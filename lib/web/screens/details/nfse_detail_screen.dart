@@ -14,6 +14,16 @@ const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
 const _bg = Color(0xFFF5F5F5);
 
+String? resolveCodigoServicoMunicipalNfseWeb(Map<String, dynamic>? cidade) {
+  final valor = cidade?['codigoServicoMunicipal'] ??
+      cidade?['codigo_servico_municipal'] ??
+      cidade?['codigoServico'] ??
+      cidade?['codigo_servico'] ??
+      cidade?['ibge'];
+  final texto = valor?.toString().trim();
+  return texto == null || texto.isEmpty ? null : texto;
+}
+
 /// Tela de inserção/detalhe de NFSe — espelha o layout do NfeSankhyaDetailScreen:
 /// cabeçalho fiscal à esquerda + grid de itens (produtos de serviço) à direita
 /// com aba de Impostos (ISS).
@@ -85,12 +95,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
     _numeroCtrl.text = i['numero']?.toString() ?? '';
     _serieCtrl.text = i['serie']?.toString() ?? '';
-    _municipioCtrl.text = i['municipioPrestacao']?.toString() ??
-        i['municipio']?.toString() ??
-        '';
-    _codigoServicoCtrl.text = i['codigoServicoMunicipal']?.toString() ??
-        i['codigoServico']?.toString() ??
-        '';
+    _municipioCtrl.text =
+        i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
+    _codigoServicoCtrl.text = _codigoServicoMunicipalInicial(i);
 
     _statusVal = _isNovo ? 'PENDENTE' : (i['status']?.toString() ?? 'PENDENTE');
     _ambienteVal = i['ambiente']?.toString() ?? 'HOMOLOGACAO';
@@ -103,7 +110,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
     _tomadorId = (i['tomador'] is Map
             ? i['tomador']['id']
-            : (i['parceiro'] is Map ? i['parceiro']['id'] : i['tomador'] ?? i['parceiro']))
+            : (i['parceiro'] is Map
+                ? i['parceiro']['id']
+                : i['tomador'] ?? i['parceiro']))
         ?.toString();
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
@@ -116,7 +125,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
     // Cidade: tentar extrair id (se vier como objeto) ou buscar pelo nome
     if (i['cidade'] is Map) {
-      _cidadeId = i['cidade']['id']?.toString();
+      final cidade = Map<String, dynamic>.from(i['cidade'] as Map);
+      _cidadeId = cidade['id']?.toString();
+      final nomeCidade = cidade['nome']?.toString();
+      if (nomeCidade != null && nomeCidade.isNotEmpty) {
+        _municipioCtrl.text = nomeCidade;
+      }
+      final codigoMunicipal = resolveCodigoServicoMunicipalNfseWeb(cidade);
+      if (_codigoServicoCtrl.text.isEmpty && codigoMunicipal != null) {
+        _codigoServicoCtrl.text = codigoMunicipal;
+      }
     }
     if (i['municipioPrestacao'] != null) {
       _municipioCtrl.text = i['municipioPrestacao']?.toString() ?? '';
@@ -135,15 +153,46 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
+  String _primeiroTextoPreenchido(
+      Map<String, dynamic> origem, List<String> chaves) {
+    for (final chave in chaves) {
+      final valor = origem[chave]?.toString().trim();
+      if (valor != null && valor.isNotEmpty) return valor;
+    }
+    return '';
+  }
+
+  String _codigoServicoMunicipalInicial(Map<String, dynamic> item) {
+    final codigoDireto = _primeiroTextoPreenchido(item, const [
+      'codigoServicoMunicipal',
+      'codigo_servico_municipal',
+      'codigoServico',
+      'codigo_servico',
+    ]);
+    if (codigoDireto.isNotEmpty) return codigoDireto;
+
+    final cidade = item['cidade'];
+    if (cidade is Map) {
+      return _codigoServicoMunicipalDaCidade(Map<String, dynamic>.from(cidade));
+    }
+    return '';
+  }
+
+  String _codigoServicoMunicipalDaCidade(Map<String, dynamic> cidade) {
+    return resolveCodigoServicoMunicipalNfseWeb(cidade) ?? '';
+  }
+
   Future<void> _loadDropdowns() async {
     final login = AuthUtility.userInfo?.login;
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
     await Future.wait([
-      _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
+      _loadList(
+          '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
       _loadProdutosServico(empId),
-      _loadList('${ApiLinks.baseUrl}/api/nfse-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+      _loadList(
+          '${ApiLinks.baseUrl}/api/nfse-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _series = d)),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
@@ -174,7 +223,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// Busca cidades no servidor pelo termo digitado (debounce feito pelo
   /// SearchableDropdownField). Usada pelo popup "Município de Prestação"
   /// para não depender de carregar as 5571 cidades no cliente.
-  Future<List<Map<String, dynamic>>> _buscarCidadesServidor(String termo) async {
+  Future<List<Map<String, dynamic>>> _buscarCidadesServidor(
+      String termo) async {
     List<Map<String, dynamic>> resultado = [];
     await _loadList(
       '${ApiLinks.baseUrl}/api/cidade?nome=${Uri.encodeQueryComponent(termo)}&tamanho=50',
@@ -211,7 +261,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             raw = b['dados'] ?? b['content'] ?? b['items'] ?? [];
           }
         }
-        cb(raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        cb(raw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
@@ -222,7 +275,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           '${ApiLinks.baseUrl}/api/nfse_item?nfseId=$_nfseId&tamanho=100');
       if (r.statusCode == 200) {
         final b = jsonDecode(r.body);
-        final d = b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
+        final d =
+            b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
         setState(() => _itens = (d as List? ?? [])
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
@@ -242,33 +296,45 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       'codigoServicoMunicipal': _codigoServicoCtrl.text,
       if (_statusVal != null) 'status': _statusVal,
       if (_ambienteVal != null) 'ambiente': _ambienteVal,
-      if (_empresaId != null) 'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
-      if (_tomadorId != null) 'tomador': {'id': int.tryParse(_tomadorId!) ?? _tomadorId},
-      if (_dataEmissao != null) 'dataEmissao': _dataEmissao!.toIso8601String().substring(0, 10),
-      if (_dataCompetencia != null) 'dataCompetencia': _dataCompetencia!.toIso8601String().substring(0, 10),
+      if (_empresaId != null)
+        'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
+      if (_tomadorId != null)
+        'tomador': {'id': int.tryParse(_tomadorId!) ?? _tomadorId},
+      if (_dataEmissao != null)
+        'dataEmissao': _dataEmissao!.toIso8601String().substring(0, 10),
+      if (_dataCompetencia != null)
+        'dataCompetencia': _dataCompetencia!.toIso8601String().substring(0, 10),
     };
     try {
       final r = _isNovo
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfse', body)
-          : await TenantContext.put('${ApiLinks.baseUrl}/api/nfse/${widget.item['id']}', body);
+          : await TenantContext.put(
+              '${ApiLinks.baseUrl}/api/nfse/${widget.item['id']}', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (_isNovo) {
           try {
             final b = jsonDecode(r.body);
-            final newId = b is Map ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id'])) : null;
+            final newId = b is Map
+                ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id']))
+                : null;
             if (newId != null) {
               setState(() => widget.item['id'] = newId);
               _loadItens();
             }
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}: ${r.body}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
   }
 
@@ -280,32 +346,45 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       if (item['produto'] != null) 'produto': item['produto'],
       'descricao': item['descricao'] ?? '',
       'quantidade': double.tryParse((item['quantidade'] ?? '').toString()),
-      'valorUnitario': double.tryParse((item['valorUnitario'] ?? item['valor_unitario'] ?? '').toString()),
-      'valorTotal': double.tryParse((item['valorTotal'] ?? item['valor_total'] ?? '').toString()),
-      'aliquotaIss': double.tryParse((item['aliquotaIss'] ?? item['aliquota_iss'] ?? '').toString()),
-      'valorIss': double.tryParse((item['valorIss'] ?? item['valor_iss'] ?? '').toString()),
-      'codigoTributacaoMunicipal': item['codigoTributacaoMunicipal'] ?? item['codigo_tributacao_municipal'] ?? '',
+      'valorUnitario': double.tryParse(
+          (item['valorUnitario'] ?? item['valor_unitario'] ?? '').toString()),
+      'valorTotal': double.tryParse(
+          (item['valorTotal'] ?? item['valor_total'] ?? '').toString()),
+      'aliquotaIss': double.tryParse(
+          (item['aliquotaIss'] ?? item['aliquota_iss'] ?? '').toString()),
+      'valorIss': double.tryParse(
+          (item['valorIss'] ?? item['valor_iss'] ?? '').toString()),
+      'codigoTributacaoMunicipal': item['codigoTributacaoMunicipal'] ??
+          item['codigo_tributacao_municipal'] ??
+          '',
       'issRetido': item['issRetido'] == true || item['iss_retido'] == true,
     };
     try {
       final r = isNew
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfse_item', body)
-          : await TenantContext.put('${ApiLinks.baseUrl}/api/nfse_item/${item['id']}', body);
+          : await TenantContext.put(
+              '${ApiLinks.baseUrl}/api/nfse_item/${item['id']}', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (isNew) {
           try {
             final b = jsonDecode(r.body);
-            final newId = b is Map ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id'])) : null;
+            final newId = b is Map
+                ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id']))
+                : null;
             if (newId != null) setState(() => item['id'] = newId);
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item salvo!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Item salvo!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
   }
 
@@ -330,7 +409,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           TextButton.icon(
             onPressed: _salvarCabecalho,
             icon: const Icon(Icons.save, size: 16, color: Colors.white),
-            label: const Text('Salvar', style: TextStyle(color: Colors.white, fontSize: 12)),
+            label: const Text('Salvar',
+                style: TextStyle(color: Colors.white, fontSize: 12)),
           ),
           const SizedBox(width: 8),
         ],
@@ -340,22 +420,31 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(width: _cabWidth, child: _cabecalho()),
             GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(() => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
+              onHorizontalDragUpdate: (d) => setState(
+                  () => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
               child: MouseRegion(
                 cursor: SystemMouseCursors.resizeColumn,
-                child: Container(width: 6, color: _bord,
-                  child: const Center(child: Icon(Icons.drag_indicator, size: 14, color: _grey))),
+                child: Container(
+                    width: 6,
+                    color: _bord,
+                    child: const Center(
+                        child: Icon(Icons.drag_indicator,
+                            size: 14, color: _grey))),
               ),
             ),
             Expanded(child: _itensPanel()),
           ]),
         ),
         GestureDetector(
-          onVerticalDragUpdate: (d) => setState(() => _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
+          onVerticalDragUpdate: (d) => setState(() =>
+              _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
           child: MouseRegion(
             cursor: SystemMouseCursors.resizeRow,
-            child: Container(height: 6, color: _bord,
-              child: const Center(child: Icon(Icons.drag_handle, size: 14, color: _grey))),
+            child: Container(
+                height: 6,
+                color: _bord,
+                child: const Center(
+                    child: Icon(Icons.drag_handle, size: 14, color: _grey))),
           ),
         ),
         SizedBox(height: _rodapeHeight, child: _rodape()),
@@ -373,11 +462,22 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           color: _green,
           child: Row(children: [
-            const Expanded(child: Text('Cabeçalho', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
-            SizedBox(height: 24, child: ElevatedButton.icon(
-              onPressed: _salvarCabecalho,
-              icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
+            const Expanded(
+                child: Text('Cabeçalho',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12))),
+            SizedBox(
+                height: 24,
+                child: ElevatedButton.icon(
+                    onPressed: _salvarCabecalho,
+                    icon: const Icon(Icons.save, size: 12),
+                    label: const Text('Salvar', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: _green,
+                        padding: const EdgeInsets.symmetric(horizontal: 8)))),
           ]),
         ),
         Expanded(
@@ -386,16 +486,21 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             child: Column(children: [
               hasSession && _empresaNome != null
                   ? _inpDisabledText('Empresa', _empresaNome!)
-                  : _ddObj('Empresa', _empresaId, _empresas, 'nome', (v) => setState(() => _empresaId = v)),
-              _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) => setState(() => _tomadorId = v)),
+                  : _ddObj('Empresa', _empresaId, _empresas, 'nome',
+                      (v) => setState(() => _empresaId = v)),
+              _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
+                  (v) => setState(() => _tomadorId = v)),
               _ddSerie(),
               _inp('Número', _numeroCtrl),
-              _dateField('Data Emissão', _dataEmissao, (d) => setState(() => _dataEmissao = d)),
-              _dateField('Data Competência', _dataCompetencia, (d) => setState(() => _dataCompetencia = d)),
+              _dateField('Data Emissão', _dataEmissao,
+                  (d) => setState(() => _dataEmissao = d)),
+              _dateField('Data Competência', _dataCompetencia,
+                  (d) => setState(() => _dataCompetencia = d)),
               _ddCidade(),
               _inp('Código de Serviço Municipal', _codigoServicoCtrl),
               _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-              _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
+              _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+                  (v) => setState(() => _ambienteVal = v)),
             ]),
           ),
         ),
@@ -411,10 +516,15 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _green, width: 1.5)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _green, width: 1.5)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
         ),
       );
@@ -427,21 +537,30 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
             filled: true,
             fillColor: const Color(0xFFF5F5F5),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
-          child: Text(value, style: const TextStyle(fontSize: 12, color: _grey)),
+          child:
+              Text(value, style: const TextStyle(fontSize: 12, color: _grey)),
         ),
       );
 
-  Widget _dd(String label, String? val, List<String> opts, void Function(String?) cb) => Padding(
+  Widget _dd(String label, String? val, List<String> opts,
+          void Function(String?) cb) =>
+      Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: SearchableDropdownField(
           label: label,
           value: val,
-          items: opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
+          items:
+              opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
           valueField: 'id',
           displayField: 'nome',
           nullable: true,
@@ -450,13 +569,19 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ),
       );
 
-  Widget _ddObj(String label, String? val, List<Map<String, dynamic>> opts, String displayField, void Function(String?) cb) {
+  Widget _ddObj(String label, String? val, List<Map<String, dynamic>> opts,
+      String displayField, void Function(String?) cb) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: label,
         value: opts.any((o) => o['id']?.toString() == val) ? val : null,
-        items: opts.map((o) => <String, dynamic>{'id': o['id']?.toString() ?? '', 'nome': o[displayField]?.toString() ?? ''}).toList(),
+        items: opts
+            .map((o) => <String, dynamic>{
+                  'id': o['id']?.toString() ?? '',
+                  'nome': o[displayField]?.toString() ?? ''
+                })
+            .toList(),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -472,18 +597,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: 'Série',
-        value: _series.any((o) => o['id']?.toString() == _serieId) ? _serieId : null,
-        items: _series.map((s) => <String, dynamic>{
-          'id': s['id']?.toString() ?? '',
-          'nome': '${s['serie'] ?? ''} (atual: ${s['numeroAtual'] ?? 1})',
-        }).toList(),
+        value: _series.any((o) => o['id']?.toString() == _serieId)
+            ? _serieId
+            : null,
+        items: _series
+            .map((s) => <String, dynamic>{
+                  'id': s['id']?.toString() ?? '',
+                  'nome':
+                      '${s['serie'] ?? ''} (atual: ${s['numeroAtual'] ?? 1})',
+                })
+            .toList(),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione —',
         onChanged: (v) {
           setState(() => _serieId = v);
-          final s = _series.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
+          final s = _series.firstWhere((o) => o['id']?.toString() == v,
+              orElse: () => {});
           if (s.isNotEmpty) {
             _serieCtrl.text = s['serie']?.toString() ?? '';
             // Auto-preencher próximo número
@@ -497,18 +628,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   /// Dropdown de Município (Cidade) — carrega de /api/cidade
   /// Ao selecionar, preenche o código de serviço municipal se a cidade tiver
+  Map<String, dynamic> _cidadeDropdownItem(Map<String, dynamic> cidade) {
+    final codigo = _codigoServicoMunicipalDaCidade(cidade);
+    return <String, dynamic>{
+      'id': cidade['id']?.toString() ?? '',
+      'nome': cidade['nome']?.toString() ?? '',
+      if (codigo.isNotEmpty) 'codigoServicoMunicipal': codigo,
+    };
+  }
+
   Widget _ddCidade() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: 'Município de Prestação',
-        value: _cidades.any((o) => o['id']?.toString() == _cidadeId) ? _cidadeId : null,
-        items: _cidades.map((c) => <String, dynamic>{
-          'id': c['id']?.toString() ?? '',
-          'nome': c['nome']?.toString() ?? '',
-          if (c['codigoServicoMunicipal'] != null)
-            'codigoServicoMunicipal': c['codigoServicoMunicipal'],
-        }).toList(),
+        value: _cidades.any((o) => o['id']?.toString() == _cidadeId)
+            ? _cidadeId
+            : null,
+        items: _cidades.map(_cidadeDropdownItem).toList(),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -529,8 +666,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             setState(() => _cidades = [item, ..._cidades]);
           }
           // Auto-preencher código de serviço municipal se a cidade tiver
-          final codServico = item['codigoServicoMunicipal']?.toString();
-          if (codServico != null && codServico.isNotEmpty) {
+          final codServico = _codigoServicoMunicipalDaCidade(item);
+          if (codServico.isNotEmpty) {
             _codigoServicoCtrl.text = codServico;
           }
         },
@@ -555,9 +692,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
           child: Row(children: [
             const Icon(Icons.calendar_today, size: 14, color: _grey),
@@ -583,39 +723,69 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           color: const Color(0xFFF8F8F8),
           child: Row(children: [
-            const Text('Itens (Serviços)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text('Itens (Serviços)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(width: 8),
-            _togBtn(Icons.view_list, _itensGrid, () => setState(() => _itensGrid = true)),
+            _togBtn(Icons.view_list, _itensGrid,
+                () => setState(() => _itensGrid = true)),
             const SizedBox(width: 4),
-            _togBtn(Icons.edit_note, !_itensGrid, () => setState(() => _itensGrid = false)),
+            _togBtn(Icons.edit_note, !_itensGrid,
+                () => setState(() => _itensGrid = false)),
             const SizedBox(width: 8),
-            SizedBox(height: 24, child: ElevatedButton.icon(
-              onPressed: _novoItem,
-              icon: const Icon(Icons.add, size: 12), label: const Text('Novo', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10)))),
+            SizedBox(
+                height: 24,
+                child: ElevatedButton.icon(
+                    onPressed: _novoItem,
+                    icon: const Icon(Icons.add, size: 12),
+                    label: const Text('Novo', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: _green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10)))),
             if (!_itensGrid && _itens.isNotEmpty) ...[
               const SizedBox(width: 4),
-              SizedBox(height: 24, child: ElevatedButton.icon(
-                onPressed: () => _salvarItem(_itens[_selItem]),
-                icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
+              SizedBox(
+                  height: 24,
+                  child: ElevatedButton.icon(
+                      onPressed: () => _salvarItem(_itens[_selItem]),
+                      icon: const Icon(Icons.save, size: 12),
+                      label:
+                          const Text('Salvar', style: TextStyle(fontSize: 11)),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: _green,
+                          padding: const EdgeInsets.symmetric(horizontal: 8)))),
             ],
             const Spacer(),
             if (!_itensGrid && _itens.isNotEmpty) ...[
               _nb(Icons.first_page, () => setState(() => _selItem = 0)),
-              _nb(Icons.chevron_left, () => setState(() { if (_selItem > 0) _selItem--; })),
-              Text(' ${_selItem + 1}/${_itens.length} ', style: const TextStyle(fontSize: 11)),
-              _nb(Icons.chevron_right, () => setState(() { if (_selItem < _itens.length - 1) _selItem++; })),
-              _nb(Icons.last_page, () => setState(() => _selItem = _itens.length - 1)),
+              _nb(
+                  Icons.chevron_left,
+                  () => setState(() {
+                        if (_selItem > 0) _selItem--;
+                      })),
+              Text(' ${_selItem + 1}/${_itens.length} ',
+                  style: const TextStyle(fontSize: 11)),
+              _nb(
+                  Icons.chevron_right,
+                  () => setState(() {
+                        if (_selItem < _itens.length - 1) _selItem++;
+                      })),
+              _nb(Icons.last_page,
+                  () => setState(() => _selItem = _itens.length - 1)),
             ],
           ]),
         ),
         Container(height: 1, color: _bord),
         Expanded(
           child: _itensGrid
-              ? _gridSemHeader(telaNome: 'nfse_item', extraParams: {'nfseId': _nfseId, 'nfse_id': _nfseId})
+              ? _gridSemHeader(
+                  telaNome: 'nfse_item',
+                  extraParams: {'nfseId': _nfseId, 'nfse_id': _nfseId})
               : (_itens.isEmpty
-                  ? const Center(child: Text('Nenhum item', style: TextStyle(color: _grey)))
+                  ? const Center(
+                      child:
+                          Text('Nenhum item', style: TextStyle(color: _grey)))
                   : _iForm()),
         ),
       ]),
@@ -625,20 +795,26 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   Widget _iForm() {
     if (_selItem >= _itens.length) return const SizedBox();
     final item = _itens[_selItem];
-    final prodId = (item['produto'] is Map ? item['produto']['id'] : item['produto_id'])?.toString();
+    final prodId =
+        (item['produto'] is Map ? item['produto']['id'] : item['produto_id'])
+            ?.toString();
     return SingleChildScrollView(
       padding: const EdgeInsets.all(10),
       child: Column(children: [
         // Produto — somente os marcados como serviço (Produto.isServico == true)
         _ddObjItem('Produto (Serviço)', prodId, _produtos, 'nome', (v) {
-          final prod = _produtos.firstWhere((p) => p['id']?.toString() == v, orElse: () => {});
+          final prod = _produtos.firstWhere((p) => p['id']?.toString() == v,
+              orElse: () => {});
           setState(() {
             item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
             if (prod.isNotEmpty) {
               item['descricao'] = prod['nome']?.toString() ?? '';
               item['valorUnitario'] = prod['preco']?.toString() ?? '';
-              item['aliquotaIss'] = prod['aliquotaIss']?.toString() ?? prod['aliquota_iss']?.toString() ?? '';
-              item['codigoTributacaoMunicipal'] = prod['codigoTributacaoMunicipal']?.toString() ?? '';
+              item['aliquotaIss'] = prod['aliquotaIss']?.toString() ??
+                  prod['aliquota_iss']?.toString() ??
+                  '';
+              item['codigoTributacaoMunicipal'] =
+                  prod['codigoTributacaoMunicipal']?.toString() ?? '';
             }
           });
         }),
@@ -647,11 +823,18 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _iInp('Vl. Unitário', item, 'valorUnitario'),
         _iInp('Vl. Total', item, 'valorTotal'),
         const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: ElevatedButton.icon(
-          onPressed: () => _salvarItem(item),
-          icon: const Icon(Icons.save, size: 14),
-          label: const Text('Salvar Item', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10)))),
+        SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+                onPressed: () => _salvarItem(item),
+                icon: const Icon(Icons.save, size: 14),
+                label: const Text('Salvar Item',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10)))),
       ]),
     );
   }
@@ -667,15 +850,19 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(fontSize: 11, color: _grey),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _bord)),
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         ),
       ),
     );
   }
 
-  Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts, String df, void Function(String?) cb) {
+  Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts,
+      String df, void Function(String?) cb) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
@@ -684,9 +871,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         items: opts.map((o) {
           final nome = o[df]?.toString() ?? '';
           final preco = o['preco']?.toString() ?? '';
-          final codigo = o['codigoTributacaoMunicipal']?.toString() ?? o['cnae']?.toString() ?? '';
-          final display = codigo.isNotEmpty ? '$nome (R\$ $preco) [$codigo]' : '$nome (R\$ $preco)';
-          return <String, dynamic>{'id': o['id']?.toString() ?? '', 'nome': display};
+          final codigo = o['codigoTributacaoMunicipal']?.toString() ??
+              o['cnae']?.toString() ??
+              '';
+          final display = codigo.isNotEmpty
+              ? '$nome (R\$ $preco) [$codigo]'
+              : '$nome (R\$ $preco)';
+          return <String, dynamic>{
+            'id': o['id']?.toString() ?? '',
+            'nome': display
+          };
         }).toList(),
         valueField: 'id',
         displayField: 'nome',
@@ -697,7 +891,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  Widget _gridSemHeader({required String telaNome, Map<String, dynamic>? extraParams}) {
+  Widget _gridSemHeader(
+      {required String telaNome, Map<String, dynamic>? extraParams}) {
     return DynamicGridWindowsScreen<Map<String, dynamic>>(
       key: ValueKey('${telaNome}_$_nfseId'),
       telaNome: telaNome,
@@ -713,24 +908,31 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         onTap: cb,
         child: Container(
           padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(color: on ? _green : Colors.transparent, borderRadius: BorderRadius.circular(4), border: Border.all(color: on ? _green : _bord)),
+          decoration: BoxDecoration(
+              color: on ? _green : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: on ? _green : _bord)),
           child: Icon(ic, size: 16, color: on ? Colors.white : _grey),
         ),
       );
 
   Widget _nb(IconData ic, VoidCallback cb) => InkWell(
         onTap: cb,
-        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 1), child: Icon(ic, size: 18, color: _dark)),
+        child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: Icon(ic, size: 18, color: _dark)),
       );
 
   // ── RODAPÉ: abas ──
   Widget _rodape() {
     final tabs = ['Totais', 'Impostos'];
     return Column(children: [
-      Container(color: const Color(0xFFF0F0F0), child: Row(children: [
-        const SizedBox(width: 8),
-        ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
-      ])),
+      Container(
+          color: const Color(0xFFF0F0F0),
+          child: Row(children: [
+            const SizedBox(width: 8),
+            ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
+          ])),
       Container(height: 1, color: _bord),
       Expanded(child: _tabContent()),
     ]);
@@ -742,8 +944,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       onTap: () => setState(() => _tab = idx),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: on ? Colors.white : Colors.transparent, border: Border(bottom: BorderSide(color: on ? _red : Colors.transparent, width: 2))),
-        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.bold : FontWeight.normal, color: on ? _red : _grey)),
+        decoration: BoxDecoration(
+            color: on ? Colors.white : Colors.transparent,
+            border: Border(
+                bottom: BorderSide(
+                    color: on ? _red : Colors.transparent, width: 2))),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: on ? FontWeight.bold : FontWeight.normal,
+                color: on ? _red : _grey)),
       ),
     );
   }
@@ -763,18 +973,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final vt = widget.item['valorTotal']?.toString() ?? '0,00';
     return Padding(
       padding: const EdgeInsets.all(10),
-      child: Row(children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
+      child:
+          Row(children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
     );
   }
 
   Widget _card(String label, String value) => Container(
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: _bord)),
+        decoration: BoxDecoration(
+            color: _bg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _bord)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: const TextStyle(fontSize: 11, color: _grey)),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _dark)),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.bold, color: _dark)),
         ]),
       );
 
@@ -785,7 +1001,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     if (_itens.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(10),
-        child: Text('Impostos (ISS) calculados a partir dos itens.', style: TextStyle(color: _grey, fontSize: 12)),
+        child: Text('Impostos (ISS) calculados a partir dos itens.',
+            style: TextStyle(color: _grey, fontSize: 12)),
       );
     }
     return ListView.separated(
@@ -795,15 +1012,27 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       itemBuilder: (_, i) {
         final item = _itens[i];
         final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
-        final aliquota = item['aliquotaIss']?.toString() ?? item['aliquota_iss']?.toString() ?? '-';
-        final valorIss = item['valorIss']?.toString() ?? item['valor_iss']?.toString() ?? '-';
-        final codTrib = item['codigoTributacaoMunicipal']?.toString() ?? item['codigo_tributacao_municipal']?.toString() ?? '-';
+        final aliquota = item['aliquotaIss']?.toString() ??
+            item['aliquota_iss']?.toString() ??
+            '-';
+        final valorIss = item['valorIss']?.toString() ??
+            item['valor_iss']?.toString() ??
+            '-';
+        final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
+            item['codigo_tributacao_municipal']?.toString() ??
+            '-';
         final retido = item['issRetido'] == true || item['iss_retido'] == true;
         return Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: _bord)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(descricao, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _bord)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(descricao,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 6),
             Wrap(spacing: 16, runSpacing: 6, children: [
               _impInfo('Alíquota ISS', '$aliquota%'),
@@ -817,8 +1046,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  Widget _impInfo(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _impInfo(String label, String value) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: const TextStyle(fontSize: 10, color: _grey)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _dark)),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: _dark)),
       ]);
 }
