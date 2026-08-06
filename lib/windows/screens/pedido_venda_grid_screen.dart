@@ -22,23 +22,23 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         CustomAction<PedidoVenda>(
           icon: Icons.check_circle,
           label: GridTexts.approve,
-          isVisible: (item) => item.status == 'RASCUNHO',
+          isVisible: (item) => item.id != null && item.status == 'RASCUNHO',
           onPressed: (context, item) => _showConfirm(
             context,
             GridTexts.approveOrderTitle,
             GridTexts.approveOrderQuestion,
-            () => PedidoVendaService.aprovar(item.id ?? 0),
+            () => PedidoVendaService.aprovar(item.id!),
           ),
         ),
         CustomAction<PedidoVenda>(
           icon: Icons.cancel,
           label: GridTexts.reject,
-          isVisible: (item) => item.status == 'RASCUNHO',
+          isVisible: (item) => item.id != null && item.status == 'RASCUNHO',
           onPressed: (context, item) => _showConfirm(
             context,
             GridTexts.rejectOrderTitle,
             GridTexts.rejectOrderQuestion,
-            () => PedidoVendaService.rejeitar(item.id ?? 0),
+            () => PedidoVendaService.rejeitar(item.id!),
           ),
         ),
         CustomAction<PedidoVenda>(
@@ -50,23 +50,23 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         CustomAction<PedidoVenda>(
           icon: Icons.done_all,
           label: GridTexts.totalBilling,
-          isVisible: (item) => item.status == 'APROVADO' || item.status == 'FATURADO_PARCIAL',
+          isVisible: (item) => item.id != null && (item.status == 'APROVADO' || item.status == 'FATURADO_PARCIAL'),
           onPressed: (context, item) => _showConfirm(
             context,
             GridTexts.totalBilling,
             GridTexts.totalBillingQuestion,
-            () => PedidoVendaService.faturarTotal(item.id ?? 0),
+            () => PedidoVendaService.faturarTotal(item.id!),
           ),
         ),
         CustomAction<PedidoVenda>(
           icon: Icons.block,
           label: GridTexts.cancel,
-          isVisible: (item) => true,
+          isVisible: (item) => item.id != null,
           onPressed: (context, item) => _showConfirm(
             context,
             GridTexts.cancelOrderTitle,
             GridTexts.cancelOrderQuestion,
-            () => PedidoVendaService.cancelar(item.id ?? 0),
+            () => PedidoVendaService.cancelar(item.id!),
           ),
         ),
         CustomAction<PedidoVenda>(
@@ -109,15 +109,23 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
       ),
     );
     if (confirmed != true) return;
-    final success = await action();
-    if (!context.mounted) return;
+    try {
+      final success = await action();
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success
-          ? GridTexts.completedAction(title)
-          : GridTexts.actionFailure(title)),
-      backgroundColor: success ? Colors.green : Colors.red,
-    ));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success
+            ? GridTexts.completedAction(title)
+            : GridTexts.actionFailure(title)),
+        backgroundColor: success ? GridColors.success : GridColors.error,
+      ));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(GridTexts.actionFailure('$title: $e')),
+        backgroundColor: GridColors.error,
+      ));
+    }
   }
   void _showFaturarDialog(BuildContext context, PedidoVenda pedido) {
     if (pedido.id == null) return;
@@ -130,7 +138,10 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         onSaved: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Faturamento atualizado com sucesso')),
+            SnackBar(
+              content: Text(GridTexts.completedAction('Faturamento')),
+              backgroundColor: GridColors.success,
+            ),
           );
         },
       ),

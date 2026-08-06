@@ -104,7 +104,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success ? 'Pedido criado a partir do orçamento!' : 'Erro ao criar pedido'),
-      backgroundColor: success ? Colors.green : Colors.red,
+      backgroundColor: success ? GridColors.success : GridColors.error,
     ));
     if (success) _load();
   }
@@ -137,13 +137,21 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
       ),
     );
     if (confirmed != true) return;
-    final success = await action();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? '$title concluído!' : 'Erro ao $title'),
-      backgroundColor: success ? Colors.green : Colors.red,
-    ));
-    if (success) _load();
+    try {
+      final success = await action();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success ? '$title concluído!' : 'Erro ao $title'),
+        backgroundColor: success ? GridColors.success : GridColors.error,
+      ));
+      if (success) _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erro ao $title: $e'),
+        backgroundColor: GridColors.error,
+      ));
+    }
   }
 
   Color _statusColor(String? status) {
