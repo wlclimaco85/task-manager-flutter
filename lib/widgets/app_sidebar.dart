@@ -9,6 +9,7 @@ import '../services/permission_service.dart';
 import '../utils/menu_config.dart';
 import '../utils/security_matrix.dart';
 import '../utils/string_utils.dart';
+import '../utils/asset_loader.dart';
 
 /// Sidebar com submenus, busca e favoritos.
 /// Usado tanto no Windows quanto no Web (drawer).
@@ -183,19 +184,37 @@ class _AppSidebarState extends State<AppSidebar> {
       ..sort((a, b) => a.label.compareTo(b.label));
   }
 
-  /// Mesma lógica de UserBannerAppBar._getUserAvatar() — decodifica a foto do
-  /// usuário (base64) vinda do login ou dos dados pessoais.
+  /// Decodifica a foto do usuário (base64) vinda do login ou dos dados pessoais.
+  /// Suporta strings que já trazem prefixo "data:image/...;base64," do backend.
   Uint8List _getUserAvatar() {
-    final base64String = AuthUtility.userInfo?.login?.foto ??
+    final raw = AuthUtility.userInfo?.login?.foto ??
         AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
-    if (base64String != null && base64String.trim().isNotEmpty) {
-      try {
-        final UriData? data =
-            Uri.parse("data:image/png;base64,$base64String").data;
-        if (data != null) return data.contentAsBytes();
-      } catch (_) {}
-    }
+    if (raw == null || raw.trim().isEmpty) return Uint8List(0);
+    try {
+      final base64Only = raw.contains(';base64,')
+          ? raw.substring(raw.indexOf(';base64,') + 8)
+          : raw.trim();
+      final UriData? data =
+          Uri.parse('data:image/jpeg;base64,$base64Only').data;
+      if (data != null) return data.contentAsBytes();
+    } catch (_) {}
     return Uint8List(0);
+  }
+
+  /// Nome da empresa ou parceiro do usuário logado.
+  String _getCompanyName() {
+    return AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.nome ??
+        '';
+  }
+
+  /// Inicial para o avatar: usa o email (sempre disponível) em vez do nome.
+  String _avatarInitial() {
+    final email = widget.userEmail;
+    if (email.isNotEmpty) return email[0].toUpperCase();
+    final name = widget.userName;
+    if (name.isNotEmpty) return name[0].toUpperCase();
+    return 'U';
   }
 
   @override
@@ -236,6 +255,14 @@ class _AppSidebarState extends State<AppSidebar> {
   // fallback para a inicial do nome quando não há foto cadastrada.
   Widget _buildUserAvatar(double radius) {
     final avatar = _getUserAvatar();
+    final initial = _avatarInitial();
+    final fallback = Text(
+      initial,
+      style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: radius * 0.8),
+    );
     return CircleAvatar(
       radius: radius,
       backgroundColor: _primary,
@@ -246,24 +273,10 @@ class _AppSidebarState extends State<AppSidebar> {
                 width: radius * 2,
                 height: radius * 2,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Text(
-                  widget.userName.isNotEmpty
-                      ? widget.userName[0].toUpperCase()
-                      : 'U',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: radius * 0.8),
-                ),
+                errorBuilder: (_, __, ___) => fallback,
               ),
             )
-          : Text(
-              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: radius * 0.8),
-            ),
+          : fallback,
     );
   }
 
@@ -275,13 +288,11 @@ class _AppSidebarState extends State<AppSidebar> {
           children: [
             // Logo Abraço Contabilidade (versão compacta — só o avatar/ícone)
             ClipOval(
-              child: Image.asset(
+              child: AssetLoader.loadImage(
                 'assets/images/logo_contabilidade.jpg',
                 width: 30,
                 height: 30,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.apps, color: Colors.white, size: 22),
               ),
             ),
             const SizedBox(height: 10),
@@ -311,13 +322,11 @@ class _AppSidebarState extends State<AppSidebar> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.asset(
+                child: AssetLoader.loadImage(
                   'assets/images/logo_contabilidade.jpg',
                   width: 32,
                   height: 32,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.apps, color: Colors.white, size: 24),
                 ),
               ),
               const SizedBox(width: 10),
@@ -343,8 +352,11 @@ class _AppSidebarState extends State<AppSidebar> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Linha 1: email (identificador principal do usuário)
                     Text(
-                      widget.userName.isNotEmpty ? widget.userName : 'Usuário',
+                      widget.userEmail.isNotEmpty
+                          ? widget.userEmail
+                          : widget.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -352,9 +364,10 @@ class _AppSidebarState extends State<AppSidebar> {
                           fontWeight: FontWeight.bold,
                           fontSize: 13),
                     ),
-                    if (widget.userEmail.isNotEmpty)
+                    // Linha 2: empresa ou cliente logado
+                    if (_getCompanyName().isNotEmpty)
                       Text(
-                        widget.userEmail,
+                        _getCompanyName(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: _textMuted, fontSize: 11),

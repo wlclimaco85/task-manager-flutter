@@ -421,7 +421,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsFornecedorGridScreen(
             hasPermission: (perm) => true), // 93: Fornecedores
         const WindowsOrcamentoGridScreen(), // 94: Orçamentos
-        const WindowsPedidoVendaGridScreen(), // 95: Pedidos de Venda
+        WindowsPedidoVendaGridScreen(
+            hasPermission: (perm) => true), // 95: Pedidos de Venda
         const WindowsPedidoCompraGridScreen(), // 96: Pedidos de Compra
         const ConsultaDfeScreen(), // 97: Consulta DF-e
         const ManifestacaoDestinatarioScreen(), // 98: Manifestação Destinatário
