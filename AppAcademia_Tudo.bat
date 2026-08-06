@@ -347,10 +347,15 @@ if /i "%CURRENT_BRANCH%"=="%SELECTED_BRANCH%" (
 )
 
 echo Atualizando %SELECTED_BRANCH% antes de subir...
-git pull --rebase --autostash
+git rev-parse --abbrev-ref --symbolic-full-name @{u} >nul 2>&1
 if errorlevel 1 (
-    echo [ERRO] Falha no pull de %SELECTED_BRANCH% em %REPO_LABEL%.
-    exit /b 1
+    echo [AVISO] Branch %SELECTED_BRANCH% sem upstream remoto. Continuando sem pull.
+) else (
+    git pull --rebase --autostash
+    if errorlevel 1 (
+        echo [ERRO] Falha no pull de %SELECTED_BRANCH% em %REPO_LABEL%.
+        exit /b 1
+    )
 )
 exit /b 0
 
