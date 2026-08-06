@@ -223,6 +223,11 @@ class MenuConfig {
             label: 'Dashboard Fiscal',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 146),
+        MenuItem(
+            id: 'agendamento_nfe',
+            label: 'Agendar NFe Recorrente',
+            icon: FontAwesomeIcons.calendarPlus,
+            screenIndex: 183),
       ],
     ),
     MenuGroup(
