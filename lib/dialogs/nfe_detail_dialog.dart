@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/core/design/design_tokens.dart';
+import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_detail_summary_tab.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_detail_impostos_tab.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_detail_actions_tab.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
-import 'package:task_manager_flutter/utils/app_logger.dart';
 
 /// Dialog responsivo com 4 tabs para visualizar detalhes completos de uma NFe
 /// Tabs:
@@ -24,11 +24,24 @@ class NfeDetailDialog extends StatefulWidget {
 
 class _NfeDetailDialogState extends State<NfeDetailDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late Breakpoint _breakpoint;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _updateBreakpoint();
+  }
+
+  void _updateBreakpoint() {
+    final width = MediaQuery.of(context).size.width;
+    _breakpoint = ResponsiveHelper().getBreakpoint(width);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateBreakpoint();
   }
 
   @override
@@ -130,7 +143,10 @@ class _NfeDetailDialogState extends State<NfeDetailDialog> with SingleTickerProv
                   SingleChildScrollView(
                     child: Padding(
                       padding: const EdgeInsets.all(DesignTokens.spacingMd),
-                      child: NfeItemsTable(nfe: widget.nfe),
+                      child: NfeItemsTable(
+                        items: widget.nfe.itens,
+                        breakpoint: _breakpoint,
+                      ),
                     ),
                   ),
 

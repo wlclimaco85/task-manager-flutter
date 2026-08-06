@@ -433,7 +433,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             ),
                           )
                               .then((_) {
-                            if (mounted) setState(() {});
+                            if (mounted && !_disposed) setState(() {});
                           });
                           return;
                         }
@@ -441,7 +441,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           context: context,
                           builder: (_) => const MeuPerfilDialog(),
                         ).then((salvou) {
-                          if (salvou == true) {
+                          if (salvou == true && mounted && !_disposed) {
                             setState(() {});
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

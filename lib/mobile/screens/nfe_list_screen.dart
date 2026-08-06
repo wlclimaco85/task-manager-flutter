@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:task_manager_flutter/core/responsive_helper.dart';
+import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_filter_model.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
@@ -60,7 +60,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
               NfeFilterBar(
                 onFilterChanged: (filter) {
                   setState(() => _currentFilter = filter);
-                  notifier.applyFilter(filter);
+                  // TODO: Implementar applyFilter em NfeNotifier
                 },
               ),
               Expanded(
@@ -76,7 +76,8 @@ class _NfeListScreenState extends State<NfeListScreen> {
 
   /// Constrói grid responsivo de NFes
   Widget _buildNfeGrid(NfeNotifier notifier, BuildContext context) {
-    final breakpoint = ResponsiveHelper.getBreakpoint(context);
+    final width = MediaQuery.of(context).size.width;
+    final breakpoint = ResponsiveHelper().getBreakpoint(width);
     final colCount = _getColumnCount(breakpoint);
 
     return GridView.builder(
@@ -96,14 +97,13 @@ class _NfeListScreenState extends State<NfeListScreen> {
   }
 
   /// Retorna número de colunas baseado em breakpoint
-  int _getColumnCount(ResponsiveBreakpoint breakpoint) {
+  int _getColumnCount(Breakpoint breakpoint) {
     switch (breakpoint) {
-      case ResponsiveBreakpoint.mobile:
+      case Breakpoint.mobile:
         return 1;
-      case ResponsiveBreakpoint.tablet:
+      case Breakpoint.tablet:
         return 2;
-      case ResponsiveBreakpoint.desktop:
-      case ResponsiveBreakpoint.wideDesktop:
+      case Breakpoint.desktop:
         return 4;
     }
   }
