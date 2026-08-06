@@ -35,7 +35,7 @@ class _NfeDetailDialogState extends State<NfeDetailDialog> with SingleTickerProv
 
   void _updateBreakpoint() {
     final width = MediaQuery.of(context).size.width;
-    _breakpoint = ResponsiveHelper().getBreakpoint(width);
+    _breakpoint = ResponsiveHelper.getBreakpoint(width);
   }
 
   @override
