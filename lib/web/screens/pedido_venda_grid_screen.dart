@@ -81,7 +81,16 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
       itens = itensRaw.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     if (id == null) return;
-    showDialog(context: context, builder: (_) => FaturarDialog(pedidoId: id, itens: itens, onSaved: _load));
+    try {
+      showDialog(context: context, builder: (_) => FaturarDialog(pedidoId: id, itens: itens, onSaved: _load));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao faturar parcialmente: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
   }
 
   Future<void> _criarDeOrcamento() async {
@@ -89,7 +98,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     if (!mounted) return;
     if (orcamentos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum orçamento aprovado disponível'), backgroundColor: Colors.orange),
+        SnackBar(content: const Text('Nenhum orçamento aprovado disponível'), backgroundColor: GridColors.warning),
       );
       return;
     }
