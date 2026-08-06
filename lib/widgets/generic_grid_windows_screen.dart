@@ -1666,6 +1666,9 @@ class GenericGridScreen<T> extends StatefulWidget {
   /// [detailScreenBuilder] usado por "Visualizar", em vez do popup de
   /// formulário genérico ([_openForm]). Default false para não alterar o
   /// comportamento das telas que já usam o popup.
+  /// Ao voltar da tela, o grid é recarregado automaticamente — não é
+  /// necessário nenhum callback de salvar na tela de destino, mas ela deve
+  /// persistir de fato as alterações antes do usuário navegar de volta.
   final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
@@ -4540,7 +4543,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             context,
                             MaterialPageRoute(
                                 builder: (_) =>
-                                    widget.detailScreenBuilder!(item)));
+                                    widget.detailScreenBuilder!(item)))
+                            .then((_) {
+                          if (mounted) _loadItems(_currentPage, rowsPerPage);
+                        });
                       } else {
                         _openForm(item: item);
                       }
