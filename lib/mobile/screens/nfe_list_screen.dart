@@ -77,7 +77,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
   /// Constrói grid responsivo de NFes
   Widget _buildNfeGrid(NfeNotifier notifier, BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final breakpoint = ResponsiveHelper().getBreakpoint(width);
+    final breakpoint = ResponsiveHelper.getBreakpoint(width);
     final colCount = _getColumnCount(breakpoint);
 
     return GridView.builder(
