@@ -6,6 +6,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../core/responsive/responsive_helper.dart';
 
 const _red = GridColors.primary;
 const _green = GridColors.secondary;
@@ -461,7 +462,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final isDesktop = size.width >= 1000;
+    final responsive = ResponsiveHelper();
+    final isDesktop = responsive.isDesktop(size.width);
 
     return Scaffold(
       backgroundColor: _bg,
