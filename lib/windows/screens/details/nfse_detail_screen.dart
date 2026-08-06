@@ -60,7 +60,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   final _serieCtrl = TextEditingController();
   final _municipioCtrl = TextEditingController();
   final _codigoServicoCtrl = TextEditingController();
-  Map<String, TextEditingController> _itemControllers = {};
   String? _statusVal;
   String? _ambienteVal;
   String? _empresaId;
@@ -91,9 +90,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _serieCtrl.dispose();
     _municipioCtrl.dispose();
     _codigoServicoCtrl.dispose();
-    for (final ctrl in _itemControllers.values) {
-      ctrl.dispose();
-    }
     super.dispose();
   }
 
@@ -860,14 +856,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   Widget _iInp(String label, Map<String, dynamic> item, String key) {
-    _itemControllers.putIfAbsent('$key', () => TextEditingController());
-    final ctrl = _itemControllers['$key']!;
-    ctrl.text = item[key]?.toString() ?? '';
-    ctrl.addListener(() => item[key] = ctrl.text);
+    final ctrl = TextEditingController(text: item[key]?.toString() ?? '');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
         controller: ctrl,
+        onChanged: (value) => item[key] = value,
         style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(
           labelText: label,

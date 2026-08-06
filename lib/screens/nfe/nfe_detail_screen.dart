@@ -33,12 +33,10 @@ class NfeDetailScreen extends StatefulWidget {
 
 class _NfeDetailScreenState extends State<NfeDetailScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  late ResponsiveHelper _responsiveHelper;
 
   @override
   void initState() {
     super.initState();
-    _responsiveHelper = ResponsiveHelper();
     // TabController para tablet (5 abas)
     _tabController = TabController(length: 5, vsync: this);
 
@@ -58,7 +56,7 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final breakpoint = _responsiveHelper.getBreakpoint(screenWidth);
+    final breakpoint = ResponsiveHelper.getBreakpoint(screenWidth);
 
     return Scaffold(
       appBar: AppBar(
