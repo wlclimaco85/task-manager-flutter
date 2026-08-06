@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/pedido_venda_model.dart';
+import '../../../services/network_caller.dart';
 import '../../../services/pedido_venda_service.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
-import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
+import '../../../windows/dialogs/orcamento_picker_dialog.dart';
+import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../utils/grid_texts.dart';
 
 class WindowsPedidoVendaGridScreen extends StatelessWidget {
@@ -18,6 +21,20 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => PedidoVenda.fromJson(json),
       toJson: (a) => a.toJson(),
+      headerActions: [
+        Builder(
+          builder: (context) => ElevatedButton.icon(
+            onPressed: () => _criarDeOrcamento(context),
+            icon: const Icon(Icons.transform, size: 18),
+            label: const Text('Criar de Orçamento'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.secondary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+      ],
       customActions: () => [
         CustomAction<PedidoVenda>(
           icon: Icons.check_circle,
@@ -81,6 +98,50 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
       ],
     );
   }
+  Future<void> _criarDeOrcamento(BuildContext context) async {
+    final orcamentos = await _fetchOrcamentosAprovados();
+    if (!context.mounted) return;
+    if (orcamentos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum orçamento aprovado disponível'),
+          backgroundColor: GridColors.warning,
+        ),
+      );
+      return;
+    }
+    final selected = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => OrcamentoPickerDialog(orcamentos: orcamentos),
+    );
+    if (selected == null || !context.mounted) return;
+    final orcamentoId = selected['id'] as int?;
+    if (orcamentoId == null) return;
+    final success = await PedidoVendaService.criarDeOrcamento(orcamentoId);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? 'Pedido criado a partir do orçamento!'
+          : 'Erro ao criar pedido'),
+      backgroundColor: success ? GridColors.success : GridColors.error,
+    ));
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchOrcamentosAprovados() async {
+    try {
+      final response = await NetworkCaller()
+          .getRequest('${ApiLinks.orcamentos}?status=APROVADO');
+      if (response.isSuccess && response.body != null) {
+        final data =
+            response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
+        if (data is List) {
+          return data.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
   Future<void> _showConfirm(
     BuildContext context,
     String title,

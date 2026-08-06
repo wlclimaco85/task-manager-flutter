@@ -43,7 +43,12 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // pumpAndSettle trava aqui: NfseDetailScreen dispara fetch de rede real
+      // em initState (sem mock), então nunca "estabiliza". Usa pump limitado
+      // para deixar os frames iniciais renderizarem sem esperar indefinidamente.
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.byType(NfseDetailScreen), findsOneWidget);
     });
 
@@ -63,7 +68,12 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // pumpAndSettle trava aqui: NfseDetailScreen dispara fetch de rede real
+      // em initState (sem mock), então nunca "estabiliza". Usa pump limitado
+      // para deixar os frames iniciais renderizarem sem esperar indefinidamente.
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Desktop deve ter Row layout
       expect(find.byType(Row), findsWidgets);
@@ -104,7 +114,12 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // pumpAndSettle trava aqui: NfseDetailScreen dispara fetch de rede real
+      // em initState (sem mock), então nunca "estabiliza". Usa pump limitado
+      // para deixar os frames iniciais renderizarem sem esperar indefinidamente.
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verifica que ConstrainedBox está presente (limita width em desktop)
       expect(find.byType(ConstrainedBox), findsWidgets);

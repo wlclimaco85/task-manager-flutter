@@ -7,6 +7,7 @@ import '../../../constants/custom_colors.dart';
 import 'details/pedido_venda_detail_screen.dart';
 import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
+import '../../../windows/dialogs/orcamento_picker_dialog.dart';
 import '../../utils/grid_texts.dart';
 import '../../../widgets/gated_button.dart';
 
@@ -104,7 +105,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     }
     final selected = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _OrcamentoPickerDialog(orcamentos: orcamentos),
+      builder: (_) => OrcamentoPickerDialog(orcamentos: orcamentos),
     );
     if (selected == null) return;
     final orcamentoId = selected['id'] as int?;
@@ -381,43 +382,6 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
         onPressed: onPressed,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      ),
-    );
-  }
-}
-
-class _OrcamentoPickerDialog extends StatelessWidget {
-  final List<Map<String, dynamic>> orcamentos;
-  const _OrcamentoPickerDialog({required this.orcamentos});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
-        child: Column(
-          children: [
-            AppBar(
-              title: const Text('Selecionar Orçamento'),
-              automaticallyImplyLeading: false,
-              actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(8),
-                itemCount: orcamentos.length,
-                itemBuilder: (_, i) {
-                  final o = orcamentos[i];
-                  return ListTile(
-                    title: Text('${o['numero'] ?? '#'} - ${o['clienteNome'] ?? ''} - R\$ ${(o['totalGeral'] as num?)?.toDouble() ?? 0}'),
-                    onTap: () => Navigator.pop(context, o),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
