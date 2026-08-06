@@ -186,6 +186,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   /// Decodifica a foto do usuário (base64) vinda do login ou dos dados pessoais.
   /// Suporta strings que já trazem prefixo "data:image/...;base64," do backend.
+  /// Fix WR-04: usa MIME type genérico `image/*` para suportar PNG, JPEG, etc.
   Uint8List _getUserAvatar() {
     final raw = AuthUtility.userInfo?.login?.foto ??
         AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
@@ -194,8 +195,9 @@ class _AppSidebarState extends State<AppSidebar> {
       final base64Only = raw.contains(';base64,')
           ? raw.substring(raw.indexOf(';base64,') + 8)
           : raw.trim();
+      // Usa generic MIME type para suportar múltiplos formatos de imagem
       final UriData? data =
-          Uri.parse('data:image/jpeg;base64,$base64Only').data;
+          Uri.parse('data:image/*;base64,$base64Only').data;
       if (data != null) return data.contentAsBytes();
     } catch (_) {}
     return Uint8List(0);
