@@ -297,6 +297,7 @@ class _NfseScreenState extends State<NfseScreen> {
                   toJson: (a) => a,
                   extraParams: _filtros,
                   detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                  editUsesDetailScreen: true,
                   showAppBar: false,
                 ),
               ),

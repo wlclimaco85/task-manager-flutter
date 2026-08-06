@@ -30,6 +30,10 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final T Function(Map<String, dynamic>) fromJson;
   final Map<String, dynamic> Function(T) toJson;
   final Widget Function(T item)? detailScreenBuilder;
+  /// Repassado a GenericGridScreen.editUsesDetailScreen — quando true, a
+  /// ação "Editar" abre a mesma tela de [detailScreenBuilder] em vez do
+  /// popup de formulário genérico.
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
   /// Ver GenericGridScreen.transformFormData — repassado como está.
@@ -67,6 +71,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     required this.fromJson,
     required this.toJson,
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
@@ -515,6 +520,7 @@ class _DynamicGridWindowsScreenState<T>
               enableCsvExport: true, filenamePrefix: 'dynamic'),
           paginationConfig: const PaginationConfig(),
           detailScreenBuilder: widget.detailScreenBuilder,
+          editUsesDetailScreen: widget.editUsesDetailScreen,
           extraParams: widget.extraParams,
           additionalFormData: widget.additionalFormData,
           transformFormData: widget.transformFormData,

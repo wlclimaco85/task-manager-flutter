@@ -1662,6 +1662,11 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
+  /// Quando true, a ação "Editar" do menu de ações abre o mesmo
+  /// [detailScreenBuilder] usado por "Visualizar", em vez do popup de
+  /// formulário genérico ([_openForm]). Default false para não alterar o
+  /// comportamento das telas que já usam o popup.
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
   /// Hook opcional para ajustar o formData final antes do envio (ex.: copiar
@@ -1721,6 +1726,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.initialFilters,
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
@@ -4528,7 +4534,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   itemBuilder: (_) => menuItems,
                   onSelected: (value) {
                     if (value == '__edit__') {
-                      _openForm(item: item);
+                      if (widget.editUsesDetailScreen &&
+                          widget.detailScreenBuilder != null) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    widget.detailScreenBuilder!(item)));
+                      } else {
+                        _openForm(item: item);
+                      }
                     } else if (value == '__view__') {
                       Navigator.push(
                           context,
