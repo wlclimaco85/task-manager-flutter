@@ -18,6 +18,7 @@ import '../../auth_screens/login_screen.dart';
 import 'chatMessageListScreen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
+import '../../features/agendamento/agendamento_module.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../services/network_caller.dart';
@@ -1091,6 +1092,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Propostas Comerciais":
         nav = _pushDynamicGrid(telaNome: 'proposta_comercial_screen', sec: sec);
         break;
+      case "Agendar NFe Recorrente":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AgendamentoModuleScreen()),
+        );
+        break;
       case "Voltar":
         return;
       case "Sair":
@@ -1276,6 +1283,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         [
           if (sec.canView(AppScreen.dashFiscalArea))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
+          _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
         ],
       ),
       _ModuloGroup(
