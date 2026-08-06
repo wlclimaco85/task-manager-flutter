@@ -9,7 +9,15 @@ class AssetLoader {
   /// Mantem a chave original do asset.
   ///
   /// Prefixar `assets/` aqui gera URL web com `assets/assets/assets/...`.
+  /// Fix WR-03: valida path traversal — bloqueia `..` e `/` absoluto.
   static String correctAssetPath(String assetPath) {
+    // Validação: path não pode conter traversal de diretório
+    if (assetPath.contains('..') || assetPath.startsWith('/')) {
+      throw ArgumentError(
+        'Invalid asset path: $assetPath. Path traversal not allowed.',
+      );
+    }
+
     var normalized = assetPath.trim().replaceAll('\\', '/');
     while (normalized.startsWith('/')) {
       normalized = normalized.substring(1);
