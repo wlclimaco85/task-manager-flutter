@@ -29,9 +29,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   bool _itensGrid = true;
   int _selItem = 0;
 
-  double _cabWidth = 320;
-  double _rodapeHeight = 240;
-
   List<Map<String, dynamic>> _itens = [];
 
   // Dropdowns
@@ -320,7 +317,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: GridColors.background,
       appBar: AppBar(
         backgroundColor: _red,
         foregroundColor: Colors.white,
@@ -335,74 +332,98 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(children: [
-        Expanded(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: _cabWidth, child: _cabecalho()),
-            GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(() => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
-              child: MouseRegion(
-                cursor: SystemMouseCursors.resizeColumn,
-                child: Container(width: 6, color: _bord,
-                  child: const Center(child: Icon(Icons.drag_indicator, size: 14, color: _grey))),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth >= 1180 ? 1120.0 : constraints.maxWidth;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _cabecalho(),
+                    const SizedBox(height: 12),
+                    _itensPanel(),
+                    const SizedBox(height: 12),
+                    _rodape(),
+                  ],
+                ),
               ),
             ),
-            Expanded(child: _itensPanel()),
-          ]),
-        ),
-        GestureDetector(
-          onVerticalDragUpdate: (d) => setState(() => _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.resizeRow,
-            child: Container(height: 6, color: _bord,
-              child: const Center(child: Icon(Icons.drag_handle, size: 14, color: _grey))),
-          ),
-        ),
-        SizedBox(height: _rodapeHeight, child: _rodape()),
-      ]),
+          );
+        },
+      ),
     );
   }
-
-  // ── CABEÇALHO ──
+  // CABECALHO
   Widget _cabecalho() {
     final hasSession = AuthUtility.userInfo?.login != null;
-    return Container(
-      color: Colors.white,
-      child: Column(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          color: _green,
-          child: Row(children: [
-            const Expanded(child: Text('Cabeçalho', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
-            SizedBox(height: 24, child: ElevatedButton.icon(
-              onPressed: _salvarCabecalho,
-              icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
-          ]),
+    return _sectionCard(
+      title: 'Dados da NFSe',
+      icon: Icons.receipt_long,
+      action: ElevatedButton.icon(
+        onPressed: _salvarCabecalho,
+        icon: const Icon(Icons.save, size: 14),
+        label: const Text('Salvar'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(10),
-            child: Column(children: [
-              hasSession && _empresaNome != null
-                  ? _inpDisabledText('Empresa', _empresaNome!)
-                  : _ddObj('Empresa', _empresaId, _empresas, 'nome', (v) => setState(() => _empresaId = v)),
-              _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) => setState(() => _tomadorId = v)),
-              _ddSerie(),
-              _inp('Número', _numeroCtrl),
-              _dateField('Data Emissão', _dataEmissao, (d) => setState(() => _dataEmissao = d)),
-              _dateField('Data Competência', _dataCompetencia, (d) => setState(() => _dataCompetencia = d)),
-              _ddCidade(),
-              _inp('Código de Serviço Municipal', _codigoServicoCtrl),
-              _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-              _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
-            ]),
-          ),
-        ),
+      ),
+      child: _formGrid([
+        hasSession && _empresaNome != null
+            ? _inpDisabledText('Empresa', _empresaNome!)
+            : _ddObj('Empresa', _empresaId, _empresas, 'nome', (v) => setState(() => _empresaId = v)),
+        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) => setState(() => _tomadorId = v)),
+        _ddSerie(),
+        _inp('Numero', _numeroCtrl),
+        _dateField('Data Emissao', _dataEmissao, (d) => setState(() => _dataEmissao = d)),
+        _dateField('Data Competencia', _dataCompetencia, (d) => setState(() => _dataCompetencia = d)),
+        _ddCidade(),
+        _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
+        _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
+        _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
       ]),
     );
   }
 
+  Widget _sectionCard({required String title, required IconData icon, required Widget child, Widget? action}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: GridColors.borderSubtle),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(children: [
+            Icon(icon, size: 18, color: _red),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: GridColors.textSecondary))),
+            if (action != null) action,
+          ]),
+        ),
+        Container(height: 1, color: GridColors.borderSubtle),
+        Padding(padding: const EdgeInsets.all(16), child: child),
+      ]),
+    );
+  }
+
+  Widget _formGrid(List<Widget> children) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final width = constraints.maxWidth >= 900
+          ? (constraints.maxWidth - 24) / 3
+          : constraints.maxWidth >= 620
+              ? (constraints.maxWidth - 12) / 2
+              : constraints.maxWidth;
+      return Wrap(spacing: 12, runSpacing: 4, children: children.map((w) => SizedBox(width: width, child: w)).toList());
+    });
+  }
   Widget _inp(String label, TextEditingController ctrl) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: TextFormField(
@@ -576,52 +597,46 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   // ── ITENS ──
   Widget _itensPanel() {
-    return Container(
-      color: Colors.white,
+    return _sectionCard(
+      title: 'Servicos da nota',
+      icon: Icons.design_services,
       child: Column(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          color: const Color(0xFFF8F8F8),
-          child: Row(children: [
-            const Text('Itens (Serviços)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(width: 8),
-            _togBtn(Icons.view_list, _itensGrid, () => setState(() => _itensGrid = true)),
+        Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          const Text('Itens (Servicos)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          const SizedBox(width: 8),
+          _togBtn(Icons.view_list, _itensGrid, () => setState(() => _itensGrid = true)),
+          const SizedBox(width: 4),
+          _togBtn(Icons.edit_note, !_itensGrid, () => setState(() => _itensGrid = false)),
+          const SizedBox(width: 8),
+          SizedBox(height: 28, child: ElevatedButton.icon(
+            onPressed: _novoItem,
+            icon: const Icon(Icons.add, size: 12), label: const Text('Novo', style: TextStyle(fontSize: 11)),
+            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10)))),
+          if (!_itensGrid && _itens.isNotEmpty) ...[
             const SizedBox(width: 4),
-            _togBtn(Icons.edit_note, !_itensGrid, () => setState(() => _itensGrid = false)),
-            const SizedBox(width: 8),
-            SizedBox(height: 24, child: ElevatedButton.icon(
-              onPressed: _novoItem,
-              icon: const Icon(Icons.add, size: 12), label: const Text('Novo', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10)))),
-            if (!_itensGrid && _itens.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              SizedBox(height: 24, child: ElevatedButton.icon(
-                onPressed: () => _salvarItem(_itens[_selItem]),
-                icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
-            ],
-            const Spacer(),
-            if (!_itensGrid && _itens.isNotEmpty) ...[
-              _nb(Icons.first_page, () => setState(() => _selItem = 0)),
-              _nb(Icons.chevron_left, () => setState(() { if (_selItem > 0) _selItem--; })),
-              Text(' ${_selItem + 1}/${_itens.length} ', style: const TextStyle(fontSize: 11)),
-              _nb(Icons.chevron_right, () => setState(() { if (_selItem < _itens.length - 1) _selItem++; })),
-              _nb(Icons.last_page, () => setState(() => _selItem = _itens.length - 1)),
-            ],
-          ]),
-        ),
-        Container(height: 1, color: _bord),
-        Expanded(
+            SizedBox(height: 28, child: ElevatedButton.icon(
+              onPressed: () => _salvarItem(_itens[_selItem]),
+              icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
+          ],
+          if (!_itensGrid && _itens.isNotEmpty) ...[
+            _nb(Icons.first_page, () => setState(() => _selItem = 0)),
+            _nb(Icons.chevron_left, () => setState(() { if (_selItem > 0) _selItem--; })),
+            Text(' ${_selItem + 1}/${_itens.length} ', style: const TextStyle(fontSize: 11)),
+            _nb(Icons.chevron_right, () => setState(() { if (_selItem < _itens.length - 1) _selItem++; })),
+            _nb(Icons.last_page, () => setState(() => _selItem = _itens.length - 1)),
+          ],
+        ]),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: _itensGrid ? 420 : 360,
           child: _itensGrid
               ? _gridSemHeader(telaNome: 'nfse_item', extraParams: {'nfseId': _nfseId, 'nfse_id': _nfseId})
-              : (_itens.isEmpty
-                  ? const Center(child: Text('Nenhum item', style: TextStyle(color: _grey)))
-                  : _iForm()),
+              : (_itens.isEmpty ? const Center(child: Text('Nenhum item', style: TextStyle(color: GridColors.neutral))) : _iForm()),
         ),
       ]),
     );
   }
-
   Widget _iForm() {
     if (_selItem >= _itens.length) return const SizedBox();
     final item = _itens[_selItem];
@@ -726,16 +741,19 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   // ── RODAPÉ: abas ──
   Widget _rodape() {
     final tabs = ['Totais', 'Impostos'];
-    return Column(children: [
-      Container(color: const Color(0xFFF0F0F0), child: Row(children: [
-        const SizedBox(width: 8),
-        ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
-      ])),
-      Container(height: 1, color: _bord),
-      Expanded(child: _tabContent()),
-    ]);
+    return _sectionCard(
+      title: 'Resumo e impostos',
+      icon: Icons.summarize,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(color: GridColors.gridHeader, child: Row(children: [
+          const SizedBox(width: 8),
+          ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
+        ])),
+        Container(height: 1, color: GridColors.borderSubtle),
+        SizedBox(height: 180, child: _tabContent()),
+      ]),
+    );
   }
-
   Widget _tabBtn(int idx, String label) {
     final on = _tab == idx;
     return GestureDetector(
@@ -763,7 +781,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final vt = widget.item['valorTotal']?.toString() ?? '0,00';
     return Padding(
       padding: const EdgeInsets.all(10),
-      child: Row(children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
+      child: Wrap(spacing: 10, runSpacing: 10, children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
     );
   }
 
