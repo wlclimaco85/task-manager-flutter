@@ -44,7 +44,7 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         CustomAction<PedidoVenda>(
           icon: Icons.payment,
           label: GridTexts.partialBilling,
-          isVisible: (item) => item.status == 'APROVADO',
+          isVisible: (item) => item.id != null && item.status == 'APROVADO',
           onPressed: (context, item) => _showFaturarDialog(context, item),
         ),
         CustomAction<PedidoVenda>(
@@ -130,21 +130,30 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
   void _showFaturarDialog(BuildContext context, PedidoVenda pedido) {
     if (pedido.id == null) return;
     final itens = pedido.itens?.map((i) => i.toJson()).toList() ?? [];
-    showDialog(
-      context: context,
-      builder: (_) => FaturarDialog(
-        pedidoId: pedido.id!,
-        itens: itens,
-        onSaved: () {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(GridTexts.completedAction('Faturamento')),
-              backgroundColor: GridColors.success,
-            ),
-          );
-        },
-      ),
-    );
+    try {
+      showDialog(
+        context: context,
+        builder: (_) => FaturarDialog(
+          pedidoId: pedido.id!,
+          itens: itens,
+          onSaved: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(GridTexts.completedAction('Faturamento')),
+                backgroundColor: GridColors.success,
+              ),
+            );
+          },
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao faturar parcialmente: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
   }
 }
