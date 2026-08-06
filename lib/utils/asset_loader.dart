@@ -10,7 +10,14 @@ class AssetLoader {
   ///
   /// Prefixar `assets/` aqui gera URL web com `assets/assets/assets/...`.
   static String correctAssetPath(String assetPath) {
-    return assetPath;
+    var normalized = assetPath.trim().replaceAll('\\', '/');
+    while (normalized.startsWith('/')) {
+      normalized = normalized.substring(1);
+    }
+    while (normalized.startsWith('assets/assets/')) {
+      normalized = normalized.substring('assets/'.length);
+    }
+    return normalized;
   }
 
   /// Carrega imagem com fallback sem overflow para miniaturas pequenas.

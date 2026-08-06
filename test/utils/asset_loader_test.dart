@@ -10,6 +10,15 @@ void main() {
     );
   });
 
+  test('AssetLoader remove prefixos duplicados de assets', () {
+    expect(
+      AssetLoader.correctAssetPath(
+        'assets/assets/assets/images/logo_contabilidade.jpg',
+      ),
+      'assets/images/logo_contabilidade.jpg',
+    );
+  });
+
   testWidgets('AssetLoader fallback cabe em logo pequeno', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
