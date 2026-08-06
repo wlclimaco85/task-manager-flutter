@@ -209,6 +209,8 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   /// Inicial para o avatar: usa o email (sempre disponível) em vez do nome.
+  /// Strategy email-first: garante consistência visual entre plataformas.
+  /// Fix WR-02: evita divergência cliente vs web de avatar initial.
   String _avatarInitial() {
     final email = widget.userEmail;
     if (email.isNotEmpty) return email[0].toUpperCase();
