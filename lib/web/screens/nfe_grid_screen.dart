@@ -245,10 +245,19 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       final r = await TenantContext.post(
           ApiLinks.cancelarNfe(id), {'justificativa': motivoCtrl.text.trim()});
       if (!context.mounted) return;
+      String msg = 'NF-e cancelada com sucesso!';
+      if (r.statusCode != 200) {
+        msg = 'Erro ${r.statusCode}';
+        try {
+          final body = jsonDecode(r.body);
+          msg = body['message']?.toString() ??
+              body['mensagem']?.toString() ??
+              body['error']?.toString() ??
+              msg;
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'NF-e cancelada com sucesso!'
-              : 'Erro ${r.statusCode}: ${r.body}'),
+          content: Text(msg),
           backgroundColor:
               r.statusCode == 200 ? GridColors.success : GridColors.error));
       if (r.statusCode == 200) setState(() => _gridKey++);
