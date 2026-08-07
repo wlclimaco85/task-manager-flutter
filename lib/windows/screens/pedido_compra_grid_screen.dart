@@ -131,7 +131,6 @@ class _WindowsPedidoCompraGridScreenState
       builder: (_) => PedidoCompraFormDialog(
         item: pedido.toJson(),
         onSaved: () {
-          Navigator.pop(context);
           _reload();
         },
       ),
@@ -148,7 +147,6 @@ class _WindowsPedidoCompraGridScreenState
           pedidoId: pedido.id!,
           itens: itens,
           onSaved: () {
-            Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(GridTexts.completedAction(GridTexts.receivePartial)),

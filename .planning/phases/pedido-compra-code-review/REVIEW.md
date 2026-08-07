@@ -1,124 +1,137 @@
 ---
-commit: 25e5aaec
+commit: a71f05f2 (remediação de 25e5aaec)
 branch: card-6a3e8cb5-pedido-compra-padrao
 reviewed: 2026-08-07T00:00:00Z
 depth: standard
-files_reviewed: 4
+files_reviewed: 6
 files_reviewed_list:
   - lib/windows/screens/pedido_compra_grid_screen.dart
+  - lib/customization/dynamic_grid_windows_screen.dart
+  - lib/windows/dialogs/pedido_compra_form_dialog.dart
   - lib/utils/grid_texts.dart
   - lib/windows/screens/bottom_navbar_screen.dart
   - lib/widgets/dashboard_area/drill_down_router.dart
 findings:
-  critical: 2
-  warning: 3
+  critical: 1
+  warning: 4
   info: 2
   total: 7
 status: issues_found
 ---
 
-# Code Review: commit 25e5aaec (card 6a3e8cb5 — Pedido de Compra padrão)
+# Code Review: commit a71f05f2 (card 6a3e8cb5 — Pedido de Compra padrão) — Rodada 2
 
 **Reviewed:** 2026-08-07
-**Depth:** standard (leitura completa dos 4 arquivos alterados + arquivos chamados: `pedido_compra_service.dart`, `receber_dialog.dart`, `pedido_compra_historico_dialog.dart`, `pedido_compra_model.dart`, `dynamic_grid_windows_screen.dart`, `generic_grid_windows_screen.dart`, comparação com `pedido_venda_grid_screen.dart` e com a versão anterior do arquivo em `fb16b64f`)
-**Status:** issues_found
+**Depth:** standard
+**Status:** issues_found (rodada anterior sobre `25e5aaec`: reprovado)
 
-## Summary
+## Rodada 1 (commit 25e5aaec) — resumo
 
-A migração de `WindowsPedidoCompraGridScreen` para `DynamicGridWindowsScreen<PedidoCompra>` está bem executada no que diz respeito às `CustomAction` de negócio: a visibilidade por status (Emitir/Aprovar/Receber Parcial/Receber Total/Cancelar/Histórico) reproduz fielmente a versão anterior, e as assinaturas de `PedidoCompraService`, `ReceberDialog` e `PedidoCompraHistoricoDialog` batem exatamente com o que o novo arquivo espera — confirmado por leitura direta do código, não apenas pela análise estática.
+Achados originais: CR-01 (exclusão indevida em qualquer status), CR-02 (edição genérica fora de RASCUNHO), WR-01 (grid não recarrega após ação), WR-02 (Histórico escondido quando vazio), WR-03 (RBAC `hasPermission` sempre `true`), IN-01/IN-02. Veredito: **Reprovado**.
 
-Porém, adotar o widget genérico `DynamicGridWindowsScreen`/`GenericGridScreen` introduz duas capacidades que **não existiam** na tela anterior e que não foram mencionadas no card nem no commit: um botão genérico "Editar" disponível para pedidos em **qualquer status** (antes só RASCUNHO podia ser editado) e um botão genérico "Excluir" (exclusão definitiva) disponível para **qualquer pedido, em qualquer status**, algo que a tela anterior simplesmente não oferecia. Combinado com `hasPermission: (perm) => true` (linha adicionada em `bottom_navbar_screen.dart`), isso significa que qualquer usuário que acesse esta tela Windows pode editar ou apagar definitivamente um pedido de compra já aprovado/recebido, contornando toda a máquina de estados (Emitir → Aprovar → Receber → Cancelar) que o restante da tela tenta preservar. Isso é tratado como BLOCKER porque afeta integridade de um documento financeiro/fiscal (pedido de compra), não é coberto pelos critérios de aceite do card, e é silencioso — não há teste, warning de UI ou log que avise sobre o risco.
+## Rodada 2 (commit a71f05f2) — o que foi verificado
 
-Adicionalmente, as `CustomAction` de negócio (Emitir/Aprovar/Cancelar/Receber Total/Receber Parcial) não disparam nenhum recarregamento da grid após sucesso — diferente do código antigo, que chamava `_load()` após cada ação bem-sucedida. O usuário só vê o status atualizado após um refresh manual.
+Revalidei cada remediação lendo o diff completo (`git show a71f05f2`) e os arquivos afetados por inteiro, não apenas a descrição do autor.
 
-Nota: o padrão `hasPermission: (perm) => true` e a ausência de recarregamento pós-ação já existem hoje em `pedido_venda_grid_screen.dart` (aprovado anteriormente) — não são inéditos deste commit, mas o commit os estende para Pedido de Compra sem qualquer ressalva, e o risco de exclusão indevida é particularmente sensível em compras (documento com efeito financeiro/estoque).
+### CR-01 (exclusão indevida) — ✅ Corrigido
+`buttonPermissions` foi corretamente propagado como parâmetro opcional de `DynamicGridWindowsScreen` até `GenericGridScreen`, com fallback para o default anterior quando omitido (`dynamic_grid_windows_screen.dart:532-539` — confirmei que o fallback reproduz exatamente o default hardcoded que existia antes em `generic_grid_windows_screen.dart:1715-1721`, então nenhuma outra tela que não passe o parâmetro é afetada). `pedido_compra_grid_screen.dart:49-55` passa `delete: false, deleteMultiple: false`. Confirmado: `flutter analyze` nos 3 arquivos tocados = 0 issues.
 
-Os itens de `grid_texts.dart`, `bottom_navbar_screen.dart` e a correção pré-existente em `drill_down_router.dart` estão corretos e conferidos linha a linha.
+### CR-02 (edição fora de RASCUNHO) — ✅ Corrigido, com um bug novo introduzido (ver CR-03 abaixo)
+`edit: false` remove o botão genérico; `CustomAction` "Editar" com `isVisible: (item) => item.id != null && item.status == 'RASCUNHO'` reproduz exatamente a regra antiga. `PedidoCompraFormDialog` é reaproveitado corretamente (`item: pedido.toJson()` bate com o `Map<String, dynamic>?` esperado pelo dialog). Porém a forma como o retorno do dialog é tratado introduz um bug de navegação — ver **CR-03**.
+
+### WR-02 (Histórico escondido quando vazio) — ✅ Corrigido
+`isVisible: (item) => item.id != null` — sempre visível, igual ao comportamento anterior. Confirmado que `PedidoCompraHistoricoDialog` já trata lista vazia (linha 24-27 do dialog, não alterada).
+
+### WR-01 (grid não recarrega após ação) — ✅ Corrigido funcionalmente, novo WARNING sobre o custo do approach (ver WR-04)
 
 ## Critical Issues
 
-### CR-01: Exclusão definitiva (hard delete) de pedidos de compra em qualquer status, sem essa opção existir antes
+### CR-03 (NOVO): Double-pop de navegação após "Editar" (RASCUNHO) e "Receber Parcial" — pode fechar a tela errada
 
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart` (todo o arquivo, por herdar de `DynamicGridWindowsScreen`) + `lib/widgets/generic_grid_windows_screen.dart:4488-4497,3094-3127` + `lib/windows/screens/bottom_navbar_screen.dart:426`
+**File:** `lib/windows/screens/pedido_compra_grid_screen.dart:128-139` (`_openEdit`, **novo** nesta rodada) e `:141-172` (`_showReceberParcial`, **já existia desde `25e5aaec` e eu não peguei isso na rodada 1 — falha minha, registrando aqui**)
 
-**Issue:** A tela antiga (`fb16b64f:lib/windows/screens/pedido_compra_grid_screen.dart`) não tinha NENHUM botão de exclusão — só Visualizar/Editar(RASCUNHO)/Emitir/Aprovar/Cancelar/Receber/Histórico. Ao migrar para `GenericGridScreen`, o menu de ações passa a incluir "Excluir" sempre que `hasPermission('delete') && buttonPermissions['delete']` (linha 4488). `buttonPermissions` não é passado por `DynamicGridWindowsScreen` nem por `WindowsPedidoCompraGridScreen`, então usa o default `{'delete': true, ...}` (generic_grid_windows_screen.dart:1715-1721). E `hasPermission` chega hardcoded como `(perm) => true` a partir de `bottom_navbar_screen.dart:426`. Resultado: **qualquer usuário** que abra a tela de Pedidos de Compra pelo menu lateral Windows pode clicar em "Excluir" em um pedido `APROVADO`, `RECEBIDO_PARCIAL` ou `RECEBIDO_TOTAL` e apagá-lo permanentemente (`_deleteItem` dispara `DELETE` direto no endpoint configurado pela tela, sem checagem de status — `generic_grid_windows_screen.dart:3094-3127`). Isso ignora toda a máquina de estados que as `CustomAction` tentam preservar e pode causar perda de dado fiscal/financeiro sem qualquer trilha de auditoria além do que o backend registrar no DELETE.
+**Issue:** Tanto `PedidoCompraFormDialog._save()` (`lib/windows/dialogs/pedido_compra_form_dialog.dart:231-233`) quanto `ReceberDialog._confirmar()` (`lib/windows/dialogs/receber_dialog.dart:66-68`) já chamam `Navigator.pop(context)` internamente para fechar a si mesmos **antes** de invocar `widget.onSaved()`. Mas os dois callbacks `onSaved` em `pedido_compra_grid_screen.dart` chamam `Navigator.pop(context)` **de novo**, usando o `context` capturado do item da grid (não o `context` local do dialog):
 
-**Fix:** Desabilitar o botão de exclusão genérico para esta tela (ela nunca teve essa opção) e, se exclusão de RASCUNHO for desejada no futuro, tratá-la como uma `CustomAction` própria com checagem de status, igual às demais:
 ```dart
-return DynamicGridWindowsScreen<PedidoCompra>(
-  telaNome: 'pedido_compra',
-  hasPermission: hasPermission,
-  buttonPermissions: const {
-    'create': true,
-    'edit': false,   // ver CR-02 — edição deve ser feita via CustomAction restrita a RASCUNHO
-    'delete': false, // pedido de compra nunca teve exclusão direta nesta tela
-    'deleteMultiple': false,
-    'export': true,
-  },
-  ...
-);
+// _openEdit — NOVO nesta rodada
+onSaved: () {
+  Navigator.pop(context);   // <- dialog já fechou sozinho; isso fecha a PRÓXIMA rota do topo
+  _reload();
+},
+
+// _showReceberParcial — já existia desde 25e5aaec
+onSaved: () {
+  Navigator.pop(context);   // <- mesmo problema
+  ScaffoldMessenger.of(context).showSnackBar(...);
+  _reload();
+},
 ```
-(Confirmar se `DynamicGridWindowsScreen`/`GenericGridScreen` já expõe `buttonPermissions` como parâmetro passável — hoje `DynamicGridWindowsScreen` não repassa esse campo do widget pai para `GenericGridScreen`, então também será necessário adicionar esse plumbing, ou resolver via `hasPermission` retornando `false` para `'delete'`/`'edit'` especificamente nesta tela em vez de `(perm) => true` genérico.)
 
-### CR-02: Edição genérica liberada para pedidos em qualquer status (antes só RASCUNHO podia ser editado)
+Como `Navigator.of(context).pop()` sempre remove a rota que estiver no topo da pilha no momento da chamada (independentemente de qual `BuildContext` válido for usado para localizar o Navigator), o segundo `pop()` não fecha "mais uma vez o dialog" — ele fecha a **rota seguinte**, que hoje é o shell principal (`WindowsBottomNavBarScreen`, já que os pedidos de compra vivem dentro de um `IndexedStack` de abas, não como rota própria — confirmei em `bottom_navbar_screen.dart:970`). Na estrutura de navegação atual isso tende a ser um no-op inofensivo (se o shell for a única rota da pilha, `pop()` simplesmente não faz nada). Mas é código objetivamente incorreto e frágil: (a) inconsistente com `_showConfirm`, que não tem esse problema porque não fecha nenhum dialog próprio antes de retornar; (b) se esta tela algum dia for aberta via rota empurrada (`Navigator.push`) — por exemplo, se `WindowsPedidoCompraGridScreen` for adicionada ao `drill_down_router.dart` no mesmo padrão já usado para `WindowsPedidoVendaGridScreen` — o segundo `pop()` fecharia a própria tela de Pedido de Compra logo após o usuário editar um RASCUNHO ou receber parcialmente um pedido, imediatamente após a ação ter sucesso. É o mesmo padrão problemático que já existe em `pedido_venda_grid_screen.dart:_showFaturarDialog` (não introduzido por este commit, mas replicado aqui).
 
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart` (todo o arquivo) + `lib/widgets/generic_grid_windows_screen.dart:4470-4478,3015`
-
-**Issue:** No código antigo, o botão "Editar" só aparecia quando `status == 'RASCUNHO'` (`_buildActions`, linha `if (status == 'RASCUNHO') [...editar...]`). No `GenericGridScreen`, o item de menu "Editar" só depende de `hasPermission('edit') && buttonPermissions['edit']` — não há nenhuma checagem de `item.status` (linha 4470). Com `hasPermission: (perm) => true`, um pedido `EMITIDO`, `APROVADO` ou `RECEBIDO_PARCIAL/TOTAL` pode ser aberto no formulário genérico e ter seus campos (fornecedor, itens, valores, centro de custo) alterados livremente, o que corrompe o histórico/consistência entre o que foi aprovado/recebido e o que está salvo, sem passar pelo fluxo de "nova versão"/histórico que `PedidoCompraHistoricoDialog` sugere existir no backend.
-
-**Fix:** Restringir "Editar" a RASCUNHO. Duas abordagens possíveis: (a) usar `buttonPermissions: {'edit': false}` e implementar edição de RASCUNHO como `CustomAction` própria (mesmo padrão de Emitir/Aprovar), ou (b) se o componente genérico suportar, condicionar a visibilidade do botão "Editar" por item — hoje ele não suporta isso (é global por tela), então a opção (a) é a mais segura dado o estado atual do componente compartilhado.
+**Fix:** Remover o `Navigator.pop(context)` redundante nos dois callbacks `onSaved` — o dialog já se fecha sozinho:
+```dart
+void _openEdit(BuildContext context, PedidoCompra pedido) {
+  showDialog(
+    context: context,
+    builder: (_) => PedidoCompraFormDialog(
+      item: pedido.toJson(),
+      onSaved: _reload, // dialog já fecha a si mesmo em _save()
+    ),
+  );
+}
+```
+```dart
+onSaved: () {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(GridTexts.completedAction(GridTexts.receivePartial)),
+      backgroundColor: GridColors.success,
+    ),
+  );
+  _reload();
+},
+```
+Recomendo corrigir antes do merge, mesmo com o risco prático baixo na navegação atual (IndexedStack/shell único) — é barato de corrigir e remove uma armadilha real para quem for adicionar uma rota de drill-down para Pedido de Compra no futuro (o card irmão de Pedido de Venda já tem esse drill-down).
 
 ## Warnings
 
-### WR-01: Grid não recarrega automaticamente após Emitir/Aprovar/Cancelar/Receber Total/Receber Parcial
+### WR-04 (NOVO): Reload via remount completo (`key: ValueKey`) descarta filtros, paginação e ordenação da grid após toda ação de negócio
 
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart:118-164` (`_showConfirm`) e linhas do bloco `_showReceberParcial`
+**File:** `lib/windows/screens/pedido_compra_grid_screen.dart:35-44`
 
-**Issue:** O código antigo chamava `_load()` após toda ação de negócio bem-sucedida (`if (success) _load();` em `_confirmAction`, e `onSaved: _load` no `ReceberDialog`). O novo `_showConfirm` só exibe um `SnackBar` de sucesso/erro e não dispara nenhum recarregamento da grid; o mesmo vale para o callback `onSaved` passado a `ReceberDialog` (só fecha o diálogo e mostra snackbar). Como o `GenericGridScreen` não observa automaticamente o retorno de uma `CustomAction` para decidir se deve recarregar (`generic_grid_windows_screen.dart:4562-4567` só chama `action.onPressed`, sem `_loadItems` depois), o usuário continua vendo o status antigo (e, portanto, as ações antigas — ex.: "Emitir" ainda visível depois de emitido) até clicar manualmente no botão de refresh da toolbar. Isso pode levar a cliques duplicados na mesma ação (ex.: tentar "Emitir" duas vezes) achando que a primeira não funcionou.
+**Issue:** A correção do WR-01 troca a chave (`ValueKey(_reloadToken)`) do `DynamicGridWindowsScreen` filho a cada ação bem-sucedida, forçando o Flutter a destruir e recriar todo o subtree — incluindo `_DynamicGridWindowsScreenState`, que reinicia `_telaFuture = _loadTela()` (refetch completo da configuração de tela, com até 5 tentativas e backoff, não apenas um refetch dos dados) e recria o `GenericGridScreen` do zero. Isso funciona para atualizar o status exibido (resolve o WR-01 original), mas tem dois efeitos colaterais que a versão antiga (`_load()` reaproveitando o mesmo estado do widget) não tinha: (1) qualquer filtro/busca/ordenação/página aplicada pelo usuário na grid genérica é perdida a cada Emitir/Aprovar/Cancelar/Receber/Editar bem-sucedido, porque o estado interno do `GenericGridScreen` (que guarda filtros, página atual, ordenação) é descartado junto com o widget; (2) refaz a busca da configuração de tela (`getTelaFromCache`) a cada ação, não só o fetch de dados — desnecessário, já que a tela não mudou.
 
-**Fix:** Expor um callback de reload que a `CustomAction` possa chamar após sucesso. Se `GenericGridScreen` não expõe isso hoje, uma alternativa mais simples é usar uma `GlobalKey<State<GenericGridScreen<PedidoCompra>>>`/callback passado via `onAfterSave`-like hook, ou (mínimo) instruir o usuário via snackbar a atualizar, mas o ideal é reintroduzir o reload automático equivalente ao antigo `_load()`.
+**Fix:** Se o objetivo é só re-buscar os dados (não a config de tela), seria melhor expor um método de reload real em `GenericGridScreen`/`DynamicGridWindowsScreen` (ex.: via `GlobalKey<GenericGridScreenState>` chamando `_loadItems` diretamente, ou um `ValueNotifier` de "reload trigger" observado internamente sem remount) em vez de forçar remount total via `key`. Não bloqueante — é uma correção de UX/eficiência, o dado errado (WR-01 original) já não aparece mais — mas vale registrar como fast-follow, especialmente porque filtro/paginação resetados a cada ação é perceptível ao usuário em telas com muitos pedidos.
 
-### WR-02: `isVisible` do Histórico mudou de "sempre visível" para "só quando não vazio" sem registro dessa mudança de comportamento
+### WR-03 (mantido da rodada 1, não tratado): RBAC `hasPermission` sempre `true`
 
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart` (CustomAction "Histórico": `isVisible: (item) => item.historico != null && item.historico!.isNotEmpty`)
+Sem mudanças. Classificado como dívida técnica sistêmica na rodada 1; mantenho a mesma classificação — não bloqueia esta entrega.
 
-**Issue:** No código antigo, o ícone de "Histórico" sempre aparecia (`_actionIcon(Icons.history, 'Histórico', ..., () => _showHistorico(historico))`), abrindo um diálogo que já tratava o caso de lista vazia (`PedidoCompraHistoricoDialog` tem branch `if (historico.isEmpty) ... 'Nenhum histórico disponível'`). O novo código esconde a ação inteira quando `historico` é nulo/vazio. Isso não é necessariamente errado (evita clique inútil), mas contradiz a afirmação de que a paridade de comportamento com a versão anterior foi total — é uma mudança de UX não documentada. Além disso, se a API de listagem (`fetchAll`) não retornar o campo `historico` populado no payload de lista (comum em APIs que só populam nested collections no fetch por ID), a ação "Histórico" pode nunca aparecer mesmo quando existe histórico real, silenciosamente escondendo uma funcionalidade que antes sempre estava acessível.
+### WR-05: Fixação não testada da remediação (ausência de teste automatizado cobrindo CR-01/CR-02/CR-03)
 
-**Fix:** Confirmar com o backend se `GET /api/compras/pedidos` (listagem) inclui `historico` por item. Se não incluir, ou trocar a condição de visibilidade para sempre mostrar a ação (deixando o diálogo tratar lista vazia, como fazia antes), ou buscar o histórico sob demanda ao clicar.
+**File:** `lib/windows/screens/pedido_compra_grid_screen.dart`
 
-### WR-03: `hasPermission: (perm) => true` desabilita RBAC nesta tela
+**Issue:** Nenhum teste widget foi adicionado cobrindo: (a) que "Excluir"/"Editar genérico" não aparecem mais no menu de ações para nenhum status; (b) que "Editar" (CustomAction) só aparece em RASCUNHO; (c) o comportamento de navegação após salvar via `_openEdit`/`_showReceberParcial` (que teria pego o CR-03 antes de chegar ao code review). Dado que o projeto lista TDD como prática recomendada para "regras de negócio, bugs reproduzíveis e funções isoladas" (CLAUDE.md), a ausência de cobertura aqui é uma lacuna, principalmente porque `buttonPermissions` é uma peça de segurança/integridade de dado (CR-01/CR-02), não só UX.
 
-**File:** `lib/windows/screens/bottom_navbar_screen.dart:426`, `lib/widgets/dashboard_area/drill_down_router.dart:117,119` (padrão idêntico já usado para Pedido de Venda)
-
-**Issue:** Isso não é uma regressão exclusiva deste commit (o mesmo padrão já existe hoje para `WindowsPedidoVendaGridScreen`, `WindowsContaBancariaGridScreen` etc.), mas ao estendê-lo para Pedido de Compra o commit propaga o mesmo problema: nenhuma verificação real de permissão de usuário é feita para criar/editar/excluir/exportar pedidos de compra — todo usuário autenticado tem acesso total pela tela Windows. Combinado com CR-01/CR-02, o impacto é maior aqui do que em telas de leitura pura.
-
-**Fix:** Fora do escopo estrito deste card (é uma dívida técnica sistêmica), mas vale registrar como item de backlog: substituir `(perm) => true` por uma checagem real de permissão do usuário logado (ex.: via `TenantContext`/claims de role), pelo menos para os módulos financeiros/fiscais mais sensíveis (Pedido de Compra, Pedido de Venda, Contas).
+**Fix:** Adicionar ao menos um teste de widget instanciando `WindowsPedidoCompraGridScreen` (ou testando `DynamicGridWindowsScreen` com `buttonPermissions` customizado) que verifique a ausência de "Excluir"/"Editar" genéricos e a presença condicional da `CustomAction` "Editar" por status. Não bloqueante para este ciclo dado o tempo já investido, mas recomendo antes de fechar o card.
 
 ## Info
 
-### IN-01: Duplicação de padrão `_showConfirm`/`_showReceberParcial` entre `pedido_compra_grid_screen.dart` e `pedido_venda_grid_screen.dart`
+### IN-01/IN-02 (mantidos da rodada 1)
 
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart:86-164`, comparar com `lib/windows/screens/pedido_venda_grid_screen.dart:147-224`
-
-**Issue:** Os métodos `_showConfirm` (diálogo de confirmação genérico com snackbar de sucesso/erro) são praticamente idênticos entre os dois arquivos (mesma lógica, mesmos estilos). Isso é duplicação de código que provavelmente já existia antes desta migração (mesmo padrão em `conta_bancaria_grid_screen.dart` possivelmente), então não é introduzido por este commit especificamente, mas a oportunidade de extrair um helper compartilhado (ex.: `GridActionHelpers.showConfirm(context, title, message, action)`) fica mais evidente agora que dois arquivos praticamente idênticos coexistem.
-
-**Fix:** Considerar extrair `_showConfirm` para um mixin/helper compartilhado em `lib/widgets/` reutilizável por todas as telas Windows baseadas em `DynamicGridWindowsScreen` com `CustomAction`. Sugestão de melhoria, não bloqueante.
-
-### IN-02: `try/catch` em `_showConfirm`/`_showReceberParcial` é código defensivo mas provavelmente morto
-
-**File:** `lib/windows/screens/pedido_compra_grid_screen.dart:146-163,89-115`
-
-**Issue:** Todos os métodos de `PedidoCompraService` (`emitir`, `aprovar`, `cancelar`, `receberTotal`, `receberParcial`) já capturam suas próprias exceções internamente e retornam `false` em caso de erro (`lib/services/pedido_compra_service.dart` — todo método tem `try { ... } catch (_) { return false; }`). Isso significa que os blocos `try/catch` em `_showConfirm` e `_showReceberParcial` no arquivo revisado nunca deveriam, na prática, capturar uma exceção vinda de `action()` — é redundância defensiva. Não é um bug, mas indica que o tratamento de erro está duplicado em duas camadas (service e UI) sem um contrato claro de "quem lança o quê".
-
-**Fix:** Nenhuma ação obrigatória. Se quiser simplificar, considerar padronizar: services nunca lançam (sempre retornam bool/null) e a UI trata só o `success == false`, removendo o `try/catch` supérfluo — ou o inverso, deixando os services propagarem exceções e a UI ser a única camada de tratamento. Mistura hoje é aceitável, mas vale nota para consistência futura.
+Sem mudanças — duplicação de `_showConfirm` entre telas e `try/catch` redundante sobre services que já tratam erro internamente. Seguem como sugestões não bloqueantes.
 
 ## Verdict
 
-**Reprovado.**
+**Aprovado com ressalvas.**
 
-Os dois achados críticos (CR-01 exclusão definitiva de pedidos de compra em qualquer status, CR-02 edição liberada para pedidos fora de RASCUNHO) representam uma mudança de comportamento não intencional e não coberta pelos critérios de aceite do card ("preservar a mesma visibilidade por status das ações de negócio" foi cumprido só para as `CustomAction`, não para as ações genéricas Editar/Excluir que vieram "de brinde" ao adotar `DynamicGridWindowsScreen`). Isso é um risco real de perda/corrupção de dado em um documento financeiro (pedido de compra aprovado/recebido), não apenas uma questão de UX.
+CR-01 e CR-02 da rodada 1 foram corrigidos corretamente e de forma verificável (li o diff completo, não apenas a descrição). WR-02 foi revertido corretamente. WR-01 foi resolvido funcionalmente, ainda que com uma abordagem mais custosa que o ideal (WR-04).
 
-Recomendação: resolver CR-01 e CR-02 antes de mover o card para QA — no mínimo desabilitando `buttonPermissions['delete']` e restringindo `edit` a RASCUNHO (ou implementando "Editar" como `CustomAction` visível só para RASCUNHO, retirando a dependência do botão genérico). WR-01 (falta de reload pós-ação) deveria idealmente ser corrigido também, pois afeta diretamente a percepção de sucesso da ação pelo usuário, mas não bloqueia por si só — pode ser tratado como fast-follow se houver pressão de prazo, desde que documentado.
+Encontrei um bug novo durante a revalidação (**CR-03**, double-pop de navegação), que também expôs uma instância idêntica já existente desde a rodada 1 em `_showReceberParcial` que eu não tinha identificado antes — registro isso explicitamente como uma lacuna da minha própria revisão anterior, não como algo introduzido só agora. O risco prático de CR-03 é baixo na estrutura de navegação atual (tela vive dentro de `IndexedStack`, não como rota própria — o `pop()` extra tende a ser um no-op), mas é código incorreto, barato de corrigir, e vira um problema real no dia em que Pedido de Compra ganhar uma rota de drill-down (como Pedido de Venda já tem).
+
+Recomendação: corrigir CR-03 antes de mover para QA (fix é de poucas linhas, baixo risco de regressão, e evita um comportamento surpreendente para o usuário caso a navegação da tela mude no futuro). WR-04 e WR-05 podem ser tratados como fast-follow sem bloquear o card, desde que registrados no Trello.
 
 ---
 
