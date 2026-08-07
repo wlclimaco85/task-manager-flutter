@@ -181,9 +181,10 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         backgroundColor: success ? GridColors.success : GridColors.error,
       ));
     } catch (e) {
+      debugPrint('Falha na acao "$title": $e');
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(GridTexts.actionFailure('$title: $e')),
+        content: Text(GridTexts.actionFailure(title)),
         backgroundColor: GridColors.error,
       ));
     }
