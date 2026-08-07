@@ -70,6 +70,11 @@ class SearchableDropdownField extends StatefulWidget {
   /// record, since a remotely-searched item may not exist in the local list.
   final ValueChanged<Map<String, dynamic>?>? onItemSelected;
 
+  /// Ícone opcional exibido no início do campo (prefixIcon), usado para
+  /// diferenciar visualmente campos de natureza específica (ex: municipal)
+  /// dos demais campos genéricos do formulário.
+  final IconData? prefixIcon;
+
   const SearchableDropdownField({
     super.key,
     required this.label,
@@ -86,6 +91,7 @@ class SearchableDropdownField extends StatefulWidget {
     this.validator,
     this.onSearch,
     this.onItemSelected,
+    this.prefixIcon,
   });
 
   @override
@@ -219,6 +225,9 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            prefixIcon: widget.prefixIcon != null
+                ? Icon(widget.prefixIcon, size: 18, color: primary)
+                : null,
             suffixIcon: isDisabled
                 ? const Icon(Icons.lock_outline, size: 16, color: Colors.grey)
                 : Icon(Icons.search, size: 18, color: primary),

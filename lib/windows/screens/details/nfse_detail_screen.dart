@@ -330,7 +330,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            content: Text(_mensagemErro(r.statusCode, r.body)),
             backgroundColor: _red));
       }
     } catch (e) {
@@ -338,6 +338,22 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
+  }
+
+  /// Extrai mensagem de erro legível do corpo da resposta (ex: validação
+  /// municipal recusada pelo backend), caindo no status HTTP cru quando o
+  /// corpo não trouxer um campo de mensagem reconhecido.
+  String _mensagemErro(int statusCode, String body) {
+    try {
+      final b = jsonDecode(body);
+      if (b is Map) {
+        final msg = b['message']?.toString() ??
+            b['mensagem']?.toString() ??
+            b['error']?.toString();
+        if (msg != null && msg.isNotEmpty) return msg;
+      }
+    } catch (_) {}
+    return 'Erro $statusCode: $body';
   }
 
   Future<void> _salvarItem(Map<String, dynamic> item) async {
@@ -475,8 +491,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _dateField('Data Competencia', _dataCompetencia,
             (d) => setState(() => _dataCompetencia = d)),
         _ddCidade(),
-        _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
-        _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
+        _inp('Codigo de Servico Municipal', _codigoServicoCtrl,
+            icon: Icons.location_city),
+        _statusChip(_statusVal ?? 'PENDENTE'),
         _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
             (v) => setState(() => _ambienteVal = v)),
       ]),
@@ -530,7 +547,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     });
   }
 
-  Widget _inp(String label, TextEditingController ctrl) => Padding(
+  Widget _inp(String label, TextEditingController ctrl, {IconData? icon}) =>
+      Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: TextFormField(
           controller: ctrl,
@@ -538,6 +556,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
+            prefixIcon:
+                icon != null ? Icon(icon, size: 16, color: _red) : null,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(color: _bord)),
@@ -550,6 +570,55 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           ),
         ),
       );
+
+  /// Chip de status com cor/ícone conforme o retorno da prefeitura —
+  /// substitui o texto cinza puro anterior para dar clareza visual imediata
+  /// (critério de aceite: "retorno prefeitura mapeado e exibido").
+  Widget _statusChip(String status) {
+    final upper = status.toUpperCase();
+    Color cor;
+    IconData icone;
+    if (upper.contains('AUTORIZAD')) {
+      cor = _green;
+      icone = Icons.check_circle;
+    } else if (upper.contains('REJEITAD') || upper.contains('ERRO')) {
+      cor = _red;
+      icone = Icons.error;
+    } else if (upper.contains('CANCELAD')) {
+      cor = _grey;
+      icone = Icons.cancel;
+    } else {
+      cor = _grey;
+      icone = Icons.hourglass_empty;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Status',
+          labelStyle: const TextStyle(fontSize: 11, color: _grey),
+          filled: true,
+          fillColor: const Color(0xFFF5F5F5),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _bord)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _bord)),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icone, size: 14, color: cor),
+          const SizedBox(width: 6),
+          Text(status,
+              style: TextStyle(
+                  fontSize: 12, color: cor, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
 
   Widget _inpDisabledText(String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -655,6 +724,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: 'Município de Prestação',
+        prefixIcon: Icons.location_city,
         value: _cidades.any((o) => o['id']?.toString() == _cidadeId)
             ? _cidadeId
             : null,
