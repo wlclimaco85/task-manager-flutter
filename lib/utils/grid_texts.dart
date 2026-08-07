@@ -673,6 +673,12 @@ class GridTexts {
   static const String totalBillingQuestion = 'Deseja faturar totalmente este pedido?';
   static const String cancelOrderTitle = 'Cancelar Pedido';
   static const String cancelOrderQuestion = 'Deseja cancelar este pedido?';
+  static const String issue = 'Emitir';
+  static const String issueOrderTitle = 'Emitir Pedido';
+  static const String issueOrderQuestion = 'Deseja emitir este pedido de compra?';
+  static const String receivePartial = 'Receber Parcial';
+  static const String receiveTotal = 'Receber Total';
+  static const String receiveTotalQuestion = 'Deseja receber totalmente este pedido?';
   static const String selectBudget = 'Selecionar Orçamento';
   static const String budgetOrigin = 'Orçamento';
   static const String directOrigin = 'Direto';

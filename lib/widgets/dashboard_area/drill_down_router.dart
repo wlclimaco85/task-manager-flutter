@@ -114,9 +114,9 @@ class DrillDownRouter {
         return const web_pedido.WebPedidoVendaGridScreen();
       }
       if (defaultTargetPlatform == TargetPlatform.windows) {
-        return const windows_pedido.WindowsPedidoVendaGridScreen();
+        return windows_pedido.WindowsPedidoVendaGridScreen(hasPermission: (p) => true);
       }
-      return const windows_pedido.WindowsPedidoVendaGridScreen();
+      return windows_pedido.WindowsPedidoVendaGridScreen(hasPermission: (p) => true);
     },
     'devolucaoComercialGrid': (context) {
       if (kIsWeb) {
