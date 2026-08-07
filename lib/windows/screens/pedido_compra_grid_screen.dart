@@ -4,22 +4,62 @@ import '../../../models/pedido_compra_model.dart';
 import '../../../services/pedido_compra_service.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../windows/dialogs/pedido_compra_form_dialog.dart';
 import '../../../windows/dialogs/pedido_compra_historico_dialog.dart';
 import '../../../windows/dialogs/receber_dialog.dart';
 import '../../utils/grid_texts.dart';
 
-class WindowsPedidoCompraGridScreen extends StatelessWidget {
+/// Grid Windows de Pedido de Compra no padrão DynamicGridWindowsScreen
+/// (mesmo padrão de pedido_venda_grid_screen.dart / conta_bancaria_grid_screen.dart).
+///
+/// Editar/Excluir genéricos ficam desabilitados via [buttonPermissions]
+/// porque a tela tem máquina de estados própria (RASCUNHO → EMITIDO →
+/// APROVADO → RECEBIDO_PARCIAL/TOTAL, com CANCELADO a partir de EMITIDO):
+/// edição só é permitida em RASCUNHO (via CustomAction dedicada, reaproveitando
+/// PedidoCompraFormDialog) e exclusão definitiva nunca existiu nesta tela.
+///
+/// [key] muda a cada ação de negócio bem-sucedida para forçar o
+/// DynamicGridWindowsScreen a remontar e buscar os dados atualizados —
+/// não há hoje um callback de reload exposto pelo widget compartilhado.
+class WindowsPedidoCompraGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
   const WindowsPedidoCompraGridScreen({super.key, required this.hasPermission});
 
   @override
+  State<WindowsPedidoCompraGridScreen> createState() =>
+      _WindowsPedidoCompraGridScreenState();
+}
+
+class _WindowsPedidoCompraGridScreenState
+    extends State<WindowsPedidoCompraGridScreen> {
+  int _reloadToken = 0;
+
+  void _reload() {
+    if (mounted) setState(() => _reloadToken++);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<PedidoCompra>(
+      key: ValueKey(_reloadToken),
       telaNome: 'pedido_compra',
-      hasPermission: hasPermission,
+      hasPermission: widget.hasPermission,
       fromJson: (json) => PedidoCompra.fromJson(json),
       toJson: (a) => a.toJson(),
+      buttonPermissions: const {
+        'create': true,
+        'edit': false,
+        'delete': false,
+        'deleteMultiple': false,
+        'export': true,
+      },
       customActions: () => [
+        CustomAction<PedidoCompra>(
+          icon: Icons.edit,
+          label: GridTexts.edit,
+          isVisible: (item) => item.id != null && item.status == 'RASCUNHO',
+          onPressed: (context, item) => _openEdit(context, item),
+        ),
         CustomAction<PedidoCompra>(
           icon: Icons.send,
           label: GridTexts.issue,
@@ -73,13 +113,28 @@ class WindowsPedidoCompraGridScreen extends StatelessWidget {
         CustomAction<PedidoCompra>(
           icon: Icons.history,
           label: GridTexts.viewHistory,
-          isVisible: (item) => item.historico != null && item.historico!.isNotEmpty,
+          // Sempre visivel (igual ao comportamento anterior): o dialogo ja
+          // trata a lista vazia com uma mensagem propria.
+          isVisible: (item) => item.id != null,
           onPressed: (context, item) => showDialog(
             context: context,
             builder: (_) => PedidoCompraHistoricoDialog(historico: item.historico ?? []),
           ),
         ),
       ],
+    );
+  }
+
+  void _openEdit(BuildContext context, PedidoCompra pedido) {
+    showDialog(
+      context: context,
+      builder: (_) => PedidoCompraFormDialog(
+        item: pedido.toJson(),
+        onSaved: () {
+          Navigator.pop(context);
+          _reload();
+        },
+      ),
     );
   }
 
@@ -100,6 +155,7 @@ class WindowsPedidoCompraGridScreen extends StatelessWidget {
                 backgroundColor: GridColors.success,
               ),
             );
+            _reload();
           },
         ),
       );
@@ -153,6 +209,7 @@ class WindowsPedidoCompraGridScreen extends StatelessWidget {
             : GridTexts.actionFailure(title)),
         backgroundColor: success ? GridColors.success : GridColors.error,
       ));
+      if (success) _reload();
     } catch (e) {
       debugPrint('Falha na acao "$title": $e');
       if (!context.mounted) return;
