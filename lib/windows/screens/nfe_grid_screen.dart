@@ -393,10 +393,19 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
         fileField: 'xml',
       );
       if (!context.mounted) return;
+      String msg = 'XML importado com sucesso!';
+      if (r.statusCode != 200) {
+        msg = 'Erro ${r.statusCode}';
+        try {
+          final body = jsonDecode(r.body);
+          msg = body['message']?.toString() ??
+              body['mensagem']?.toString() ??
+              body['error']?.toString() ??
+              msg;
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'XML importado com sucesso!'
-              : 'Erro ${r.statusCode}: ${r.body}'),
+          content: Text(msg),
           backgroundColor:
               r.statusCode == 200 ? GridColors.success : GridColors.error));
       if (r.statusCode == 200) setState(() => _gridKey++);
