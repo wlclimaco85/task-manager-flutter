@@ -138,7 +138,9 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
           return data.map((e) => Map<String, dynamic>.from(e)).toList();
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Falha ao buscar orcamentos aprovados: $e');
+    }
     return [];
   }
 
@@ -210,9 +212,11 @@ class WindowsPedidoVendaGridScreen extends StatelessWidget {
         ),
       );
     } catch (e) {
+      debugPrint('Falha ao abrir faturamento parcial: $e');
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao faturar parcialmente: $e'),
+          content: Text(GridTexts.actionFailure('Faturar Parcial')),
           backgroundColor: GridColors.error,
         ),
       );
