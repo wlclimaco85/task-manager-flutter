@@ -110,6 +110,15 @@ class SearchableDropdownField extends StatefulWidget {
 }
 
 class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
+  /// Instância dona do popover inline atualmente aberto (no máximo um por
+  /// vez, entre todos os [SearchableDropdownField] com `inline: true` na
+  /// árvore) — evita depender apenas do comportamento incidental de
+  /// hit-testing do barrier translúcido para fechar um popover quando outro
+  /// campo é tocado diretamente (achado WR-02 do code review do card
+  /// 6F94hyxf). Ao abrir um novo overlay inline, qualquer overlay anterior
+  /// de outra instância é fechado explicitamente primeiro.
+  static _SearchableDropdownFieldState? _instanciaComOverlayAberto;
+
   String? _displayLabel;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -205,6 +214,9 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
   void _closeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+    if (identical(_instanciaComOverlayAberto, this)) {
+      _instanciaComOverlayAberto = null;
+    }
   }
 
   /// Abre a busca como autocomplete inline, ancorado logo abaixo do campo,
@@ -218,6 +230,14 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
   /// popover ao espaço realmente disponível no lado escolhido, para nunca
   /// renderizar parcialmente fora da tela.
   void _openInlineOverlay() {
+    // Fecha explicitamente qualquer popover inline de OUTRA instância que
+    // ainda esteja aberto — não depende do barrier translúcido conseguir
+    // interceptar o toque que abre este campo (WR-02 do code review).
+    final overlayAberto = _instanciaComOverlayAberto;
+    if (overlayAberto != null && !identical(overlayAberto, this)) {
+      overlayAberto._closeOverlay();
+      if (overlayAberto.mounted) overlayAberto.setState(() {});
+    }
     final renderBox = context.findRenderObject() as RenderBox?;
     final fieldWidth = renderBox?.size.width ?? 320.0;
     final fieldSize = renderBox?.size ?? Size.zero;
@@ -282,6 +302,7 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
       ),
     );
     Overlay.of(context).insert(_overlayEntry!);
+    _instanciaComOverlayAberto = this;
   }
 
   @override

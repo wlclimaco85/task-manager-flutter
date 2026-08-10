@@ -103,7 +103,8 @@ void main() {
     });
 
     testWidgets(
-        'Selecionar produto no formulário do item atualiza os campos sem recriar o controller',
+        'Editar campo do formulário do item manualmente não lança exceção nem perde o texto digitado '
+        '(NAO cobre o fluxo de selecionar um produto real — ver nota abaixo)',
         (WidgetTester tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       tester.view.physicalSize = const Size(1400, 1200);
@@ -120,10 +121,25 @@ void main() {
       expect(find.text('Descrição'), findsOneWidget);
       expect(find.text('Salvar Item'), findsOneWidget);
 
-      // Digita direto no campo Descrição — como não há produtos carregados
-      // no teste (sem backend), simula edição manual do item e confirma que
-      // o TextFormField responde a entrada sem lançar exceção mesmo após
-      // rebuilds provocados por outros setState do widget pai.
+      // NOTA (achado WR-01 do code review do commit 5521d39d): este teste
+      // NÃO seleciona um produto de verdade. Não há como carregar
+      // `_produtos` no ambiente de teste (populado via TenantContext.get em
+      // `_loadProdutosServico`, chamada HTTP real que falha silenciosamente
+      // sem backend disponível), e `_NfseItemFormFields`/`_produtos` são
+      // privados ao arquivo de produção — não há ponto de injeção acessível
+      // a partir de um teste de widget externo. O teste anterior tinha
+      // título enganoso ("Selecionar produto... atualiza os campos") sem
+      // exercitar seleção nenhuma; foi renomeado para refletir com precisão
+      // o que É verificado aqui: edição manual do campo "Descrição" não
+      // lança exceção e o texto digitado permanece visível — cobertura do
+      // TextFormField em si, não da sincronização produto→campos.
+      // A sincronização real (item[campo] mutado pelo callback de seleção
+      // de produto refletindo no controller via didUpdateWidget) é coberta
+      // indiretamente pelo teste de regressão CR-01/CR-02 em
+      // nfse_detail_layout_test.dart, que navega entre itens após editar
+      // campos manualmente — mas cobertura direta da seleção de produto via
+      // UI requer mock da camada HTTP (TenantContext), registrado como
+      // débito técnico, não coberto nesta rodada.
       await tester.enterText(
           find.widgetWithText(TextFormField, 'Descrição'), 'Consultoria XPTO');
       await tester.pump();
