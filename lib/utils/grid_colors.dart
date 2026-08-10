@@ -56,6 +56,17 @@ class GridColors {
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x2693070A);
 
+  /// Texto padrão de campos/valores (cinza-escuro quase preto). Token
+  /// adicionado para centralizar um valor (0xFF212121) que antes existia
+  /// duplicado como constante local em algumas telas (ex: nfse_detail_screen).
+  /// Não altera nenhuma cor renderizada — apenas referencia o mesmo valor.
+  static const Color textDefault = Color(0xFF212121);
+
+  /// Fundo alternativo claro (cards/inputs desabilitados). Token adicionado
+  /// para centralizar um valor (0xFFF5F5F5) que antes existia duplicado
+  /// como constante local em algumas telas.
+  static const Color surfaceAlt = Color(0xFFF5F5F5);
+
   // Cores por tipo de arquivo (GED)
   static const Color fileTypePdf = Colors.red;
   static const Color fileTypeImage = Colors.blue;
