@@ -8,6 +8,7 @@ import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
 import '../../../../utils/tenant_context.dart';
 import '../../../../widgets/searchable_dropdown.dart';
+import '../../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../../utils/grid_texts.dart';
 import '../../../../widgets/accessibility/index.dart';
 
@@ -239,6 +240,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             _field('Série', _serieCtrl, flex: 1),
           ]),
           _field('Chave', _chaveCtrl),
+          NfeChaveQrCard(chave: _chaveCtrl.text),
           _row([
             _dropField('Status', _statusVal, ['PENDENTE', 'AUTORIZADA', 'CANCELADA', 'REJEITADA'],
                 (v) => setState(() => _statusVal = v), flex: 1),

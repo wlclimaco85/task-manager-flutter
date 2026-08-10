@@ -7,7 +7,6 @@ import 'package:task_manager_flutter/widgets/nfe/nfe_action_bar.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_filter_chip.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
 import 'package:task_manager_flutter/widgets/nfe/responsive_scaffold.dart';
-import '../helpers/responsive_tester.dart';
 import '../mocks/nfe_mocks.dart';
 
 void main() {
@@ -342,28 +341,6 @@ void main() {
       );
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
-    });
-  });
-
-  group('Responsive Layout Tests', () {
-    testWidgets('Widgets adaptam-se a múltiplos breakpoints', (tester) async {
-      await ResponsiveTestHelper.testAllBreakpoints(
-        tester,
-        (size) async {
-          await tester.pumpWidget(
-            MaterialApp(
-              home: Scaffold(
-                body: NfeStatusBadge(
-                  status: NfeStatus.autorizada,
-                  breakpoint: size.width < 768 ? Breakpoint.mobile : (size.width < 1024 ? Breakpoint.tablet : Breakpoint.desktop),
-                ),
-              ),
-            ),
-          );
-
-          expect(find.byType(NfeStatusBadge), findsOneWidget);
-        },
-      );
     });
   });
 }

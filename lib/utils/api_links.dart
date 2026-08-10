@@ -977,6 +977,9 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/recusar';
+  // Busca parceiro por CNPJ/CPF (usado pelo filtro de NF-e por parceiro/destinatario)
+  static String buscarParceiroPorCnpj(String cpfCnpj) =>
+      '$_baseUrlNew/api/parceiro?cpfCnpj=$cpfCnpj&tamanho=1';
   static String get importarNfeCsv => '$_baseUrlNew/api/nfe/importar-csv';
   static String get allNfe => '$_baseUrlNew/api/nfe';
   static String get createNfe => '$_baseUrlNew/api/nfe';
