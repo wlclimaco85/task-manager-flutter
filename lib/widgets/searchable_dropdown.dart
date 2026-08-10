@@ -212,9 +212,34 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
   /// sem scrim cobrindo o restante da tela. Um barrier transparente captura
   /// toques fora do popover para fechá-lo (clique-fora), preservando o
   /// restante do formulário visível e interativo.
+  ///
+  /// Faz "flip" para cima quando não há espaço suficiente abaixo do campo
+  /// (ex: campo próximo do rodapé da janela/viewport) e limita a altura do
+  /// popover ao espaço realmente disponível no lado escolhido, para nunca
+  /// renderizar parcialmente fora da tela.
   void _openInlineOverlay() {
     final renderBox = context.findRenderObject() as RenderBox?;
     final fieldWidth = renderBox?.size.width ?? 320.0;
+    final fieldSize = renderBox?.size ?? Size.zero;
+    final fieldTopLeft =
+        renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    const margin = 8.0;
+    const minUsableHeight = 120.0;
+    const preferredMaxHeight = 340.0;
+
+    final spaceBelow =
+        screenHeight - (fieldTopLeft.dy + fieldSize.height) - margin;
+    final spaceAbove = fieldTopLeft.dy - margin;
+
+    // Abre para cima somente quando não sobra espaço utilizável abaixo e há
+    // mais espaço acima — caso contrário mantém o padrão (abrir para baixo).
+    final openUpward = spaceBelow < minUsableHeight && spaceAbove > spaceBelow;
+    final availableHeight = openUpward ? spaceAbove : spaceBelow;
+    final popoverMaxHeight =
+        availableHeight.clamp(minUsableHeight, preferredMaxHeight);
+
     _closeOverlay();
     _overlayEntry = OverlayEntry(
       builder: (overlayContext) => Stack(
@@ -231,11 +256,14 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
           CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: false,
-            offset: const Offset(0, 4),
-            targetAnchor: Alignment.bottomLeft,
-            followerAnchor: Alignment.topLeft,
+            offset: Offset(0, openUpward ? -4 : 4),
+            targetAnchor:
+                openUpward ? Alignment.topLeft : Alignment.bottomLeft,
+            followerAnchor:
+                openUpward ? Alignment.bottomLeft : Alignment.topLeft,
             child: _InlineSearchPopover(
               width: fieldWidth.clamp(280.0, 420.0),
+              maxHeight: popoverMaxHeight.toDouble(),
               title: widget.label,
               items: widget.items,
               valueField: widget.valueField,
@@ -359,6 +387,12 @@ class _DropResult {
 /// campo, e não como [Dialog] (sem scrim cobrindo o formulário).
 class _InlineSearchPopover extends StatefulWidget {
   final double width;
+
+  /// Altura máxima já calculada pelo chamador com base no espaço realmente
+  /// disponível na tela/janela (acima ou abaixo do campo) — evita que o
+  /// popover renderize parcialmente fora da viewport quando o campo está
+  /// perto da borda.
+  final double maxHeight;
   final String title;
   final List<Map<String, dynamic>> items;
   final String valueField;
@@ -376,6 +410,7 @@ class _InlineSearchPopover extends StatefulWidget {
     required this.valueField,
     required this.displayField,
     required this.onSelected,
+    this.maxHeight = 340.0,
     this.currentValue,
     this.nullable = false,
     this.nullLabel = '— Nenhum —',
@@ -468,7 +503,7 @@ class _InlineSearchPopoverState extends State<_InlineSearchPopover> {
       color: Colors.white,
       child: Container(
         width: widget.width,
-        constraints: const BoxConstraints(maxHeight: 340),
+        constraints: BoxConstraints(maxHeight: widget.maxHeight),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: primary.withValues(alpha: 0.3)),
