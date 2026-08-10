@@ -1917,7 +1917,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
             SizedBox(
               width: 160,
               child: DropdownButtonFormField<String>(
-                value: _novoPagTpag,
+                initialValue: _novoPagTpag,
                 isDense: true,
                 decoration: const InputDecoration(
                     labelText: 'Tipo',
