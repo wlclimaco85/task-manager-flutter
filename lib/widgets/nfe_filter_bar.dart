@@ -18,7 +18,8 @@ class NfeFilterBar extends StatefulWidget {
 
 class _NfeFilterBarState extends State<NfeFilterBar> {
   late NfeFilterModel _filter;
-  final _dateFormatRegex = RegExp(r'(\d{2})/(\d{2})/(\d{4})');
+  final _dataInicioCtrl = TextEditingController();
+  final _dataFimCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -27,8 +28,19 @@ class _NfeFilterBarState extends State<NfeFilterBar> {
   }
 
   @override
+  void dispose() {
+    _dataInicioCtrl.dispose();
+    _dataFimCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    _dataInicioCtrl.text =
+        _filter.dataInicio != null ? _formatDate(_filter.dataInicio!) : '';
+    _dataFimCtrl.text =
+        _filter.dataFim != null ? _formatDate(_filter.dataFim!) : '';
 
     return Container(
       color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[50],
@@ -86,6 +98,7 @@ class _NfeFilterBarState extends State<NfeFilterBar> {
         // Data Início
         Expanded(
           child: _buildDateField(
+            controller: _dataInicioCtrl,
             label: 'De',
             value: _filter.dataInicio,
             onChanged: (date) {
@@ -98,6 +111,7 @@ class _NfeFilterBarState extends State<NfeFilterBar> {
         // Data Fim
         Expanded(
           child: _buildDateField(
+            controller: _dataFimCtrl,
             label: 'Até',
             value: _filter.dataFim,
             onChanged: (date) {
@@ -128,6 +142,7 @@ class _NfeFilterBarState extends State<NfeFilterBar> {
 
   /// Campo de data (read-only, abre date picker)
   Widget _buildDateField({
+    required TextEditingController controller,
     required String label,
     required DateTime? value,
     required Function(DateTime?) onChanged,
@@ -146,9 +161,7 @@ class _NfeFilterBarState extends State<NfeFilterBar> {
           vertical: 12,
         ),
       ),
-      controller: TextEditingController(
-        text: value != null ? _formatDate(value) : '',
-      ),
+      controller: controller,
     );
   }
 
