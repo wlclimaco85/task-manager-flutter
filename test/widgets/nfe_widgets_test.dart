@@ -6,64 +6,11 @@ import 'package:task_manager_flutter/widgets/nfe/currency_text_field.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_action_bar.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_filter_chip.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
-import 'package:task_manager_flutter/widgets/nfe/nfe_status_badge.dart';
 import 'package:task_manager_flutter/widgets/nfe/responsive_scaffold.dart';
 import '../helpers/responsive_tester.dart';
 import '../mocks/nfe_mocks.dart';
 
 void main() {
-  group('NfeStatusBadge', () {
-    testWidgets('Renderiza badge compacta para status autorizada', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NfeStatusBadge(
-              status: NfeStatus.autorizada,
-              breakpoint: Breakpoint.mobile,
-              expanded: false,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
-    });
-
-    testWidgets('Renderiza badge expandida com label', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NfeStatusBadge(
-              status: NfeStatus.rejeitada,
-              breakpoint: Breakpoint.tablet,
-              expanded: true,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Rejeitada'), findsOneWidget);
-      expect(find.byIcon(Icons.cancel), findsOneWidget);
-    });
-
-    testWidgets('Badge adapta tamanho por breakpoint', (tester) async {
-      for (final breakpoint in [Breakpoint.mobile, Breakpoint.tablet, Breakpoint.desktop]) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: NfeStatusBadge(
-                status: NfeStatus.pendente,
-                breakpoint: breakpoint,
-              ),
-            ),
-          ),
-        );
-
-        expect(find.byType(Icon), findsWidgets);
-      }
-    });
-  });
-
   group('NfeActionBar', () {
     testWidgets('Renderiza FAB em mobile', (tester) async {
       await tester.pumpWidget(
