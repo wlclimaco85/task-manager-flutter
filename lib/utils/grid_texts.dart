@@ -264,6 +264,20 @@ class GridTexts {
   static const String notPerformed = 'Não Realizada';
   static const String noManifestationDone = 'Nenhuma manifestação realizada.';
   static String manifestationCount(int count) => '$count manifestação(ões)';
+  static const String newManifestation = 'Nova Manifestação';
+  static const String accessKeyFieldLabel = 'Chave de acesso da NFe (44 dígitos)';
+  static const String accessKeyInvalidLength =
+      'Chave de acesso deve ter 44 dígitos';
+  static const String manifestationJustificationHint =
+      'Justificativa obrigatória para Confirmação ou Operação não Realizada';
+  static const String manifestationJustificationRequired =
+      'Justificativa é obrigatória para este tipo de manifestação';
+  static const String confirmation = 'Confirmação da Operação';
+  static const String cienciaLabel = 'Ciência da Emissão';
+  static const String unknownLabel = 'Desconhecimento da Operação';
+  static const String notPerformedLabel = 'Operação não Realizada';
+  static const String pending = 'Pendente';
+  static const String sent = 'Enviado';
   static const String type = 'Tipo';
   static const String period = 'Período';
   static const String start = 'Início';

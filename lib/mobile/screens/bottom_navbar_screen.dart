@@ -27,6 +27,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
+import '../../web/screens/manifestacao_destinatario_screen.dart';
 import 'documento_screen.dart';
 import 'meu_perfil_screen.dart';
 import 'ponto_screen.dart';
@@ -943,6 +944,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ConfigFiscalScreen()),
+        );
+        break;
+      case "Manifestação Destinatário":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const ManifestacaoDestinatarioScreen()),
         );
         break;
       case "CRM/Funil":
