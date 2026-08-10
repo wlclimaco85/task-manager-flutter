@@ -40,14 +40,28 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
     _aplicarFiltros();
   }
 
+  @override
+  void dispose() {
+    _numeroCtrl.dispose();
+    _chaveCtrl.dispose();
+    _parceiroCtrl.dispose();
+    _destCtrl.dispose();
+    _cnpjCtrl.dispose();
+    super.dispose();
+  }
+
   /// Resolve o parceiroId a partir do CNPJ digitado (GET /api/parceiro?cpfCnpj=).
   /// Retorna null se o campo estiver vazio, sem alterar _cnpjErro.
   Future<int?> _resolverParceiroPorCnpj() async {
     final digitos = CnpjInputFormatter.onlyDigits(_cnpjCtrl.text);
-    if (digitos.isEmpty) return null;
+    if (digitos.isEmpty) {
+      if (_cnpjErro != null) setState(() => _cnpjErro = null);
+      return null;
+    }
     setState(() => _buscandoCnpj = true);
     try {
       final r = await TenantContext.get(ApiLinks.buscarParceiroPorCnpj(digitos));
+      if (!mounted) return null;
       if (r.statusCode == 200) {
         final body = jsonDecode(r.body);
         final data = body is Map ? body['data'] : null;
@@ -62,7 +76,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
       setState(() => _cnpjErro = 'Nenhum parceiro encontrado com este CNPJ');
       return null;
     } catch (_) {
-      setState(() => _cnpjErro = 'Erro ao buscar parceiro por CNPJ');
+      if (mounted) setState(() => _cnpjErro = 'Erro ao buscar parceiro por CNPJ');
       return null;
     } finally {
       if (mounted) setState(() => _buscandoCnpj = false);
