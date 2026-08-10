@@ -23,13 +23,15 @@ class NfeChaveQrCard extends StatelessWidget {
 
   double _tamanhoQr(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    switch (ResponsiveHelper.getBreakpoint(width)) {
-      case Breakpoint.mobile:
-        return 120;
-      case Breakpoint.tablet:
-        return 140;
-      case Breakpoint.desktop:
-        return 160;
+    // Usa as constantes estáticas diretamente (evita depender de
+    // ResponsiveHelper.getBreakpoint, cuja assinatura static/instância
+    // diverge entre task_manager_flutter e task_manager_flutter_merged_final).
+    if (width < ResponsiveHelper.breakpointMobile) {
+      return 120;
+    } else if (width < ResponsiveHelper.breakpointTablet) {
+      return 140;
+    } else {
+      return 160;
     }
   }
 
