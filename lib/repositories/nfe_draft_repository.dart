@@ -5,11 +5,9 @@ import 'package:task_manager_flutter/utils/app_logger.dart';
 
 /// Repositório de rascunhos offline de NFe (card W3R3).
 ///
-/// Usa uma box Hive própria (`nfe_drafts_offline`), independente da box de
-/// cache de NFes já transmitidas (`nfe_queue_offline`, card H2) — não
-/// reaproveita a mesma box porque guarda um tipo de dado diferente (payload
-/// de formulário pendente, não NFe já normalizada), mas usa a mesma
-/// infraestrutura Hive/typeId já estabelecida no projeto.
+/// Usa uma box Hive própria (`nfe_drafts_offline`), independente de qualquer
+/// cache legado de NFes transmitidas. Não reaproveita a mesma box porque
+/// guarda payload de formulário pendente, não NFe já normalizada.
 class NfeDraftRepository {
   static const String boxName = 'nfe_drafts_offline';
   static bool _adapterRegistered = false;

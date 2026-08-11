@@ -2,9 +2,8 @@ import 'package:hive/hive.dart';
 import 'nfe_draft_status.dart';
 
 /// Rascunho local de uma NFe salva quando o dispositivo está sem conexão
-/// (card W3R3 — Offline Queue). Estende o cache Hive já usado pelo card H2
-/// (Wave 2), em uma box própria (`nfe_drafts_offline`) para não colidir com
-/// o cache de NFes já transmitidas.
+/// (card W3R3 — Offline Queue). Usa uma box própria (`nfe_drafts_offline`)
+/// para isolar o payload de formulário pendente de qualquer cache legado.
 ///
 /// [dadosFormulario] guarda o payload bruto que seria enviado ao backend
 /// (mesmo Map usado por `TenantContext.post(ApiLinks.emitirNfe(id), body)`),
@@ -86,9 +85,8 @@ class NfeDraftModel {
       status: NfeDraftStatus.fromCode(json['status']?.toString()),
       criadoEm: DateTime.tryParse(json['criadoEm']?.toString() ?? '') ??
           DateTime.now(),
-      atualizadoEm:
-          DateTime.tryParse(json['atualizadoEm']?.toString() ?? '') ??
-              DateTime.now(),
+      atualizadoEm: DateTime.tryParse(json['atualizadoEm']?.toString() ?? '') ??
+          DateTime.now(),
       mensagemErro: json['mensagemErro']?.toString(),
     );
   }
@@ -111,8 +109,8 @@ class NfeDraftModel {
 /// toJson/fromJson, sem depender de build_runner/hive_generator (nenhum dos
 /// dois está no pubspec.yaml do projeto).
 ///
-/// typeId 41 — livre no projeto (maior typeId existente hoje é 40, usado por
-/// `AgendamentoModelAdapter`).
+/// typeId 41 — reservado para rascunhos NFe e sem colisão com adapters
+/// existentes no projeto.
 class NfeDraftModelAdapter extends TypeAdapter<NfeDraftModel> {
   @override
   final int typeId = 41;
