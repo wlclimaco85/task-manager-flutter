@@ -125,6 +125,66 @@ void main() {
     expect(atualizado.mensagemErro, contains('inválidos'));
   });
 
+  test(
+      'NUNCA reenvia quando a checagem de status falha sem lançar exceção (fail-closed, não fail-open)',
+      () async {
+    final draft = await repository.salvarRascunho(
+      nfeIdReferencia: '50',
+      dadosFormulario: {},
+      acao: 'emitir',
+    );
+
+    var postFoiChamado = false;
+    // GET retorna 401 (token expirado, por ex.) SEM lançar exceção — cenário
+    // do achado crítico do code review: TenantContext.get/post não lançam
+    // exceção em respostas HTTP não-2xx, então isso não cai no catch de
+    // conectividade. O serviço precisa tratar isso como "não confirmado" e
+    // bloquear o reenvio, não como "sem conflito".
+    final service = NfeDraftSyncService(
+      repository: repository,
+      getFn: (url) async => http.Response('{"message":"não autorizado"}', 401),
+      postFn: (url, body) async {
+        postFoiChamado = true;
+        return http.Response('{}', 200);
+      },
+    );
+
+    final resultado = await service.sincronizar(draft);
+
+    expect(resultado, NfeDraftSyncResult.erro);
+    expect(postFoiChamado, isFalse,
+        reason:
+            'não deve reenviar quando não foi possível confirmar o status atual da NFe');
+
+    final atualizado = await repository.obterRascunho(draft.id);
+    expect(atualizado!.status, NfeDraftStatus.erro);
+  });
+
+  test(
+      'NUNCA reenvia quando o corpo da checagem de status vem em formato inesperado',
+      () async {
+    final draft = await repository.salvarRascunho(
+      nfeIdReferencia: '60',
+      dadosFormulario: {},
+      acao: 'emitir',
+    );
+
+    var postFoiChamado = false;
+    final service = NfeDraftSyncService(
+      repository: repository,
+      getFn: (url) async => http.Response('não é json válido', 200),
+      postFn: (url, body) async {
+        postFoiChamado = true;
+        return http.Response('{}', 200);
+      },
+    );
+
+    final resultado = await service.sincronizar(draft);
+
+    expect(resultado, NfeDraftSyncResult.erro);
+    expect(postFoiChamado, isFalse);
+  });
+
   test('sincronizarPendentes processa apenas rascunhos com status pendente',
       () async {
     final d1 = await repository.salvarRascunho(

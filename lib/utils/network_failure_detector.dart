@@ -17,8 +17,11 @@ class NetworkFailureDetector {
     if (error is HttpException) return true;
     if (error is http.ClientException) return true;
 
-    // Alguns pacotes (ex.: dio) lançam exceptions com esses nomes de tipo
-    // mesmo sem depender diretamente do pacote aqui — fallback textual.
+    // Fallback textual best-effort para exceptions não capturadas pelos
+    // tipos acima. Hoje só `package:http` é usado nos pontos onde este
+    // detector é chamado (TenantContext); se outro cliente HTTP (ex.: dio)
+    // for introduzido depois, REVISE estas substrings contra o texto real
+    // das exceptions dele — este fallback não foi validado para o dio.
     final text = error.toString().toLowerCase();
     return text.contains('socketexception') ||
         text.contains('connection refused') ||

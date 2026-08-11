@@ -81,6 +81,7 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
         final body = jsonDecode(resp.body);
         final dados = body['data']?['dados'] as List? ?? [];
         final lista = dados.map((e) => Map<String, dynamic>.from(e)).toList();
+        if (!mounted) return;
         setState(() {
           _certificados = lista;
           _exibindoCacheOffline = false;
@@ -105,7 +106,7 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
           empresaId: widget.empresaId,
           parceiroId: widget.parceiroId,
         );
-        if (cache.isNotEmpty) {
+        if (cache.isNotEmpty && mounted) {
           setState(() {
             _certificados = cache
                 .map((c) => {
@@ -123,9 +124,11 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
         }
       }
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 

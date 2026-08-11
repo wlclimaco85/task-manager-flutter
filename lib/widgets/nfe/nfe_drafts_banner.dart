@@ -215,7 +215,7 @@ class NfeDraftsBannerState extends State<NfeDraftsBanner> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'NFe ref. ${draft.nfeIdReferencia} — ${draft.acao}',
+              _descricaoLinha(draft),
               style: const TextStyle(fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
@@ -224,6 +224,22 @@ class NfeDraftsBannerState extends State<NfeDraftsBanner> {
         ],
       ),
     );
+  }
+
+  /// Texto de exibição do rascunho — usa somente [NfeDraftModel.contextoExibicao]
+  /// (dado só para exibição), nunca `dadosFormulario` (que é fielmente o que
+  /// será reenviado ao backend, ex.: `{}` para a ação 'emitir').
+  String _descricaoLinha(NfeDraftModel draft) {
+    final numero = draft.contextoExibicao['numero'];
+    final destinatario = draft.contextoExibicao['destinatario'] ??
+        draft.contextoExibicao['razaoSocial'];
+    final partes = [
+      if (numero != null) 'NF-e #$numero' else 'NFe ref. ${draft.nfeIdReferencia}',
+      if (destinatario != null) destinatario.toString(),
+    ];
+    // partes sempre tem ao menos 1 item (o if/else da 1ª posição garante
+    // isso), mas join funciona igual com 1 ou 2 itens.
+    return partes.join(' — ');
   }
 
   Widget _buildStatusChip(NfeDraftStatus status, {required bool enviando}) {

@@ -33,6 +33,7 @@ class NfeDraftRepository {
   Future<NfeDraftModel> salvarRascunho({
     required String nfeIdReferencia,
     required Map<String, dynamic> dadosFormulario,
+    Map<String, dynamic> contextoExibicao = const {},
     required String acao,
   }) async {
     final box = await _abrirBox();
@@ -41,6 +42,7 @@ class NfeDraftRepository {
       id: gerarId(nfeIdReferencia),
       nfeIdReferencia: nfeIdReferencia,
       dadosFormulario: dadosFormulario,
+      contextoExibicao: contextoExibicao,
       acao: acao,
       status: NfeDraftStatus.rascunho,
       criadoEm: agora,

@@ -20,9 +20,17 @@ class NfeDraftModel {
   /// servidor já tiver essa NFe com status autorizada/transmitida.
   final String nfeIdReferencia;
 
-  /// Dados do formulário/ação que seriam enviados ao backend quando a
-  /// conexão voltar.
+  /// Corpo exato que será reenviado ao backend quando a conexão voltar —
+  /// precisa ser FIEL ao que a ação original enviaria (ex.: para 'emitir',
+  /// isso é sempre `{}`, pois `TenantContext.post(ApiLinks.emitirNfe(id), {})`
+  /// não manda corpo; a NFe já existe no servidor, só falta emitir). Nunca
+  /// usar isso para guardar dado de exibição — ver [contextoExibicao].
   final Map<String, dynamic> dadosFormulario;
+
+  /// Dados só para exibição na UI do rascunho (ex.: número, destinatário,
+  /// valor da linha da grid no momento da falha). NÃO é reenviado ao
+  /// backend — só [dadosFormulario] é.
+  final Map<String, dynamic> contextoExibicao;
 
   /// Ação original que falhou por falta de conexão (ex.: 'emitir').
   final String acao;
@@ -36,6 +44,7 @@ class NfeDraftModel {
     required this.id,
     required this.nfeIdReferencia,
     required this.dadosFormulario,
+    this.contextoExibicao = const {},
     required this.acao,
     required this.status,
     required this.criadoEm,
@@ -53,6 +62,7 @@ class NfeDraftModel {
       id: id,
       nfeIdReferencia: nfeIdReferencia,
       dadosFormulario: dadosFormulario,
+      contextoExibicao: contextoExibicao,
       acao: acao,
       status: status ?? this.status,
       criadoEm: criadoEm,
@@ -69,6 +79,9 @@ class NfeDraftModel {
       dadosFormulario: json['dadosFormulario'] != null
           ? Map<String, dynamic>.from(json['dadosFormulario'] as Map)
           : <String, dynamic>{},
+      contextoExibicao: json['contextoExibicao'] != null
+          ? Map<String, dynamic>.from(json['contextoExibicao'] as Map)
+          : <String, dynamic>{},
       acao: json['acao']?.toString() ?? 'emitir',
       status: NfeDraftStatus.fromCode(json['status']?.toString()),
       criadoEm: DateTime.tryParse(json['criadoEm']?.toString() ?? '') ??
@@ -84,6 +97,7 @@ class NfeDraftModel {
         'id': id,
         'nfeIdReferencia': nfeIdReferencia,
         'dadosFormulario': dadosFormulario,
+        'contextoExibicao': contextoExibicao,
         'acao': acao,
         'status': status.code,
         'criadoEm': criadoEm.toIso8601String(),

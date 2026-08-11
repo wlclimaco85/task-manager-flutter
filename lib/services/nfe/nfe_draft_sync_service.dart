@@ -48,9 +48,26 @@ class NfeDraftSyncService {
         status: NfeDraftStatus.enviando, limparMensagemErro: true);
 
     try {
-      final conflita = await _existeNfeJaProcessadaNoServidor(
-          draft.nfeIdReferencia);
-      if (conflita) {
+      // bool? — null significa "não foi possível confirmar o status atual".
+      // Regra obrigatória do card: NUNCA reenviar sem essa confirmação
+      // positiva de que a NFe ainda não foi processada. Uma checagem que
+      // falhou (500/401/403/404 no GET, JSON inesperado, etc.) é tratada
+      // como bloqueio, não como "sem conflito" — fail-closed, não fail-open.
+      final statusConfirmado =
+          await _existeNfeJaProcessadaNoServidor(draft.nfeIdReferencia);
+
+      if (statusConfirmado == null) {
+        const msg =
+            'Não foi possível confirmar o status atual da NFe no servidor '
+            'antes de reenviar. Tente novamente.';
+        await _repository.atualizarStatus(draft.id,
+            status: NfeDraftStatus.erro, mensagemErro: msg);
+        L.w('[NfeDraftSyncService] Checagem de status indeterminada para ${draft.id} '
+            '(nfe=${draft.nfeIdReferencia}) — reenvio bloqueado por segurança');
+        return NfeDraftSyncResult.erro;
+      }
+
+      if (statusConfirmado) {
         await _repository.atualizarStatus(
           draft.id,
           status: NfeDraftStatus.conflito,
@@ -119,17 +136,24 @@ class NfeDraftSyncService {
 
   /// Verifica se a NFe referenciada já foi processada (autorizada/cancelada)
   /// no servidor por outra via — usado para bloquear sobrescrita.
-  Future<bool> _existeNfeJaProcessadaNoServidor(String nfeId) async {
-    if (nfeId.isEmpty) return false;
+  ///
+  /// Retorna `true`/`false` só quando a checagem foi de fato confirmada com
+  /// uma resposta 200 e um status reconhecível. Qualquer outro caso (id
+  /// vazio, status HTTP != 200, corpo inesperado) retorna `null` — "não deu
+  /// para confirmar" — que o chamador DEVE tratar como bloqueio ao reenvio,
+  /// nunca como "pode reenviar".
+  Future<bool?> _existeNfeJaProcessadaNoServidor(String nfeId) async {
+    if (nfeId.isEmpty) return null;
     final response = await _get(ApiLinks.nfeById(nfeId));
-    if (response.statusCode != 200) return false;
+    if (response.statusCode != 200) return null;
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final status =
           (body['statusNfe'] ?? body['status'])?.toString().toUpperCase();
-      return status != null && _statusJaProcessados.contains(status);
+      if (status == null) return null;
+      return _statusJaProcessados.contains(status);
     } catch (_) {
-      return false;
+      return null;
     }
   }
 }

@@ -17,7 +17,7 @@ class CertificadoLocalCacheService {
       : _storage = storage ?? const FlutterSecureStorage();
 
   String _chave({int? empresaId, int? parceiroId}) =>
-      'certificado_local_cache_${empresaId ?? 'p'}_${parceiroId ?? 'e'}';
+      'certificado_local_cache_emp${empresaId ?? '-'}_par${parceiroId ?? '-'}';
 
   Future<void> salvarCache(
     List<CertificadoLocalCacheModel> certificados, {
