@@ -6,6 +6,7 @@ import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/api_response_helpers.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/security_matrix.dart';
 import '../../../utils/tenant_context.dart';
@@ -111,12 +112,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       final response = await TenantContext.get(url);
       if (!mounted) return;
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final lista = decoded is List
-            ? decoded
-            : (decoded is Map && decoded['content'] is List)
-                ? decoded['content'] as List
-                : const [];
+        final lista = extrairListaDeResposta(jsonDecode(response.body));
         setState(() {
           _clientes = lista
               .whereType<Map>()

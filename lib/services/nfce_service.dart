@@ -7,6 +7,7 @@ import '../models/auth_utility.dart';
 import '../models/nfce/nfce_resultado_model.dart';
 import '../models/nfce/nfce_status_model.dart';
 import '../utils/api_links.dart';
+import '../utils/api_response_helpers.dart';
 import '../utils/tenant_context.dart';
 
 /// Serviço responsável pelas chamadas HTTP relacionadas a NFC-e.
@@ -285,20 +286,22 @@ class NfceService {
     required String query,
     required int empresaId,
   }) async {
+    // Bug de producao: GET /api/produto ignora os parametros nome/empresa
+    // (ProdutoController.listarProdutos() nao os declara) e, pior, o
+    // create/list desse recurso mapeia para a entidade CatalogoProduto
+    // (dominio de negociacao agricola, campos nome/preco sempre null),
+    // nao para a entidade Produto real usada pelo catalogo fiscal. O
+    // endpoint correto, que filtra por nome/empresa e usa a entidade
+    // Produto (nome, preco, ncm, gtin, codigo), e /api/produto_contabil.
     final url =
-        '${ApiLinks.baseUrl}/api/produto?nome=${Uri.encodeComponent(query)}&empresa=$empresaId';
+        '${ApiLinks.baseUrl}/api/produto_contabil?nome=${Uri.encodeComponent(query)}&empresa=$empresaId&tamanho=20';
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
     );
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body is List) {
-        return body.cast<Map<String, dynamic>>();
-      }
-      if (body is Map && body['content'] is List) {
-        return (body['content'] as List).cast<Map<String, dynamic>>();
-      }
+      return extrairListaPaginada(jsonDecode(response.body))
+          .cast<Map<String, dynamic>>();
     }
     return [];
   }
