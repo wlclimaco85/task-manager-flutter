@@ -84,7 +84,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
@@ -100,7 +100,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byType(AppBar), findsOneWidget);
     });
 
@@ -116,7 +116,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
@@ -294,7 +294,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Simula mudança de estado

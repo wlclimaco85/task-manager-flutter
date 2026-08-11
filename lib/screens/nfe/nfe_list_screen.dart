@@ -437,28 +437,18 @@ class _NfeListScreenState extends State<NfeListScreen> {
       runSpacing: 8,
       children: [
         OutlinedButton.icon(
-          onPressed: () => L.d('[NfeListScreen] Navegando NFe ${nfe.id}'),
+          onPressed: () => _handleVerDetalhes(context, nfe),
           icon: const Icon(Icons.visibility, size: 18),
           label: const Text('Detalhes'),
         ),
         OutlinedButton.icon(
-          onPressed: () {
-            L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Reimpressão iniciada')),
-            );
-          },
+          onPressed: () => _handleReimprimirNfe(context, nfe),
           icon: const Icon(Icons.print, size: 18),
           label: const Text('Reimprimir'),
         ),
         if (nfe.statusNfe != NfeStatus.cancelada)
           OutlinedButton.icon(
-            onPressed: () {
-              L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cancelamento iniciado')),
-              );
-            },
+            onPressed: () => _handleCancelarNfe(context, nfe),
             icon: const Icon(Icons.cancel, size: 18),
             label: const Text('Cancelar'),
           ),
@@ -626,7 +616,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
     if (state.isLoading) {
       return const Padding(
         padding: EdgeInsets.all(DesignTokens.spacingMd),
-        child: CircularProgressIndicator(value: 0),
+        child: CircularProgressIndicator(),
       );
     }
 
@@ -753,7 +743,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
       L.d('[NfeListScreen] Navegando para detalhes NFe ${nfe.id}');
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => NfeDetailScreen(nfeId: nfe.id),
+          builder: (context) => NfeDetailScreen(nfe: nfe),
         ),
       );
     } catch (e) {
