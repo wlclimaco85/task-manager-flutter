@@ -7,6 +7,9 @@ import 'dart:convert';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../utils/network_failure_detector.dart';
+import '../../../models/certificado/certificado_local_cache_model.dart';
+import '../../../services/certificado/certificado_local_cache_service.dart';
 
 /// Tela de gerenciamento do certificado digital A1 da empresa.
 /// Permite upload do .pfx, visualização do status e remoção.
@@ -38,6 +41,8 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
   bool _loading = true;
   bool _uploading = false;
   List<Map<String, dynamic>> _certificados = [];
+  final _cacheService = CertificadoLocalCacheService();
+  bool _exibindoCacheOffline = false;
 
   // Upload state
   PlatformFile? _arquivoSelecionado;
@@ -75,16 +80,55 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
         final dados = body['data']?['dados'] as List? ?? [];
+        final lista = dados.map((e) => Map<String, dynamic>.from(e)).toList();
+        if (!mounted) return;
         setState(() {
-          _certificados =
-              dados.map((e) => Map<String, dynamic>.from(e)).toList();
+          _certificados = lista;
+          _exibindoCacheOffline = false;
+        });
+        // Card W3R3 (item B): cacheia apenas metadado (sem senha/PFX) para
+        // exibir status quando o dispositivo estiver offline.
+        await _cacheService.salvarCache(
+          lista
+              .map((c) => CertificadoLocalCacheModel.fromCertificadoApi(
+                    c,
+                    empresaId: widget.empresaId,
+                    parceiroId: widget.parceiroId,
+                  ))
+              .toList(),
+          empresaId: widget.empresaId,
+          parceiroId: widget.parceiroId,
+        );
+      }
+    } catch (e) {
+      if (NetworkFailureDetector.isConnectivityError(e)) {
+        final cache = await _cacheService.obterCache(
+          empresaId: widget.empresaId,
+          parceiroId: widget.parceiroId,
+        );
+        if (cache.isNotEmpty && mounted) {
+          setState(() {
+            _certificados = cache
+                .map((c) => {
+                      'id': c.id,
+                      'nomeArquivo': c.nomeArquivo,
+                      'cnpjCert': c.cnpjCert,
+                      'validade': c.validade,
+                      'statusValidade': c.statusValidade,
+                      'diasParaVencer': c.diasParaVencer,
+                      'ativo': c.ativo,
+                    })
+                .toList();
+            _exibindoCacheOffline = true;
+          });
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
         });
       }
-    } catch (_) {
-    } finally {
-      setState(() {
-        _loading = false;
-      });
     }
   }
 
@@ -242,6 +286,14 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (_exibindoCacheOffline)
+                    _buildAlert(
+                      'Sem conexão. Exibindo último status conhecido do '
+                      'certificado (dados em cache local, sem senha nem '
+                      'arquivo do certificado armazenados no dispositivo).',
+                      _warning,
+                      Icons.wifi_off,
+                    ),
                   // ── Certificados existentes ──────────────────────────────
                   if (_certificados.isNotEmpty) ...[
                     _sectionTitle('Certificados Cadastrados'),

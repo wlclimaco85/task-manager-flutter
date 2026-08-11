@@ -13,6 +13,9 @@ import 'nfe_saida_create_screen.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/cnpj_input_formatter.dart';
+import '../../../widgets/nfe/nfe_drafts_banner.dart';
+import '../../../repositories/nfe_draft_repository.dart';
+import '../../../utils/nfe_offline_draft_helper.dart';
 
 class WindowsNfeGridScreen extends StatefulWidget {
   final bool entrada;
@@ -33,6 +36,8 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
   int _gridKey = 0;
   bool _buscandoCnpj = false;
   String? _cnpjErro;
+  final _draftsBannerKey = GlobalKey<NfeDraftsBannerState>();
+  final _draftRepository = NfeDraftRepository();
 
   @override
   void initState() {
@@ -166,6 +171,11 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
               ),
             ],
           ),
+        ),
+        // ── Rascunhos offline (card W3R3) ────────────────────────────────
+        NfeDraftsBanner(
+          key: _draftsBannerKey,
+          onSincronizado: () => setState(() => _gridKey++),
         ),
         // ── Conteúdo: filtros laterais + grid ────────────────────────────
         Expanded(
@@ -368,6 +378,17 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
             SnackBar(content: Text(msg), backgroundColor: GridColors.error));
       }
     } catch (e) {
+      // Card W3R3: falha real de rede (não erro de negócio/validação) vira
+      // rascunho local em vez de só mostrar erro genérico.
+      final tratadoComoRascunho = await NfeOfflineDraftHandler.tratarFalhaEmitir(
+        context: context,
+        erro: e,
+        nfeId: id,
+        item: item,
+        draftRepository: _draftRepository,
+        bannerKey: _draftsBannerKey,
+      );
+      if (tratadoComoRascunho) return;
       if (context.mounted)
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro: $e'), backgroundColor: GridColors.error));
