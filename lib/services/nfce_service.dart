@@ -156,9 +156,8 @@ class NfceService {
     }
 
     final ufNormalizada = uf.trim().toUpperCase();
-    final ambienteNormalizado = ambiente.trim().isEmpty
-        ? 'HOMOLOGACAO'
-        : ambiente.trim().toUpperCase();
+    final ambienteNormalizado =
+        ambiente.trim().isEmpty ? 'HOMOLOGACAO' : ambiente.trim().toUpperCase();
     final url = ApiLinks.nfceHealth(
       empresaId,
       ufNormalizada,
@@ -204,6 +203,7 @@ class NfceService {
     required String fileName,
     required String senha,
     required int empresaId,
+    int? parceiroId,
     required String uf,
     String ambiente = 'HOMOLOGACAO',
   }) async {
@@ -215,6 +215,7 @@ class NfceService {
       fields: {
         'senha': senha,
         'empresaId': empresaId.toString(),
+        if (parceiroId != null) 'parceiroId': parceiroId.toString(),
         'uf': uf.trim().toUpperCase(),
         'ambiente': ambiente.trim().isEmpty
             ? 'HOMOLOGACAO'
@@ -229,8 +230,11 @@ class NfceService {
     }
   }
 
-  Future<Map<String, dynamic>> buscarConfigFiscal(int empresaId) async {
-    final url = ApiLinks.configFiscal(empresaId);
+  Future<Map<String, dynamic>> buscarConfigFiscal(
+    int empresaId, {
+    int? parceiroId,
+  }) async {
+    final url = ApiLinks.configFiscal(empresaId, parceiroId: parceiroId);
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
@@ -258,6 +262,23 @@ class NfceService {
         statusCode: response.statusCode,
       );
     }
+  }
+
+  Future<Map<String, dynamic>> criarConfigFiscal(
+    Map<String, dynamic> config,
+  ) async {
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.createConfigFiscal())),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode(config),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw NfceException(
+      _extractErrorMessage(response, 'Falha ao criar configuração fiscal'),
+      statusCode: response.statusCode,
+    );
   }
 
   Future<List<Map<String, dynamic>>> buscarProdutos({

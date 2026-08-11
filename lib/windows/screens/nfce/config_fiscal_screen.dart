@@ -1,12 +1,18 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/security_matrix.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../models/nfce/nfce_config_fiscal_cache_model.dart';
+import '../../../repositories/nfce_config_fiscal_cache_repository.dart';
 import '../../../widgets/nfce/nfce_notice_banner.dart';
+import '../../../widgets/searchable_dropdown.dart';
 import 'nfce_inutilizacao_screen.dart';
 
 /// Tela de configuração fiscal NFC-e.
@@ -20,6 +26,8 @@ class ConfigFiscalScreen extends StatefulWidget {
 
 class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   final NfceService _service = NfceService();
+  final NfceConfigFiscalCacheRepository _cache =
+      NfceConfigFiscalCacheRepository();
   final _formKey = GlobalKey<FormState>();
 
   String _uf = 'SP';
@@ -40,26 +48,125 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   bool _verificandoSefaz = false;
   NfceSefazHealthResult? _sefazHealth;
 
+  // ── Cliente/Parceiro (card ConfigFiscalScreen por Cliente) ────────────────
+  List<Map<String, dynamic>> _clientes = [];
+  bool _loadingClientes = false;
+  int? _clienteId;
+  String _escopoConfig = 'EMPRESA';
+  // true quando os campos vieram do cache local e ainda nao foram destravados
+  // pelo botao "Editar" (nao se aplica quando o campo esta travado pela
+  // identidade do login — nesse caso nao ha botao de destravar).
+  bool _camposTravadosPeloCache = false;
+  bool get _clienteTravadoPeloLogin => TenantContext.hasParceiro;
+  bool get _camposFiscaisEditaveis => !_camposTravadosPeloCache;
+
   static const _ufs = [
-    'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-    'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN',
-    'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
+    'AC',
+    'AL',
+    'AM',
+    'AP',
+    'BA',
+    'CE',
+    'DF',
+    'ES',
+    'GO',
+    'MA',
+    'MG',
+    'MS',
+    'MT',
+    'PA',
+    'PB',
+    'PE',
+    'PI',
+    'PR',
+    'RJ',
+    'RN',
+    'RO',
+    'RR',
+    'RS',
+    'SC',
+    'SE',
+    'SP',
+    'TO',
   ];
 
   @override
   void initState() {
     super.initState();
+    if (_clienteTravadoPeloLogin) {
+      _clienteId = TenantContext.parceiroId;
+    }
     _carregarConfig();
+    if (!_clienteTravadoPeloLogin) {
+      _carregarClientes();
+    }
   }
 
-  Future<void> _carregarConfig() async {
+  Future<void> _carregarClientes() async {
+    final empresaId = TenantContext.empresaId;
+    if (empresaId == null) return;
+    setState(() => _loadingClientes = true);
+    try {
+      final url = ApiLinks.allParceirosPorEmp(empresaId.toString());
+      final response = await TenantContext.get(url);
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final lista = decoded is List
+            ? decoded
+            : (decoded is Map && decoded['content'] is List)
+                ? decoded['content'] as List
+                : const [];
+        setState(() {
+          _clientes = lista
+              .whereType<Map>()
+              .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+              .toList();
+        });
+      }
+    } catch (_) {
+      // Lista de clientes é auxiliar — falha ao carregar não bloqueia a tela.
+    } finally {
+      if (mounted) setState(() => _loadingClientes = false);
+    }
+  }
+
+  /// Carrega a config fiscal aplicando a regra de precedência Cliente > Empresa.
+  /// Primeiro tenta o cache local (Hive); se não houver cache, busca no backend
+  /// e grava no cache para a próxima abertura da tela.
+  Future<void> _carregarConfig({bool ignorarCache = false}) async {
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) return;
 
     setState(() => _carregando = true);
     try {
-      final config = await _service.buscarConfigFiscal(empresaId);
+      if (!ignorarCache) {
+        final cacheado = await _cache.obterCache(
+          empresaId: empresaId,
+          parceiroId: _clienteId,
+        );
+        if (cacheado != null) {
+          if (!mounted) return;
+          setState(() {
+            _configId = cacheado.configId;
+            _uf = cacheado.uf;
+            _ambiente = cacheado.ambiente;
+            _idCsc = cacheado.idCsc;
+            _csc = cacheado.csc;
+            _serie = cacheado.serieNfce;
+            _escopoConfig = cacheado.escopo;
+            _camposTravadosPeloCache = true;
+          });
+          return;
+        }
+      }
+
+      final config = await _service.buscarConfigFiscal(
+        empresaId,
+        parceiroId: _clienteId,
+      );
       if (!mounted) return;
+      final escopoResolvido = config['escopo']?.toString() ?? 'EMPRESA';
       final configuracoes = (config['configuracoes'] is List)
           ? (config['configuracoes'] as List)
               .whereType<Map>()
@@ -87,12 +194,122 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         _serie = selecionada['serieNfce']?.toString() ??
             selecionada['serie']?.toString() ??
             _serie;
+        _escopoConfig = escopoResolvido;
+        _camposTravadosPeloCache = false;
       });
+
+      if (_configId != null && _csc.isNotEmpty) {
+        await _cache.salvarCache(NfceConfigFiscalCacheModel(
+          configId: _configId!,
+          empresaId: empresaId,
+          parceiroId: _clienteId,
+          escopo: escopoResolvido,
+          uf: _uf,
+          ambiente: _ambiente,
+          idCsc: _idCsc,
+          csc: _csc,
+          serieNfce: _serie,
+          cacheadoEm: DateTime.now(),
+        ));
+      }
     } catch (_) {
-      // Config ainda não existe — usa defaults.
+      // Config ainda não existe — usa defaults (fluxo de criação para o cliente).
+      if (mounted) {
+        setState(() {
+          _configId = null;
+          _escopoConfig = _clienteId != null ? 'CLIENTE' : 'EMPRESA';
+          _camposTravadosPeloCache = false;
+        });
+      }
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
+  }
+
+  /// Destrava os campos preenchidos a partir do cache local e busca a versão
+  /// mais recente no backend antes de permitir edição.
+  Future<void> _alternarEdicao() async {
+    setState(() => _camposTravadosPeloCache = false);
+    await _carregarConfig(ignorarCache: true);
+  }
+
+  void _onClienteAlterado(String? novoClienteId) {
+    setState(() {
+      _clienteId = novoClienteId != null ? int.tryParse(novoClienteId) : null;
+      _configId = null;
+      _escopoConfig = _clienteId != null ? 'CLIENTE' : 'EMPRESA';
+      _idCsc = '';
+      _csc = '';
+      _serie = '001';
+      _camposTravadosPeloCache = false;
+    });
+    _carregarConfig();
+  }
+
+  List<Map<String, dynamic>> get _clientesComSelecionado {
+    final id = _clienteId;
+    if (id == null ||
+        _clientes
+            .any((cliente) => cliente['id']?.toString() == id.toString())) {
+      return _clientes;
+    }
+    return [
+      {'id': id, 'nome': 'Cliente ID $id'},
+      ..._clientes,
+    ];
+  }
+
+  Widget _buildClienteField() {
+    if (_clienteTravadoPeloLogin) {
+      return TextFormField(
+        key: ValueKey('cliente_login_${_clienteId ?? ''}'),
+        initialValue: _clienteId?.toString() ?? '—',
+        readOnly: true,
+        decoration: const InputDecoration(
+          labelText: 'Cliente (ID)',
+          border: OutlineInputBorder(),
+          suffixIcon: Icon(Icons.lock_outline, size: 16),
+        ),
+      );
+    }
+
+    return SearchableDropdownField(
+      label: _loadingClientes ? 'Carregando clientes...' : 'Cliente',
+      value: _clienteId?.toString(),
+      items: _clientesComSelecionado,
+      valueField: 'id',
+      displayField: 'nome',
+      nullable: true,
+      nullLabel: 'Configuração da empresa',
+      hintText: 'Selecione para configuração por cliente',
+      onChanged: _onClienteAlterado,
+    );
+  }
+
+  Widget _buildEscopoBanner() {
+    final isCliente = _escopoConfig == 'CLIENTE';
+    final text = isCliente
+        ? 'Configuração específica do cliente selecionado.'
+        : _clienteId == null
+            ? 'Configuração geral da empresa.'
+            : 'Cliente sem configuração própria: usando configuração da empresa até salvar uma específica.';
+    return NfceNoticeBanner(
+      icon: isCliente ? Icons.person_pin_circle_outlined : Icons.business,
+      backgroundColor:
+          isCliente ? const Color(0xFFEAF4FF) : const Color(0xFFF4F6F8),
+      borderColor:
+          isCliente ? const Color(0xFFB6D4FE) : const Color(0xFFD0D7DE),
+      textColor: isCliente ? const Color(0xFF0B5CAD) : GridColors.secondary,
+      title: isCliente ? 'Escopo Cliente' : 'Escopo Empresa',
+      message: text,
+      trailing: _camposTravadosPeloCache
+          ? TextButton.icon(
+              onPressed: _alternarEdicao,
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Editar'),
+            )
+          : null,
+    );
   }
 
   Future<void> _selecionarCertificado() async {
@@ -112,7 +329,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   Future<void> _verificarSefaz() async {
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro(GridTexts.companyNotIdentified);
+      _mostrarErro('Empresa não identificada.');
       return;
     }
 
@@ -133,7 +350,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           _sefazHealth = NfceSefazHealthResult(
             disponivel: false,
             status: 'DOWN',
-            mensagem: GridTexts.sefazHealthCheckFailure(e),
+            mensagem: 'Falha ao consultar a saúde da SEFAZ: $e',
             uf: _uf,
             ambiente: _ambiente,
           );
@@ -150,7 +367,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
 
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro(GridTexts.companyNotIdentified);
+      _mostrarErro('Empresa não identificada.');
       return;
     }
 
@@ -161,42 +378,77 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           _mostrarErro(GridTexts.certificatePasswordRequiredBeforeSave);
           return;
         }
-        await _service.uploadCertificado(
-          fileBytes: _bytesCertificado!,
-          fileName: _nomeCertificado!,
-          senha: _senhaCertificado,
-          empresaId: empresaId,
-          uf: _uf,
-          ambiente: _ambiente,
-        );
       }
 
-      if (_configId == null) {
-        _mostrarErro(GridTexts.noActiveFiscalConfigFound);
-        return;
-      }
-
-      await _service.salvarConfigFiscal({
-        'id': _configId,
+      final payload = <String, dynamic>{
         'empresaId': empresaId,
+        if (_clienteId != null) 'parceiroId': _clienteId,
         'uf': _uf,
         'ambiente': _ambiente,
         'idCsc': _idCsc,
         'csc': _csc,
         'serieNfce': int.tryParse(_serie) ?? 1,
-      });
+      };
+
+      Map<String, dynamic>? salvo;
+      final criandoConfigDoCliente = _configId == null ||
+          (_clienteId != null && _escopoConfig != 'CLIENTE');
+      if (criandoConfigDoCliente) {
+        salvo = await _service.criarConfigFiscal(payload);
+        _configId = salvo['id'] is num
+            ? (salvo['id'] as num).toInt()
+            : int.tryParse(salvo['id']?.toString() ?? '');
+      } else {
+        await _service.salvarConfigFiscal({
+          'id': _configId,
+          ...payload,
+        });
+      }
+
+      final escopoSalvo = (salvo?['escopo']?.toString() ??
+              (_clienteId != null ? 'CLIENTE' : 'EMPRESA'))
+          .toUpperCase();
+      if (_configId != null) {
+        if (_bytesCertificado != null && _nomeCertificado != null) {
+          await _service.uploadCertificado(
+            fileBytes: _bytesCertificado!,
+            fileName: _nomeCertificado!,
+            senha: _senhaCertificado,
+            empresaId: empresaId,
+            parceiroId: _clienteId,
+            uf: _uf,
+            ambiente: _ambiente,
+          );
+        }
+        await _cache.salvarCache(NfceConfigFiscalCacheModel(
+          configId: _configId!,
+          empresaId: empresaId,
+          parceiroId: _clienteId,
+          escopo: escopoSalvo,
+          uf: _uf,
+          ambiente: _ambiente,
+          idCsc: _idCsc,
+          csc: _csc,
+          serieNfce: _serie,
+          cacheadoEm: DateTime.now(),
+        ));
+      }
 
       if (!mounted) return;
+      setState(() {
+        _escopoConfig = escopoSalvo;
+        _camposTravadosPeloCache = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(GridTexts.nfceFiscalConfigSavedSuccess),
+          content: Text('Configuração fiscal salva com sucesso.'),
           backgroundColor: Colors.green,
         ),
       );
     } on NfceException catch (e) {
       _mostrarErro(e.message);
     } catch (e) {
-      _mostrarErro(GridTexts.saveFiscalConfigError(e));
+      _mostrarErro('Erro ao salvar: $e');
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
@@ -205,13 +457,14 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   void _abrirInutilizacao() {
     final sec = SecurityMatrix.current();
     if (!sec.canManageFiscalEvents) {
-      _mostrarErro(GridTexts.nfceInutilizationAdminOnly);
+      _mostrarErro(
+          'A inutilização está disponível apenas para perfis FISCAL/ADMIN.');
       return;
     }
 
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro(GridTexts.companyNotIdentified);
+      _mostrarErro('Empresa não identificada.');
       return;
     }
 
@@ -237,15 +490,15 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     final isProducao = _ambiente == 'PRODUCAO';
     return NfceNoticeBanner(
       icon: isProducao ? Icons.verified_outlined : Icons.warning_amber_rounded,
-      backgroundColor: isProducao ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3CD),
-      borderColor: isProducao ? const Color(0xFFA5D6A7) : const Color(0xFFFFD54F),
+      backgroundColor:
+          isProducao ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3CD),
+      borderColor:
+          isProducao ? const Color(0xFFA5D6A7) : const Color(0xFFFFD54F),
       textColor: isProducao ? const Color(0xFF1B5E20) : const Color(0xFF7A4B00),
-      title: isProducao
-          ? GridTexts.sefazProductionTitle
-          : GridTexts.sefazHomologationTitle,
+      title: isProducao ? 'Produção NFC-e' : 'Homologação NFC-e',
       message: isProducao
-          ? GridTexts.sefazProductionNotice
-          : GridTexts.sefazHomologationNotice,
+          ? 'Ambiente de produção ativo. Revise UF, CSC, certificado e prazo de cancelamento antes de operar o PDV.'
+          : 'Ambiente de homologação ativo. Use este fluxo para testes, validações de inutilização e contingência.',
     );
   }
 
@@ -256,8 +509,9 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         backgroundColor: GridColors.selectedRow,
         borderColor: const Color(0xFF90CAF9),
         textColor: const Color(0xFF0D47A1),
-        title: GridTexts.checkingSefaz,
-        message: GridTexts.checkingSefazMessage(_uf, _ambiente),
+        title: 'Verificando SEFAZ',
+        message:
+            'Consultando a saúde da SEFAZ para UF $_uf no ambiente $_ambiente.',
         trailing: const SizedBox(
           width: 18,
           height: 18,
@@ -272,13 +526,14 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         backgroundColor: const Color(0xFFEAF4FF),
         borderColor: const Color(0xFFB6D4FE),
         textColor: const Color(0xFF0B5CAD),
-        title: GridTexts.sefazHealthTitle,
-        message: GridTexts.sefazHealthNotice,
+        title: 'Saúde da SEFAZ',
+        message:
+            'Valide certificado e conectividade do ambiente antes de emitir, cancelar ou regularizar vendas em contingência.',
         trailing: TextButton.icon(
           onPressed: _verificandoSefaz ? null : _verificarSefaz,
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF0B5CAD)),
           icon: const Icon(Icons.refresh),
-          label: const Text(GridTexts.verify),
+          label: const Text('Verificar'),
         ),
       );
     }
@@ -286,10 +541,11 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     final online = _sefazHealth!.disponivel;
     return NfceNoticeBanner(
       icon: online ? Icons.check_circle_outline : Icons.error_outline,
-      backgroundColor: online ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+      backgroundColor:
+          online ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
       borderColor: online ? const Color(0xFFA5D6A7) : const Color(0xFFEF9A9A),
       textColor: online ? const Color(0xFF1B5E20) : GridColors.error,
-      title: online ? GridTexts.sefazAvailable : GridTexts.sefazUnavailable,
+      title: online ? 'SEFAZ disponível' : 'SEFAZ indisponível',
       message: _sefazHealth!.mensagem,
       trailing: TextButton.icon(
         onPressed: _verificandoSefaz ? null : _verificarSefaz,
@@ -297,7 +553,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           foregroundColor: online ? const Color(0xFF1B5E20) : GridColors.error,
         ),
         icon: const Icon(Icons.refresh),
-        label: const Text(GridTexts.recheck),
+        label: const Text('Reverificar'),
       ),
     );
   }
@@ -311,7 +567,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              GridTexts.epicFiscalEvents,
+              'Eventos fiscais do épico',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -320,7 +576,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              GridTexts.epicFiscalEventsNotice,
+              'A inutilização já pode ser iniciada pelo app. Cancelamento fica disponível na NFC-e autorizada. Contingência local está pronta; o registro real em EPEC continua dependente do backend.',
               style: TextStyle(height: 1.35),
             ),
             const SizedBox(height: 16),
@@ -331,12 +587,12 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                 OutlinedButton.icon(
                   onPressed: _abrirInutilizacao,
                   icon: const Icon(Icons.block),
-                  label: const Text(GridTexts.openInutilization),
+                  label: const Text('Abrir inutilização'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _verificandoSefaz ? null : _verificarSefaz,
                   icon: const Icon(Icons.health_and_safety_outlined),
-                  label: const Text(GridTexts.validateSefazHealth),
+                  label: const Text('Validar saúde da SEFAZ'),
                 ),
               ],
             ),
@@ -356,7 +612,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(GridTexts.nfceFiscalConfigTitle),
+        title: const Text('Configuração Fiscal NFC-e'),
         backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -376,119 +632,143 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   const SizedBox(height: 12),
                   _buildEventosCard(),
                   const SizedBox(height: 16),
-                  const _SectionTitle(title: GridTexts.identification),
+                  const _SectionTitle(title: 'Identificação'),
                   const SizedBox(height: 12),
                   TextFormField(
                     initialValue: TenantContext.empresaId?.toString() ?? '—',
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: GridTexts.companyIdLabel,
+                      labelText: 'Empresa (ID)',
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.lock_outline, size: 16),
                     ),
                   ),
                   const SizedBox(height: 16),
+                  _buildClienteField(),
+                  const SizedBox(height: 12),
+                  _buildEscopoBanner(),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _uf,
                     decoration: const InputDecoration(
-                      labelText: GridTexts.uf,
+                      labelText: 'UF',
                       border: OutlineInputBorder(),
                     ),
                     items: _ufs
-                        .map((uf) => DropdownMenuItem(value: uf, child: Text(uf)))
+                        .map((uf) =>
+                            DropdownMenuItem(value: uf, child: Text(uf)))
                         .toList(),
-                    onChanged: (v) => setState(() => _uf = v ?? 'SP'),
+                    onChanged: _camposFiscaisEditaveis
+                        ? (v) => setState(() => _uf = v ?? 'SP')
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _ambiente,
                     decoration: const InputDecoration(
-                      labelText: GridTexts.environment,
+                      labelText: 'Ambiente',
                       border: OutlineInputBorder(),
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: 'HOMOLOGACAO',
-                        child: Text(GridTexts.environmentHomologation),
-                      ),
+                          value: 'HOMOLOGACAO', child: Text('Homologação')),
                       DropdownMenuItem(
-                        value: 'PRODUCAO',
-                        child: Text(GridTexts.environmentProduction),
-                      ),
+                          value: 'PRODUCAO', child: Text('Produção')),
                     ],
-                    onChanged: (v) => setState(() => _ambiente = v ?? 'HOMOLOGACAO'),
+                    onChanged: _camposFiscaisEditaveis
+                        ? (v) => setState(() => _ambiente = v ?? 'HOMOLOGACAO')
+                        : null,
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: GridTexts.cscSecurityCodeSection),
+                  const _SectionTitle(
+                      title: 'CSC (Código de Segurança do Contribuinte)'),
                   const SizedBox(height: 12),
                   TextFormField(
+                    key: ValueKey('id_csc_$_idCsc'),
                     initialValue: _idCsc,
+                    readOnly: !_camposFiscaisEditaveis,
                     decoration: InputDecoration(
-                      labelText: GridTexts.cscIdLabel,
+                      labelText: 'ID CSC',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_mostrarCsc ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _mostrarCsc = !_mostrarCsc),
+                        icon: Icon(_mostrarCsc
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: _camposFiscaisEditaveis
+                            ? () => setState(() => _mostrarCsc = !_mostrarCsc)
+                            : null,
                       ),
                     ),
                     obscureText: !_mostrarCsc,
                     validator: (v) =>
-                        (v == null || v.isEmpty) ? GridTexts.informIdCsc : null,
+                        (v == null || v.isEmpty) ? 'Informe o ID CSC.' : null,
                     onSaved: (v) => _idCsc = v?.trim() ?? '',
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
+                    key: ValueKey('csc_$_csc'),
                     initialValue: _csc,
+                    readOnly: !_camposFiscaisEditaveis,
                     decoration: const InputDecoration(
-                      labelText: GridTexts.cscLabel,
+                      labelText: 'CSC',
                       border: OutlineInputBorder(),
                     ),
                     obscureText: !_mostrarCsc,
                     validator: (v) =>
-                        (v == null || v.isEmpty) ? GridTexts.informCsc : null,
+                        (v == null || v.isEmpty) ? 'Informe o CSC.' : null,
                     onSaved: (v) => _csc = v?.trim() ?? '',
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: GridTexts.digitalCertificateA1),
+                  const _SectionTitle(title: 'Certificado Digital A1'),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.upload_file),
                     label: Text(
-                      _nomeCertificado ?? GridTexts.selectCertificateFile,
-                    ),
-                    onPressed: _selecionarCertificado,
+                        _nomeCertificado ?? 'Selecionar arquivo .pfx / .p12'),
+                    onPressed:
+                        _camposFiscaisEditaveis ? _selecionarCertificado : null,
                   ),
                   if (_nomeCertificado != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      GridTexts.selectedFile(_nomeCertificado!),
-                      style: const TextStyle(color: GridColors.secondary, fontSize: 12),
+                      'Arquivo selecionado: $_nomeCertificado',
+                      style: const TextStyle(
+                          color: GridColors.secondary, fontSize: 12),
                     ),
                   ],
                   const SizedBox(height: 16),
                   TextFormField(
+                    readOnly: !_camposFiscaisEditaveis,
                     obscureText: !_mostrarSenha,
                     decoration: InputDecoration(
-                      labelText: GridTexts.certificatePasswordLabel,
-                      hintText: GridTexts.certificatePasswordNotStoredPlain,
+                      labelText: 'Senha do certificado',
+                      hintText: 'Nunca é armazenada em texto puro',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_mostrarSenha ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _mostrarSenha = !_mostrarSenha),
+                        icon: Icon(_mostrarSenha
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: _camposFiscaisEditaveis
+                            ? () =>
+                                setState(() => _mostrarSenha = !_mostrarSenha)
+                            : null,
                       ),
                     ),
                     onChanged: (v) => _senhaCertificado = v,
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: GridTexts.nfceSectionTitle),
+                  const _SectionTitle(title: 'NFC-e'),
                   const SizedBox(height: 12),
                   TextFormField(
+                    key: ValueKey('serie_$_serie'),
                     initialValue: _serie,
+                    readOnly: !_camposFiscaisEditaveis,
                     decoration: const InputDecoration(
-                      labelText: GridTexts.nfceSeriesLabel,
+                      labelText: 'Série NFC-e',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? GridTexts.informSeries : null,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Informe a série.' : null,
                     onSaved: (v) => _serie = v?.trim() ?? '001',
                   ),
                   const SizedBox(height: 32),
@@ -501,10 +781,11 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.network_check),
-                        label: const Text(GridTexts.verifySefaz),
+                        label: const Text('Verificar SEFAZ'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueGrey,
                           foregroundColor: Colors.white,
@@ -514,7 +795,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                       OutlinedButton.icon(
                         onPressed: _abrirInutilizacao,
                         icon: const Icon(Icons.block),
-                        label: const Text(GridTexts.inutilization),
+                        label: const Text('Inutilização'),
                       ),
                     ],
                   ),
@@ -526,10 +807,11 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.save),
-                      label: const Text(GridTexts.saveConfiguration),
+                      label: const Text('Salvar configuração'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: GridColors.secondary,
                         foregroundColor: Colors.white,
