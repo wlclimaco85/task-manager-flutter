@@ -12,7 +12,6 @@ import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
-import '../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
 
@@ -908,8 +907,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
                   child: Column(children: [
                     // Chave: sempre disabled (gerada na transmissão)
                     _inpDisabled('Chave', _chaveCtrl),
-                    // QR code de consulta pública SEFAZ + copiar chave (card H2)
-                    NfeChaveQrCard(chave: _chaveCtrl.text),
                     // Número: disabled (preenchido automaticamente pela série)
                     _inpDisabled('Número', _numeroCtrl),
                     // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA

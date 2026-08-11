@@ -12,16 +12,16 @@ import '../../utils/grid_colors.dart';
 /// - Contrast ≥4.5:1 for borders and labels
 /// - Keyboard-only navigation support (Tab/Shift+Tab)
 class AccessibleTextField extends StatefulWidget {
-  final String label; // Accessible label (always visible)
-  final String? hint; // Hint text (supplementary, not a label)
-  final String? errorText; // Error message (announced immediately)
+  final String label;  // Accessible label (always visible)
+  final String? hint;  // Hint text (supplementary, not a label)
+  final String? errorText;  // Error message (announced immediately)
   final TextEditingController controller;
   final Function(String)? onChanged;
   final TextInputType keyboardType;
   final int? maxLines;
   final int? minLines;
   final bool obscureText;
-  final String? Function(String?)? validator; // Optional validation function
+  final String? Function(String?)? validator;  // Optional validation function
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
 
@@ -72,7 +72,11 @@ class _AccessibleTextFieldState extends State<AccessibleTextField> {
   Widget build(BuildContext context) {
     final borderColor = widget.errorText != null
         ? GridColors.error
-        : (_isFocused ? GridColors.primary : GridColors.inputBorder);
+        : (
+            _isFocused
+                ? GridColors.primary
+                : GridColors.inputBorder
+        );
     final borderWidth = _isFocused || widget.errorText != null ? 2.0 : 1.0;
 
     return Semantics(
@@ -127,10 +131,9 @@ class _AccessibleTextFieldState extends State<AccessibleTextField> {
                   width: 2,
                 ),
               ),
-              errorText: null, // We handle error display separately
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              isDense: false, // Allows minimum 48 dp height
+              errorText: null,  // We handle error display separately
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              isDense: false,  // Allows minimum 48 dp height
             ),
             onChanged: widget.onChanged,
             style: TextStyle(

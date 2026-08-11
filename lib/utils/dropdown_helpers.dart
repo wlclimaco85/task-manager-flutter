@@ -120,6 +120,18 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> horariosFunc() =>
       load('${ApiLinks.baseUrl}/api/horarioFunc', displayField: 'nome');
 
+  /// Carrega roles filtradas pela empresa fornecida.
+  /// Se [empresaId] for nulo ou vazio, retorna todas as roles disponíveis.
+  static Future<List<Map<String, dynamic>>> rolesPorEmpresa(String? empresaId) {
+    if (empresaId == null || empresaId.isEmpty) {
+      return load('${ApiLinks.baseUrl}/api/role/disponiveis',
+          displayField: 'description');
+    }
+    return load(
+        '${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId',
+        displayField: 'description');
+  }
+
   // ---- FieldConfigWindows prontos ----
 
   /// Campo empresa: pré-selecionado e disabled quando usuário tem empresa em cache.
@@ -352,5 +364,24 @@ class DropdownHelpers {
         isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: horariosFunc,
+      );
+
+  /// Campo Roles com cascade automático por empresa.
+  /// Quando o usuário muda a empresa selecionada, o campo de Roles recarrega
+  /// mostrando apenas as roles compatíveis com aquela empresa.
+  static FieldConfigWindows rolesField({bool required = false}) =>
+      FieldConfigWindows(
+        label: 'Roles',
+        fieldName: 'roles',
+        fieldType: FieldType.multiselect,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'description',
+        enabled: true,
+        isInForm: true,
+        isFilterable: true,
+        isRequired: required,
+        // Cascade: filtra roles pela empresa selecionada
+        dependsOnField: 'empresa',
+        dropdownFutureBuilderWithParam: rolesPorEmpresa,
       );
 }

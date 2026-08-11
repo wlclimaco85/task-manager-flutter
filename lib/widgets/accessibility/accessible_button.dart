@@ -11,15 +11,15 @@ import '../../utils/grid_colors.dart';
 /// - Keyboard activation (Enter, Space)
 /// - Disabled state with visual indication
 class AccessibleButton extends StatefulWidget {
-  final String label; // User-facing label + semantic label for SR
-  final String? hint; // Optional additional context for SR (longer explanation)
+  final String label;  // User-facing label + semantic label for SR
+  final String? hint;  // Optional additional context for SR (longer explanation)
   final VoidCallback onPressed;
   final bool isEnabled;
   final Color backgroundColor;
   final Color? textColor;
   final double? width;
   final double? height;
-  final bool isDestructive; // If true, announces as "destructive action"
+  final bool isDestructive;  // If true, announces as "destructive action"
 
   const AccessibleButton({
     super.key,
@@ -61,8 +61,9 @@ class _AccessibleButtonState extends State<AccessibleButton> {
 
   @override
   Widget build(BuildContext context) {
-    final semanticLabel =
-        widget.isDestructive ? 'Ação perigosa: ${widget.label}' : widget.label;
+    final semanticLabel = widget.isDestructive
+        ? 'Ação perigosa: ${widget.label}'
+        : widget.label;
 
     return Semantics(
       button: true,
@@ -91,11 +92,8 @@ class _AccessibleButtonState extends State<AccessibleButton> {
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.backgroundColor,
               disabledBackgroundColor: widget.backgroundColor.withOpacity(0.5),
-              padding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14), // CR-03: +2dp vertical safety margin
-              minimumSize:
-                  Size(48, 48), // Explicit minimum to prevent height drop
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),  // CR-03: +2dp vertical safety margin
+              minimumSize: Size(48, 48),  // Explicit minimum to prevent height drop
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),

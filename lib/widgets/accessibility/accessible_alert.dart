@@ -111,14 +111,17 @@ void showAccessibleAlert({
                   }
                 : null,
             child: Semantics(
-              label:
-                  isDestructive ? 'Ação perigosa: $actionLabel' : actionLabel,
+              label: isDestructive
+                  ? 'Ação perigosa: $actionLabel'
+                  : actionLabel,
               enabled: true,
               button: true,
               child: Text(
                 actionLabel,
                 style: TextStyle(
-                  color: isDestructive ? GridColors.error : GridColors.primary,
+                  color: isDestructive
+                      ? GridColors.error
+                      : GridColors.primary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
