@@ -241,6 +241,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$currentPid = $pid; $par
 timeout /t 2 /nobreak >nul
 exit /b 0
 
+:KILL_BACKEND_FOR_CLEAN
+echo [PRE-CLEAN] Liberando backend antigo para destravar target\spring.log...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$port = [int]$env:BACKEND_PORT; $backendDir = $env:BACKEND_DIR; $portPids = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique); $javaPids = @(Get-CimInstance Win32_Process | Where-Object { ($_.Name -in @('java.exe','javaw.exe')) -and ($_.CommandLine -like ('*' + $backendDir + '*') -or $_.CommandLine -like '*AppAcademia*.jar*' -or $_.CommandLine -like '*spring-boot:run*') } | Select-Object -ExpandProperty ProcessId); @($portPids + $javaPids) | Where-Object { $_ } | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $_ + ' encerrado') }"
+timeout /t 2 /nobreak >nul
+exit /b 0
+
 :START_APP
 call :CHECK_PATHS
 if errorlevel 1 (
@@ -267,6 +273,8 @@ if errorlevel 1 (
 )
 cd /d "%BACKEND_DIR%"
 echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
+call :KILL_BACKEND_FOR_CLEAN
+del /f /q "target\spring.log" 2>nul
 rmdir /s /q "target\generated-sources" 2>nul
 rmdir /s /q "target\classes" 2>nul
 call mvnw.cmd clean package -DskipTests
