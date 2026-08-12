@@ -12,6 +12,7 @@ import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../widgets/finance/gerar_contas_pagar_dialog.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
 
@@ -459,32 +460,22 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Future<void> _gerarContasPagar() async {
-    final confirmed = await showDialog<bool>(
+    final resultado = await showDialog<GerarContasPagarResultado>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Gerar Contas a Pagar',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text(
-            'Confirma a geração de Contas a Pagar para a NF-e #$_nfeId?\n'
-            'Serão criadas ${_duplicatas.length} conta(s) baseadas nas duplicatas.',
-            style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text(GridTexts.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: _green, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Gerar'),
-          ),
-        ],
+      builder: (_) => GerarContasPagarDialog(
+        nfeId: int.tryParse(_nfeId) ?? 0,
+        quantidadeDuplicatas: _duplicatas.length,
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (resultado == null || !mounted) return;
     try {
       final r = await TenantContext.post(
-          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {});
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {
+        if (resultado.categoriaFinanceiraId != null)
+          'categoriaFinanceiraId': resultado.categoriaFinanceiraId,
+        if (resultado.contaBancariaId != null)
+          'contaBancariaId': resultado.contaBancariaId,
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(r.statusCode == 200
