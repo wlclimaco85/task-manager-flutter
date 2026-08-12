@@ -12,7 +12,9 @@ import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/nfe_emission_payload.dart';
+import '../../../utils/nfe_action_feedback.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../widgets/finance/gerar_contas_pagar_dialog.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
@@ -104,6 +106,21 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _loadContas();
       _loadPagamentos();
     }
+  }
+
+  @override
+  void dispose() {
+    _novoPagVpag.dispose();
+    _fatNFat.dispose();
+    _fatVOrig.dispose();
+    _fatVLiq.dispose();
+    _dupNDup.dispose();
+    _dupDVenc.dispose();
+    _dupVDup.dispose();
+    _chaveCtrl.dispose();
+    _numeroCtrl.dispose();
+    _serieCtrl.dispose();
+    super.dispose();
   }
 
   void _initCabecalho() {
@@ -519,10 +536,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 _secao(
                   titulo: 'Itens e Importação de XML',
                   trailing: _isEntrada ? _btnImportarXml() : null,
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    SizedBox(height: 480, child: _itensPanel()),
-                    _impostosTab(),
-                  ]),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 480, child: _itensPanel()),
+                        _impostosTab(),
+                      ]),
                 ),
                 const SizedBox(height: 16),
                 _secao(
@@ -816,21 +835,27 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
-    if (motivoCtrl.text.trim().length < 15) {
+    if (confirmed != true || !mounted) {
+      motivoCtrl.dispose();
+      return;
+    }
+    final motivo = motivoCtrl.text.trim();
+    motivoCtrl.dispose();
+    if (motivo.length < 15) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Motivo deve ter pelo menos 15 caracteres'),
           backgroundColor: _red));
       return;
     }
     try {
-      final r = await TenantContext.post(ApiLinks.cancelarNfe(_nfeId),
-          {'justificativa': motivoCtrl.text.trim()});
+      final r = await TenantContext.post(
+          ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivo});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(r.statusCode == 200
               ? 'NF-e cancelada!'
-              : 'Erro ${r.statusCode}. Tente novamente.'),
+              : NfeActionFeedback.cancelamentoErrorMessage(
+                  r.statusCode, r.body)),
           backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
       if (mounted)
@@ -989,7 +1014,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
           content: Text(
               r.statusCode == 200 ? 'NF-e recusada!' : 'Erro ${r.statusCode}'),
           backgroundColor: r.statusCode == 200 ? _green : _red));
-      if (r.statusCode == 200) setState(() => _statusVal = 'CANCELADA');
+      if (r.statusCode == 200) {
+        setState(() => _statusVal = NfeActionFeedback.recusaStatus);
+      }
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1016,6 +1043,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
     return _grid([
       // Chave: sempre disabled (gerada na transmissão)
       _inpDisabled('Chave', _chaveCtrl),
+      // QR code de consulta publica SEFAZ + copiar chave (card H2)
+      NfeChaveQrCard(chave: _chaveCtrl.text),
       // Número: disabled (preenchido automaticamente pela série)
       _inpDisabled('Número', _numeroCtrl),
       // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
@@ -1048,8 +1077,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
       _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
           (v) => setState(() => _destinatarioId = v)),
-      _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento,
-          'descricao', (v) => setState(() => _formaPagId = v)),
+      _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
+          (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
           (v) => setState(() => _finalidadeId = v)),
     ]);
@@ -1343,8 +1372,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 _togBtn(Icons.view_list, _itensGrid,
                     () => setState(() => _itensGrid = true), 'Ver como grade'),
                 const SizedBox(width: 4),
-                _togBtn(Icons.edit_note, !_itensGrid,
-                    () => setState(() => _itensGrid = false), 'Ver como formulário'),
+                _togBtn(
+                    Icons.edit_note,
+                    !_itensGrid,
+                    () => setState(() => _itensGrid = false),
+                    'Ver como formulário'),
                 const SizedBox(width: 8),
                 // Botão Novo abre o form customizado
                 SizedBox(
@@ -1392,7 +1424,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
                             if (_selItem < _itens.length - 1) _selItem++;
                           }),
                       'Próximo item'),
-                  _nb(Icons.last_page,
+                  _nb(
+                      Icons.last_page,
                       () => setState(() => _selItem = _itens.length - 1),
                       'Último item'),
                 ],
@@ -1793,7 +1826,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
           onTap: cb,
           child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 1),
-              child: Icon(ic, size: 18, color: _dark, semanticLabel: tooltip))));
+              child:
+                  Icon(ic, size: 18, color: _dark, semanticLabel: tooltip))));
 
   Widget _totaisTab() {
     final vt = widget.item['valorTotal']?.toString() ?? '0,00';
@@ -1858,7 +1892,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
                         if (_selFin < _contas.length - 1) _selFin++;
                       }),
                   'Próxima conta'),
-              _nb(Icons.last_page,
+              _nb(
+                  Icons.last_page,
                   () => setState(() => _selFin = _contas.length - 1),
                   'Última conta'),
             ],
@@ -1898,14 +1933,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Widget _fInp(String label, Map<String, dynamic> conta, String key) {
-    final ctrl = TextEditingController(text: conta[key]?.toString() ?? '');
-    ctrl.addListener(() {
-      conta[key] = ctrl.text;
-    });
     return Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: TextFormField(
-            controller: ctrl,
+            initialValue: conta[key]?.toString() ?? '',
+            onChanged: (value) => conta[key] = value,
             style: const TextStyle(fontSize: 12, color: _dark),
             decoration: InputDecoration(
                 labelText: label,
