@@ -11,6 +11,7 @@ import '../../../models/nfe_fatura_model.dart';
 import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/nfe_emission_payload.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
@@ -33,6 +34,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   int _tab = 0;
   bool _itensGrid = true;
   bool _finGrid = true;
+  bool _emitindo = false;
   int _selItem = 0;
   int _selFin = 0;
 
@@ -560,7 +562,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
   // ── AppBar Actions ────────────────────────────────────────────────────────
 
   List<Widget> _actionsSaida() => [
-        _appBarBtn(Icons.send, 'Emitir', () => _emitir()),
+        _appBarBtn(Icons.send, _emitindo ? 'Autorizando...' : 'Emitir',
+            _emitindo ? null : () => _emitir()),
         _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
         _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
         _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
@@ -574,7 +577,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         const SizedBox(width: 8),
       ];
 
-  Widget _appBarBtn(IconData icon, String label, VoidCallback onTap) =>
+  Widget _appBarBtn(IconData icon, String label, VoidCallback? onTap) =>
       TextButton.icon(
         onPressed: onTap,
         icon: Icon(icon, size: 16, color: Colors.white),
@@ -588,6 +591,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   // NF08: usa POST /api/nfe/{id}/emitir (geração de XML real)
   Future<void> _emitir() async {
+    if (_emitindo) return; // evita duplo-clique disparar 2 confirmacoes/POSTs
     if (_isNovo) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Salve a NF-e antes de emitir'),
@@ -623,9 +627,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final payload = _payloadEmissaoOrSnack();
+    if (payload == null) return;
+    setState(() => _emitindo = true);
     try {
       // NF08: novo endpoint que gera XML real e assina digitalmente
-      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), {});
+      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), payload);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
@@ -633,14 +640,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('NF-e emitida com sucesso! XML gerado e assinado.'),
             backgroundColor: _green));
       } else {
-        String msg = 'Erro ${r.statusCode}';
-        try {
-          final body = jsonDecode(r.body);
-          msg = body['message']?.toString() ??
-              body['mensagem']?.toString() ??
-              body['error']?.toString() ??
-              msg;
-        } catch (_) {}
+        final msg = NfeEmissionPayload.readableHttpError(r.statusCode, r.body);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
       }
@@ -649,7 +649,62 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ao processar. Tente novamente.'),
             backgroundColor: _red));
+    } finally {
+      if (mounted) setState(() => _emitindo = false);
     }
+  }
+
+  String _finalidadeEmissao() {
+    final selected = _finalidades.firstWhere(
+      (e) => e['id']?.toString() == _finalidadeId,
+      orElse: () => {},
+    );
+    final value = selected['codigo'] ??
+        selected['descricao'] ??
+        selected['nome'] ??
+        widget.item['finalidade'] ??
+        (widget.item['nfeFinalidade'] is Map
+            ? widget.item['nfeFinalidade']['codigo'] ??
+                widget.item['nfeFinalidade']['descricao'] ??
+                widget.item['nfeFinalidade']['nome']
+            : null) ??
+        'NORMAL';
+    return value.toString();
+  }
+
+  Map<String, dynamic>? _payloadEmissaoOrSnack() {
+    final finalidade = _finalidadeEmissao();
+    final errors = NfeEmissionPayload.validate(
+      empresaId: _empresaId,
+      destinatarioId: _destinatarioId,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text('Campos obrigatórios para emitir: ${errors.join('; ')}'),
+          backgroundColor: _red));
+      return null;
+    }
+    return NfeEmissionPayload.build(
+      empresaId: _empresaId!,
+      destinatarioId: _destinatarioId!,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+  }
+
+  bool _permitirDownloadAutorizado(String tipo) {
+    if (NfeEmissionPayload.isAuthorized(_statusVal)) return true;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('$tipo disponível somente após a NF-e autorizada.'),
+        backgroundColor: _red));
+    return false;
   }
 
   Future<void> _cancelar() async {
@@ -715,6 +770,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Future<void> _imprimirDanfe() async {
+    if (!_permitirDownloadAutorizado('DANFE')) return;
     try {
       final r = await TenantContext.get(ApiLinks.danfeNfe(_nfeId));
       if (!mounted) return;
@@ -739,6 +795,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Future<void> _baixarXml() async {
+    if (!_permitirDownloadAutorizado('XML')) return;
     try {
       final r = await TenantContext.get(ApiLinks.xmlNfe(_nfeId));
       if (!mounted) return;

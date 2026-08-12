@@ -213,6 +213,9 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
     final erros = <String>[];
     if (_topSelected == null) erros.add('Tipo de Operação');
     if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
+    if (_destinatarioId == null || _destinatarioId!.isEmpty) {
+      erros.add('Destinatário');
+    }
     if (_serieVal == null || _serieVal!.isEmpty) erros.add('Série');
     if (_items.isEmpty) erros.add('Itens (adicione ao menos 1)');
     if (erros.isNotEmpty) {
@@ -456,6 +459,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                     displayField: 'nome',
                     onChanged: (v) => setState(() => _destinatarioId = v),
                     nullable: true,
+                    isRequired: true,
                     hintText: 'Selecione o destinatário...',
                   ),
                 ),

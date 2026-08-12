@@ -7,9 +7,9 @@ import '../../../../utils/grid_colors.dart';
 import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
 import '../../../../utils/tenant_context.dart';
+import '../../../../utils/nfe_emission_payload.dart';
 import '../../../../widgets/searchable_dropdown.dart';
 import '../../../../widgets/nfe/nfe_chave_qr_card.dart';
-import '../../../../utils/grid_texts.dart';
 import '../../../../widgets/accessibility/index.dart';
 
 const _red = GridColors.primary;
@@ -27,14 +27,15 @@ class MobileNfeSankhyaDetailScreen extends StatefulWidget {
 
 class _State extends State<MobileNfeSankhyaDetailScreen> {
   int _tab = 0;
-  bool _isLoading = false;
+  final bool _isLoading = false;
+  bool _emitindo = false;
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
   List<Map<String, dynamic>> _parceiros = [];
-  List<Map<String, dynamic>> _destinatarios = [];
+  final List<Map<String, dynamic>> _destinatarios = [];
   List<Map<String, dynamic>> _series = [];
   List<Map<String, dynamic>> _unidades = [];
   List<Map<String, dynamic>> _tiposOperacao = [];
@@ -206,7 +207,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   List<Widget> _actionsSaida() => [
-    _appBarBtn(Icons.send, 'Emitir', () => _emitir()),
+    _appBarBtn(Icons.send, _emitindo ? 'Autorizando...' : 'Emitir',
+        _emitindo ? null : () => _emitir()),
     _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
     _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
     _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
@@ -218,7 +220,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
   ];
 
-  Widget _appBarBtn(IconData icon, String label, VoidCallback onTap) =>
+  Widget _appBarBtn(IconData icon, String label, VoidCallback? onTap) =>
       Tooltip(
         message: label,
         child: IconButton(
@@ -351,6 +353,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   // ── Ações ─────────────────────────────────────────────────────────────
 
   Future<void> _emitir() async {
+    if (_emitindo) return; // evita duplo-clique disparar 2 confirmacoes/POSTs
     if (_isNovo) {
       showAccessibleSnackBar(
         context: context,
@@ -388,8 +391,11 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final payload = _payloadEmissaoOrSnack();
+    if (payload == null) return;
+    setState(() => _emitindo = true);
     try {
-      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), {});
+      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), payload);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
@@ -400,11 +406,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           type: AccessibleSnackBarType.success,
         );
       } else {
-        String msg = 'Erro ${r.statusCode}';
-        try {
-          final body = jsonDecode(r.body);
-          msg = body['message']?.toString() ?? body['mensagem']?.toString() ?? msg;
-        } catch (_) {}
+        final msg = NfeEmissionPayload.readableHttpError(r.statusCode, r.body);
         showAccessibleSnackBar(
           context: context,
           message: msg,
@@ -418,7 +420,65 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           message: 'Erro ao processar. Tente novamente.',
           type: AccessibleSnackBarType.error,
         );
+    } finally {
+      if (mounted) setState(() => _emitindo = false);
     }
+  }
+
+  String _finalidadeEmissao() {
+    final selected = _finalidades.firstWhere(
+      (e) => e['id']?.toString() == _finalidadeId,
+      orElse: () => {},
+    );
+    final value = selected['codigo'] ??
+        selected['descricao'] ??
+        selected['nome'] ??
+        widget.item['finalidade'] ??
+        (widget.item['nfeFinalidade'] is Map
+            ? widget.item['nfeFinalidade']['codigo'] ??
+                widget.item['nfeFinalidade']['descricao'] ??
+                widget.item['nfeFinalidade']['nome']
+            : null) ??
+        'NORMAL';
+    return value.toString();
+  }
+
+  Map<String, dynamic>? _payloadEmissaoOrSnack() {
+    final finalidade = _finalidadeEmissao();
+    final errors = NfeEmissionPayload.validate(
+      empresaId: _empresaId,
+      destinatarioId: _destinatarioId,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+    if (errors.isNotEmpty) {
+      showAccessibleSnackBar(
+        context: context,
+        message: 'Campos obrigatórios para emitir: ${errors.join('; ')}',
+        type: AccessibleSnackBarType.error,
+      );
+      return null;
+    }
+    return NfeEmissionPayload.build(
+      empresaId: _empresaId!,
+      destinatarioId: _destinatarioId!,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+  }
+
+  bool _permitirDownloadAutorizado(String tipo) {
+    if (NfeEmissionPayload.isAuthorized(_statusVal)) return true;
+    showAccessibleSnackBar(
+      context: context,
+      message: '$tipo disponível somente após a NF-e autorizada.',
+      type: AccessibleSnackBarType.warning,
+    );
+    return false;
   }
 
   Future<void> _cancelar() async {
@@ -498,6 +558,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   Future<void> _imprimirDanfe() async {
+    if (!_permitirDownloadAutorizado('DANFE')) return;
     try {
       final r = await TenantContext.get(ApiLinks.danfeNfe(_nfeId));
       if (!mounted) return;
@@ -530,6 +591,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   Future<void> _baixarXml() async {
+    if (!_permitirDownloadAutorizado('XML')) return;
     try {
       final r = await TenantContext.get(ApiLinks.xmlNfe(_nfeId));
       if (!mounted) return;
