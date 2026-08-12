@@ -22,7 +22,8 @@ const _green = GridColors.secondary;
 const _bord = Color(0xFFDDDDDD);
 const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
-const _bg = Color(0xFFF5F5F5);
+
+const double _kCampoMinWidth = 260;
 
 class NfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -32,16 +33,11 @@ class NfeSankhyaDetailScreen extends StatefulWidget {
 }
 
 class _State extends State<NfeSankhyaDetailScreen> {
-  int _tab = 0;
   bool _itensGrid = true;
   bool _finGrid = true;
   bool _emitindo = false;
   int _selItem = 0;
   int _selFin = 0;
-
-  // Divisórias redimensionáveis
-  double _cabWidth = 320;
-  double _rodapeHeight = 260;
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
@@ -495,7 +491,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: GridColors.pageBackground,
       appBar: AppBar(
           backgroundColor: _red,
           foregroundColor: Colors.white,
@@ -503,53 +499,114 @@ class _State extends State<NfeSankhyaDetailScreen> {
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           actions: _isEntrada ? _actionsEntrada() : _actionsSaida()),
-      body: LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth < 768) {
-          return SingleChildScrollView(
-              child: Column(children: [
-            SizedBox(height: 400, child: _cabecalho()),
-            const Divider(height: 1),
-            SizedBox(height: 400, child: _itensPanel()),
-            const Divider(height: 1),
-            SizedBox(height: 300, child: _rodape()),
-          ]));
-        }
-        return Column(children: [
-          Expanded(
-              child:
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: _cabWidth, child: _cabecalho()),
-            GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(
-                  () => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
-              child: MouseRegion(
-                  cursor: SystemMouseCursors.resizeColumn,
-                  child: Container(
-                      width: 6,
-                      color: _bord,
-                      child: const Center(
-                          child: Icon(Icons.drag_indicator,
-                              size: 14, color: _grey)))),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _secao(
+                  titulo: 'Dados da Nota',
+                  trailing: _btnSalvarCabecalho(),
+                  child: _camposDadosDaNota(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Empresa e Fornecedor',
+                  child: _camposEmpresaFornecedor(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Itens e Importação de XML',
+                  trailing: _isEntrada ? _btnImportarXml() : null,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SizedBox(height: 480, child: _itensPanel()),
+                    _impostosTab(),
+                  ]),
+                ),
+                const SizedBox(height: 16),
+                _secao(titulo: 'Pagamento', child: _pagamentosTab()),
+                const SizedBox(height: 16),
+                _secao(titulo: 'Totais', child: _totaisTab()),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: _isEntrada ? 'Contas a Pagar' : 'Contas a Receber',
+                  child: SizedBox(height: 400, child: _financeiroTab()),
+                ),
+              ],
             ),
-            Expanded(child: _itensPanel()),
-          ])),
-          GestureDetector(
-            onVerticalDragUpdate: (d) => setState(() =>
-                _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
-            child: MouseRegion(
-                cursor: SystemMouseCursors.resizeRow,
-                child: Container(
-                    height: 6,
-                    color: _bord,
-                    child: const Center(
-                        child:
-                            Icon(Icons.drag_handle, size: 14, color: _grey)))),
           ),
-          SizedBox(height: _rodapeHeight, child: _rodape()),
-        ]);
-      }),
+        ),
+      ),
     );
   }
+
+  Widget _secao({required String titulo, required Widget child, Widget? trailing}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: GridColors.card,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: GridColors.borderSubtle),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          color: _green,
+          child: LayoutBuilder(builder: (context, constraints) {
+            final tituloWidget = Text(titulo,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13));
+            if (trailing == null) return tituloWidget;
+            if (constraints.maxWidth < 640) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                tituloWidget,
+                const SizedBox(height: 8),
+                SingleChildScrollView(scrollDirection: Axis.horizontal, child: trailing),
+              ]);
+            }
+            return Row(children: [Expanded(child: tituloWidget), trailing]);
+          }),
+        ),
+        Padding(padding: const EdgeInsets.all(14), child: child),
+      ]),
+    );
+  }
+
+  Widget _grid(List<Widget> campos) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final double largura = constraints.maxWidth;
+      double colWidth;
+      if (largura < _kCampoMinWidth) {
+        colWidth = largura;
+      } else if ((largura - 24) / 3 >= _kCampoMinWidth) {
+        colWidth = (largura - 24) / 3;
+      } else if ((largura - 12) / 2 >= _kCampoMinWidth) {
+        colWidth = (largura - 12) / 2;
+      } else {
+        colWidth = largura;
+      }
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children:
+            campos.map((c) => SizedBox(width: colWidth, child: c)).toList(),
+      );
+    });
+  }
+
+  Widget _btnImportarXml() => SizedBox(
+      height: 26,
+      child: ElevatedButton.icon(
+          onPressed: () => _importarXml(),
+          icon: const Icon(Icons.upload_file, size: 12),
+          label: const Text('Importar XML', style: TextStyle(fontSize: 11)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _green,
+              padding: const EdgeInsets.symmetric(horizontal: 8))));
 
   // ── AppBar Actions ────────────────────────────────────────────────────────
 
@@ -920,76 +977,60 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   // ── CABEÇALHO com dropdowns ──
-  Widget _cabecalho() {
-    final hasSession = AuthUtility.userInfo?.login != null;
+  Widget _btnSalvarCabecalho() => SizedBox(
+      height: 26,
+      child: ElevatedButton.icon(
+          onPressed: _salvarCabecalho,
+          icon: const Icon(Icons.save, size: 12),
+          label: const Text('Salvar', style: TextStyle(fontSize: 11)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _green,
+              padding: const EdgeInsets.symmetric(horizontal: 8))));
 
-    return Container(
-        color: Colors.white,
-        child: Column(children: [
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              color: _green,
-              child: Row(children: [
-                const Expanded(
-                    child: Text('Cabeçalho',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12))),
-                SizedBox(
-                    height: 24,
-                    child: ElevatedButton.icon(
-                        onPressed: _salvarCabecalho,
-                        icon: const Icon(Icons.save, size: 12),
-                        label: const Text('Salvar',
-                            style: TextStyle(fontSize: 11)),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: _green,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8)))),
-              ])),
-          Expanded(
-              child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(children: [
-                    // Chave: sempre disabled (gerada na transmissão)
-                    _inpDisabled('Chave', _chaveCtrl),
-                    // Número: disabled (preenchido automaticamente pela série)
-                    _inpDisabled('Número', _numeroCtrl),
-                    // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
-                    _isEntrada
-                        ? _inp('Série', _serieCtrl)
-                        : _ddObjSerie('Série', _serieId, _series),
-                    // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
-                    _ddTipoOperacao(),
-                    // Status: disabled (PENDENTE no insert, muda só ao transmitir)
-                    _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-                    _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
-                        (v) => setState(() => _ambienteVal = v)),
-                    // Empresa: disabled, vem do localstore
-                    hasSession && _empresaNome != null
-                        ? _inpDisabledText('Empresa', _empresaNome!)
-                        : _ddObj('Empresa', _empresaId, _empresas, 'nome',
-                            (v) => setState(() => _empresaId = v)),
-                    // Parceiro: disabled, vem do localstore
-                    hasSession && _parceiroNome != null
-                        ? _inpDisabledText('Parceiro', _parceiroNome!)
-                        : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome',
-                            (v) => setState(() => _parceiroId = v)),
-                    // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
-                    _ddObjSearch(
-                        'Destinatário',
-                        _destinatarioId,
-                        _destinatarios,
-                        'nome',
-                        (v) => setState(() => _destinatarioId = v)),
-                    _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento,
-                        'descricao', (v) => setState(() => _formaPagId = v)),
-                    _ddObj('Finalidade', _finalidadeId, _finalidades,
-                        'descricao', (v) => setState(() => _finalidadeId = v)),
-                  ]))),
-        ]));
+  /// Card "Dados da Nota": identificação da NF-e. Tipo de Operação em
+  /// destaque porque controla CFOP/CST/Alíquota ICMS herdados pelos itens.
+  Widget _camposDadosDaNota() {
+    return _grid([
+      // Chave: sempre disabled (gerada na transmissão)
+      _inpDisabled('Chave', _chaveCtrl),
+      // Número: disabled (preenchido automaticamente pela série)
+      _inpDisabled('Número', _numeroCtrl),
+      // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
+      _isEntrada
+          ? _inp('Série', _serieCtrl)
+          : _ddObjSerie('Série', _serieId, _series),
+      // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
+      _ddTipoOperacao(),
+      // Status: disabled (PENDENTE no insert, muda só ao transmitir)
+      _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
+      _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+          (v) => setState(() => _ambienteVal = v)),
+    ]);
+  }
+
+  /// Card "Empresa e Fornecedor": partes envolvidas na nota.
+  Widget _camposEmpresaFornecedor() {
+    final hasSession = AuthUtility.userInfo?.login != null;
+    return _grid([
+      // Empresa: disabled, vem do localstore
+      hasSession && _empresaNome != null
+          ? _inpDisabledText('Empresa', _empresaNome!)
+          : _ddObj('Empresa', _empresaId, _empresas, 'nome',
+              (v) => setState(() => _empresaId = v)),
+      // Parceiro: disabled, vem do localstore
+      hasSession && _parceiroNome != null
+          ? _inpDisabledText('Parceiro', _parceiroNome!)
+          : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome',
+              (v) => setState(() => _parceiroId = v)),
+      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
+      _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
+          (v) => setState(() => _destinatarioId = v)),
+      _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento,
+          'descricao', (v) => setState(() => _formaPagId = v)),
+      _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
+          (v) => setState(() => _finalidadeId = v)),
+    ]);
   }
 
   /// Dropdown de Tipo de Operação — define CFOP/CST/Alíquota ICMS herdados pelos itens
@@ -1278,10 +1319,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(width: 8),
                 _togBtn(Icons.view_list, _itensGrid,
-                    () => setState(() => _itensGrid = true)),
+                    () => setState(() => _itensGrid = true), 'Ver como grade'),
                 const SizedBox(width: 4),
                 _togBtn(Icons.edit_note, !_itensGrid,
-                    () => setState(() => _itensGrid = false)),
+                    () => setState(() => _itensGrid = false), 'Ver como formulário'),
                 const SizedBox(width: 8),
                 // Botão Novo abre o form customizado
                 SizedBox(
@@ -1313,21 +1354,25 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 ],
                 const Spacer(),
                 if (!_itensGrid && _itens.isNotEmpty) ...[
-                  _nb(Icons.first_page, () => setState(() => _selItem = 0)),
+                  _nb(Icons.first_page, () => setState(() => _selItem = 0),
+                      'Primeiro item'),
                   _nb(
                       Icons.chevron_left,
                       () => setState(() {
                             if (_selItem > 0) _selItem--;
-                          })),
+                          }),
+                      'Item anterior'),
                   Text(' ${_selItem + 1}/${_itens.length} ',
                       style: const TextStyle(fontSize: 11)),
                   _nb(
                       Icons.chevron_right,
                       () => setState(() {
                             if (_selItem < _itens.length - 1) _selItem++;
-                          })),
+                          }),
+                      'Próximo item'),
                   _nb(Icons.last_page,
-                      () => setState(() => _selItem = _itens.length - 1)),
+                      () => setState(() => _selItem = _itens.length - 1),
+                      'Último item'),
                 ],
               ])),
           Container(height: 1, color: _bord),
@@ -1706,69 +1751,30 @@ class _State extends State<NfeSankhyaDetailScreen> {
         {'id': 'T', 'nome': 'T', 'descricao': 'Tonelada'},
       ];
 
-  Widget _togBtn(IconData ic, bool on, VoidCallback cb) => InkWell(
-      onTap: cb,
-      child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-              color: on ? _green : Colors.transparent,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: on ? _green : _bord)),
-          child: Icon(ic, size: 16, color: on ? Colors.white : _grey)));
+  Widget _togBtn(IconData ic, bool on, VoidCallback cb, String tooltip) =>
+      Tooltip(
+          message: tooltip,
+          child: InkWell(
+              onTap: cb,
+              child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                      color: on ? _green : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: on ? _green : _bord)),
+                  child: Icon(ic,
+                      size: 16,
+                      color: on ? Colors.white : _grey,
+                      semanticLabel: tooltip))));
 
-  Widget _nb(IconData ic, VoidCallback cb) => InkWell(
-      onTap: cb,
-      child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1),
-          child: Icon(ic, size: 18, color: _dark)));
+  Widget _nb(IconData ic, VoidCallback cb, String tooltip) => Tooltip(
+      message: tooltip,
+      child: InkWell(
+          onTap: cb,
+          child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1),
+              child: Icon(ic, size: 18, color: _dark, semanticLabel: tooltip))));
 
-  // ── RODAPÉ ──
-  Widget _rodape() {
-    final tabs = ['Totais', 'Impostos', 'Financeiro', 'Pagamentos'];
-    return Column(children: [
-      Container(
-          color: const Color(0xFFF0F0F0),
-          child: Row(children: [
-            const SizedBox(width: 8),
-            ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
-          ])),
-      Container(height: 1, color: _bord),
-      Expanded(child: _tabContent()),
-    ]);
-  }
-
-  Widget _tabBtn(int idx, String label) {
-    final on = _tab == idx;
-    return GestureDetector(
-        onTap: () => setState(() => _tab = idx),
-        child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-                color: on ? Colors.white : Colors.transparent,
-                border: Border(
-                    bottom: BorderSide(
-                        color: on ? _red : Colors.transparent, width: 2))),
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: on ? FontWeight.bold : FontWeight.normal,
-                    color: on ? _red : _grey))));
-  }
-
-  Widget _tabContent() {
-    switch (_tab) {
-      case 0:
-        return _totaisTab();
-      case 1:
-        return _impostosTab();
-      case 2:
-        return _financeiroTab();
-      case 3:
-        return _pagamentosTab();
-      default:
-        return const SizedBox();
-    }
-  }
 
   Widget _totaisTab() {
     final vt = widget.item['valorTotal']?.toString() ?? '0,00';
@@ -1800,10 +1806,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(width: 8),
             _togBtn(Icons.view_list, _finGrid,
-                () => setState(() => _finGrid = true)),
+                () => setState(() => _finGrid = true), 'Ver como grade'),
             const SizedBox(width: 4),
             _togBtn(Icons.edit_note, !_finGrid,
-                () => setState(() => _finGrid = false)),
+                () => setState(() => _finGrid = false), 'Ver como formulário'),
             const SizedBox(width: 8),
             SizedBox(
                 height: 24,
@@ -1817,21 +1823,25 @@ class _State extends State<NfeSankhyaDetailScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10)))),
             const Spacer(),
             if (!_finGrid && _contas.isNotEmpty) ...[
-              _nb(Icons.first_page, () => setState(() => _selFin = 0)),
+              _nb(Icons.first_page, () => setState(() => _selFin = 0),
+                  'Primeira conta'),
               _nb(
                   Icons.chevron_left,
                   () => setState(() {
                         if (_selFin > 0) _selFin--;
-                      })),
+                      }),
+                  'Conta anterior'),
               Text(' ${_selFin + 1}/${_contas.length} ',
                   style: const TextStyle(fontSize: 11)),
               _nb(
                   Icons.chevron_right,
                   () => setState(() {
                         if (_selFin < _contas.length - 1) _selFin++;
-                      })),
+                      }),
+                  'Próxima conta'),
               _nb(Icons.last_page,
-                  () => setState(() => _selFin = _contas.length - 1)),
+                  () => setState(() => _selFin = _contas.length - 1),
+                  'Última conta'),
             ],
           ])),
       Container(height: 1, color: _bord),
@@ -1924,7 +1934,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final diferenca = totalPago - valorTotal;
     final okPago = diferenca.abs() <= 0.01;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── Seção 1: Formas de Pagamento ──────────────────────────────────
