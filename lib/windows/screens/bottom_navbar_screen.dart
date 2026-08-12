@@ -110,6 +110,7 @@ import '../../windows/screens/consulta_dfe_screen.dart';
 import '../../windows/screens/manifestacao_destinatario_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
+import '../../windows/screens/certificado_empresa_screen.dart';
 import '../../windows/screens/orcamento_grid_screen.dart';
 import '../../windows/screens/pedido_venda_grid_screen.dart';
 import '../../windows/screens/pedido_compra_grid_screen.dart';
@@ -522,6 +523,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
         DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
         const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
+        const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
       ];
 
   String get userName {

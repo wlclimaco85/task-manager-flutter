@@ -78,6 +78,8 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 136:InstagramMonitor
+/// 183:AgendamentoNFeRecorrente
+/// 184:CertificadoDigital (empresa logada)
 
 class MenuConfig {
   MenuConfig._();
@@ -181,6 +183,11 @@ class MenuConfig {
             label: 'Dashboard Comercial',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
+        MenuItem(
+            id: 'certificado_digital',
+            label: 'Certificado Digital',
+            icon: FontAwesomeIcons.certificate,
+            screenIndex: 184),
       ],
     ),
     MenuGroup(

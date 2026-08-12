@@ -106,6 +106,7 @@ import './alvara_grid_screen.dart';
 import './fornecedor_grid_screen.dart';
 import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
+import './certificado_empresa_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
@@ -545,6 +546,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
       DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
+      const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
     ];
   }
 

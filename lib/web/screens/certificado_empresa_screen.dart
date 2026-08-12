@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_texts.dart';
+import '../../utils/tenant_context.dart';
 
 /// Tela de gerenciamento do certificado digital A1 da empresa.
 /// Permite upload do .pfx, visualização do status e remoção.
@@ -548,4 +549,82 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
           ],
         ),
       );
+}
+
+/// Entrada de menu (grupo Comercial) para o certificado digital da própria
+/// empresa logada. CertificadoEmpresaScreen exige empresaId/empresaNome no
+/// construtor (é reaproveitada dentro das abas de Empresa/Parceiro, onde
+/// esses dados já vêm carregados do registro aberto); aqui resolvemos o
+/// nome da empresa do tenant atual antes de delegar para a tela real.
+class MeuCertificadoDigitalScreen extends StatefulWidget {
+  const MeuCertificadoDigitalScreen({super.key});
+
+  @override
+  State<MeuCertificadoDigitalScreen> createState() =>
+      _MeuCertificadoDigitalScreenState();
+}
+
+class _MeuCertificadoDigitalScreenState
+    extends State<MeuCertificadoDigitalScreen> {
+  bool _carregando = true;
+  String? _erro;
+  int? _empresaId;
+  String _empresaNome = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarNomeEmpresa();
+  }
+
+  Future<void> _carregarNomeEmpresa() async {
+    final empresaId = TenantContext.empresaId;
+    if (empresaId == null) {
+      setState(() {
+        _carregando = false;
+        _erro = 'Empresa não identificada.';
+      });
+      return;
+    }
+    try {
+      final response =
+          await TenantContext.get(ApiLinks.empresaById(empresaId.toString()));
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final dados = jsonDecode(response.body) as Map<String, dynamic>;
+        setState(() {
+          _empresaId = empresaId;
+          _empresaNome =
+              (dados['nome'] ?? dados['razaoSocial'] ?? 'Empresa').toString();
+          _carregando = false;
+        });
+      } else {
+        setState(() {
+          _carregando = false;
+          _erro = 'Falha ao carregar dados da empresa.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('MeuCertificadoDigitalScreen: falha ao carregar empresa $empresaId: $e');
+      setState(() {
+        _carregando = false;
+        _erro = 'Falha ao carregar dados da empresa.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_erro != null || _empresaId == null) {
+      return Center(
+          child: Text(_erro ?? 'Empresa não identificada.',
+              style: const TextStyle(color: GridColors.error)));
+    }
+    return CertificadoEmpresaScreen(
+        empresaId: _empresaId, empresaNome: _empresaNome);
+  }
 }
