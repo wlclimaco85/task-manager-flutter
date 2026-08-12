@@ -43,6 +43,10 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   String? _nomeCertificado;
   List<int>? _bytesCertificado;
   int? _configId;
+  // CSC e senha do certificado sao segredos write-only: o backend nunca os
+  // devolve (por design). Esta flag indica que ja existe um certificado
+  // salvo no backend, para nao dar a falsa impressao de "nao configurado".
+  bool _certificadoJaSalvo = false;
 
   bool _carregando = false;
   bool _salvando = false;
@@ -60,6 +64,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   bool _camposTravadosPeloCache = false;
   bool get _clienteTravadoPeloLogin => TenantContext.hasParceiro;
   bool get _camposFiscaisEditaveis => !_camposTravadosPeloCache;
+  // Mesmo criterio usado em _salvar() para decidir POST (config nova) vs
+  // PUT (config existente): quando um Cliente sem config propria esta
+  // selecionado, _configId aponta para o fallback da config da Empresa
+  // (nao nulo!), entao "_configId == null" sozinho NAO basta para saber
+  // se estamos criando uma config nova.
+  bool get _criandoConfigNova =>
+      _configId == null || (_clienteId != null && _escopoConfig != 'CLIENTE');
 
   static const _ufs = [
     'AC',
@@ -151,6 +162,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
             _csc = cacheado.csc;
             _serie = cacheado.serieNfce;
             _escopoConfig = cacheado.escopo;
+            _certificadoJaSalvo = cacheado.temCertificado;
             _camposTravadosPeloCache = true;
           });
           return;
@@ -191,6 +203,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
             selecionada['serie']?.toString() ??
             _serie;
         _escopoConfig = escopoResolvido;
+        _certificadoJaSalvo = selecionada['temCertificado'] == true;
         _camposTravadosPeloCache = false;
       });
 
@@ -205,6 +218,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           idCsc: _idCsc,
           csc: _csc,
           serieNfce: _serie,
+          temCertificado: _certificadoJaSalvo,
           cacheadoEm: DateTime.now(),
         ));
       }
@@ -214,6 +228,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         setState(() {
           _configId = null;
           _escopoConfig = _clienteId != null ? 'CLIENTE' : 'EMPRESA';
+          _certificadoJaSalvo = false;
           _camposTravadosPeloCache = false;
         });
       }
@@ -237,6 +252,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       _idCsc = '';
       _csc = '';
       _serie = '001';
+      _certificadoJaSalvo = false;
       _camposTravadosPeloCache = false;
     });
     _carregarConfig();
@@ -382,14 +398,16 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         'uf': _uf,
         'ambiente': _ambiente,
         'idCsc': _idCsc,
-        'csc': _csc,
+        // O backend nunca devolve o CSC salvo (segredo write-only). Se o
+        // campo estiver vazio numa config ja existente, e porque o valor
+        // nao foi redigitado — omite do payload para o backend manter o
+        // que ja esta salvo, em vez de sobrescrever com vazio.
+        if (_csc.trim().isNotEmpty) 'csc': _csc,
         'serieNfce': int.tryParse(_serie) ?? 1,
       };
 
       Map<String, dynamic>? salvo;
-      final criandoConfigDoCliente = _configId == null ||
-          (_clienteId != null && _escopoConfig != 'CLIENTE');
-      if (criandoConfigDoCliente) {
+      if (_criandoConfigNova) {
         salvo = await _service.criarConfigFiscal(payload);
         _configId = salvo['id'] is num
             ? (salvo['id'] as num).toInt()
@@ -415,6 +433,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
             uf: _uf,
             ambiente: _ambiente,
           );
+          _certificadoJaSalvo = true;
         }
         await _cache.salvarCache(NfceConfigFiscalCacheModel(
           configId: _configId!,
@@ -426,6 +445,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           idCsc: _idCsc,
           csc: _csc,
           serieNfce: _serie,
+          temCertificado: _certificadoJaSalvo,
           cacheadoEm: DateTime.now(),
         ));
       }
@@ -434,6 +454,9 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       setState(() {
         _escopoConfig = escopoSalvo;
         _camposTravadosPeloCache = true;
+        _nomeCertificado = null;
+        _bytesCertificado = null;
+        _senhaCertificado = '';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -705,22 +728,43 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                     key: ValueKey('csc_$_csc'),
                     initialValue: _csc,
                     readOnly: !_camposFiscaisEditaveis,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'CSC',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      // O backend nunca devolve o CSC salvo (segredo write-only).
+                      // Quando ja existe configuracao e o campo vem vazio, o
+                      // valor esta salvo — so nao pode ser reexibido. Usa
+                      // helperText (nao hintText) porque precisa ficar visivel
+                      // mesmo sem o campo estar focado.
+                      helperText: !_criandoConfigNova && _csc.isEmpty
+                          ? 'Já configurado — deixe em branco para manter'
+                          : null,
                     ),
                     obscureText: !_mostrarCsc,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Informe o CSC.' : null,
+                    validator: (v) => (v == null || v.isEmpty) && _criandoConfigNova
+                        ? 'Informe o CSC.'
+                        : null,
                     onSaved: (v) => _csc = v?.trim() ?? '',
                   ),
                   const SizedBox(height: 24),
                   const _SectionTitle(title: 'Certificado Digital A1'),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.upload_file),
-                    label: Text(
-                        _nomeCertificado ?? 'Selecionar arquivo .pfx / .p12'),
+                    icon: Icon(_nomeCertificado == null &&
+                            _certificadoJaSalvo &&
+                            !_criandoConfigNova
+                        ? Icons.check_circle_outline
+                        : Icons.upload_file),
+                    label: Text(_nomeCertificado ??
+                        (_certificadoJaSalvo && !_criandoConfigNova
+                            ? 'Certificado configurado — clique para substituir'
+                            : 'Selecionar arquivo .pfx / .p12')),
+                    style: _nomeCertificado == null &&
+                            _certificadoJaSalvo &&
+                            !_criandoConfigNova
+                        ? OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF1B5E20))
+                        : null,
                     onPressed:
                         _camposFiscaisEditaveis ? _selecionarCertificado : null,
                   ),
@@ -734,6 +778,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   ],
                   const SizedBox(height: 16),
                   TextFormField(
+                    // Sem key/initialValue, o Flutter reaproveita o Element
+                    // interno no rebuild e o TextEditingController mantem o
+                    // ultimo texto digitado na tela mesmo apos _salvar()
+                    // zerar _senhaCertificado — a senha ficaria visivel na
+                    // tela mesmo com o estado Dart ja limpo.
+                    key: ValueKey('senha_cert_$_senhaCertificado'),
+                    initialValue: _senhaCertificado,
                     readOnly: !_camposFiscaisEditaveis,
                     obscureText: !_mostrarSenha,
                     decoration: InputDecoration(

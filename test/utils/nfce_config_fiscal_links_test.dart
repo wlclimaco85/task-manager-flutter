@@ -27,5 +27,43 @@ void main() {
         equals('emp1_par814'),
       );
     });
+
+    test('cache preserva temCertificado no round-trip json', () {
+      final modelo = NfceConfigFiscalCacheModel(
+        configId: 10,
+        empresaId: 1,
+        escopo: 'EMPRESA',
+        uf: 'SP',
+        ambiente: 'PRODUCAO',
+        idCsc: 'abc123',
+        csc: 'segredo',
+        serieNfce: '001',
+        temCertificado: true,
+        cacheadoEm: DateTime(2026, 1, 1),
+      );
+
+      final restaurado = NfceConfigFiscalCacheModel.fromJson(modelo.toJson());
+
+      expect(restaurado.temCertificado, isTrue);
+    });
+
+    test('cache antigo sem temCertificado assume false (compat retroativa)',
+        () {
+      final jsonAntigo = {
+        'configId': 10,
+        'empresaId': 1,
+        'escopo': 'EMPRESA',
+        'uf': 'SP',
+        'ambiente': 'PRODUCAO',
+        'idCsc': 'abc123',
+        'csc': 'segredo',
+        'serieNfce': '001',
+        'cacheadoEm': DateTime(2026, 1, 1).toIso8601String(),
+      };
+
+      final restaurado = NfceConfigFiscalCacheModel.fromJson(jsonAntigo);
+
+      expect(restaurado.temCertificado, isFalse);
+    });
   });
 }
