@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/nfse_ux_helper.dart';
 import '../../widgets/searchable_dropdown.dart';
 import 'details/nfse_detail_screen.dart';
 
 /// Tela de NFSe — espelha o layout da NF-e Saída:
-/// header vermelho + painel de filtro lateral + botões + grid dinâmica.
+// / header vermelho + painel de filtro lateral + botões + grid dinâmica.
 class NfseScreen extends StatefulWidget {
   const NfseScreen({super.key});
   @override
@@ -76,7 +77,7 @@ class _NfseScreenState extends State<NfseScreen> {
     super.dispose();
   }
 
-  // ── Filtros ───────────────────────────────────────────────────────────────
+  // Filtros
 
   void _aplicarFiltros() {
     final f = <String, dynamic>{};
@@ -111,9 +112,26 @@ class _NfseScreenState extends State<NfseScreen> {
     ).then((_) => _aplicarFiltros());
   }
 
-  // ── Ações (mesmas do painel anterior, mantidas como dialogs) ─────────────
+  // Ações (mesmas do painel anterior, mantidas como dialogs)
 
   Future<void> _emitir() async {
+    final valor = double.tryParse(_valorCtrl.text.replaceAll(',', '.')) ?? 0;
+    final aliquota =
+        double.tryParse(_aliquotaCtrl.text.replaceAll(',', '.')) ?? 0;
+    final errosMunicipais = NfseUxHelper.validarDadosMunicipais(
+      municipio: _municipioCtrl.text,
+      codigoTributacao: _codigoTribCtrl.text,
+      descricaoServico: _descricaoCtrl.text,
+      valor: valor,
+      aliquotaIss: aliquota,
+    );
+    if (errosMunicipais.isNotEmpty) {
+      setState(() {
+        _resultadoEmissao =
+            NfseUxHelper.erroValidacaoMunicipal(errosMunicipais);
+      });
+      return;
+    }
     setState(() {
       _emitindo = true;
       _resultadoEmissao = null;
@@ -124,22 +142,22 @@ class _NfseScreenState extends State<NfseScreen> {
         cnpjTomador: _cnpjCtrl.text,
         nomeTomador: _nomeCtrl.text,
         descricaoServico: _descricaoCtrl.text,
-        valor: double.parse(_valorCtrl.text),
-        aliquotaIss: double.parse(_aliquotaCtrl.text),
+        valor: valor,
+        aliquotaIss: aliquota,
         cnae: _cnaeCtrl.text,
         codigoTributacao: _codigoTribCtrl.text,
       );
       if (mounted) {
         setState(() {
-          _resultadoEmissao = 'NFSe emitida!\n'
-              'Número: ${result['numero'] ?? result['nfseNumber'] ?? '-'}\n'
-              'Protocolo: ${result['protocolo'] ?? result['protocol'] ?? '-'}\n'
-              'Status: ${result['status'] ?? result['situacao'] ?? '-'}\n'
-              'Chave: ${result['chave'] ?? '-'}';
+          _resultadoEmissao = NfseUxHelper.retornoPrefeitura(result);
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _resultadoEmissao = 'Erro: $e');
+      if (mounted) {
+        setState(() {
+          _resultadoEmissao = e is NfseException ? e.message : 'Erro: $e';
+        });
+      }
     } finally {
       if (mounted) setState(() => _emitindo = false);
     }
@@ -257,13 +275,13 @@ class _NfseScreenState extends State<NfseScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // Build
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Header ────────────────────────────────────────────────────────
+        // Header
         Container(
           height: 56,
           color: GridColors.error,
@@ -282,7 +300,7 @@ class _NfseScreenState extends State<NfseScreen> {
             ],
           ),
         ),
-        // ── Conteúdo: filtros laterais + grid ─────────────────────────────
+        // Conteúdo: filtros laterais + grid
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +396,8 @@ class _NfseScreenState extends State<NfseScreen> {
               child: ElevatedButton.icon(
                 onPressed: _showEmissaoDialog,
                 icon: const Icon(Icons.send, size: 14),
-                label: const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
+                label:
+                    const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
@@ -511,13 +530,17 @@ class _NfseScreenState extends State<NfseScreen> {
       );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Dialogs internos (mantidos do painel anterior)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _EmissaoDialog extends StatelessWidget {
-  final TextEditingController municipioCtrl, cnpjCtrl, nomeCtrl,
-      descricaoCtrl, valorCtrl, aliquotaCtrl, cnaeCtrl, codigoTribCtrl;
+  final TextEditingController municipioCtrl,
+      cnpjCtrl,
+      nomeCtrl,
+      descricaoCtrl,
+      valorCtrl,
+      aliquotaCtrl,
+      cnaeCtrl,
+      codigoTribCtrl;
   final bool emitindo;
   final String? resultado;
   final VoidCallback onEmitir;
@@ -547,22 +570,33 @@ class _EmissaoDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Emitir NFSe',
+              const Text('Emitir NFS-e',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text(
+                'NFS-e é municipal e de serviços. O envio depende da prefeitura, ISS, CNAE e código de tributação municipal.',
+                style: TextStyle(fontSize: 12, color: GridColors.textSecondary),
+              ),
               const SizedBox(height: 20),
-              _campo('Município', municipioCtrl),
+              _campo('Município de Prestação', municipioCtrl),
               _campo('CNPJ Tomador', cnpjCtrl),
               _campo('Nome Tomador', nomeCtrl),
               _campo('Descrição do Serviço', descricaoCtrl),
               Row(children: [
-                Expanded(child: _campo('Valor', valorCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Valor', valorCtrl,
+                        teclado: TextInputType.number)),
                 const SizedBox(width: 12),
-                Expanded(child: _campo('Alíquota ISS', aliquotaCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Alíquota ISS', aliquotaCtrl,
+                        teclado: TextInputType.number)),
               ]),
               Row(children: [
                 Expanded(child: _campo('CNAE', cnaeCtrl)),
                 const SizedBox(width: 12),
-                Expanded(child: _campo('Cód. Tributação', codigoTribCtrl)),
+                Expanded(
+                    child: _campo(
+                        'Código de Tributação Municipal', codigoTribCtrl)),
               ]),
               if (resultado != null) ...[
                 const SizedBox(height: 12),
@@ -570,12 +604,14 @@ class _EmissaoDialog extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: resultado!.startsWith('Erro')
+                    color: resultado!.startsWith('Erro') ||
+                            resultado!.startsWith('Dados municipais')
                         ? Colors.red.shade50
                         : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: resultado!.startsWith('Erro')
+                      color: resultado!.startsWith('Erro') ||
+                              resultado!.startsWith('Dados municipais')
                           ? Colors.red.shade200
                           : Colors.green.shade200,
                     ),
@@ -787,7 +823,8 @@ class _CancelamentoDialog extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: resultado!.startsWith('Erro')
+                    color: resultado!.startsWith('Erro') ||
+                            resultado!.startsWith('Dados municipais')
                         ? Colors.red.shade50
                         : Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -884,8 +921,7 @@ class _AuditoriaDialog extends StatelessWidget {
                           child: Text('Nenhum log de auditoria encontrado.'))
                       : ListView.separated(
                           itemCount: logs.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (_, i) {
                             final log = logs[i];
                             final data = log['data'] ??
