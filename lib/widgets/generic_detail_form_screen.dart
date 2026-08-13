@@ -257,8 +257,48 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (fn == 'cnpj') return FieldType.cnpj;
     if (fn == 'cpfcnpj' || fn == 'cpf_cnpj') return FieldType.text;
     if (fn == 'telefone' || fn == 'celular') return FieldType.phone;
-    if (tft.index < FieldType.values.length) return FieldType.values[tft.index];
-    return FieldType.text;
+    // Bug: TelaFieldType (backend) e FieldType (widget) tem "cpfCnpj"/"cep"
+    // extras a partir do indice 12 que nao existem em FieldType — mapear por
+    // indice numerico desalinha os dois enums a partir dali (ex.: currency
+    // do backend virava percentage no widget). Mapeia por NOME, robusto a
+    // qualquer enum ganhar/perder valores no futuro.
+    switch (tft) {
+      case TelaFieldType.text:
+        return FieldType.text;
+      case TelaFieldType.number:
+        return FieldType.number;
+      case TelaFieldType.email:
+        return FieldType.email;
+      case TelaFieldType.date:
+        return FieldType.date;
+      case TelaFieldType.multiline:
+        return FieldType.multiline;
+      case TelaFieldType.dropdown:
+        return FieldType.dropdown;
+      case TelaFieldType.boolean:
+        return FieldType.boolean;
+      case TelaFieldType.file:
+        return FieldType.file;
+      case TelaFieldType.password:
+        return FieldType.password;
+      case TelaFieldType.phone:
+        return FieldType.phone;
+      case TelaFieldType.cpf:
+        return FieldType.cpf;
+      case TelaFieldType.cnpj:
+        return FieldType.cnpj;
+      case TelaFieldType.cpfCnpj:
+      case TelaFieldType.cep:
+        return FieldType.text;
+      case TelaFieldType.currency:
+        return FieldType.currency;
+      case TelaFieldType.percentage:
+        return FieldType.percentage;
+      case TelaFieldType.url:
+        return FieldType.url;
+      case TelaFieldType.multiselect:
+        return FieldType.multiselect;
+    }
   }
 
   Future<void> _save(TelaConfig tela) async {
@@ -539,14 +579,17 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           label: f.label,
           type: isMulti ? FieldType.multiselect : FieldType.dropdown,
           isRequired: f.isRequired,
-          vField:
-              f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value'
-                  ? f.dropdownValueField
-                  : 'id',
-          dField: f.dropdownDisplayField.isNotEmpty &&
-                  f.dropdownDisplayField != 'label'
-              ? f.dropdownDisplayField
-              : 'nome',
+          // Bug: quando o backend configurava explicitamente 'value'/'label'
+          // (dropdowns baseados em enum, ex. /api/enums/Ambiente), o codigo
+          // tratava isso como "nao customizado" e trocava para 'id'/'nome' —
+          // que nao existem nesses objetos, entao o dropdown caia no
+          // fallback o[vf].toString() e mostrava o id numerico bruto da
+          // linha da tabela enum_values (ex. "651") em vez do valor do enum
+          // (ex. "HOMOLOGACAO"/"Homologação"). Usa a config do backend
+          // diretamente sempre que ela vier preenchida.
+          vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
+          dField:
+              f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
           dropdownEndpoint: f.dropdownEndpoint,
         ));
         inserted.add(f.fieldName);
