@@ -107,7 +107,8 @@ class GenericDetailFormScreen extends StatefulWidget {
   final List<RelatedGridTab>? relatedTabs;
 
   /// Callback após salvar o formulário principal.
-  final Future<void> Function(Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
+  final Future<void> Function(
+      Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
 
   const GenericDetailFormScreen({
     super.key,
@@ -377,14 +378,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao salvar: ${resp.statusCode}', style: const TextStyle(color: Colors.white)),
+              content: Text('Erro ao salvar: ${resp.statusCode}',
+                  style: const TextStyle(color: Colors.white)),
               backgroundColor: GridColors.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+          SnackBar(
+              content:
+                  Text('Erro: $e', style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     } finally {
@@ -620,8 +625,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           // (ex. "HOMOLOGACAO"/"Homologação"). Usa a config do backend
           // diretamente sempre que ela vier preenchida.
           vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
-          dField:
-              f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
+          dField: f.dropdownDisplayField.isNotEmpty
+              ? f.dropdownDisplayField
+              : 'nome',
           dropdownEndpoint: f.dropdownEndpoint,
         ));
         inserted.add(f.fieldName);
@@ -1300,8 +1306,7 @@ class _LazyTab extends StatefulWidget {
 
 typedef WidgetBuilder0 = Widget Function();
 
-class _LazyTabState extends State<_LazyTab>
-    with AutomaticKeepAliveClientMixin {
+class _LazyTabState extends State<_LazyTab> with AutomaticKeepAliveClientMixin {
   bool _activated = false;
 
   @override
