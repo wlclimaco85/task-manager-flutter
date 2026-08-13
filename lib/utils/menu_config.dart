@@ -736,14 +736,14 @@ class MenuConfig {
       icon: FontAwesomeIcons.gears,
       items: [
         MenuItem(
-            id: 'dashboard_gme',
-            label: 'Dashboard GME',
-            icon: FontAwesomeIcons.chartPie,
-            screenIndex: 156),
-        MenuItem(
             id: 'contrato',
             label: 'Contratos',
             icon: FontAwesomeIcons.fileContract,
+            screenIndex: 156),
+        MenuItem(
+            id: 'faturar_contratos',
+            label: 'Faturar Contratos',
+            icon: FontAwesomeIcons.receipt,
             screenIndex: 157),
         MenuItem(
             id: 'equipamento',

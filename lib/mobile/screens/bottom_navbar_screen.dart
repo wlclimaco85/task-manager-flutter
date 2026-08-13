@@ -19,6 +19,7 @@ import 'chatMessageListScreen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/agendamento/agendamento_module.dart';
+import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../services/network_caller.dart';
@@ -1025,6 +1026,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Contratos GME":
         nav = _pushDynamicGrid(telaNome: 'contrato', sec: sec);
         break;
+      case "Faturar Contratos":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FaturarContratosScreen()),
+        );
+        break;
       case "Equipamentos":
         nav = _pushDynamicGrid(telaNome: 'equipamento', sec: sec);
         break;
@@ -1293,8 +1300,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         'GME',
         Icons.precision_manufacturing,
         [
-          _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
           _MoreMenuAction(Icons.description, 'Contratos GME'),
+          _MoreMenuAction(Icons.receipt_long, 'Faturar Contratos'),
           _MoreMenuAction(Icons.build, 'Equipamentos'),
           _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
           _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),

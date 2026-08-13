@@ -138,6 +138,7 @@ import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
 import '../../web/screens/instagram_monitor_screen.dart';
+import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../widgets/chat/chat_kanban_screen.dart';
 import './atividade_diaria_screen.dart';
 import '../../features/diario_nutricional/diario_nutricional_screen.dart';
@@ -496,7 +497,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
         DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
-        const SizedBox.shrink(), // 157: reservado
+        FaturarContratosScreen(), // 157: Faturar Contratos
         DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
         DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
         DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção

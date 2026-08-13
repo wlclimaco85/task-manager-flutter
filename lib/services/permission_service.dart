@@ -210,6 +210,7 @@ class PermissionService {
     // GME
     'dashboard_gme': 'DashboardGME',
     'contrato': 'Contratos',
+    'faturar_contratos': 'Contratos',
     'equipamento': 'Equipamentos',
     'ordem_servico': 'OrdensServico',
     'plano_manutencao': 'PlanosManutencao',

@@ -96,6 +96,7 @@ import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/screens/trading_config_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../features/trading/screens/carteira_screen.dart';
+import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/menu_config.dart';
@@ -519,7 +520,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const RegistroCargaScreen(sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
       const FrequenciaScreen(), // 155: Frequencia Semanal
       DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
-      const SizedBox.shrink(), // 157: reservado
+      FaturarContratosScreen(), // 157: Faturar Contratos
       DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
       DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
       DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
