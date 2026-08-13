@@ -600,9 +600,16 @@ class _MeuCertificadoDigitalScreenState
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final dados = body['data'] as Map<String, dynamic>?;
+        if (dados == null) {
+          setState(() {
+            _carregando = false;
+            _erro = 'Parceiro não encontrado.';
+          });
+          return;
+        }
         setState(() {
           _parceiroId = parceiroId;
-          _nome = (dados?['nome'] ?? dados?['razaoSocial'] ?? 'Parceiro')
+          _nome = (dados['nome'] ?? dados['razaoSocial'] ?? 'Parceiro')
               .toString();
           _carregando = false;
         });
