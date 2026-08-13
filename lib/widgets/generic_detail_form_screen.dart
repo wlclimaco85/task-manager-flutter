@@ -197,9 +197,39 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final val = item[fn];
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
-      } else if (f.fieldType == TelaFieldType.dropdown ||
-          f.fieldType == TelaFieldType.multiselect) {
-        // handled below
+      } else if (f.fieldType == TelaFieldType.dropdown) {
+        // Bug: campo dropdown vindo de tela.fields (nao de fieldOverrides)
+        // nunca era inicializado com o valor ja existente do registro — o
+        // dropdown sempre abria vazio ao editar, mesmo quando o item ja
+        // tinha um valor salvo. Ao salvar sem re-selecionar, o campo era
+        // omitido do payload (nao enviado como vazio, simplesmente ausente),
+        // dando a impressao de que "nao salvou"/"o valor sumiu". Mesma
+        // logica ja usada abaixo para fieldOverrides.
+        if (!_dropdownValues.containsKey(fn)) {
+          final vf = f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id';
+          if (val is Map) {
+            _dropdownValues[fn] = (val[vf] ?? val['id'])?.toString();
+          } else if (val != null) {
+            _dropdownValues[fn] = val.toString();
+          }
+        }
+      } else if (f.fieldType == TelaFieldType.multiselect) {
+        // Mesmo bug do dropdown, para multiselect (ex.: Modulo Servicos,
+        // Tipo Parceiros): chips sempre voltavam a "Selecione..." ao editar.
+        if (!_multiValues.containsKey(fn)) {
+          final vf = f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id';
+          if (val is List) {
+            _multiValues[fn] = val
+                .map((e) {
+                  if (e is Map) return (e[vf] ?? e['id'])?.toString();
+                  return e?.toString();
+                })
+                .whereType<String>()
+                .toList();
+          } else {
+            _multiValues[fn] = [];
+          }
+        }
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
