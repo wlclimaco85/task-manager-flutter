@@ -194,42 +194,29 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           fnL == 'dh_updated_at') {
         continue;
       }
+      // Campo com fieldOverride correspondente: renderizacao (_buildFormTab)
+      // ja da precedencia ao override (vField/label/etc próprios da tela).
+      // Deixa a inicializacao do valor tambem exclusivamente pro bloco de
+      // overrides abaixo, senao o valor inicial pode ser calculado com o
+      // dropdownValueField de tela.fields e nao bater com o vField usado
+      // pelo widget (que vem do override) — o dropdown pareceria vazio de
+      // novo mesmo com o item tendo um valor salvo.
+      if (_overrideMap.containsKey(fn)) continue;
       final val = item[fn];
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
       } else if (f.fieldType == TelaFieldType.dropdown) {
-        // Bug: campo dropdown vindo de tela.fields (nao de fieldOverrides)
-        // nunca era inicializado com o valor ja existente do registro — o
-        // dropdown sempre abria vazio ao editar, mesmo quando o item ja
-        // tinha um valor salvo. Ao salvar sem re-selecionar, o campo era
-        // omitido do payload (nao enviado como vazio, simplesmente ausente),
-        // dando a impressao de que "nao salvou"/"o valor sumiu". Mesma
-        // logica ja usada abaixo para fieldOverrides.
-        if (!_dropdownValues.containsKey(fn)) {
-          final vf = f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id';
-          if (val is Map) {
-            _dropdownValues[fn] = (val[vf] ?? val['id'])?.toString();
-          } else if (val != null) {
-            _dropdownValues[fn] = val.toString();
-          }
-        }
+        // Bug: campo dropdown vindo de tela.fields nunca era inicializado
+        // com o valor ja existente do registro — o dropdown sempre abria
+        // vazio ao editar, mesmo quando o item ja tinha um valor salvo. Ao
+        // salvar sem re-selecionar, o campo era omitido do payload (nao
+        // enviado como vazio, simplesmente ausente), dando a impressao de
+        // que "nao salvou"/"o valor sumiu".
+        _initDropdownValue(fn, val, f.dropdownValueField);
       } else if (f.fieldType == TelaFieldType.multiselect) {
         // Mesmo bug do dropdown, para multiselect (ex.: Modulo Servicos,
         // Tipo Parceiros): chips sempre voltavam a "Selecione..." ao editar.
-        if (!_multiValues.containsKey(fn)) {
-          final vf = f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id';
-          if (val is List) {
-            _multiValues[fn] = val
-                .map((e) {
-                  if (e is Map) return (e[vf] ?? e['id'])?.toString();
-                  return e?.toString();
-                })
-                .whereType<String>()
-                .toList();
-          } else {
-            _multiValues[fn] = [];
-          }
-        }
+        _initMultiValue(fn, val, f.dropdownValueField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -240,32 +227,47 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final fn = o.fieldName;
       final val = item[fn];
       if (o.fieldType == FieldType.dropdown) {
-        if (!_dropdownValues.containsKey(fn)) {
-          if (val is Map) {
-            _dropdownValues[fn] = val['id']?.toString();
-          } else if (val != null) {
-            _dropdownValues[fn] = val.toString();
-          }
-        }
+        _initDropdownValue(fn, val, o.dropdownValueField);
       } else if (o.fieldType == FieldType.multiselect) {
-        if (!_multiValues.containsKey(fn)) {
-          if (val is List) {
-            _multiValues[fn] = val
-                .map((e) {
-                  if (e is Map)
-                    return (e['id'] ?? e[o.dropdownValueField])?.toString();
-                  return e?.toString();
-                })
-                .whereType<String>()
-                .toList();
-          } else {
-            _multiValues[fn] = [];
-          }
-        }
+        _initMultiValue(fn, val, o.dropdownValueField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
       }
+    }
+  }
+
+  /// Inicializa _dropdownValues[fn] a partir do valor ja existente do
+  /// registro (widget.item), usando o mesmo campo (dropdownValueField) que
+  /// o widget de dropdown usa pra resolver qual opcao esta pre-selecionada
+  /// (_dropdownWidget) — evita divergencia entre o valor guardado no estado
+  /// e o valor comparado nas opcoes da lista. Compartilhado entre o caminho
+  /// de tela.fields e o de fieldOverrides (antes duplicado e com ordem de
+  /// fallback inconsistente entre os dois).
+  void _initDropdownValue(String fn, dynamic val, String dropdownValueField) {
+    if (_dropdownValues.containsKey(fn)) return;
+    final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    if (val is Map) {
+      _dropdownValues[fn] = (val[vf] ?? val['id'])?.toString();
+    } else if (val != null) {
+      _dropdownValues[fn] = val.toString();
+    }
+  }
+
+  /// Mesma logica de _initDropdownValue, para multiselect.
+  void _initMultiValue(String fn, dynamic val, String dropdownValueField) {
+    if (_multiValues.containsKey(fn)) return;
+    final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    if (val is List) {
+      _multiValues[fn] = val
+          .map((e) {
+            if (e is Map) return (e[vf] ?? e['id'])?.toString();
+            return e?.toString();
+          })
+          .whereType<String>()
+          .toList();
+    } else {
+      _multiValues[fn] = [];
     }
   }
 
