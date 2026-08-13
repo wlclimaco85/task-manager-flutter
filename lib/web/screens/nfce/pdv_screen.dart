@@ -9,6 +9,7 @@ import '../../../services/nfce_provider.dart';
 import '../../../services/nfce_service.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/nfce/nfce_notice_banner.dart';
+import '../produto_grid_screen.dart';
 import 'config_fiscal_screen.dart';
 import 'nfce_finalizacao_screen.dart';
 
@@ -77,6 +78,138 @@ class _PdvScreenState extends State<PdvScreen> {
       if (mounted) setState(() => _buscando = false);
     }
   }
+
+  /// Popup com todos os produtos da empresa/parceiro logado (endpoint
+  /// /api/produto_contabil, ja escopado por tenant no backend). Permite
+  /// buscar/filtrar, selecionar um produto e confirmar com "OK", ou
+  /// navegar para o cadastro de produtos quando o item procurado nao existe.
+  Future<void> _abrirPopupTodosProdutos() async {
+    final empresaId = TenantContext.empresaId ?? 0;
+    List<Map<String, dynamic>> todos;
+    try {
+      todos = await _service.buscarProdutos(
+          query: '', empresaId: empresaId, tamanho: 500);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao carregar produtos.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    final filtroCtrl = TextEditingController();
+    Map<String, dynamic>? selecionado;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final filtro = filtroCtrl.text.trim().toLowerCase();
+            final filtrados = filtro.isEmpty
+                ? todos
+                : todos.where((p) {
+                    final nome = (p['nome'] ?? '').toString().toLowerCase();
+                    final codigo =
+                        (p['codigo'] ?? '').toString().toLowerCase();
+                    return nome.contains(filtro) || codigo.contains(filtro);
+                  }).toList();
+
+            return AlertDialog(
+              title: const Text('Todos os produtos'),
+              content: SizedBox(
+                width: 480,
+                height: 480,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: filtroCtrl,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Filtrar por nome ou código',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum produto encontrado.'))
+                          : ListView.builder(
+                              itemCount: filtrados.length,
+                              itemBuilder: (_, i) {
+                                final p = filtrados[i];
+                                final preco =
+                                    (p['preco'] ?? p['precoVenda'] ?? 0)
+                                        .toDouble();
+                                final isSelecionado =
+                                    selecionado != null &&
+                                        selecionado!['id'] == p['id'];
+                                return ListTile(
+                                  selected: isSelecionado,
+                                  selectedTileColor:
+                                      GridColors.secondary.withValues(alpha: 0.1),
+                                  leading:
+                                      const Icon(Icons.inventory_2_outlined),
+                                  title: Text(p['nome']?.toString() ?? '—'),
+                                  subtitle: Text(
+                                      '${p['codigo'] ?? ''} — R\$ ${preco.toStringAsFixed(2)}'),
+                                  onTap: () =>
+                                      setDialogState(() => selecionado = p),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Cadastrar novo produto'),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const WebProdutoGridScreen(hasPermission: _semRestricao),
+                      ),
+                    );
+                  },
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: selecionado == null
+                      ? null
+                      : () {
+                          _provider.adicionarItem(selecionado!);
+                          Navigator.of(dialogContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '${selecionado!['nome']} adicionado ao carrinho.'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  static bool _semRestricao(String _) => true;
 
   bool _validarCpfCnpj(String valor) {
     final digits = valor.replaceAll(RegExp(r'\D'), '');
@@ -283,6 +416,11 @@ class _PdvScreenState extends State<PdvScreen> {
                       ),
                     )
                   : const Icon(Icons.search),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Buscar todos os produtos',
+                onPressed: _abrirPopupTodosProdutos,
+              ),
               border: const OutlineInputBorder(),
             ),
           ),

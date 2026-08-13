@@ -285,6 +285,7 @@ class NfceService {
   Future<List<Map<String, dynamic>>> buscarProdutos({
     required String query,
     required int empresaId,
+    int tamanho = 20,
   }) async {
     // Bug de producao: GET /api/produto ignora os parametros nome/empresa
     // (ProdutoController.listarProdutos() nao os declara) e, pior, o
@@ -294,7 +295,7 @@ class NfceService {
     // endpoint correto, que filtra por nome/empresa e usa a entidade
     // Produto (nome, preco, ncm, gtin, codigo), e /api/produto_contabil.
     final url =
-        '${ApiLinks.baseUrl}/api/produto_contabil?nome=${Uri.encodeComponent(query)}&empresa=$empresaId&tamanho=20';
+        '${ApiLinks.baseUrl}/api/produto_contabil?nome=${Uri.encodeComponent(query)}&empresa=$empresaId&tamanho=$tamanho';
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
