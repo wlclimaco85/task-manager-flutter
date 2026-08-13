@@ -501,7 +501,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
         DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
         DynamicGridDynamicScreen(telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
-        DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
+        DynamicGridDynamicScreen(telaNome: 'historico_manutencao', hasPermission: (p) => true), // 162: Histórico Manutenção
         DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
         DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
         const SizedBox.shrink(), // 165: reservado

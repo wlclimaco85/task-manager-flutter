@@ -1039,7 +1039,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Histórico Manutenção":
         nav =
-            _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
+            _pushDynamicGrid(telaNome: 'historico_manutencao', sec: sec);
         break;
       case "Técnicos":
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
