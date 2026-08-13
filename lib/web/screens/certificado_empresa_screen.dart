@@ -551,11 +551,16 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
       );
 }
 
-/// Entrada de menu (grupo Comercial) para o certificado digital da própria
-/// empresa logada. CertificadoEmpresaScreen exige empresaId/empresaNome no
+/// Entrada de menu (grupo Comercial) para o certificado digital do próprio
+/// tenant logado. CertificadoEmpresaScreen exige empresaId OU parceiroId no
 /// construtor (é reaproveitada dentro das abas de Empresa/Parceiro, onde
-/// esses dados já vêm carregados do registro aberto); aqui resolvemos o
-/// nome da empresa do tenant atual antes de delegar para a tela real.
+/// esses dados já vêm carregados do registro aberto); aqui resolvemos qual
+/// dos dois é o dono do certificado antes de delegar para a tela real.
+///
+/// Prioridade: se o login logado tem parceiroId (é um parceiro/cliente
+/// específico, não a empresa como um todo), o certificado é o DO PARCEIRO —
+/// nunca o da empresa. O certificado da empresa só é exibido quando não há
+/// parceiroId no login (ex.: usuário master/empresa logado diretamente).
 class MeuCertificadoDigitalScreen extends StatefulWidget {
   const MeuCertificadoDigitalScreen({super.key});
 
@@ -569,12 +574,53 @@ class _MeuCertificadoDigitalScreenState
   bool _carregando = true;
   String? _erro;
   int? _empresaId;
-  String _empresaNome = '';
+  int? _parceiroId;
+  String _nome = '';
 
   @override
   void initState() {
     super.initState();
-    _carregarNomeEmpresa();
+    _carregarDadosDoTenant();
+  }
+
+  Future<void> _carregarDadosDoTenant() async {
+    final parceiroId = TenantContext.parceiroId;
+    if (parceiroId != null) {
+      await _carregarNomeParceiro(parceiroId);
+      return;
+    }
+    await _carregarNomeEmpresa();
+  }
+
+  Future<void> _carregarNomeParceiro(int parceiroId) async {
+    try {
+      final response =
+          await TenantContext.get('${ApiLinks.baseUrl}/api/parceiro/$parceiroId');
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final dados = body['data'] as Map<String, dynamic>?;
+        setState(() {
+          _parceiroId = parceiroId;
+          _nome = (dados?['nome'] ?? dados?['razaoSocial'] ?? 'Parceiro')
+              .toString();
+          _carregando = false;
+        });
+      } else {
+        setState(() {
+          _carregando = false;
+          _erro = 'Falha ao carregar dados do parceiro.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint(
+          'MeuCertificadoDigitalScreen: falha ao carregar parceiro $parceiroId: $e');
+      setState(() {
+        _carregando = false;
+        _erro = 'Falha ao carregar dados do parceiro.';
+      });
+    }
   }
 
   Future<void> _carregarNomeEmpresa() async {
@@ -594,7 +640,7 @@ class _MeuCertificadoDigitalScreenState
         final dados = jsonDecode(response.body) as Map<String, dynamic>;
         setState(() {
           _empresaId = empresaId;
-          _empresaNome =
+          _nome =
               (dados['nome'] ?? dados['razaoSocial'] ?? 'Empresa').toString();
           _carregando = false;
         });
@@ -619,12 +665,12 @@ class _MeuCertificadoDigitalScreenState
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_erro != null || _empresaId == null) {
+    if (_erro != null || (_empresaId == null && _parceiroId == null)) {
       return Center(
           child: Text(_erro ?? 'Empresa não identificada.',
               style: const TextStyle(color: GridColors.error)));
     }
     return CertificadoEmpresaScreen(
-        empresaId: _empresaId, empresaNome: _empresaNome);
+        empresaId: _empresaId, parceiroId: _parceiroId, empresaNome: _nome);
   }
 }
