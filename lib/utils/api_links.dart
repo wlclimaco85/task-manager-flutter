@@ -4,7 +4,12 @@ class ApiLinks {
   // URL do backend
   // Dev local: flutter run usa base efetiva http://127.0.0.1:9001/boletobancos
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
-  static final String _backendUrl = String.fromEnvironment(
+  // String.fromEnvironment SO funciona como const constructor — declarar
+  // como "final" quebra em runtime no DDC (debug web) com
+  // "Unsupported operation: String.fromEnvironment can only be used as a
+  // const constructor". Precisa ficar const mesmo com o resto da cadeia
+  // (_baseIp em diante) sendo final.
+  static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
     defaultValue: 'http://127.0.0.1:9001',
   );
@@ -89,7 +94,7 @@ class ApiLinks {
       '$_baseUrlNew/api/noticias/public/recentes';
   static String telaAjudaPorTela(String telaNome) =>
       '$_baseUrlNew/api/tela-ajuda/por-tela/${Uri.encodeComponent(telaNome)}';
-  static final String _windowsDownloadUrl = String.fromEnvironment(
+  static const String _windowsDownloadUrl = String.fromEnvironment(
     'WINDOWS_DOWNLOAD_URL',
     defaultValue: '',
   );
