@@ -6,6 +6,7 @@ import '../../windows/screens/bottom_navbar_screen.dart';
 import '../../web/screens/bottom_navbar_screen.dart';
 import '../../models/auth_utility.dart';
 import '../../models/login_model.dart';
+import '../../models/network_response.dart';
 import '../../utils/api_links.dart';
 import '../../utils/assets_utils.dart';
 import '../../utils/grid_colors.dart';
@@ -56,10 +57,26 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
     setState(() => _loginInProgress = true);
-    final resp = await NetworkCaller().postRequest(ApiLinks.login, {
-      'email': _emailController.text.trim(),
-      'password': _passwordController.text
-    });
+    // Bug de producao: uma excecao nao tratada aqui (ex.: erro de
+    // configuracao em ApiLinks.login) travava o botao com o spinner ativo
+    // pra sempre, sem chamar o backend e sem nenhum erro visivel — o
+    // catch garante que _loginInProgress sempre volta a false.
+    NetworkResponse resp;
+    try {
+      resp = await NetworkCaller().postRequest(ApiLinks.login, {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text
+      });
+    } catch (e) {
+      setState(() => _loginInProgress = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erro ao conectar: $e', style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+        ));
+      }
+      return;
+    }
     setState(() => _loginInProgress = false);
     if (resp.isSuccess && resp.body != null) {
       final model = LoginModel.fromJson(resp.body!);
