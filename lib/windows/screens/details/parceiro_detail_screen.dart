@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../models/auth_utility.dart';
+import '../../../services/network_caller.dart';
+import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
@@ -9,7 +12,7 @@ import '../certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
 import 'modulo_cobranca_screen.dart';
 
-class WindowsParceiroDetailScreen extends StatelessWidget {
+class WindowsParceiroDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
@@ -20,34 +23,140 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<WindowsParceiroDetailScreen> createState() =>
+      _WindowsParceiroDetailScreenState();
+}
+
+class _WindowsParceiroDetailScreenState
+    extends State<WindowsParceiroDetailScreen> {
+  late Map<String, dynamic> _item;
+
+  @override
+  void initState() {
+    super.initState();
+    _item = Map<String, dynamic>.from(widget.item);
+    _preCarregarModulos();
+  }
+
+  static bool _podeEditarModulosServico() {
+    final email =
+        (AuthUtility.userInfo?.login?.email ?? '').toLowerCase().trim();
+    return email == 'wlclimaco@gmail.com';
+  }
+
+  static Future<List<Map<String, dynamic>>> _loadModulosServico() async {
+    final r = await NetworkCaller()
+        .getRequest('${ApiLinks.allModuloServico}?tamanho=200');
+    if (!r.isSuccess || r.body == null) return [];
+    final raw = r.body!['data']?['dados'] ??
+        r.body!['data'] ??
+        r.body!['content'] ??
+        r.body;
+    if (raw is! List) return [];
+    return raw
+        .map<Map<String, dynamic>>((e) {
+          final label = e['descricao']?.toString() ??
+              e['nome']?.toString() ??
+              e['id']?.toString() ??
+              '';
+          return {'value': e['id']?.toString() ?? '', 'label': label};
+        })
+        .where((m) => m['value']!.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> _preCarregarModulos() async {
+    final parceiroId = _item['id'];
+    if (parceiroId == null) return;
+    final r = await NetworkCaller().getRequest(
+      '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
+    );
+    if (!r.isSuccess || r.body == null) return;
+    final body = r.body;
+    final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
+    if (raw is! List) return;
+    final ids = raw
+        .map((e) => e['id']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .join(', ');
+    if (mounted) setState(() => _item['modulo_servicos'] = ids);
+  }
+
+  static Map<String, dynamic> _limparPayloadParceiro(
+      Map<String, dynamic> formData) {
+    final status = formData['status'];
+    if (status is Map) {
+      formData['status'] =
+          status['id']?.toString() ?? status['value']?.toString();
+    }
+    formData.remove('modulo_servicos');
+    return formData;
+  }
+
+  static Future<void> _salvarModulos(
+      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+    final parceiroId = formData['id'];
+    if (parceiroId == null) return;
+    final raw = formData['modulo_servicos'];
+    final selected = raw is List
+        ? raw
+        : raw
+            .toString()
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+    final modulos = selected
+        .map((v) {
+          if (v is Map) return int.tryParse(v['id']?.toString() ?? '');
+          return int.tryParse(v.toString());
+        })
+        .whereType<int>()
+        .map((id) => {'id': id, 'valor': 0})
+        .toList();
+    await NetworkCaller().postRequest(
+      '${ApiLinks.baseUrl}/api/parceiro-modulo',
+      {'parceiroId': parceiroId, 'modulos': modulos},
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final id = item['id']?.toString() ?? '';
-    final parceiroId = item['id'] as int? ?? 0;
-    final parceiroNome = item['nome']?.toString() ??
-        item['razaoSocial']?.toString() ??
+    final podeEditarModulos = _podeEditarModulosServico();
+    final id = _item['id']?.toString() ?? '';
+    final parceiroId = _item['id'] as int? ?? 0;
+    final parceiroNome = _item['nome']?.toString() ??
+        _item['razaoSocial']?.toString() ??
         'Parceiro';
     final empresaId =
-        (item['empresa'] is Map ? item['empresa']['id'] : item['empresa'])
+        (_item['empresa'] is Map ? _item['empresa']['id'] : _item['empresa'])
                 ?.toString() ??
             '';
     final empresaIdInt = int.tryParse(empresaId);
-    final empresaNome = item['empresa'] is Map
-        ? (item['empresa']['nome']?.toString() ??
-            item['empresa']['razaoSocial']?.toString() ??
+    final empresaNome = _item['empresa'] is Map
+        ? (_item['empresa']['nome']?.toString() ??
+            _item['empresa']['razaoSocial']?.toString() ??
             '')
         : '';
 
     return GenericDetailFormScreen(
-      item: item,
+      item: _item,
       telaNome: 'parceiro',
-      hasPermission: hasPermission,
-      fieldOverrides: const [
+      hasPermission: widget.hasPermission,
+      transformFormData: _limparPayloadParceiro,
+      onAfterSave: podeEditarModulos ? _salvarModulos : null,
+      fieldOverrides: [
         FieldConfigWindows(
           label: 'Modulo Servicos',
           fieldName: 'modulo_servicos',
-          isInForm: false,
+          fieldType: FieldType.multiselect,
+          dropdownFutureBuilder: _loadModulosServico,
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
           isVisibleByDefault: false,
-          enabled: false,
+          enabled: podeEditarModulos,
+          isFilterable: false,
         ),
       ],
       relatedTabs: [

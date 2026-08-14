@@ -110,6 +110,11 @@ class GenericDetailFormScreen extends StatefulWidget {
   final Future<void> Function(
       Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
 
+  /// Ajusta o payload enviado ao endpoint principal sem alterar o estado
+  /// original repassado ao [onAfterSave].
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
+
   const GenericDetailFormScreen({
     super.key,
     required this.item,
@@ -118,6 +123,7 @@ class GenericDetailFormScreen extends StatefulWidget {
     this.fieldOverrides,
     this.relatedTabs,
     this.onAfterSave,
+    this.transformFormData,
   });
 
   @override
@@ -356,6 +362,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         body[entry.key] = entry.value.map((v) => {'id': v}).toList();
       }
 
+      final requestBody = widget.transformFormData != null
+          ? widget.transformFormData!(Map<String, dynamic>.from(body))
+          : body;
+
       final isCreate = id == null;
       final endpoint = isCreate
           ? tela.createEndpoint
@@ -363,8 +373,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final url =
           endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
       final resp = isCreate
-          ? await NetworkCaller().postRequest(url, body)
-          : await NetworkCaller().putRequest(url, body);
+          ? await NetworkCaller().postRequest(url, requestBody)
+          : await NetworkCaller().putRequest(url, requestBody);
       if (!mounted) return;
       if (resp.isSuccess) {
         final msg = isCreate ? 'Criado com sucesso' : 'Salvo com sucesso';
@@ -951,6 +961,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: _controllers[ef.fieldName],
+        enabled: ef.enabled,
         keyboardType: keyboardType,
         inputFormatters: formatters,
         maxLines: maxLines ?? 1,
@@ -982,26 +993,29 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       child: TextFormField(
         controller: _controllers[ef.fieldName],
         readOnly: true,
+        enabled: ef.enabled,
         decoration: _dec(ef.label,
             prefix: const Icon(Icons.calendar_today_outlined),
             suffix: const Icon(Icons.arrow_drop_down),
             req: ef.isRequired),
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate:
-                DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ??
-                    DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) {
-            _controllers[ef.fieldName]?.text =
-                '${picked.year.toString().padLeft(4, '0')}-'
-                '${picked.month.toString().padLeft(2, '0')}-'
-                '${picked.day.toString().padLeft(2, '0')}';
-          }
-        },
+        onTap: ef.enabled
+            ? () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.tryParse(
+                          _controllers[ef.fieldName]?.text ?? '') ??
+                      DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  _controllers[ef.fieldName]?.text =
+                      '${picked.year.toString().padLeft(4, '0')}-'
+                      '${picked.month.toString().padLeft(2, '0')}-'
+                      '${picked.day.toString().padLeft(2, '0')}';
+                }
+              }
+            : null,
       ),
     );
   }
@@ -1018,8 +1032,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             title: Text(ef.label),
             value: _checkboxValues[ef.fieldName] ?? false,
             activeColor: GridColors.primary,
-            onChanged: (v) =>
-                setState(() => _checkboxValues[ef.fieldName] = v ?? false),
+            onChanged: ef.enabled
+                ? (v) =>
+                    setState(() => _checkboxValues[ef.fieldName] = v ?? false)
+                : null,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             controlAffinity: ListTileControlAffinity.leading,
           ),
@@ -1080,7 +1096,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                       overflow: TextOverflow.ellipsis),
                 ))
             .toList(),
-        onChanged: (val) => setState(() => _dropdownValues[ef.fieldName] = val),
+        onChanged: ef.enabled
+            ? (val) => setState(() => _dropdownValues[ef.fieldName] = val)
+            : null,
         validator: ef.isRequired
             ? (v) => v == null ? '${ef.label} é obrigatório' : null
             : null,
@@ -1137,7 +1155,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => _openMultiDialog(ef, options, vf, df),
+        onTap: ef.enabled ? () => _openMultiDialog(ef, options, vf, df) : null,
         borderRadius: BorderRadius.circular(8),
         child: InputDecorator(
           decoration: _dec(ef.label,
@@ -1394,6 +1412,7 @@ class _EF {
   final String label;
   final FieldType type;
   final bool isRequired;
+  final bool enabled;
   final String vField;
   final String dField;
   final String? dropdownEndpoint;
@@ -1406,6 +1425,7 @@ class _EF {
       required this.label,
       required this.type,
       this.isRequired = false,
+      this.enabled = true,
       this.vField = 'id',
       this.dField = 'nome',
       this.dropdownEndpoint,
@@ -1418,6 +1438,7 @@ class _EF {
         label: f.label,
         type: type,
         isRequired: f.isRequired,
+        enabled: f.enabled,
         vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
         dField:
             f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
@@ -1436,6 +1457,7 @@ class _EF {
         label: o.label,
         type: o.fieldType,
         isRequired: o.isRequired,
+        enabled: o.enabled,
         vField: o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id',
         dField:
             o.dropdownDisplayField.isNotEmpty ? o.dropdownDisplayField : 'nome',
