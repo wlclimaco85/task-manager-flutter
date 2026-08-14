@@ -4,15 +4,21 @@ class ApiLinks {
   // URL do backend
   // Dev local: flutter run (usa default http://127.0.0.1:8080)
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
-  static const String _backendUrl = String.fromEnvironment(
+  static final String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
     defaultValue: 'http://127.0.0.1:8080',
   );
 
-  // Context-path do backend: server.servlet.context-path=/boletobancos
-  // (application.properties). Confirmado via curl: sem o prefixo as rotas
-  // retornam 404 real; com o prefixo respondem corretamente.
-  static const String _baseIp = '$_backendUrl/boletobancos';
+  // Context-path do backend: server.servlet.context-path=/boletobancos SO no
+  // application.properties (perfil dev/local). Em producao/staging (perfil
+  // prod, application-prod.properties) o context-path e vazio — sem essa
+  // distincao, toda chamada de API em producao levava um redirect 308
+  // desnecessario (LegacyBoletobancosPathFilter) antes de chegar na rota
+  // real. So usar o prefixo quando o backend e realmente o localhost local.
+  static bool get _isBackendLocal =>
+      _backendUrl.contains('localhost') || _backendUrl.contains('127.0.0.1');
+  static final String _baseIp =
+      _isBackendLocal ? '$_backendUrl/boletobancos' : _backendUrl;
 
   // WebSocket: converte http→ws e https→wss
   static String get _wsUrl => _backendUrl
@@ -20,30 +26,28 @@ class ApiLinks {
       .replaceFirst('http://', 'ws://');
 
   // _chatId usado apenas por chatStart (WebSocket) — derivada do host do backend.
-  // Mantida como String get por causa do _wsUrl ser get; cacheada em static final
-  // para evitar recriar a string a cada chamada de chatStart().
-  // server.servlet.context-path=/boletobancos se aplica tambem aos WebSocket
-  // handlers registrados via WebSocketConfigurer.
-  static final String _chatId = '$_wsUrl/boletobancos';
-  static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
-  static const String _baseUrlNew = _baseIp;
-  static const String allPersonal = '$_baseUrlNew/personal/findAll';
-  static const String allAcademia = '$_baseUrlNew/academia/findAll';
-  static const String allModalidade = '$_baseUrlNew/modalidade/findAll';
-  static const String allTipoRefeicao = '$_baseUrlNew/dieta/findByRefeicao';
-  static const String allUniMeds = '$_baseUrlNew/unidade/findAll';
-  static const String insertPersonal = '$_baseUrlNew/personal/inserir';
-  static const String insertSuplemento = '$_baseUrlNew/suplemento/insert';
-  static const String insertAcademia = '$_baseUrlNew/academia/inserir';
-  static const String allSuplementoAluno =
+  // Mesma logica de context-path condicional do _baseIp (ver comentario acima).
+  static final String _chatId =
+      _isBackendLocal ? '$_wsUrl/boletobancos' : _wsUrl;
+  static final String _baseUrl = 'https://task.teamrabbil.com/api/v1';
+  static final String _baseUrlNew = _baseIp;
+  static final String allPersonal = '$_baseUrlNew/personal/findAll';
+  static final String allAcademia = '$_baseUrlNew/academia/findAll';
+  static final String allModalidade = '$_baseUrlNew/modalidade/findAll';
+  static final String allTipoRefeicao = '$_baseUrlNew/dieta/findByRefeicao';
+  static final String allUniMeds = '$_baseUrlNew/unidade/findAll';
+  static final String insertPersonal = '$_baseUrlNew/personal/inserir';
+  static final String insertSuplemento = '$_baseUrlNew/suplemento/insert';
+  static final String insertAcademia = '$_baseUrlNew/academia/inserir';
+  static final String allSuplementoAluno =
       '$_baseUrlNew/suplemento/findByIdAluno';
-  static const String insertAluno = '$_baseUrlNew/rest/auth/inserirAluno';
-  static const String insertExame = '$_baseUrlNew/exame/inserir';
-  static const String findByIdAluno = '$_baseUrlNew/exame/findByParceiros';
-  static const String insertMedicamento = '$_baseUrlNew/medicamento/inserir';
-  static const String findByAlunoByMedicamento =
+  static final String insertAluno = '$_baseUrlNew/rest/auth/inserirAluno';
+  static final String insertExame = '$_baseUrlNew/exame/inserir';
+  static final String findByIdAluno = '$_baseUrlNew/exame/findByParceiros';
+  static final String insertMedicamento = '$_baseUrlNew/medicamento/inserir';
+  static final String findByAlunoByMedicamento =
       '$_baseUrlNew/medicamento/findByParceiros';
-  static const String findByAlunoByDieta = '$_baseUrlNew/dieta/findByParceiros';
+  static final String findByAlunoByDieta = '$_baseUrlNew/dieta/findByParceiros';
   // static String login = '$_baseUrl/login';
   // static String login = '$_baseUrl/rest/auth/login';
 
@@ -78,7 +82,7 @@ class ApiLinks {
       '$_baseUrlNew/api/noticias/public/recentes';
   static String telaAjudaPorTela(String telaNome) =>
       '$_baseUrlNew/api/tela-ajuda/por-tela/${Uri.encodeComponent(telaNome)}';
-  static const String _windowsDownloadUrl = String.fromEnvironment(
+  static final String _windowsDownloadUrl = String.fromEnvironment(
     'WINDOWS_DOWNLOAD_URL',
     defaultValue: '',
   );
@@ -350,9 +354,9 @@ class ApiLinks {
       '$_baseUrlNew/api/conta_receber/$id/historico';
 
   // Contas BancÃ¡rias
-  static const String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
-  static const String allContasBancarias = '$_baseUrlNew/api/contas/saldos';
-  static const String createContaBancaria = contasBancarias;
+  static final String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
+  static final String allContasBancarias = '$_baseUrlNew/api/contas/saldos';
+  static final String createContaBancaria = contasBancarias;
   static String updateContaBancaria(String id) => '$contasBancarias/$id';
   static String deleteContaBancaria(String id) => '$contasBancarias/$id';
 
@@ -363,7 +367,7 @@ class ApiLinks {
   static String pontoBancoHoras = '$_baseUrlNew/api/pontos/banco-horas';
 
   // PaÃ­ses / Estados / Cidades
-  static const String buscarPaises = '$_baseUrlNew/api/pais';
+  static final String buscarPaises = '$_baseUrlNew/api/pais';
   static String buscarEstados(String paisId) =>
       '$_baseUrlNew/api/estado/pais/$paisId';
   static String buscarCidades(String estadoId) =>
@@ -671,7 +675,7 @@ class ApiLinks {
   static String chamadoByEmpresaId(String id) =>
       '$_baseUrlNew/api/chamados/chamado/$id';
 
-  static const String workflowChamados = '$_baseUrlNew/api/workflow/chamados';
+  static final String workflowChamados = '$_baseUrlNew/api/workflow/chamados';
 
   static String getAllChamados(String id) =>
       '$_baseUrlNew/api/workflow/chamados/$id/historico';
@@ -758,7 +762,7 @@ class ApiLinks {
   static String deleteFeriado(String id) => '$_baseUrlNew/api/feriado/$id';
 
   // Orçamento Comercial
-  static const String orcamentos = '$_baseUrlNew/api/comercial/orcamentos';
+  static final String orcamentos = '$_baseUrlNew/api/comercial/orcamentos';
   static String orcamentoById(String id) =>
       '$_baseUrlNew/api/comercial/orcamentos/$id';
   static String aprovarOrcamento(String id) =>
@@ -773,7 +777,7 @@ class ApiLinks {
       '$_baseUrlNew/api/comercial/orcamentos/$id/cancelar';
 
   // Pedido de Venda
-  static const String pedidosVenda = '$_baseUrlNew/api/comercial/pedidos-venda';
+  static final String pedidosVenda = '$_baseUrlNew/api/comercial/pedidos-venda';
   static String pedidoVendaById(String id) =>
       '$_baseUrlNew/api/comercial/pedidos-venda/$id';
   static String aprovarPedidoVenda(String id) =>
@@ -794,7 +798,7 @@ class ApiLinks {
       '$_baseUrlNew/api/comercial/pedidos-venda/$id/historico';
 
   // Pedido de Compra
-  static const String pedidosCompra = '$_baseUrlNew/api/compras/pedidos';
+  static final String pedidosCompra = '$_baseUrlNew/api/compras/pedidos';
   static String pedidoCompraById(String id) =>
       '$_baseUrlNew/api/compras/pedidos/$id';
   static String emitirPedidoCompra(String id) =>
@@ -809,7 +813,7 @@ class ApiLinks {
       '$_baseUrlNew/api/compras/pedidos/$id/cancelar';
 
   // Aprovação de Compras
-  static const String aprovacaoCompraFila =
+  static final String aprovacaoCompraFila =
       '$_baseUrlNew/api/compras/aprovacao/fila';
   static String aprovacaoCompraSolicitar(dynamic pedidoCompraId) =>
       '$_baseUrlNew/api/compras/aprovacao/$pedidoCompraId/solicitar';
@@ -821,7 +825,7 @@ class ApiLinks {
       '$_baseUrlNew/api/compras/aprovacao/pedido/$pedidoCompraId';
 
   // Tabela de Preços e Descontos
-  static const String tabelasPreco = '$_baseUrlNew/api/comercial/tabelas-preco';
+  static final String tabelasPreco = '$_baseUrlNew/api/comercial/tabelas-preco';
   static String tabelaPrecoById(String id) =>
       '$_baseUrlNew/api/comercial/tabelas-preco/$id';
   static String itensTabelaPreco(String tabelaId) =>
@@ -830,12 +834,12 @@ class ApiLinks {
       '$_baseUrlNew/api/comercial/tabelas-preco/$tabelaId/itens';
   static String deletarItemTabelaPreco(String tabelaId, String itemId) =>
       '$_baseUrlNew/api/comercial/tabelas-preco/$tabelaId/itens/$itemId';
-  static const String descontos = '$_baseUrlNew/api/comercial/descontos';
+  static final String descontos = '$_baseUrlNew/api/comercial/descontos';
   static String descontoById(String id) =>
       '$_baseUrlNew/api/comercial/descontos/$id';
 
   // Devolução Comercial
-  static const String devolucoes = '$_baseUrlNew/api/comercial/devolucoes';
+  static final String devolucoes = '$_baseUrlNew/api/comercial/devolucoes';
   static String devolucaoById(String id) =>
       '$_baseUrlNew/api/comercial/devolucoes/$id';
   static String devolucaoConcluir(String id) =>
@@ -852,7 +856,7 @@ class ApiLinks {
       '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/liberar';
 
   // Multi-depósito e localização
-  static const String depositos = '$_baseUrlNew/api/estoque/depositos';
+  static final String depositos = '$_baseUrlNew/api/estoque/depositos';
   static String depositoPorId(int id) =>
       '$_baseUrlNew/api/estoque/depositos/$id';
   static String localizacoesPorDeposito(int depositoId) =>
@@ -861,9 +865,9 @@ class ApiLinks {
       '$_baseUrlNew/api/estoque/depositos/$depositoId/localizacoes';
   static String saldoPorProduto(int produtoId) =>
       '$_baseUrlNew/api/estoque/depositos/saldo?produtoId=$produtoId';
-  static const String transferirDeposito =
+  static final String transferirDeposito =
       '$_baseUrlNew/api/estoque/depositos/transferir';
-  static const String ajustarEstoque =
+  static final String ajustarEstoque =
       '$_baseUrlNew/api/estoque/depositos/ajustar';
 
   // Alerta Aluno
@@ -1109,19 +1113,19 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/broker-config';
 
   // Consulta e Download DF-e
-  static const String consultaDfeConsultar =
+  static final String consultaDfeConsultar =
       '$_baseUrlNew/api/fiscal/consulta-dfe/consultar';
   static String baixarDfe(String nsu) =>
       '$_baseUrlNew/api/fiscal/consulta-dfe/baixar/$nsu';
-  static const String importacoesDfe =
+  static final String importacoesDfe =
       '$_baseUrlNew/api/fiscal/consulta-dfe/importacoes';
 
   // Manifestação do Destinatário
-  static const String manifestacaoPendentes =
+  static final String manifestacaoPendentes =
       '$_baseUrlNew/api/fiscal/manifestacao/pendentes';
-  static const String manifestacaoHistorico =
+  static final String manifestacaoHistorico =
       '$_baseUrlNew/api/fiscal/manifestacao/historico';
-  static const String manifestacaoRegistrar =
+  static final String manifestacaoRegistrar =
       '$_baseUrlNew/api/fiscal/manifestacao';
 
   // Lançamentos Financeiros (unificado)
@@ -1149,21 +1153,21 @@ class ApiLinks {
       '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId/confirmar';
 
   // Dashboard Financeiro Gerencial
-  static const String dashboardFinanceiro =
+  static final String dashboardFinanceiro =
       '$_baseUrlNew/api/financeiro/dashboard';
 
   // ConciliaÃ§Ã£o BancÃ¡ria
-  static const String conciliacaoPendentes =
+  static final String conciliacaoPendentes =
       '$_baseUrlNew/api/financeiro/conciliacao/pendentes';
   static String conciliacaoSugestoes(int contaBancariaId) =>
       '$_baseUrlNew/api/financeiro/conciliacao/$contaBancariaId/sugestoes';
-  static const String conciliacaoConciliar =
+  static final String conciliacaoConciliar =
       '$_baseUrlNew/api/financeiro/conciliacao/conciliar';
   static String conciliacaoAuto(int contaBancariaId) =>
       '$_baseUrlNew/api/financeiro/conciliacao/auto/$contaBancariaId';
   static String conciliacaoDesfazer(int conciliacaoId) =>
       '$_baseUrlNew/api/financeiro/conciliacao/$conciliacaoId';
-  static const String conciliacaoListar =
+  static final String conciliacaoListar =
       '$_baseUrlNew/api/financeiro/conciliacao';
 
   // Rateio Financeiro
@@ -1262,17 +1266,17 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/aprovacao-pagamento/conta/$contaPagarId';
 
   // Baixa Automática de Recebíveis
-  static const String baixaAutomaticaImportar =
+  static final String baixaAutomaticaImportar =
       '$_baseUrlNew/api/financeiro/baixa-automatica/importar';
   static String baixaAutomaticaConferir(dynamic id, String acao) =>
       '$_baseUrlNew/api/financeiro/baixa-automatica/$id/conferir?acao=$acao';
-  static const String baixaAutomaticaPendentes =
+  static final String baixaAutomaticaPendentes =
       '$_baseUrlNew/api/financeiro/baixa-automatica/pendentes';
   static String baixaAutomaticaConta(dynamic contaReceberId) =>
       '$_baseUrlNew/api/financeiro/baixa-automatica/conta/$contaReceberId';
 
   // Automação Financeira
-  static const String automacoesFinanceiras =
+  static final String automacoesFinanceiras =
       '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>
       '$_baseUrlNew/api/financeiro/automacoes/$id';
@@ -1280,11 +1284,11 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/automacoes/$id/executar';
   static String logsAutomacaoFinanceira(String id) =>
       '$_baseUrlNew/api/financeiro/automacoes/$id/logs';
-  static const String todosLogsAutomacoes =
+  static final String todosLogsAutomacoes =
       '$_baseUrlNew/api/financeiro/automacoes/logs';
 
   // Renegociação de Títulos
-  static const String renegociacao = '$_baseUrlNew/api/financeiro/renegociacao';
+  static final String renegociacao = '$_baseUrlNew/api/financeiro/renegociacao';
   static String renegociacaoById(String id) =>
       '$_baseUrlNew/api/financeiro/renegociacao/$id';
 
@@ -1293,7 +1297,7 @@ class ApiLinks {
   static String get drePeriodos => '$_baseUrlNew/api/financeiro/dre/periodos';
 
   // Escrituração Fiscal
-  static const String escrituracaoFiscalBase =
+  static final String escrituracaoFiscalBase =
       '$_baseUrlNew/api/escrituracao-fiscal';
   static String escrituracaoFiscalListar(int empresaId) =>
       '$escrituracaoFiscalBase?empresaId=$empresaId';
@@ -1377,7 +1381,7 @@ class ApiLinks {
       '$_baseUrlNew/api/ai/perguntar?empresaId=$empresaId&pergunta=${Uri.encodeComponent(pergunta)}';
 
   // Query Builder — Ferramenta de consulta SQL
-  static const String queryBuilder = '$_baseUrlNew/api/ferramentas/query-builder';
+  static final String queryBuilder = '$_baseUrlNew/api/ferramentas/query-builder';
   static String get queryBuilderSchemas => '$queryBuilder/schemas';
   static String get queryBuilderTabelas => '$queryBuilder/tabelas';
   static String queryBuilderColunas(String schema, String tabela) => '$queryBuilder/tabelas/$schema/$tabela/colunas';
