@@ -32,7 +32,8 @@ class PermissionService {
 
     // Procurar permissão correspondente
     return _currentPermissoes!.any(
-      (perm) => perm.telaNome.toLowerCase() == telaNome.toLowerCase() && perm.podeVer,
+      (perm) =>
+          perm.telaNome.toLowerCase() == telaNome.toLowerCase() && perm.podeVer,
     );
   }
 
@@ -55,9 +56,8 @@ class PermissionService {
               id: group.id,
               label: group.label,
               icon: group.icon,
-              items: group.items
-                  .where((item) => canViewScreen(item.id))
-                  .toList(),
+              items:
+                  group.items.where((item) => canViewScreen(item.id)).toList(),
             ))
         .where((group) => group.items.isNotEmpty)
         .toList();
@@ -65,9 +65,7 @@ class PermissionService {
 
   /// Filtrar itens soltos (loose items)
   List<MenuItem> getFilteredLooseItems() {
-    return MenuConfig.loose
-        .where((item) => canViewScreen(item.id))
-        .toList();
+    return MenuConfig.loose.where((item) => canViewScreen(item.id)).toList();
   }
 
   /// Mapeamento de MenuItem.id → telaNome do backend
@@ -92,6 +90,7 @@ class PermissionService {
     'tabela_preco': 'TabelaPreco',
     'devolucoes': 'Devolucoes',
     'dashboard_comercial': 'DashboardComercial',
+    'certificado_digital': 'CertificadoDigital',
 
     // Fiscal / NFC-e
     'pdv_nfce': 'PdvNfce',
@@ -101,6 +100,7 @@ class PermissionService {
     'nfse': 'Nfse',
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
+    'agendamento_nfe': 'AgendamentoNFeRecorrente',
 
     // Financeiro
     'calendario': 'Calendario',
@@ -252,8 +252,12 @@ class PermissionService {
   };
 
   /// Obter telaNome para um menuItem.id
-  static String? _getTelaNomeForMenuItem(String menuItemId) {
+  static String? telaNomeForMenuItem(String menuItemId) {
     return _menuIdToTelaNome[menuItemId];
+  }
+
+  static String? _getTelaNomeForMenuItem(String menuItemId) {
+    return telaNomeForMenuItem(menuItemId);
   }
 
   /// Limpar cache (logout)
