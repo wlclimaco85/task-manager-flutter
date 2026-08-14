@@ -1,4 +1,4 @@
-class ApiLinks {
+﻿class ApiLinks {
   ApiLinks._();
 
   // URL do backend
@@ -9,34 +9,24 @@ class ApiLinks {
     defaultValue: 'http://127.0.0.1:9001',
   );
 
-  // Context-path do backend: server.servlet.context-path=/boletobancos SO no
-  // application.properties (perfil dev/local). Em producao/staging (perfil
-  // prod, application-prod.properties) o context-path e vazio — sem essa
-  // distincao, toda chamada de API em producao levava um redirect 308
-  // desnecessario (LegacyBoletobancosPathFilter) antes de chegar na rota
-  // real.
-  //
-  // So usar o prefixo quando o backend e "local" — mas dev local nao e so
-  // localhost/127.0.0.1: a equipe tambem builda contra o emulador Android
-  // (10.0.2.2) e contra IP de rede local/BlueStacks (ex.: 192.168.100.113),
-  // ver network_security_config.xml. Listar IPs especificos e fragil (quebra
-  // pra qualquer IP de rede novo). O sinal real e o esquema: todo backend
-  // local roda em HTTP puro (sem TLS configurado); producao/staging (Railway
-  // e afins) sempre roda atras de HTTPS. Usar isso em vez de allowlist de IP.
-  static bool get _isBackendLocal => !_backendUrl.startsWith('https://');
-  static final String _baseIp =
-      _isBackendLocal ? '$_backendUrl/boletobancos' : _backendUrl;
+  // Contrato atual do backend em dev/producao: /boletobancos.
+  // O valor ainda pode ser zerado por build quando um ambiente publicar na raiz.
+  static const String _backendContextPath = String.fromEnvironment(
+    'BACKEND_CONTEXT_PATH',
+    defaultValue: '/boletobancos',
+  );
+  static final String _baseIp = '$_backendUrl$_backendContextPath';
 
-  // WebSocket: converte http→ws e https→wss
+  // WebSocket: converte httpâ†’ws e httpsâ†’wss
   static String get _wsUrl => _backendUrl
       .replaceFirst('https://', 'wss://')
       .replaceFirst('http://', 'ws://');
 
-  // _chatId usado apenas por chatStart (WebSocket) — derivada do host do backend.
-  // Mesma logica de context-path condicional do _baseIp (ver comentario acima).
-  static final String _chatId =
-      _isBackendLocal ? '$_wsUrl/boletobancos' : _wsUrl;
-  static final String _baseUrl = 'https://task.teamrabbil.com/api/v1';
+  // _chatId usado apenas por chatStart (WebSocket) â€” derivada do host do backend.
+  // Usa o mesmo context-path configurado para as chamadas HTTP.
+  static const String _chatContextPath = _backendContextPath;
+  static final String _chatId = '$_wsUrl$_chatContextPath';
+  static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static final String _baseUrlNew = _baseIp;
   static final String allPersonal = '$_baseUrlNew/personal/findAll';
   static final String allAcademia = '$_baseUrlNew/academia/findAll';
@@ -359,7 +349,7 @@ class ApiLinks {
   static String contaReceberHistorico(String id) =>
       '$_baseUrlNew/api/conta_receber/$id/historico';
 
-  // Contas BancÃ¡rias
+  // Contas BancÃƒÂ¡rias
   static final String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
   static final String allContasBancarias = '$_baseUrlNew/api/contas/saldos';
   static final String createContaBancaria = contasBancarias;
@@ -372,7 +362,7 @@ class ApiLinks {
   static String pontoPdf = '$_baseUrlNew/api/pontos/pdf';
   static String pontoBancoHoras = '$_baseUrlNew/api/pontos/banco-horas';
 
-  // PaÃ­ses / Estados / Cidades
+  // PaÃƒÂ­ses / Estados / Cidades
   static final String buscarPaises = '$_baseUrlNew/api/pais';
   static String buscarEstados(String paisId) =>
       '$_baseUrlNew/api/estado/pais/$paisId';
@@ -397,7 +387,7 @@ class ApiLinks {
   static String formasPagamentoByEmpresa(String empresaId) =>
       '$_baseUrlNew/api/forma_pagamento/empresa/$empresaId';
 
-  // CobranÃ§as de contas a receber
+  // CobranÃƒÂ§as de contas a receber
   static String contaReceberCobrancas(String contaReceberId) =>
       '$_baseUrlNew/api/conta_receber/$contaReceberId/cobrancas';
   static String contaReceberCobranca(String cobrancaId) =>
@@ -413,7 +403,7 @@ class ApiLinks {
   static String marcarEnvioReguaContaReceberCobranca(String cobrancaId) =>
       '$_baseUrlNew/api/conta_receber/cobrancas/$cobrancaId/regua/marcar-envio';
 
-  // Cobrança (inadimplência e régua)
+  // CobranÃ§a (inadimplÃªncia e rÃ©gua)
   static String get cobrancaVencidos => '$_baseUrlNew/api/cobranca/vencidos';
   static String get cobrancaExecutarRegua =>
       '$_baseUrlNew/api/cobranca/executar-regua';
@@ -424,7 +414,7 @@ class ApiLinks {
   static String cobrancaRegra(String id) =>
       '$_baseUrlNew/api/cobranca/regras/$id';
 
-  // Banking / CobranÃ§as legadas
+  // Banking / CobranÃƒÂ§as legadas
   static String get bankingImport => '$_baseUrlNew/api/banking/import';
   static String get bankingImports => '$_baseUrlNew/api/banking/imports';
   static String bankingReconcile({
@@ -436,7 +426,7 @@ class ApiLinks {
       '$_baseUrlNew/api/banking/reconcile?importId=${Uri.encodeComponent(importId)}&ruleName=${Uri.encodeComponent(ruleName)}&textSearch=${Uri.encodeComponent(textSearch)}&tolerance=$tolerance';
   static String get bankingBilling => '$_baseUrlNew/api/banking/billing';
 
-  // DiretÃ³rios
+  // DiretÃƒÂ³rios
   static String get allDiretorios => '$_baseUrlNew/api/diretorios';
   static String get createDiretorio => '$_baseUrlNew/api/diretorios';
   static String updateDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
@@ -453,9 +443,9 @@ class ApiLinks {
   static String arquivosPorDiretorio(String diretorioId) =>
       '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
 
-  /// Lista arquivos filtrando por empresa (obrigatÃ³rio), parceiro (opcional),
-  /// mÃ³dulo de origem (ex: 'funcionario', 'produto', 'parceiro', 'alvara') e
-  /// idOrigem (opcional) para o filtro automÃ¡tico do H5 (idShort 21).
+  /// Lista arquivos filtrando por empresa (obrigatÃƒÂ³rio), parceiro (opcional),
+  /// mÃƒÂ³dulo de origem (ex: 'funcionario', 'produto', 'parceiro', 'alvara') e
+  /// idOrigem (opcional) para o filtro automÃƒÂ¡tico do H5 (idShort 21).
   static String arquivosPorEmpresa(int empresaId,
       {int? parceiroId, String? modulo, int? idOrigem}) {
     final params = <String, String>{'empresaId': empresaId.toString()};
@@ -534,7 +524,7 @@ class ApiLinks {
   static String getAllpreferencias(String id, String setor) =>
       ('$_baseUrlNew/api/$id/user-preferences/$setor');
 
-  // Caso seu backend tambÃ©m sirva link pÃºblico direto:
+  // Caso seu backend tambÃƒÂ©m sirva link pÃƒÂºblico direto:
   static String publicFileUrl(int fileId) =>
       '$_baseUrlNew/files/public/$fileId';
 
@@ -648,7 +638,7 @@ class ApiLinks {
   static String getAllRoles =
       '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
 
-  /// GET /api/role/disponiveis — roles filtradas por módulos contratados
+  /// GET /api/role/disponiveis â€” roles filtradas por mÃ³dulos contratados
   static String get rolesDisponiveis => '$_baseUrlNew/api/role/disponiveis';
 
   static String associateRoleToLogin(int loginId, int roleId) {
@@ -706,7 +696,7 @@ class ApiLinks {
   static String updateDividendo(String id) => '$_baseUrlNew/api/dividendos/$id';
   static String deleteDividendo(String id) => '$_baseUrlNew/api/dividendos/$id';
 
-  // CotaÃ§Ã£o Frete
+  // CotaÃƒÂ§ÃƒÂ£o Frete
   static String get allCotacoesFrete => '$_baseUrlNew/api/cotacaofrete';
   static String get createCotacaoFrete => '$_baseUrlNew/api/cotacaofrete';
   static String updateCotacaoFrete(String id) =>
@@ -720,7 +710,7 @@ class ApiLinks {
   static String updatePedido(String id) => '$_baseUrlNew/api/pedidos/$id';
   static String deletePedido(String id) => '$_baseUrlNew/api/pedidos/$id';
 
-  // CalendÃ¡rio Guias
+  // CalendÃƒÂ¡rio Guias
   static String get allCalendariosGuias => '$_baseUrlNew/api/calendarios-guias';
   static String get createCalendarioGuias =>
       '$_baseUrlNew/api/calendarios-guias';
@@ -769,7 +759,7 @@ class ApiLinks {
   static String updateFeriado(String id) => '$_baseUrlNew/api/feriado/$id';
   static String deleteFeriado(String id) => '$_baseUrlNew/api/feriado/$id';
 
-  // Orçamento Comercial
+  // OrÃ§amento Comercial
   static final String orcamentos = '$_baseUrlNew/api/comercial/orcamentos';
   static String orcamentoById(String id) =>
       '$_baseUrlNew/api/comercial/orcamentos/$id';
@@ -820,7 +810,7 @@ class ApiLinks {
   static String cancelarPedidoCompra(String id) =>
       '$_baseUrlNew/api/compras/pedidos/$id/cancelar';
 
-  // Aprovação de Compras
+  // AprovaÃ§Ã£o de Compras
   static final String aprovacaoCompraFila =
       '$_baseUrlNew/api/compras/aprovacao/fila';
   static String aprovacaoCompraSolicitar(dynamic pedidoCompraId) =>
@@ -832,7 +822,7 @@ class ApiLinks {
   static String aprovacaoCompraPedido(dynamic pedidoCompraId) =>
       '$_baseUrlNew/api/compras/aprovacao/pedido/$pedidoCompraId';
 
-  // Tabela de Preços e Descontos
+  // Tabela de PreÃ§os e Descontos
   static final String tabelasPreco = '$_baseUrlNew/api/comercial/tabelas-preco';
   static String tabelaPrecoById(String id) =>
       '$_baseUrlNew/api/comercial/tabelas-preco/$id';
@@ -846,7 +836,7 @@ class ApiLinks {
   static String descontoById(String id) =>
       '$_baseUrlNew/api/comercial/descontos/$id';
 
-  // Devolução Comercial
+  // DevoluÃ§Ã£o Comercial
   static final String devolucoes = '$_baseUrlNew/api/comercial/devolucoes';
   static String devolucaoById(String id) =>
       '$_baseUrlNew/api/comercial/devolucoes/$id';
@@ -863,7 +853,7 @@ class ApiLinks {
   static String liberarEstoque(int pedidoId) =>
       '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/liberar';
 
-  // Multi-depósito e localização
+  // Multi-depÃ³sito e localizaÃ§Ã£o
   static final String depositos = '$_baseUrlNew/api/estoque/depositos';
   static String depositoPorId(int id) =>
       '$_baseUrlNew/api/estoque/depositos/$id';
@@ -881,7 +871,7 @@ class ApiLinks {
   // Alerta Aluno
   static String get allAlertasAluno => '$_baseUrlNew/api/alertas-aluno';
 
-  // FuncionÃ¡rio
+  // FuncionÃƒÂ¡rio
   static String get allFuncionarios => '$_baseUrlNew/api/funcionario';
   static String get createFuncionario => '$_baseUrlNew/api/funcionario';
   static String updateFuncionario(String id) =>
@@ -902,7 +892,7 @@ class ApiLinks {
   static String deleteAlertaAluno(String id) =>
       '$_baseUrlNew/api/alertas-aluno/$id';
 
-  // AvaliaÃ§Ã£o FÃ­sica
+  // AvaliaÃƒÂ§ÃƒÂ£o FÃƒÂ­sica
   static String get allAvaliacoesFisicas =>
       '$_baseUrlNew/api/avaliacoes-fisicas';
   static String get createAvaliacaoFisica =>
@@ -912,7 +902,7 @@ class ApiLinks {
   static String deleteAvaliacaoFisica(String id) =>
       '$_baseUrlNew/api/avaliacoes-fisicas/$id';
 
-  // ClassificaÃ§Ã£o
+  // ClassificaÃƒÂ§ÃƒÂ£o
   static String get allClassificacoes => '$_baseUrlNew/api/classificacoes';
   static String get createClassificacao => '$_baseUrlNew/api/classificacoes';
   static String updateClassificacao(String id) =>
@@ -956,7 +946,7 @@ class ApiLinks {
   static String deleteNotaFiscalEntrada(String id) =>
       '$_baseUrlNew/api/notas-fiscais-entrada/$id';
 
-  // Nota Fiscal SaÃ­da
+  // Nota Fiscal SaÃƒÂ­da
   static String get allNotasFiscaisSaida =>
       '$_baseUrlNew/api/notas-fiscais-saida';
   static String get createNotaFiscalSaida =>
@@ -966,7 +956,7 @@ class ApiLinks {
   static String deleteNotaFiscalSaida(String id) =>
       '$_baseUrlNew/api/notas-fiscais-saida/$id';
 
-  // HorÃ¡rio FuncionÃ¡rio
+  // HorÃƒÂ¡rio FuncionÃƒÂ¡rio
   static String get allHorariosFunc => '$_baseUrlNew/api/horarioFunc';
   static String get createHorarioFunc => '$_baseUrlNew/api/horarioFunc';
   static String updateHorarioFunc(String id) =>
@@ -982,7 +972,7 @@ class ApiLinks {
   static String deleteTipoProduto(String id) =>
       '$_baseUrlNew/api/tipoProdutos/$id';
 
-  // NF-e â€” NF08: EmissÃ£o real com XML (POST /api/nfe/{id}/emitir)
+  // NF-e Ã¢â‚¬â€ NF08: EmissÃƒÂ£o real com XML (POST /api/nfe/{id}/emitir)
   static String emitirNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/emitir';
   static String cancelarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/cancelar';
@@ -1010,7 +1000,7 @@ class ApiLinks {
   static String get nfeImportacaoListar =>
       '$_baseUrlNew/api/fiscal/nfe-importacao';
 
-  // NFS-e / Nota Fiscal de ServiÃ§o
+  // NFS-e / Nota Fiscal de ServiÃƒÂ§o
   static String get nfseIssue => '$_baseUrlNew/api/nfse/issue';
   static String nfseStatusUrl(String municipalityCode, String nfseNumber) =>
       '$_baseUrlNew/api/nfse/status?municipalityCode=${Uri.encodeComponent(municipalityCode)}&nfseNumber=${Uri.encodeComponent(nfseNumber)}';
@@ -1042,7 +1032,7 @@ class ApiLinks {
   // Vinculo Parceiro x Modulo de Servico (ParceiroModuloController)
   static String get parceiroModulo => '$_baseUrlNew/api/parceiro-modulo';
 
-  // CRM / RecorrÃªncias e Faturas
+  // CRM / RecorrÃƒÂªncias e Faturas
   static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
   static String get createRecurringContract => '$_baseUrlNew/api/crm/contracts';
   static String get allInvoiceRecords => '$_baseUrlNew/api/crm/invoices';
@@ -1093,7 +1083,7 @@ class ApiLinks {
   static String produtosBusca(String nome, int empresaId) =>
       '$_baseUrlNew/api/produto?nome=${Uri.encodeComponent(nome)}&empresa=$empresaId&page=0&size=20';
 
-  // Trading â€” Watchlist e Alertas
+  // Trading Ã¢â‚¬â€ Watchlist e Alertas
   static String get tradingWatchlist => '$_baseUrlNew/api/trading/watchlist';
   static String tradingWatchlistItem(String id) =>
       '$_baseUrlNew/api/trading/watchlist/$id';
@@ -1101,7 +1091,7 @@ class ApiLinks {
   static String tradingAlerta(String id) =>
       '$_baseUrlNew/api/trading/alertas/$id';
 
-  // Trading â€” OperaÃ§Ãµes Assistidas
+  // Trading Ã¢â‚¬â€ OperaÃƒÂ§ÃƒÂµes Assistidas
   static String get tradingOperacoes =>
       '$_baseUrlNew/api/trading/operacao-assistida';
   static String tradingOperacaoStatus(String id) =>
@@ -1138,7 +1128,7 @@ class ApiLinks {
   static final String importacoesDfe =
       '$_baseUrlNew/api/fiscal/consulta-dfe/importacoes';
 
-  // Manifestação do Destinatário
+  // ManifestaÃ§Ã£o do DestinatÃ¡rio
   static final String manifestacaoPendentes =
       '$_baseUrlNew/api/fiscal/manifestacao/pendentes';
   static final String manifestacaoHistorico =
@@ -1146,11 +1136,11 @@ class ApiLinks {
   static final String manifestacaoRegistrar =
       '$_baseUrlNew/api/fiscal/manifestacao';
 
-  // Lançamentos Financeiros (unificado)
+  // LanÃ§amentos Financeiros (unificado)
   static String get lancamentosFinanceiros =>
       '$_baseUrlNew/api/financeiro/lancamentos';
 
-  // Importação de Extrato Bancário
+  // ImportaÃ§Ã£o de Extrato BancÃ¡rio
   static String get extratoPreview =>
       '$_baseUrlNew/api/financeiro/extrato-importacao/preview';
   static String get extratoConfirmar =>
@@ -1160,7 +1150,7 @@ class ApiLinks {
   static String excluirExtratoImportacao(int id) =>
       '$_baseUrlNew/api/financeiro/extrato-importacao/$id';
 
-  // Importação em lote de boletos de mensalidade
+  // ImportaÃ§Ã£o em lote de boletos de mensalidade
   static String get boletoLoteIniciar =>
       '$_baseUrlNew/api/importacao/boletos-mensalidade/lote';
   static String boletoLoteArquivos(String loteId) =>
@@ -1174,7 +1164,7 @@ class ApiLinks {
   static final String dashboardFinanceiro =
       '$_baseUrlNew/api/financeiro/dashboard';
 
-  // ConciliaÃ§Ã£o BancÃ¡ria
+  // ConciliaÃƒÂ§ÃƒÂ£o BancÃƒÂ¡ria
   static final String conciliacaoPendentes =
       '$_baseUrlNew/api/financeiro/conciliacao/pendentes';
   static String conciliacaoSugestoes(int contaBancariaId) =>
@@ -1206,7 +1196,7 @@ class ApiLinks {
   static String anexoFinanceiroLinhaDigitavel(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/linha-digitavel';
 
-  // Cobrança Automática
+  // CobranÃ§a AutomÃ¡tica
   static String get cobrancaAutomaticaEnviar =>
       '$_baseUrlNew/api/financeiro/cobranca-automatica/enviar';
   static String get cobrancaAutomaticaAgendar =>
@@ -1221,13 +1211,13 @@ class ApiLinks {
   static String reguaCobranca(int id) => '$reguasCobranca/$id';
   static String get cobrancasRegua => '$_baseUrlNew/api/financeiro/cobrancas';
 
-  // Contingência e Rejeições
+  // ContingÃªncia e RejeiÃ§Ãµes
   static String get listarContingencia => '$_baseUrlNew/api/contingencia';
   static String get listarRejeicoes => '$_baseUrlNew/api/rejeicoes';
   static String reenviarContingencia(dynamic id) =>
       '$_baseUrlNew/api/contingencia/$id/reenviar';
 
-  // Custo Médio
+  // Custo MÃ©dio
   static String custoMedioConsultar(dynamic id) =>
       '$_baseUrlNew/api/custo-medio/produto/$id';
   static String get custoMedioRecalcular =>
@@ -1248,7 +1238,7 @@ class ApiLinks {
   static String contaReceberStatus(String id) =>
       '$_baseUrlNew/api/financeiro/conta-receber/$id/status';
 
-  // Conciliação Bancária - Importação OFX
+  // ConciliaÃ§Ã£o BancÃ¡ria - ImportaÃ§Ã£o OFX
   static String get conciliacaoImportarOfx =>
       '$_baseUrlNew/api/financeiro/conciliacao/importar-ofx';
 
@@ -1260,7 +1250,7 @@ class ApiLinks {
           {String? empresaId, String? parceiroId, int? meses}) =>
       '$_baseUrlNew/api/financeiro/dashboard/projecao${_buildQueryParams(empresaId: empresaId, parceiroId: parceiroId, meses: meses)}';
 
-  // Exportação Power BI / CSV
+  // ExportaÃ§Ã£o Power BI / CSV
   static String exportarCsv(String tipo) =>
       '$_baseUrlNew/api/financeiro/exportar/$tipo';
 
@@ -1274,7 +1264,7 @@ class ApiLinks {
     return params.isEmpty ? '' : '?${params.join('&')}';
   }
 
-  // Aprovação de Pagamentos
+  // AprovaÃ§Ã£o de Pagamentos
   static String get aprovacaoPagamentoFila =>
       '$_baseUrlNew/api/financeiro/aprovacao-pagamento/fila';
   static String aprovacaoPagamentoSolicitar(dynamic contaPagarId) =>
@@ -1286,7 +1276,7 @@ class ApiLinks {
   static String aprovacaoPagamentoConta(dynamic contaPagarId) =>
       '$_baseUrlNew/api/financeiro/aprovacao-pagamento/conta/$contaPagarId';
 
-  // Baixa Automática de Recebíveis
+  // Baixa AutomÃ¡tica de RecebÃ­veis
   static final String baixaAutomaticaImportar =
       '$_baseUrlNew/api/financeiro/baixa-automatica/importar';
   static String baixaAutomaticaConferir(dynamic id, String acao) =>
@@ -1296,7 +1286,7 @@ class ApiLinks {
   static String baixaAutomaticaConta(dynamic contaReceberId) =>
       '$_baseUrlNew/api/financeiro/baixa-automatica/conta/$contaReceberId';
 
-  // Automação Financeira
+  // AutomaÃ§Ã£o Financeira
   static final String automacoesFinanceiras =
       '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>
@@ -1308,7 +1298,7 @@ class ApiLinks {
   static final String todosLogsAutomacoes =
       '$_baseUrlNew/api/financeiro/automacoes/logs';
 
-  // Renegociação de Títulos
+  // RenegociaÃ§Ã£o de TÃ­tulos
   static final String renegociacao = '$_baseUrlNew/api/financeiro/renegociacao';
   static String renegociacaoById(String id) =>
       '$_baseUrlNew/api/financeiro/renegociacao/$id';
@@ -1317,7 +1307,7 @@ class ApiLinks {
   static String get dre => '$_baseUrlNew/api/financeiro/dre';
   static String get drePeriodos => '$_baseUrlNew/api/financeiro/dre/periodos';
 
-  // Escrituração Fiscal
+  // EscrituraÃ§Ã£o Fiscal
   static final String escrituracaoFiscalBase =
       '$_baseUrlNew/api/escrituracao-fiscal';
   static String escrituracaoFiscalListar(int empresaId) =>
@@ -1340,7 +1330,7 @@ class ApiLinks {
   static String cancelamentoNfeHistorico(String nfeId) =>
       '$_baseUrlNew/api/fiscal/cancelamento-cce/nfe/$nfeId/historico';
 
-  // Contábil - Plano de Contas
+  // ContÃ¡bil - Plano de Contas
   static String get allContasContabeis => '$_baseUrlNew/api/contas-contabeis';
   static String get createContaContabil => '$_baseUrlNew/api/contas-contabeis';
   static String contaContabilById(String id) =>
@@ -1354,7 +1344,7 @@ class ApiLinks {
   static String contasContabeisPorTipo(String empresaId, String tipo) =>
       '$_baseUrlNew/api/contas-contabeis?empresaId=$empresaId&ativas=true&tipo=$tipo';
 
-  // Contábil - Lançamentos
+  // ContÃ¡bil - LanÃ§amentos
   static String allLancamentosContabeis(String empresaId, String periodo) =>
       '$_baseUrlNew/api/lancamentos-contabeis?empresaId=$empresaId&periodo=$periodo';
   static String get createLancamentoContabil =>
@@ -1376,7 +1366,7 @@ class ApiLinks {
           String empresaId, String periodo, String? comparacao) =>
       '$_baseUrlNew/api/lancamentos-contabeis/analisar-variacao?empresaId=$empresaId&periodo=$periodo${comparacao != null ? '&comparacao=$comparacao' : ''}';
 
-  // Contábil - Períodos
+  // ContÃ¡bil - PerÃ­odos
   static String allPeriodosContabeis(String empresaId) =>
       '$_baseUrlNew/api/periodos-contabeis?empresaId=$empresaId';
   static String abrirPeriodoContabil(String empresaId, String periodo) =>
@@ -1389,7 +1379,7 @@ class ApiLinks {
   static String statusPeriodosUrl(String empresaId) =>
       '$_baseUrlNew/api/periodos-contabeis/status?empresaId=$empresaId';
 
-  // IA - Análises
+  // IA - AnÃ¡lises
   static String analisarFechamentoUrl(String empresaId, String periodo) =>
       '$_baseUrlNew/api/ai/analisar-fechamento?empresaId=$empresaId&periodo=$periodo';
   static String analisarDreUrl(String empresaId, String periodo) =>
@@ -1401,7 +1391,7 @@ class ApiLinks {
   static String perguntarAiUrl(String empresaId, String pergunta) =>
       '$_baseUrlNew/api/ai/perguntar?empresaId=$empresaId&pergunta=${Uri.encodeComponent(pergunta)}';
 
-  // Query Builder — Ferramenta de consulta SQL
+  // Query Builder â€” Ferramenta de consulta SQL
   static final String queryBuilder =
       '$_baseUrlNew/api/ferramentas/query-builder';
   static String get queryBuilderSchemas => '$queryBuilder/schemas';
@@ -1413,10 +1403,10 @@ class ApiLinks {
   static String get queryBuilderQueries => '$queryBuilder/queries-salvas';
   static String queryBuilderQuery(int id) => '$queryBuilder/queries-salvas/$id';
 
-  // ── Dashboards por área (Fase 171 — fundação) ──────────────────────────
+  // â”€â”€ Dashboards por Ã¡rea (Fase 171 â€” fundaÃ§Ã£o) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Rotas kebab-case distintas das legadas (/api/dashboard/financeiro,
-  // /api/dp/dashboard) para não colidir. empresaId é resolvido no backend
-  // via TenantContext — nunca enviado como query param.
+  // /api/dp/dashboard) para nÃ£o colidir. empresaId Ã© resolvido no backend
+  // via TenantContext â€” nunca enviado como query param.
   static String get dashboardAtendimentoKpis =>
       '$_baseUrlNew/api/dashboard/atendimento/kpis';
   static String get dashboardFinanceiroAreaKpis =>
