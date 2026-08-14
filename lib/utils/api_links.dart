@@ -16,7 +16,9 @@ class ApiLinks {
   // desnecessario (LegacyBoletobancosPathFilter) antes de chegar na rota
   // real. So usar o prefixo quando o backend e realmente o localhost local.
   static bool get _isBackendLocal =>
-      _backendUrl.contains('localhost') || _backendUrl.contains('127.0.0.1');
+      _backendUrl.contains('localhost') ||
+      _backendUrl.contains('127.0.0.1') ||
+      _backendUrl.contains('10.0.2.2'); // alias de localhost no emulador Android
   static final String _baseIp =
       _isBackendLocal ? '$_backendUrl/boletobancos' : _backendUrl;
 
