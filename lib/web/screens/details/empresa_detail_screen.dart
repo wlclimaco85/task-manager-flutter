@@ -14,7 +14,8 @@ class WebEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
-  const WebEmpresaDetailScreen({super.key, required this.item, required this.hasPermission});
+  const WebEmpresaDetailScreen(
+      {super.key, required this.item, required this.hasPermission});
 
   @override
   State<WebEmpresaDetailScreen> createState() => _WebEmpresaDetailScreenState();
@@ -37,35 +38,58 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
       '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$id',
     );
     if (!r.isSuccess || r.body == null) return;
-    final raw = r.body is List ? r.body : (r.body?['data'] ?? r.body?['content'] ?? []);
+    final raw =
+        r.body is List ? r.body : (r.body?['data'] ?? r.body?['content'] ?? []);
     if (raw is! List) return;
-    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    final ids = raw
+        .map((e) => e['id']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .join(', ');
     if (mounted) setState(() => _item['modulosServico'] = ids);
   }
 
   static Future<List<Map<String, dynamic>>> _loadTiposParceiro() async {
     final r = await NetworkCaller().getRequest(ApiLinks.allTipoParceiro);
     if (!r.isSuccess || r.body == null) return [];
-    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+    final raw = r.body!['data']?['dados'] ??
+        r.body!['data'] ??
+        r.body!['content'] ??
+        r.body;
     if (raw is! List) return [];
-    return raw.map<Map<String, dynamic>>((e) {
-      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
-      return {'value': e['id']?.toString() ?? '', 'label': label};
-    }).where((m) => m['value']!.isNotEmpty).toList();
+    return raw
+        .map<Map<String, dynamic>>((e) {
+          final label = e['descricao']?.toString() ??
+              e['nome']?.toString() ??
+              e['id']?.toString() ??
+              '';
+          return {'value': e['id']?.toString() ?? '', 'label': label};
+        })
+        .where((m) => m['value']!.isNotEmpty)
+        .toList();
   }
 
   static Future<List<Map<String, dynamic>>> _loadModulosServico() async {
     final r = await NetworkCaller().getRequest(ApiLinks.allModuloServico);
     if (!r.isSuccess || r.body == null) return [];
-    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+    final raw = r.body!['data']?['dados'] ??
+        r.body!['data'] ??
+        r.body!['content'] ??
+        r.body;
     if (raw is! List) return [];
-    return raw.map<Map<String, dynamic>>((e) {
-      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
-      return {'value': e['id']?.toString() ?? '', 'label': label};
-    }).where((m) => m['value']!.isNotEmpty).toList();
+    return raw
+        .map<Map<String, dynamic>>((e) {
+          final label = e['descricao']?.toString() ??
+              e['nome']?.toString() ??
+              e['id']?.toString() ??
+              '';
+          return {'value': e['id']?.toString() ?? '', 'label': label};
+        })
+        .where((m) => m['value']!.isNotEmpty)
+        .toList();
   }
 
-  static Future<Map<String, dynamic>> _prePopularModulos(Map<String, dynamic> itemMap) async {
+  static Future<Map<String, dynamic>> _prePopularModulos(
+      Map<String, dynamic> itemMap) async {
     final parceiroId = itemMap['id'];
     if (parceiroId == null) return itemMap;
     final r = await NetworkCaller().getRequest(
@@ -75,14 +99,18 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
     final body = r.body;
     final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
     if (raw is! List) return itemMap;
-    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    final ids = raw
+        .map((e) => e['id']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .join(', ');
     return {...itemMap, 'modulo_servicos': ids};
   }
 
   /// Persiste os módulos selecionados após salvar o parceiro.
   /// Envia formato {parceiroId, modulos:[{id, valor}]} para o backend gerar
   /// ContaReceber automaticamente em módulos novos com valor > 0.
-  static Future<void> _salvarModulos(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+  static Future<void> _salvarModulos(
+      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final parceiroId = formData['id'];
     if (parceiroId == null) return;
     final raw = formData['modulo_servicos'] as String? ?? '';
@@ -99,7 +127,8 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
   }
 
   /// Persiste os módulos selecionados da EMPRESA após salvar.
-  Future<void> _salvarModulosEmpresa(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+  Future<void> _salvarModulosEmpresa(
+      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final empresaId = formData['id'];
     if (empresaId == null) return;
     final raw = formData['modulosServico'] as String? ?? '';
@@ -118,13 +147,14 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
   Widget build(BuildContext context) {
     final id = _item['id']?.toString() ?? '';
     final empresaId = _item['id'] as int? ?? 0;
-    final empresaNome = _item['nome']?.toString() ?? _item['razaoSocial']?.toString() ?? 'Empresa';
+    final empresaNome = _item['nome']?.toString() ??
+        _item['razaoSocial']?.toString() ??
+        'Empresa';
 
     return GenericDetailFormScreen(
       item: _item,
       telaNome: 'empresa',
       hasPermission: widget.hasPermission,
-      onAfterSave: _salvarModulosEmpresa,
       fieldOverrides: [
         // fileAttachment: dropdown FK que envia "" quando vazio → 500 no backend
         // Ocultado do formulário — upload de arquivo tem tela própria
@@ -150,15 +180,12 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           isInForm: true,
         ),
         // Módulos de serviço contratados pela empresa (M:N via empresa_modulo)
-        FieldConfigWindows(
+        const FieldConfigWindows(
           label: 'Modulo Servicos',
           fieldName: 'modulosServico',
-          icon: Icons.settings_outlined,
-          fieldType: FieldType.multiselect,
-          dropdownFutureBuilder: _loadModulosServico,
-          dropdownValueField: 'value',
-          dropdownDisplayField: 'label',
-          isInForm: true,
+          isInForm: false,
+          isVisibleByDefault: false,
+          enabled: false,
           isFilterable: false,
         ),
       ],
@@ -168,8 +195,6 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
-          prefetchExtraFields: _prePopularModulos,
-          onAfterSave: _salvarModulos,
           fieldOverrides: [
             // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
             const FieldConfigWindows(
@@ -207,15 +232,12 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
             // Módulos de serviço contratados (multiselect M:N via parceiro_modulo).
             // Fix (card #466): mesmo motivo acima -- backend retorna
             // 'modulo_servicos' para a tela 'parceiro'.
-            FieldConfigWindows(
+            const FieldConfigWindows(
               label: 'Modulo Servicos',
               fieldName: 'modulo_servicos',
-              icon: Icons.settings_outlined,
-              fieldType: FieldType.multiselect,
-              dropdownFutureBuilder: _loadModulosServico,
-              dropdownValueField: 'value',
-              dropdownDisplayField: 'label',
-              isInForm: true,
+              isInForm: false,
+              isVisibleByDefault: false,
+              enabled: false,
               isFilterable: false,
             ),
           ],
@@ -252,7 +274,8 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': id},
-          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
+          transformFormData:
+              WebComunicadoGridComponentesScreen.transformFormData,
         ),
         RelatedGridTab(
           title: 'Certificado Digital',
@@ -271,7 +294,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           extraParams: {'empId': id},
         ),
         RelatedGridTab(
-          title: 'Módulos',
+          title: 'Módulos de Cobrança',
           icon: Icons.settings,
           customWidget: EmpresaModulosTab(
             empresaId: empresaId,

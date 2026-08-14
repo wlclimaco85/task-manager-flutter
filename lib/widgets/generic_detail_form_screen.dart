@@ -225,6 +225,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     }
     // Init overrides
     for (final o in (widget.fieldOverrides ?? [])) {
+      if (!o.isInForm) continue;
       final fn = o.fieldName;
       final val = item[fn];
       if (o.fieldType == FieldType.dropdown) {

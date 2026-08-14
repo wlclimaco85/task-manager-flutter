@@ -38,6 +38,15 @@ class WebParceiroDetailScreen extends StatelessWidget {
       item: item,
       telaNome: 'parceiro',
       hasPermission: hasPermission,
+      fieldOverrides: const [
+        FieldConfigWindows(
+          label: 'Modulo Servicos',
+          fieldName: 'modulo_servicos',
+          isInForm: false,
+          isVisibleByDefault: false,
+          enabled: false,
+        ),
+      ],
       relatedTabs: [
         RelatedGridTab(
           title: 'Logins',
@@ -61,7 +70,12 @@ class WebParceiroDetailScreen extends StatelessWidget {
               fieldType: FieldType.dropdown,
               dropdownOptions: empresaId.isNotEmpty
                   ? [
-                      {'id': empresaId, 'label': empresaNome.isNotEmpty ? empresaNome : 'Empresa #$empresaId'}
+                      {
+                        'id': empresaId,
+                        'label': empresaNome.isNotEmpty
+                            ? empresaNome
+                            : 'Empresa #$empresaId'
+                      }
                     ]
                   : [],
               dropdownValueField: 'id',
@@ -115,7 +129,8 @@ class WebParceiroDetailScreen extends StatelessWidget {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': empresaId, 'parceiroId': id},
-          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
+          transformFormData:
+              WebComunicadoGridComponentesScreen.transformFormData,
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
         RelatedGridTab(
