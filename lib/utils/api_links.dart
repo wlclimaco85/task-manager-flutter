@@ -14,11 +14,16 @@ class ApiLinks {
   // prod, application-prod.properties) o context-path e vazio — sem essa
   // distincao, toda chamada de API em producao levava um redirect 308
   // desnecessario (LegacyBoletobancosPathFilter) antes de chegar na rota
-  // real. So usar o prefixo quando o backend e realmente o localhost local.
-  static bool get _isBackendLocal =>
-      _backendUrl.contains('localhost') ||
-      _backendUrl.contains('127.0.0.1') ||
-      _backendUrl.contains('10.0.2.2'); // alias de localhost no emulador Android
+  // real.
+  //
+  // So usar o prefixo quando o backend e "local" — mas dev local nao e so
+  // localhost/127.0.0.1: a equipe tambem builda contra o emulador Android
+  // (10.0.2.2) e contra IP de rede local/BlueStacks (ex.: 192.168.100.113),
+  // ver network_security_config.xml. Listar IPs especificos e fragil (quebra
+  // pra qualquer IP de rede novo). O sinal real e o esquema: todo backend
+  // local roda em HTTP puro (sem TLS configurado); producao/staging (Railway
+  // e afins) sempre roda atras de HTTPS. Usar isso em vez de allowlist de IP.
+  static bool get _isBackendLocal => !_backendUrl.startsWith('https://');
   static final String _baseIp =
       _isBackendLocal ? '$_backendUrl/boletobancos' : _backendUrl;
 
