@@ -44,6 +44,56 @@ bool avaliarVisibleWhen(
   return valorAtual == valorEsperado;
 }
 
+@visibleForTesting
+dynamic resolveGenericDetailFormValue(
+    Map<String, dynamic> item, String fieldName) {
+  if (item.containsKey(fieldName)) return item[fieldName];
+  final aliases = _genericDetailFieldAliases(fieldName);
+  for (final alias in aliases) {
+    if (item.containsKey(alias)) return item[alias];
+  }
+
+  final normalizedField = _normalizeGenericDetailFieldName(fieldName);
+  for (final entry in item.entries) {
+    if (_normalizeGenericDetailFieldName(entry.key.toString()) ==
+        normalizedField) {
+      return entry.value;
+    }
+  }
+  return null;
+}
+
+List<String> _genericDetailFieldAliases(String fieldName) {
+  final aliases = <String>[];
+  final snake = _genericDetailCamelToSnake(fieldName);
+  final camel = _genericDetailSnakeToCamel(fieldName);
+  if (snake != fieldName) aliases.add(snake);
+  if (camel != fieldName) aliases.add(camel);
+  return aliases;
+}
+
+String _normalizeGenericDetailFieldName(String value) =>
+    value.replaceAll('_', '').toLowerCase();
+
+String _genericDetailCamelToSnake(String value) {
+  return value
+      .replaceAllMapped(
+        RegExp(r'([a-z0-9])([A-Z])'),
+        (match) => '${match.group(1)}_${match.group(2)}',
+      )
+      .toLowerCase();
+}
+
+String _genericDetailSnakeToCamel(String value) {
+  if (!value.contains('_')) return value;
+  final parts = value.split('_');
+  return parts.first +
+      parts.skip(1).map((part) {
+        if (part.isEmpty) return part;
+        return part[0].toUpperCase() + part.substring(1);
+      }).join();
+}
+
 // ---------------------------------------------------------------
 // GenericDetailFormScreen
 // ---------------------------------------------------------------
@@ -209,7 +259,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       // pelo widget (que vem do override) — o dropdown pareceria vazio de
       // novo mesmo com o item tendo um valor salvo.
       if (_overrideMap.containsKey(fn)) continue;
-      final val = item[fn];
+      final val = _valueFromItem(fn);
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
       } else if (f.fieldType == TelaFieldType.dropdown) {
@@ -233,7 +283,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     for (final o in (widget.fieldOverrides ?? [])) {
       if (!o.isInForm) continue;
       final fn = o.fieldName;
-      final val = item[fn];
+      final val = _valueFromItem(fn);
       if (o.fieldType == FieldType.dropdown) {
         _initDropdownValue(fn, val, o.dropdownValueField);
       } else if (o.fieldType == FieldType.multiselect) {
@@ -260,6 +310,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     } else if (val != null) {
       _dropdownValues[fn] = val.toString();
     }
+  }
+
+  dynamic _valueFromItem(String fieldName) {
+    return resolveGenericDetailFormValue(widget.item, fieldName);
   }
 
   /// Mesma logica de _initDropdownValue, para multiselect.
@@ -613,7 +667,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (_isRawIdField(fnL, allDropdownNames)) continue;
 
       // 4. Skip list fields (handled as tabs)
-      final val = widget.item[f.fieldName];
+      final val = _valueFromItem(f.fieldName);
       if (val is List) continue;
 
       // 5. Auto-dropdown: campo com dropdownEndpoint do backend

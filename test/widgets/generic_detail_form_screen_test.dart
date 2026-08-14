@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/widgets/generic_detail_form_screen.dart';
 
 void main() {
   group('GenericDetailFormScreen - Controllers Persistence', () {
@@ -114,6 +115,44 @@ void main() {
 
     test('Campo dropdown sem valor no GET fica nulo', () {
       expect(seedDropdown('id', null), null);
+    });
+  });
+
+  group('GenericDetailFormScreen - resolve aliases do item carregado', () {
+    test('campo camelCase encontra valor snake_case retornado pela API', () {
+      final item = {
+        'razao_social': 'BRASIL MODA SURF LTDA',
+        'valor_mensal': 500,
+        'dia_vencimento_mensalidade': 5,
+      };
+
+      expect(resolveGenericDetailFormValue(item, 'razaoSocial'),
+          'BRASIL MODA SURF LTDA');
+      expect(resolveGenericDetailFormValue(item, 'valorMensal'), 500);
+      expect(
+          resolveGenericDetailFormValue(item, 'diaVencimentoMensalidade'), 5);
+    });
+
+    test('campo snake_case encontra valor camelCase retornado pela API', () {
+      final item = {
+        'tipoParceiros': [
+          {'id': 1, 'nome': 'Cliente'},
+          {'id': 2, 'nome': 'Parceiro'},
+        ],
+      };
+
+      expect(
+        resolveGenericDetailFormValue(item, 'tipo_parceiros'),
+        item['tipoParceiros'],
+      );
+    });
+
+    test('campo equivalente ignora underscore e caixa como ultimo fallback',
+        () {
+      final item = {'diaVencimentoMensalidade': '05'};
+
+      expect(resolveGenericDetailFormValue(item, 'dia_vencimento_mensalidade'),
+          '05');
     });
   });
 
