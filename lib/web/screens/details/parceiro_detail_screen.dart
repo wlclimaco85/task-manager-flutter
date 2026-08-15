@@ -85,8 +85,33 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
       formData['status'] =
           status['id']?.toString() ?? status['value']?.toString();
     }
+    final regime = formData['regime'] ?? formData['regime_tributario'];
+    final regimeId = _extractId(regime);
+    if (regimeId != null) {
+      formData['regime'] = {'id': regimeId};
+      formData.remove('regime_tributario');
+    }
+    final tipos = formData['tiposParceiro'] ?? formData['tipo_parceiros'];
+    if (tipos is List) {
+      formData['tiposParceiro'] = tipos
+          .map(_extractId)
+          .whereType<String>()
+          .map((id) => {'id': id})
+          .toList();
+      formData.remove('tipo_parceiros');
+    }
     formData.remove('modulo_servicos');
     return formData;
+  }
+
+  static String? _extractId(dynamic value) {
+    if (value == null) return null;
+    if (value is Map) {
+      final raw = value['id'] ?? value['value'];
+      return raw?.toString();
+    }
+    final raw = value.toString().trim();
+    return raw.isEmpty ? null : raw;
   }
 
   static Future<void> _salvarModulos(
