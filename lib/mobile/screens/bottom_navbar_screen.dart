@@ -18,6 +18,8 @@ import '../../auth_screens/login_screen.dart';
 import 'chatMessageListScreen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
+import '../../features/agendamento/agendamento_module.dart';
+import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../services/network_caller.dart';
@@ -26,6 +28,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
+import '../../web/screens/manifestacao_destinatario_screen.dart';
 import 'documento_screen.dart';
 import 'meu_perfil_screen.dart';
 import 'ponto_screen.dart';
@@ -944,6 +947,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const ConfigFiscalScreen()),
         );
         break;
+      case "Manifestação Destinatário":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const ManifestacaoDestinatarioScreen()),
+        );
+        break;
       case "CRM/Funil":
         nav = Navigator.push(
           context,
@@ -1016,6 +1026,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Contratos GME":
         nav = _pushDynamicGrid(telaNome: 'contrato', sec: sec);
         break;
+      case "Faturar Contratos":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FaturarContratosScreen()),
+        );
+        break;
       case "Equipamentos":
         nav = _pushDynamicGrid(telaNome: 'equipamento', sec: sec);
         break;
@@ -1030,7 +1046,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Histórico Manutenção":
         nav =
-            _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
+            _pushDynamicGrid(telaNome: 'historico_manutencao', sec: sec);
         break;
       case "Técnicos":
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
@@ -1053,43 +1069,44 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'projeto', sec: sec);
         break;
       case "Etapas Projeto":
-        nav = _pushDynamicGrid(telaNome: 'projeto_etapa_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_etapa', sec: sec);
         break;
       case "Recursos Projeto":
-        nav = _pushDynamicGrid(telaNome: 'projeto_recurso_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_recurso', sec: sec);
         break;
       case "Apontamentos":
-        nav =
-            _pushDynamicGrid(telaNome: 'projeto_apontamento_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_apontamento', sec: sec);
         break;
       case "Medições":
-        nav = _pushDynamicGrid(telaNome: 'projeto_medicao_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_medicao', sec: sec);
         break;
       case "Cargos/Recursos":
-        nav = _pushDynamicGrid(telaNome: 'cargo_recurso_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'cargo_recurso', sec: sec);
         break;
       // Precificação
       case "Precificações":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'precificacao', sec: sec);
         break;
       case "Custos Diretos":
-        nav = _pushDynamicGrid(
-            telaNome: 'precificacao_custo_direto_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'custo_direto', sec: sec);
         break;
       case "Mão de Obra":
-        nav = _pushDynamicGrid(
-            telaNome: 'precificacao_mao_de_obra', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'mao_de_obra', sec: sec);
         break;
       case "Serviços Precificação":
-        nav =
-            _pushDynamicGrid(telaNome: 'precificacao_servico_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'precificacao_servico', sec: sec);
         break;
       case "Condições Pagamento":
-        nav = _pushDynamicGrid(
-            telaNome: 'precificacao_condicao_pagamento_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'condicao_pagamento', sec: sec);
         break;
       case "Propostas Comerciais":
-        nav = _pushDynamicGrid(telaNome: 'proposta_comercial_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'proposta_comercial', sec: sec);
+        break;
+      case "Agendar NFe Recorrente":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AgendamentoModuleScreen()),
+        );
         break;
       case "Voltar":
         return;
@@ -1276,14 +1293,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         [
           if (sec.canView(AppScreen.dashFiscalArea))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
+          _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
         ],
       ),
       _ModuloGroup(
         'GME',
         Icons.precision_manufacturing,
         [
-          _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
           _MoreMenuAction(Icons.description, 'Contratos GME'),
+          _MoreMenuAction(Icons.receipt_long, 'Faturar Contratos'),
           _MoreMenuAction(Icons.build, 'Equipamentos'),
           _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
           _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/api_links.dart';
+import '../utils/nfse_ux_helper.dart';
 import '../utils/tenant_context.dart';
 
 class NfseCaller {
@@ -93,18 +94,11 @@ class NfseCaller {
   }
 
   String _extractError(http.Response response, String fallback) {
-    try {
-      final body = jsonDecode(response.body);
-      if (body is Map<String, dynamic>) {
-        for (final key in ['mensagem', 'message', 'error', 'motivoRejeicao']) {
-          final value = body[key];
-          if (value != null && value.toString().trim().isNotEmpty) {
-            return value.toString();
-          }
-        }
-      }
-    } catch (_) {}
-    return '$fallback (status ${response.statusCode})';
+    return NfseUxHelper.readableHttpError(
+      response.statusCode,
+      response.body,
+      fallback,
+    );
   }
 }
 

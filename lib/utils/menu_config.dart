@@ -78,6 +78,8 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 136:InstagramMonitor
+/// 183:AgendamentoNFeRecorrente
+/// 184:CertificadoDigital (empresa logada)
 
 class MenuConfig {
   MenuConfig._();
@@ -181,6 +183,11 @@ class MenuConfig {
             label: 'Dashboard Comercial',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
+        MenuItem(
+            id: 'certificado_digital',
+            label: 'Certificado Digital',
+            icon: FontAwesomeIcons.certificate,
+            screenIndex: 184),
       ],
     ),
     MenuGroup(
@@ -223,6 +230,11 @@ class MenuConfig {
             label: 'Dashboard Fiscal',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 146),
+        MenuItem(
+            id: 'agendamento_nfe',
+            label: 'Agendar NFe Recorrente',
+            icon: FontAwesomeIcons.calendarPlus,
+            screenIndex: 183),
       ],
     ),
     MenuGroup(
@@ -724,14 +736,14 @@ class MenuConfig {
       icon: FontAwesomeIcons.gears,
       items: [
         MenuItem(
-            id: 'dashboard_gme',
-            label: 'Dashboard GME',
-            icon: FontAwesomeIcons.chartPie,
-            screenIndex: 156),
-        MenuItem(
             id: 'contrato',
             label: 'Contratos',
             icon: FontAwesomeIcons.fileContract,
+            screenIndex: 156),
+        MenuItem(
+            id: 'faturar_contratos',
+            label: 'Faturar Contratos',
+            icon: FontAwesomeIcons.receipt,
             screenIndex: 157),
         MenuItem(
             id: 'equipamento',

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:task_manager_flutter/core/design/design_tokens.dart';
-import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
-import 'package:task_manager_flutter/models/nfe/nfe_status.dart';
 
 void main() {
   group('NfeListScreen — Mobile PopupMenu Error Handling', () {
@@ -33,7 +30,9 @@ void main() {
         );
 
         // Act: tap no PopupMenu para abrir
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byWidgetPredicate(
+          (widget) => widget is PopupMenuButton<String>,
+        ));
         await tester.pumpAndSettle();
 
         // Act: tap no item do menu
@@ -85,7 +84,9 @@ void main() {
         );
 
         // Act: abrir e executar callback
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byWidgetPredicate(
+          (widget) => widget is PopupMenuButton<String>,
+        ));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Navegar'));
         await tester.pumpAndSettle();
@@ -129,7 +130,9 @@ void main() {
         );
 
         // Act: executar o callback
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byWidgetPredicate(
+          (widget) => widget is PopupMenuButton<String>,
+        ));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Erro Sync'));
         await tester.pumpAndSettle();

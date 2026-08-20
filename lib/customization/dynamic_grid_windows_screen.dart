@@ -30,12 +30,22 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final T Function(Map<String, dynamic>) fromJson;
   final Map<String, dynamic> Function(T) toJson;
   final Widget Function(T item)? detailScreenBuilder;
+  /// Repassado a GenericGridScreen.editUsesDetailScreen — quando true, a
+  /// ação "Editar" abre a mesma tela de [detailScreenBuilder] em vez do
+  /// popup de formulário genérico.
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
   /// Ver GenericGridScreen.transformFormData — repassado como está.
   final Map<String, dynamic> Function(Map<String, dynamic> formData)?
       transformFormData;
   final CustomActionsBuilder<T>? customActions;
+  /// Repassado a GenericGridScreen.buttonPermissions. Quando omitido, usa o
+  /// default do GenericGridScreen (todos os botoes habilitados). Permite a
+  /// telas com maquina de estados (ex.: pedido_compra) desabilitar
+  /// Editar/Excluir genericos quando essas acoes precisam ser restritas por
+  /// status via CustomAction propria.
+  final Map<String, bool>? buttonPermissions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
   // Overrides de endpoint — quando informados substituem os valores que viriam da config da tela
@@ -67,10 +77,12 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     required this.fromJson,
     required this.toJson,
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
     this.customActions,
+    this.buttonPermissions,
     this.fieldOverrides,
     this.showAppBar = true,
     this.fetchEndpointOverride,
@@ -515,10 +527,19 @@ class _DynamicGridWindowsScreenState<T>
               enableCsvExport: true, filenamePrefix: 'dynamic'),
           paginationConfig: const PaginationConfig(),
           detailScreenBuilder: widget.detailScreenBuilder,
+          editUsesDetailScreen: widget.editUsesDetailScreen,
           extraParams: widget.extraParams,
           additionalFormData: widget.additionalFormData,
           transformFormData: widget.transformFormData,
           customActions: widget.customActions,
+          buttonPermissions: widget.buttonPermissions ??
+              const {
+                'create': true,
+                'edit': true,
+                'delete': true,
+                'deleteMultiple': true,
+                'export': true,
+              },
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,

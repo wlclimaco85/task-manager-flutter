@@ -3,10 +3,11 @@ import '../../../models/pedido_venda_model.dart';
 import '../../../services/pedido_venda_service.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
-import '../../../constants/custom_colors.dart';
+import '../../../utils/grid_colors.dart';
 import 'details/pedido_venda_detail_screen.dart';
 import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
+import '../../../windows/dialogs/orcamento_picker_dialog.dart';
 import '../../utils/grid_texts.dart';
 import '../../../widgets/gated_button.dart';
 
@@ -81,7 +82,18 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
       itens = itensRaw.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     if (id == null) return;
-    showDialog(context: context, builder: (_) => FaturarDialog(pedidoId: id, itens: itens, onSaved: _load));
+    try {
+      showDialog(context: context, builder: (_) => FaturarDialog(pedidoId: id, itens: itens, onSaved: _load));
+    } catch (e) {
+      debugPrint('Falha ao abrir faturamento parcial: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(GridTexts.actionFailure('Faturar Parcial')),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
   }
 
   Future<void> _criarDeOrcamento() async {
@@ -89,13 +101,13 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     if (!mounted) return;
     if (orcamentos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum orçamento aprovado disponível'), backgroundColor: Colors.orange),
+        SnackBar(content: const Text('Nenhum orçamento aprovado disponível'), backgroundColor: GridColors.warning),
       );
       return;
     }
     final selected = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _OrcamentoPickerDialog(orcamentos: orcamentos),
+      builder: (_) => OrcamentoPickerDialog(orcamentos: orcamentos),
     );
     if (selected == null) return;
     final orcamentoId = selected['id'] as int?;
@@ -104,7 +116,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success ? 'Pedido criado a partir do orçamento!' : 'Erro ao criar pedido'),
-      backgroundColor: success ? Colors.green : Colors.red,
+      backgroundColor: success ? GridColors.success : GridColors.error,
     ));
     if (success) _load();
   }
@@ -116,7 +128,9 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
         final data = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (data is List) return data.map((e) => Map<String, dynamic>.from(e)).toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Falha ao buscar orcamentos aprovados: $e');
+    }
     return [];
   }
 
@@ -137,13 +151,22 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
       ),
     );
     if (confirmed != true) return;
-    final success = await action();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? '$title concluído!' : 'Erro ao $title'),
-      backgroundColor: success ? Colors.green : Colors.red,
-    ));
-    if (success) _load();
+    try {
+      final success = await action();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success ? GridTexts.completedAction(title) : GridTexts.actionFailure(title)),
+        backgroundColor: success ? GridColors.success : GridColors.error,
+      ));
+      if (mounted && success) _load();
+    } catch (e) {
+      debugPrint('Falha na acao "$title": $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(GridTexts.actionFailure(title)),
+        backgroundColor: GridColors.error,
+      ));
+    }
   }
 
   Color _statusColor(String? status) {
@@ -231,7 +254,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
             child: TextField(
               controller: _clienteCtrl,
               decoration: const InputDecoration(hintText: 'Buscar cliente...', contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), border: OutlineInputBorder(), isDense: true),
-              onChanged: (v) => _clienteFilter = v,
+              onChanged: (v) => setState(() => _clienteFilter = v),
             ),
           ),
           const SizedBox(width: 12),
@@ -323,13 +346,35 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     );
   }
 
+  Map<String, dynamic>? _findPedidoById(int id) {
+    for (final o in _pedidos) {
+      if (o['id'] == id) return o;
+    }
+    return null;
+  }
+
+  void _openPedidoById(int id) {
+    final pedidoItem = _findPedidoById(id);
+    if (pedidoItem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pedido não encontrado. Recarregando...'),
+          backgroundColor: GridColors.warning,
+        ),
+      );
+      _load();
+      return;
+    }
+    _openForm(pedidoItem);
+  }
+
   Widget _buildActions(int? id, String status, List<PedidoVendaHistorico> historico, Map<String, dynamic> pedido) {
     if (id == null) return const SizedBox.shrink();
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      _actionIcon(Icons.visibility, 'Visualizar', GridColors.info, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+      _actionIcon(Icons.visibility, 'Visualizar', GridColors.info, () => _openPedidoById(id)),
       GatedButton(
         enabled: status == 'RASCUNHO',
-        child: _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+        child: _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openPedidoById(id)),
       ),
       GatedButton(
         enabled: status == 'RASCUNHO',
@@ -344,11 +389,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
         child: _actionIcon(Icons.payment, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
       ),
       GatedButton(
-        enabled: status == 'APROVADO',
-        child: _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
-      ),
-      GatedButton(
-        enabled: status == 'FATURADO_PARCIAL',
+        enabled: status == 'APROVADO' || status == 'FATURADO_PARCIAL',
         child: _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
       ),
       _actionIcon(Icons.block, 'Cancelar', Colors.brown, () => _confirmAction('Cancelar Pedido', 'Deseja cancelar este pedido?', () => PedidoVendaService.cancelar(id))),
@@ -364,43 +405,6 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
         onPressed: onPressed,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      ),
-    );
-  }
-}
-
-class _OrcamentoPickerDialog extends StatelessWidget {
-  final List<Map<String, dynamic>> orcamentos;
-  const _OrcamentoPickerDialog({required this.orcamentos});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
-        child: Column(
-          children: [
-            AppBar(
-              title: const Text('Selecionar Orçamento'),
-              automaticallyImplyLeading: false,
-              actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))],
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(8),
-                itemCount: orcamentos.length,
-                itemBuilder: (_, i) {
-                  final o = orcamentos[i];
-                  return ListTile(
-                    title: Text('${o['numero'] ?? '#'} - ${o['clienteNome'] ?? ''} - R\$ ${(o['totalGeral'] as num?)?.toDouble() ?? 0}'),
-                    onTap: () => Navigator.pop(context, o),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../core/responsive/responsive_helper.dart';
 import '../../models/auth_utility.dart';
+import '../../models/nfe/nfe_item_model.dart';
 import '../../services/nfe_saida_service.dart';
 import '../../utils/api_links.dart';
+import '../../utils/nfe_totais_calculator.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/grid_colors.dart';
+import '../../widgets/nfe/nfe_item_form_dialog.dart';
+import '../../widgets/nfe/nfe_items_table.dart';
 import '../../widgets/searchable_dropdown.dart';
 
 const _primary = GridColors.primary;
@@ -13,6 +18,8 @@ const _error = GridColors.error;
 const _bg = GridColors.pageBackground;
 const _cardBg = GridColors.card;
 const _border = GridColors.borderSubtle;
+const _taxBoxBg = GridColors.secondarySoft;
+const _taxBoxBorder = GridColors.divider;
 
 class NfeSaidaCreateScreen extends StatefulWidget {
   const NfeSaidaCreateScreen({super.key});
@@ -46,6 +53,10 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
 
   bool _saving = false;
   bool _isLoading = true;
+
+  // Itens da NFe (antes ausentes nesta tela — ver NfeItemFormDialog)
+  final List<NfeItemModel> _items = [];
+  NfeTotais _totais = NfeTotais.zero;
 
   @override
   void initState() {
@@ -162,11 +173,51 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
     setState(() => _topSelected = top);
   }
 
+  /// Abre o dialog para adicionar um novo item
+  Future<void> _adicionarItem() async {
+    final item = await NfeItemFormDialog.show(
+      context,
+      proximoSequencial: _items.length + 1,
+    );
+    if (item == null) return;
+    setState(() {
+      _items.add(item);
+      _totais = NfeTotaisCalculator.calcular(_items);
+    });
+  }
+
+  /// Abre o dialog para editar um item existente
+  Future<void> _editarItem(int index) async {
+    if (index < 0 || index >= _items.length) return;
+    final item = await NfeItemFormDialog.show(
+      context,
+      item: _items[index],
+      proximoSequencial: _items[index].sequencial,
+    );
+    if (item == null) return;
+    setState(() {
+      _items[index] = item;
+      _totais = NfeTotaisCalculator.calcular(_items);
+    });
+  }
+
+  void _removerItem(int index) {
+    if (index < 0 || index >= _items.length) return;
+    setState(() {
+      _items.removeAt(index);
+      _totais = NfeTotaisCalculator.calcular(_items);
+    });
+  }
+
   Future<void> _salvar() async {
     final erros = <String>[];
     if (_topSelected == null) erros.add('Tipo de Operação');
     if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
+    if (_destinatarioId == null || _destinatarioId!.isEmpty) {
+      erros.add('Destinatário');
+    }
     if (_serieVal == null || _serieVal!.isEmpty) erros.add('Série');
+    if (_items.isEmpty) erros.add('Itens (adicione ao menos 1)');
     if (erros.isNotEmpty) {
       _snack('Campos obrigatórios: ${erros.join(', ')}', _error);
       return;
@@ -191,34 +242,45 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
 
     setState(() => _saving = true);
     try {
+      // Campos alinhados ao contrato real de NfeCriacaoDTO (backend).
+      // 'ambiente' segue enviado para compatibilidade futura, mas hoje o
+      // DTO do backend não possui esse campo — não é persistido ainda
+      // (gap de backend, fora do escopo desta tela Flutter).
       final body = <String, dynamic>{
-        'tipoOperacao': 'SAIDA',
-        'status': 'PENDENTE',
-        'ambiente': _ambienteVal,
         'numero': _numeroCtrl.text,
         'serie': _serieVal,
-        if (_empresaId != null)
-          'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
-        if (_parceiroId != null)
-          'parceiro': {'id': int.tryParse(_parceiroId!) ?? _parceiroId},
-        if (_destinatarioId != null)
-          'destinatario': {
-            'id': int.tryParse(_destinatarioId!) ?? _destinatarioId
-          },
-        if (_formaPagId != null)
-          'formaPagamento': {'id': int.tryParse(_formaPagId!) ?? _formaPagId},
-        if (_finalidadeId != null)
-          'nfeFinalidade': {
-            'id': int.tryParse(_finalidadeId!) ?? _finalidadeId
-          },
-        'nfeTipoOperacao': {'id': _topSelected!['id']},
+        'natOp': _topSelected!['natOp'],
+        'indFinal': _topSelected!['indFinal'],
+        'indPres': _topSelected!['indPres'],
+        'ambiente': _ambienteVal,
+        if (_empresaId != null) 'empresaId': int.tryParse(_empresaId!),
+        if (_destinatarioId != null) 'destinatarioId': int.tryParse(_destinatarioId!),
+        'nfeTipoOperacaoId': _topSelected!['id'] is int
+            ? _topSelected!['id']
+            : int.tryParse(_topSelected!['id'].toString()),
       };
 
       final result = await _service.criarNfe(body);
       if (!mounted) return;
 
       if (result != null && result['id'] != null) {
-        _snack('NF-e criada com sucesso!', _success);
+        final nfeId = result['id'] is int
+            ? result['id'] as int
+            : int.tryParse(result['id'].toString());
+        var itensComFalha = 0;
+        if (nfeId != null) {
+          for (final item in _items) {
+            final ok = await _service.criarItem(nfeId, item);
+            if (!ok) itensComFalha++;
+          }
+        }
+
+        if (!mounted) return;
+        if (itensComFalha > 0) {
+          _snack('NF-e criada, mas $itensComFalha item(ns) falharam ao salvar. Verifique antes de emitir.', _error);
+        } else {
+          _snack('NF-e criada com sucesso!', _success);
+        }
         Navigator.pop(context, true);
       } else {
         _snack('Erro ao criar NF-e', _error);
@@ -397,6 +459,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                     displayField: 'nome',
                     onChanged: (v) => setState(() => _destinatarioId = v),
                     nullable: true,
+                    isRequired: true,
                     hintText: 'Selecione o destinatário...',
                   ),
                 ),
@@ -461,9 +524,9 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8EAF6),
+                      color: _taxBoxBg,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFC5CAE9)),
+                      border: Border.all(color: _taxBoxBorder),
                     ),
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,6 +554,50 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                         ]),
                   ),
                 ],
+              ]),
+              _section('Itens *', [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _adicionarItem,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Adicionar Item'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_items.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: _border),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Text('Nenhum item adicionado. Clique em "Adicionar Item"'),
+                    ),
+                  )
+                else
+                  NfeItemsTable(
+                    items: _items,
+                    breakpoint: Breakpoint.desktop,
+                    editable: true,
+                    onEdit: _editarItem,
+                    onDelete: _removerItem,
+                  ),
+              ]),
+              _section('Resumo de Totais', [
+                _totalRow('Subtotal', _totais.subtotal),
+                _totalRow('ICMS', _totais.icms),
+                _totalRow('PIS', _totais.pis),
+                _totalRow('COFINS', _totais.cofins),
+                const Divider(),
+                _totalRow('TOTAL', _totais.total, isTotal: true),
               ]),
               const SizedBox(height: 24),
               Row(
@@ -543,7 +650,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
         SizedBox(
           width: 180,
           child: Text(label,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF757575))),
+              style: const TextStyle(fontSize: 13, color: GridColors.textMuted)),
         ),
         Expanded(
           child: Text(value,
@@ -551,6 +658,34 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         ),
       ],
+    );
+  }
+
+  /// Row de total formatado (compartilha o mesmo cálculo de
+  /// [NfeTotaisCalculator] usado nas telas Mobile e Windows).
+  Widget _totalRow(String label, double value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+          Text(
+            'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}',
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+              color: isTotal ? _success : null,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

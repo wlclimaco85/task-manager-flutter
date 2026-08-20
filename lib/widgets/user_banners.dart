@@ -11,6 +11,7 @@ import '../../../auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/mobile/screens/meu_perfil_screen.dart';
 import 'meu_perfil_dialog.dart';
 import '../../../utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
+import '../../../utils/asset_loader.dart';
 
 // AppBar customizado (apenas cabeçalho)
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -74,6 +75,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   List<Alert> notifications = [];
   OverlayEntry? notificationOverlay;
   Timer? _timer;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -90,10 +92,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       if (AuthUtility.isLoggedIn) {
         final List<Alert> alertData =
             await AlertCaller().fetchNotificacoes(context);
-        setState(() {
-          notifications = alertData;
-          unreadAlerts = notifications.length;
-        });
+        if (mounted && !_disposed) {
+          setState(() {
+            notifications = alertData;
+            unreadAlerts = notifications.length;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error fetching notifications: $e');
@@ -110,10 +114,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           'Não foi possível marcar a notificação como lida.');
       return;
     }
-    setState(() {
-      notifications.removeWhere((n) => n.id == id);
-      unreadAlerts = notifications.length;
-    });
+    if (mounted && !_disposed) {
+      setState(() {
+        notifications.removeWhere((n) => n.id == id);
+        unreadAlerts = notifications.length;
+      });
+    }
   }
 
   Future<void> deleteNotification(int id) async {
@@ -125,10 +131,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       _mostrarErroNotificacao('Não foi possível excluir a notificação.');
       return;
     }
-    setState(() {
-      notifications.removeWhere((n) => n.id == id);
-      unreadAlerts = notifications.length;
-    });
+    if (mounted && !_disposed) {
+      setState(() {
+        notifications.removeWhere((n) => n.id == id);
+        unreadAlerts = notifications.length;
+      });
+    }
   }
 
   void _mostrarErroNotificacao(String mensagem) {
@@ -152,10 +160,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           'Não foi possível marcar todas as notificações como lidas.');
       return;
     }
-    setState(() {
-      notifications.clear();
-      unreadAlerts = 0;
-    });
+    if (mounted && !_disposed) {
+      setState(() {
+        notifications.clear();
+        unreadAlerts = 0;
+      });
+    }
   }
 
   /// Retorna ícone e cor representando o tipo de notificação.
@@ -363,6 +373,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   @override
   void dispose() {
+    _disposed = true;
     _safeRemoveOverlay();
     _timer?.cancel();
     super.dispose();
@@ -397,7 +408,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     // Logo do escritório
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.asset(
+                      child: AssetLoader.loadImageWithCustomError(
                         'assets/images/logo_contabilidade.jpg',
                         width: 28,
                         height: 28,
@@ -422,7 +433,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             ),
                           )
                               .then((_) {
-                            if (mounted) setState(() {});
+                            if (mounted && !_disposed) setState(() {});
                           });
                           return;
                         }
@@ -430,7 +441,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           context: context,
                           builder: (_) => const MeuPerfilDialog(),
                         ).then((salvou) {
-                          if (salvou == true) {
+                          if (salvou == true && mounted && !_disposed) {
                             setState(() {});
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -914,6 +925,7 @@ class _AppBarActionsState extends State<AppBarActions> {
   List<Alert> _alerts = [];
   int _unreadCount = 0;
   Timer? _timer;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -929,7 +941,7 @@ class _AppBarActionsState extends State<AppBarActions> {
       if (!AuthUtility.isLoggedIn) return;
       if (!mounted) return;
       final alerts = await AlertCaller().fetchNotificacoes(context);
-      if (mounted) {
+      if (mounted && !_disposed) {
         setState(() {
           _alerts = alerts;
           _unreadCount = alerts.length;
@@ -949,7 +961,7 @@ class _AppBarActionsState extends State<AppBarActions> {
     if (alert != null) {
       await AlertCaller().marcarNotificacaoLida(alert);
     }
-    if (mounted) {
+    if (mounted && !_disposed) {
       setState(() {
         _alerts.removeWhere((a) => a.id == id);
         _unreadCount = _alerts.length;
@@ -958,7 +970,7 @@ class _AppBarActionsState extends State<AppBarActions> {
   }
 
   void _markAll() {
-    if (mounted) {
+    if (mounted && !_disposed) {
       setState(() {
         _alerts.clear();
         _unreadCount = 0;
@@ -1030,6 +1042,7 @@ class _AppBarActionsState extends State<AppBarActions> {
 
   @override
   void dispose() {
+    _disposed = true;
     _timer?.cancel();
     super.dispose();
   }

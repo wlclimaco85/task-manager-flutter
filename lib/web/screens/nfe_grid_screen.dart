@@ -12,6 +12,7 @@ import 'details/nfe_detail_screen.dart';
 import 'nfe_saida_create_screen.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../utils/grid_texts.dart';
+import '../../utils/cnpj_input_formatter.dart';
 
 class WebNfeGridScreen extends StatefulWidget {
   final bool entrada;
@@ -25,10 +26,13 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   final _chaveCtrl = TextEditingController();
   final _parceiroCtrl = TextEditingController();
   final _destCtrl = TextEditingController();
+  final _cnpjCtrl = TextEditingController();
   String? _statusFiltro;
   DateTime? _dtNegIni, _dtNegFim, _dtMovIni, _dtMovFim;
   Map<String, dynamic> _filtros = {};
   int _gridKey = 0;
+  bool _buscandoCnpj = false;
+  String? _cnpjErro;
 
   @override
   void initState() {
@@ -36,7 +40,50 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
     _aplicarFiltros();
   }
 
-  void _aplicarFiltros() {
+  @override
+  void dispose() {
+    _numeroCtrl.dispose();
+    _chaveCtrl.dispose();
+    _parceiroCtrl.dispose();
+    _destCtrl.dispose();
+    _cnpjCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Resolve o parceiroId a partir do CNPJ digitado (GET /api/parceiro?cpfCnpj=).
+  /// Retorna null se o campo estiver vazio, sem alterar _cnpjErro.
+  Future<int?> _resolverParceiroPorCnpj() async {
+    final digitos = CnpjInputFormatter.onlyDigits(_cnpjCtrl.text);
+    if (digitos.isEmpty) {
+      if (_cnpjErro != null) setState(() => _cnpjErro = null);
+      return null;
+    }
+    setState(() => _buscandoCnpj = true);
+    try {
+      final r = await TenantContext.get(ApiLinks.buscarParceiroPorCnpj(digitos));
+      if (!mounted) return null;
+      if (r.statusCode == 200) {
+        final body = jsonDecode(r.body);
+        final data = body is Map ? body['data'] : null;
+        final lista = data is Map ? data['dados'] : null;
+        final primeiro = (lista is List && lista.isNotEmpty) ? lista.first : null;
+        final id = primeiro is Map ? primeiro['id'] : null;
+        if (id != null) {
+          setState(() => _cnpjErro = null);
+          return int.tryParse(id.toString());
+        }
+      }
+      setState(() => _cnpjErro = 'Nenhum parceiro encontrado com este CNPJ');
+      return null;
+    } catch (_) {
+      if (mounted) setState(() => _cnpjErro = 'Erro ao buscar parceiro por CNPJ');
+      return null;
+    } finally {
+      if (mounted) setState(() => _buscandoCnpj = false);
+    }
+  }
+
+  Future<void> _aplicarFiltros() async {
     final f = <String, dynamic>{
       'tipoOperacao': widget.entrada ? 'ENTRADA' : 'SAIDA',
     };
@@ -47,6 +94,11 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       f['dhEmiInicio'] = _dtNegIni!.toIso8601String().substring(0, 10);
     if (_dtNegFim != null)
       f['dhEmiFim'] = _dtNegFim!.toIso8601String().substring(0, 10);
+    // CNPJ tem prioridade sobre os filtros de nome (parceiro/destinatário),
+    // pois o backend só filtra por parceiroId (não por texto livre).
+    final parceiroId = await _resolverParceiroPorCnpj();
+    if (parceiroId != null) f['parceiroId'] = parceiroId;
+    if (!mounted) return;
     setState(() {
       _filtros = f;
       _gridKey++;
@@ -58,6 +110,8 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
     _chaveCtrl.clear();
     _parceiroCtrl.clear();
     _destCtrl.clear();
+    _cnpjCtrl.clear();
+    _cnpjErro = null;
     _statusFiltro = null;
     _dtNegIni = null;
     _dtNegFim = null;
@@ -245,10 +299,19 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       final r = await TenantContext.post(
           ApiLinks.cancelarNfe(id), {'justificativa': motivoCtrl.text.trim()});
       if (!context.mounted) return;
+      String msg = 'NF-e cancelada com sucesso!';
+      if (r.statusCode != 200) {
+        msg = 'Erro ${r.statusCode}';
+        try {
+          final body = jsonDecode(r.body);
+          msg = body['message']?.toString() ??
+              body['mensagem']?.toString() ??
+              body['error']?.toString() ??
+              msg;
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'NF-e cancelada com sucesso!'
-              : 'Erro ${r.statusCode}: ${r.body}'),
+          content: Text(msg),
           backgroundColor:
               r.statusCode == 200 ? GridColors.success : GridColors.error));
       if (r.statusCode == 200) setState(() => _gridKey++);
@@ -384,10 +447,19 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
         fileField: 'xml',
       );
       if (!context.mounted) return;
+      String msg = 'XML importado com sucesso!';
+      if (r.statusCode != 200) {
+        msg = 'Erro ${r.statusCode}';
+        try {
+          final body = jsonDecode(r.body);
+          msg = body['message']?.toString() ??
+              body['mensagem']?.toString() ??
+              body['error']?.toString() ??
+              msg;
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'XML importado com sucesso!'
-              : 'Erro ${r.statusCode}: ${r.body}'),
+          content: Text(msg),
           backgroundColor:
               r.statusCode == 200 ? GridColors.success : GridColors.error));
       if (r.statusCode == 200) setState(() => _gridKey++);
@@ -622,6 +694,44 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
           const SizedBox(height: 8),
           _lbl('Destinatário'),
           _inp(_destCtrl, 'Nome do destinatário'),
+          const SizedBox(height: 8),
+          _lbl('CNPJ do Parceiro/Destinatário'),
+          TextField(
+            controller: _cnpjCtrl,
+            style: const TextStyle(fontSize: 12),
+            keyboardType: TextInputType.number,
+            inputFormatters: [CnpjInputFormatter()],
+            decoration: InputDecoration(
+                hintText: '00.000.000/0000-00',
+                hintStyle:
+                    const TextStyle(fontSize: 11, color: GridColors.divider),
+                filled: true,
+                fillColor: Colors.white,
+                isDense: true,
+                suffixIcon: _buscandoCnpj
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2)))
+                    : null,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: const BorderSide(color: GridColors.divider)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: const BorderSide(color: GridColors.divider))),
+          ),
+          if (_cnpjErro != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(_cnpjErro!,
+                  style:
+                      const TextStyle(fontSize: 11, color: GridColors.error)),
+            ),
           const SizedBox(height: 8),
           _lbl('Status'),
           _drop(

@@ -11,3 +11,6 @@ export 'presentation/notifiers/agendamento_notifier.dart';
 export 'presentation/screens/agendamento_screen.dart';
 export 'presentation/widgets/rrule_picker_segmentado.dart';
 export 'presentation/widgets/preview_ocorrencias.dart';
+
+// Module entry point (DI + navegação)
+export 'agendamento_module.dart';

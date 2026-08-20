@@ -3,18 +3,16 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/role_permissao_model.dart';
 import '../../models/auth_utility.dart';
-import '../../models/tela_model.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/role_permission_catalog.dart';
 import '../../utils/tenant_context.dart';
-import '../../services/tela_service.dart';
 
 // Fix (card #471): normalizacao de nomes de tela (lowercase + remove "_")
 // permite match independente de qual convencao (snake_case vs camelCase)
 // o registro especifico usar no banco. Necessario porque role_permissao.tela_nome
 // usa multiplas convencoes historicamente.
-String _normalizeTelaNome(String s) =>
-    s.toLowerCase().replaceAll('_', '');
+String _normalizeTelaNome(String s) => s.toLowerCase().replaceAll('_', '');
 
 /// Converte nomes de tela de snake_case para camelCase (formato backend)
 /// Exemplo: 'nfe_entrada' → 'nfeEntrada', 'chat' → 'chat'
@@ -49,15 +47,24 @@ class RolePermissaoScreen extends StatefulWidget {
 class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   List<RolePermissao> _permissoes = [];
   List<Map<String, dynamic>> _roles = [];
-  List<Tela> _telas = [];
+  final TextEditingController _buscaCtrl = TextEditingController();
   int? _roleId;
+  String _busca = '';
   bool _carregando = true;
 
   @override
   void initState() {
     super.initState();
+    _buscaCtrl.addListener(() {
+      setState(() => _busca = _buscaCtrl.text);
+    });
     _carregarDados();
-    _carregarTelas();
+  }
+
+  @override
+  void dispose() {
+    _buscaCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _carregarDados() async {
@@ -89,28 +96,14 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
           if (_roles.isNotEmpty) _roleId = _roles.first['id'] as int?;
           _carregando = false;
         });
+      } else {
+        setState(() => _carregando = false);
       }
     } catch (e) {
       setState(() => _carregando = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
-    }
-  }
-
-  /// Carrega a lista dinâmica de telas do backend via TelaService
-  Future<void> _carregarTelas() async {
-    try {
-      final telas = await TelaService.listarTelas();
-      if (mounted) {
-        setState(() {
-          _telas = telas;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar telas: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro: $e')));
     }
   }
 
@@ -130,7 +123,8 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       // CR-05: Usar Uri.encodeComponent() para telaNome para evitar caracteres especiais malformarem a URL
       final baseUri = Uri.parse(ApiLinks.baseUrl);
       final requestUri = baseUri.replace(
-        path: '${baseUri.path}/api/role-permissao/$roleId/${Uri.encodeComponent(telaNome)}',
+        path:
+            '${baseUri.path}/api/role-permissao/$roleId/${Uri.encodeComponent(telaNome)}',
       );
 
       final response = await http.put(
@@ -146,7 +140,9 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao salvar: ${response.statusCode}'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text('Erro ao salvar: ${response.statusCode}'),
+                backgroundColor: Colors.red),
           );
         }
         return;
@@ -154,7 +150,9 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
 
       setState(() {
         final index = _permissoes.indexWhere(
-          (p) => p.roleId == roleId && _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(telaNome),
+          (p) =>
+              p.roleId == roleId &&
+              _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(telaNome),
         );
         if (index >= 0) {
           final atual = _permissoes[index];
@@ -183,7 +181,8 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salvo'), duration: Duration(seconds: 1)),
+          const SnackBar(
+              content: Text('Salvo'), duration: Duration(seconds: 1)),
         );
       }
     } catch (e) {
@@ -195,11 +194,8 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     }
   }
 
-  /// Fix (card #493): refatorado para receber Tela diretamente
-  /// em vez de MenuItem. Usa tela.nome (ja no formato do backend)
-  /// para fazer match com permissoes armazenadas.
-  RolePermissao _permissaoDe(Tela tela) {
-    final telaNomeNormalizado = _normalizeTelaNome(tela.nome);
+  RolePermissao _permissaoDe(RolePermissionMenuEntry tela) {
+    final telaNomeNormalizado = _normalizeTelaNome(tela.telaNome);
     return _permissoes.firstWhere(
       (p) =>
           p.roleId == _roleId &&
@@ -209,7 +205,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
         roleId: _roleId!,
         roleKey: '',
         roleDescription: '',
-        telaNome: tela.nome,
+        telaNome: tela.telaNome,
         podeVer: false,
         podeInserir: false,
         podeEditar: false,
@@ -246,19 +242,35 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
                         onChanged: (v) => setState(() => _roleId = v),
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: TextField(
+                        controller: _buscaCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Buscar tela',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _busca.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Limpar busca',
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: _buscaCtrl.clear,
+                                ),
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
                     Expanded(child: _buildTabela()),
                   ],
                 ),
     );
   }
 
-  /// Fix (card #493): refatorado para iterar _telas (carregadas dinamicamente
-  /// do backend via /api/telas) em vez de MenuConfig.groups (hardcoded).
-  /// Isso permite que novas telas adicionadas ao banco sejam automaticamente
-  /// listadas no controle de acesso, sem necessidade de rebuild do app.
   Widget _buildTabela() {
     if (_roleId == null) return const SizedBox();
 
+    final grupos = RolePermissionCatalog.groups(query: _busca);
     final rows = <TableRow>[
       TableRow(
         decoration: BoxDecoration(color: GridColors.primary.withOpacity(0.1)),
@@ -273,26 +285,43 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       ),
     ];
 
-    // Itera telas carregadas dinamicamente do backend
-    for (final tela in _telas) {
-      final p = _permissaoDe(tela);
+    for (final grupo in grupos) {
       rows.add(TableRow(
+        decoration: BoxDecoration(color: GridColors.primary.withOpacity(0.06)),
         children: [
-          _cell(tela.descricao.isNotEmpty ? tela.descricao : tela.nome),
-          _check(p.podeVer, () => _salvar(tela.nome, 'podeVer', !p.podeVer)),
-          _check(p.podeInserir, () => _salvar(tela.nome, 'podeInserir', !p.podeInserir)),
-          _check(p.podeEditar, () => _salvar(tela.nome, 'podeEditar', !p.podeEditar)),
-          _check(p.podeDeletar, () => _salvar(tela.nome, 'podeDeletar', !p.podeDeletar)),
-          _check(p.podeBaixar, () => _salvar(tela.nome, 'podeBaixar', !p.podeBaixar)),
+          _cell(grupo.label, bold: true),
+          const SizedBox(),
+          const SizedBox(),
+          const SizedBox(),
+          const SizedBox(),
+          const SizedBox(),
         ],
       ));
+
+      for (final tela in grupo.entries) {
+        final p = _permissaoDe(tela);
+        rows.add(TableRow(
+          children: [
+            _cell(tela.label),
+            _check(
+                p.podeVer, () => _salvar(tela.telaNome, 'podeVer', !p.podeVer)),
+            _check(p.podeInserir,
+                () => _salvar(tela.telaNome, 'podeInserir', !p.podeInserir)),
+            _check(p.podeEditar,
+                () => _salvar(tela.telaNome, 'podeEditar', !p.podeEditar)),
+            _check(p.podeDeletar,
+                () => _salvar(tela.telaNome, 'podeDeletar', !p.podeDeletar)),
+            _check(p.podeBaixar,
+                () => _salvar(tela.telaNome, 'podeBaixar', !p.podeBaixar)),
+          ],
+        ));
+      }
     }
 
-    // Se nenhuma tela foi carregada, mostra mensagem
-    if (_telas.isEmpty) {
+    if (grupos.isEmpty) {
       rows.add(TableRow(
         children: [
-          _cell('Nenhuma tela disponível'),
+          _cell('Nenhuma tela encontrada'),
           const SizedBox(),
           const SizedBox(),
           const SizedBox(),
@@ -323,7 +352,8 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       padding: const EdgeInsets.all(8),
       child: Text(
         text,
-        style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal),
+        style:
+            TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal),
       ),
     );
   }

@@ -2,7 +2,7 @@ class ApiLinks {
   ApiLinks._();
 
   // URL do backend
-  // Dev local: flutter run (usa default http://127.0.0.1:8080)
+  // Dev local: flutter run usa base efetiva http://127.0.0.1:9001/boletobancos
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   // String.fromEnvironment SO funciona como const constructor — declarar
   // como "final" quebra em runtime no DDC (debug web) com
@@ -11,7 +11,7 @@ class ApiLinks {
   // (_baseIp em diante) sendo final.
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://127.0.0.1:8080',
+    defaultValue: 'http://127.0.0.1:9001',
   );
 
   // Context-path do backend: server.servlet.context-path=/boletobancos SO no
@@ -312,8 +312,7 @@ class ApiLinks {
       '$_baseUrlNew/api/importacao/conta-pagar';
   static String get importacaoContaReceber =>
       '$_baseUrlNew/api/importacao/conta-receber';
-  static String get importacaoBoletos =>
-      '$_baseUrlNew/api/importacao/boletos';
+  static String get importacaoBoletos => '$_baseUrlNew/api/importacao/boletos';
   static String get importacaoPreview => '$_baseUrlNew/api/importacao/preview';
 
   // Contas a Pagar
@@ -519,7 +518,8 @@ class ApiLinks {
 
   // Chat Kanban
   static String get chatKanban => '$_baseUrlNew/api/chat/kanban';
-  static String chatTransfer(dynamic id) => '$_baseUrlNew/api/chat/$id/transferir';
+  static String chatTransfer(dynamic id) =>
+      '$_baseUrlNew/api/chat/$id/transferir';
   static String chatMarkAsRead(dynamic id) => '$_baseUrlNew/api/chat/$id/ler';
   static String get chatUsuariosSetor => '$_baseUrlNew/api/chat/usuarios-setor';
   // Card #448 Fase 1: funcionario "pega" atendimento aguardando no setor.
@@ -564,7 +564,8 @@ class ApiLinks {
       '$_baseUrlNew/api/dashboard/finance/alerts/dueSoon';
 
   static String get kpis => '$_baseUrlNew/api/dashboard/kpis';
-  static String get portalClienteResumo => '$_baseUrlNew/api/portal-cliente/resumo';
+  static String get portalClienteResumo =>
+      '$_baseUrlNew/api/portal-cliente/resumo';
   static String get marketOverview => '$_baseUrlNew/api/cotacoes/mercado';
   static String get marketCollectorOverview =>
       '$_baseUrlNew/api/market/overview';
@@ -932,10 +933,13 @@ class ApiLinks {
 
   // Hidratacao
   static String get hidratacaoResumo => '$_baseUrlNew/api/hidratacao/resumo';
-  static String get hidratacaoRegistros => '$_baseUrlNew/api/hidratacao/registros';
-  static String hidratacaoRegistro(int id) => '$_baseUrlNew/api/hidratacao/registros/$id';
+  static String get hidratacaoRegistros =>
+      '$_baseUrlNew/api/hidratacao/registros';
+  static String hidratacaoRegistro(int id) =>
+      '$_baseUrlNew/api/hidratacao/registros/$id';
   static String get hidratacaoMeta => '$_baseUrlNew/api/hidratacao/meta';
-  static String get hidratacaoHistorico => '$_baseUrlNew/api/hidratacao/historico';
+  static String get hidratacaoHistorico =>
+      '$_baseUrlNew/api/hidratacao/historico';
 
   // Diario nutricional
   static String diarioNutricionalResumo(String data) =>
@@ -993,6 +997,9 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/recusar';
+  // Busca parceiro por CNPJ/CPF (usado pelo filtro de NF-e por parceiro/destinatario)
+  static String buscarParceiroPorCnpj(String cpfCnpj) =>
+      '$_baseUrlNew/api/parceiro?cpfCnpj=$cpfCnpj&tamanho=1';
   static String get importarNfeCsv => '$_baseUrlNew/api/nfe/importar-csv';
   static String get allNfe => '$_baseUrlNew/api/nfe';
   static String get createNfe => '$_baseUrlNew/api/nfe';
@@ -1080,10 +1087,14 @@ class ApiLinks {
       '$_baseUrlNew/api/v1/fiscal/nfce/health?empresaId=$empresaId&uf=$uf&ambiente=$ambiente';
   static String uploadCertificadoNfce() =>
       '$_baseUrlNew/api/v1/fiscal/nfce/certificado';
-  static String configFiscal(int empresaId) =>
-      '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId';
+  static String configFiscal(int empresaId, {int? parceiroId}) => parceiroId ==
+          null
+      ? '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId'
+      : '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId?parceiroId=$parceiroId';
   static String updateConfigFiscal(int configId) =>
       '$_baseUrlNew/api/v1/fiscal/nfce/config/$configId';
+  static String createConfigFiscal() =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/config';
   static String produtosBusca(String nome, int empresaId) =>
       '$_baseUrlNew/api/produto?nome=${Uri.encodeComponent(nome)}&empresa=$empresaId&page=0&size=20';
 
@@ -1247,16 +1258,19 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/conciliacao/importar-ofx';
 
   // Dashboard Financeiro KPIs
-  static String dashboardFinanceiroKpis({String? empresaId, String? parceiroId, int? dias}) =>
+  static String dashboardFinanceiroKpis(
+          {String? empresaId, String? parceiroId, int? dias}) =>
       '$_baseUrlNew/api/financeiro/dashboard/kpis${_buildQueryParams(empresaId: empresaId, parceiroId: parceiroId, dias: dias)}';
-  static String dashboardFinanceiroProjecao({String? empresaId, String? parceiroId, int? meses}) =>
+  static String dashboardFinanceiroProjecao(
+          {String? empresaId, String? parceiroId, int? meses}) =>
       '$_baseUrlNew/api/financeiro/dashboard/projecao${_buildQueryParams(empresaId: empresaId, parceiroId: parceiroId, meses: meses)}';
 
   // Exportação Power BI / CSV
   static String exportarCsv(String tipo) =>
       '$_baseUrlNew/api/financeiro/exportar/$tipo';
 
-  static String _buildQueryParams({String? empresaId, String? parceiroId, int? dias, int? meses}) {
+  static String _buildQueryParams(
+      {String? empresaId, String? parceiroId, int? dias, int? meses}) {
     final params = <String>[];
     if (empresaId != null) params.add('empresaId=$empresaId');
     if (parceiroId != null) params.add('parceiroId=$parceiroId');
@@ -1393,10 +1407,12 @@ class ApiLinks {
       '$_baseUrlNew/api/ai/perguntar?empresaId=$empresaId&pergunta=${Uri.encodeComponent(pergunta)}';
 
   // Query Builder — Ferramenta de consulta SQL
-  static final String queryBuilder = '$_baseUrlNew/api/ferramentas/query-builder';
+  static final String queryBuilder =
+      '$_baseUrlNew/api/ferramentas/query-builder';
   static String get queryBuilderSchemas => '$queryBuilder/schemas';
   static String get queryBuilderTabelas => '$queryBuilder/tabelas';
-  static String queryBuilderColunas(String schema, String tabela) => '$queryBuilder/tabelas/$schema/$tabela/colunas';
+  static String queryBuilderColunas(String schema, String tabela) =>
+      '$queryBuilder/tabelas/$schema/$tabela/colunas';
   static String get queryBuilderExecutar => '$queryBuilder/executar';
   static String get queryBuilderAtualizar => '$queryBuilder/atualizar';
   static String get queryBuilderQueries => '$queryBuilder/queries-salvas';

@@ -44,6 +44,56 @@ bool avaliarVisibleWhen(
   return valorAtual == valorEsperado;
 }
 
+@visibleForTesting
+dynamic resolveGenericDetailFormValue(
+    Map<String, dynamic> item, String fieldName) {
+  if (item.containsKey(fieldName)) return item[fieldName];
+  final aliases = _genericDetailFieldAliases(fieldName);
+  for (final alias in aliases) {
+    if (item.containsKey(alias)) return item[alias];
+  }
+
+  final normalizedField = _normalizeGenericDetailFieldName(fieldName);
+  for (final entry in item.entries) {
+    if (_normalizeGenericDetailFieldName(entry.key.toString()) ==
+        normalizedField) {
+      return entry.value;
+    }
+  }
+  return null;
+}
+
+List<String> _genericDetailFieldAliases(String fieldName) {
+  final aliases = <String>[];
+  final snake = _genericDetailCamelToSnake(fieldName);
+  final camel = _genericDetailSnakeToCamel(fieldName);
+  if (snake != fieldName) aliases.add(snake);
+  if (camel != fieldName) aliases.add(camel);
+  return aliases;
+}
+
+String _normalizeGenericDetailFieldName(String value) =>
+    value.replaceAll('_', '').toLowerCase();
+
+String _genericDetailCamelToSnake(String value) {
+  return value
+      .replaceAllMapped(
+        RegExp(r'([a-z0-9])([A-Z])'),
+        (match) => '${match.group(1)}_${match.group(2)}',
+      )
+      .toLowerCase();
+}
+
+String _genericDetailSnakeToCamel(String value) {
+  if (!value.contains('_')) return value;
+  final parts = value.split('_');
+  return parts.first +
+      parts.skip(1).map((part) {
+        if (part.isEmpty) return part;
+        return part[0].toUpperCase() + part.substring(1);
+      }).join();
+}
+
 // ---------------------------------------------------------------
 // GenericDetailFormScreen
 // ---------------------------------------------------------------
@@ -107,7 +157,13 @@ class GenericDetailFormScreen extends StatefulWidget {
   final List<RelatedGridTab>? relatedTabs;
 
   /// Callback após salvar o formulário principal.
-  final Future<void> Function(Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
+  final Future<void> Function(
+      Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
+
+  /// Ajusta o payload enviado ao endpoint principal sem alterar o estado
+  /// original repassado ao [onAfterSave].
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
 
   const GenericDetailFormScreen({
     super.key,
@@ -117,6 +173,7 @@ class GenericDetailFormScreen extends StatefulWidget {
     this.fieldOverrides,
     this.relatedTabs,
     this.onAfterSave,
+    this.transformFormData,
   });
 
   @override
@@ -194,12 +251,29 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           fnL == 'dh_updated_at') {
         continue;
       }
-      final val = item[fn];
+      // Campo com fieldOverride correspondente: renderizacao (_buildFormTab)
+      // ja da precedencia ao override (vField/label/etc próprios da tela).
+      // Deixa a inicializacao do valor tambem exclusivamente pro bloco de
+      // overrides abaixo, senao o valor inicial pode ser calculado com o
+      // dropdownValueField de tela.fields e nao bater com o vField usado
+      // pelo widget (que vem do override) — o dropdown pareceria vazio de
+      // novo mesmo com o item tendo um valor salvo.
+      if (_overrideMap.containsKey(fn)) continue;
+      final val = _valueFromItem(fn);
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
-      } else if (f.fieldType == TelaFieldType.dropdown ||
-          f.fieldType == TelaFieldType.multiselect) {
-        // handled below
+      } else if (f.fieldType == TelaFieldType.dropdown) {
+        // Bug: campo dropdown vindo de tela.fields nunca era inicializado
+        // com o valor ja existente do registro — o dropdown sempre abria
+        // vazio ao editar, mesmo quando o item ja tinha um valor salvo. Ao
+        // salvar sem re-selecionar, o campo era omitido do payload (nao
+        // enviado como vazio, simplesmente ausente), dando a impressao de
+        // que "nao salvou"/"o valor sumiu".
+        _initDropdownValue(fn, val, f.dropdownValueField);
+      } else if (f.fieldType == TelaFieldType.multiselect) {
+        // Mesmo bug do dropdown, para multiselect (ex.: Modulo Servicos,
+        // Tipo Parceiros): chips sempre voltavam a "Selecione..." ao editar.
+        _initMultiValue(fn, val, f.dropdownValueField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -209,34 +283,53 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     for (final o in (widget.fieldOverrides ?? [])) {
       if (!o.isInForm) continue;
       final fn = o.fieldName;
-      final val = item[fn];
+      final val = _valueFromItem(fn);
       if (o.fieldType == FieldType.dropdown) {
-        if (!_dropdownValues.containsKey(fn)) {
-          if (val is Map) {
-            _dropdownValues[fn] = val['id']?.toString();
-          } else if (val != null) {
-            _dropdownValues[fn] = val.toString();
-          }
-        }
+        _initDropdownValue(fn, val, o.dropdownValueField);
       } else if (o.fieldType == FieldType.multiselect) {
-        if (!_multiValues.containsKey(fn)) {
-          if (val is List) {
-            _multiValues[fn] = val
-                .map((e) {
-                  if (e is Map)
-                    return (e['id'] ?? e[o.dropdownValueField])?.toString();
-                  return e?.toString();
-                })
-                .whereType<String>()
-                .toList();
-          } else {
-            _multiValues[fn] = [];
-          }
-        }
+        _initMultiValue(fn, val, o.dropdownValueField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
       }
+    }
+  }
+
+  /// Inicializa _dropdownValues[fn] a partir do valor ja existente do
+  /// registro (widget.item), usando o mesmo campo (dropdownValueField) que
+  /// o widget de dropdown usa pra resolver qual opcao esta pre-selecionada
+  /// (_dropdownWidget) — evita divergencia entre o valor guardado no estado
+  /// e o valor comparado nas opcoes da lista. Compartilhado entre o caminho
+  /// de tela.fields e o de fieldOverrides (antes duplicado e com ordem de
+  /// fallback inconsistente entre os dois).
+  void _initDropdownValue(String fn, dynamic val, String dropdownValueField) {
+    if (_dropdownValues.containsKey(fn)) return;
+    final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    if (val is Map) {
+      _dropdownValues[fn] = (val[vf] ?? val['id'])?.toString();
+    } else if (val != null) {
+      _dropdownValues[fn] = val.toString();
+    }
+  }
+
+  dynamic _valueFromItem(String fieldName) {
+    return resolveGenericDetailFormValue(widget.item, fieldName);
+  }
+
+  /// Mesma logica de _initDropdownValue, para multiselect.
+  void _initMultiValue(String fn, dynamic val, String dropdownValueField) {
+    if (_multiValues.containsKey(fn)) return;
+    final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    if (val is List) {
+      _multiValues[fn] = val
+          .map((e) {
+            if (e is Map) return (e[vf] ?? e['id'])?.toString();
+            return e?.toString();
+          })
+          .whereType<String>()
+          .toList();
+    } else {
+      _multiValues[fn] = [];
     }
   }
 
@@ -258,8 +351,48 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (fn == 'cnpj') return FieldType.cnpj;
     if (fn == 'cpfcnpj' || fn == 'cpf_cnpj') return FieldType.text;
     if (fn == 'telefone' || fn == 'celular') return FieldType.phone;
-    if (tft.index < FieldType.values.length) return FieldType.values[tft.index];
-    return FieldType.text;
+    // Bug: TelaFieldType (backend) e FieldType (widget) tem "cpfCnpj"/"cep"
+    // extras a partir do indice 12 que nao existem em FieldType — mapear por
+    // indice numerico desalinha os dois enums a partir dali (ex.: currency
+    // do backend virava percentage no widget). Mapeia por NOME, robusto a
+    // qualquer enum ganhar/perder valores no futuro.
+    switch (tft) {
+      case TelaFieldType.text:
+        return FieldType.text;
+      case TelaFieldType.number:
+        return FieldType.number;
+      case TelaFieldType.email:
+        return FieldType.email;
+      case TelaFieldType.date:
+        return FieldType.date;
+      case TelaFieldType.multiline:
+        return FieldType.multiline;
+      case TelaFieldType.dropdown:
+        return FieldType.dropdown;
+      case TelaFieldType.boolean:
+        return FieldType.boolean;
+      case TelaFieldType.file:
+        return FieldType.file;
+      case TelaFieldType.password:
+        return FieldType.password;
+      case TelaFieldType.phone:
+        return FieldType.phone;
+      case TelaFieldType.cpf:
+        return FieldType.cpf;
+      case TelaFieldType.cnpj:
+        return FieldType.cnpj;
+      case TelaFieldType.cpfCnpj:
+      case TelaFieldType.cep:
+        return FieldType.text;
+      case TelaFieldType.currency:
+        return FieldType.currency;
+      case TelaFieldType.percentage:
+        return FieldType.percentage;
+      case TelaFieldType.url:
+        return FieldType.url;
+      case TelaFieldType.multiselect:
+        return FieldType.multiselect;
+    }
   }
 
   Future<void> _save(TelaConfig tela) async {
@@ -283,6 +416,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         body[entry.key] = entry.value.map((v) => {'id': v}).toList();
       }
 
+      final requestBody = widget.transformFormData != null
+          ? widget.transformFormData!(Map<String, dynamic>.from(body))
+          : body;
+
       final isCreate = id == null;
       final endpoint = isCreate
           ? tela.createEndpoint
@@ -290,8 +427,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final url =
           endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
       final resp = isCreate
-          ? await NetworkCaller().postRequest(url, body)
-          : await NetworkCaller().putRequest(url, body);
+          ? await NetworkCaller().postRequest(url, requestBody)
+          : await NetworkCaller().putRequest(url, requestBody);
       if (!mounted) return;
       if (resp.isSuccess) {
         final msg = isCreate ? 'Criado com sucesso' : 'Salvo com sucesso';
@@ -306,14 +443,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao salvar: ${resp.statusCode}', style: const TextStyle(color: Colors.white)),
+              content: Text('Erro ao salvar: ${resp.statusCode}',
+                  style: const TextStyle(color: Colors.white)),
               backgroundColor: GridColors.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+          SnackBar(
+              content:
+                  Text('Erro: $e', style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     } finally {
@@ -526,7 +667,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (_isRawIdField(fnL, allDropdownNames)) continue;
 
       // 4. Skip list fields (handled as tabs)
-      final val = widget.item[f.fieldName];
+      final val = _valueFromItem(f.fieldName);
       if (val is List) continue;
 
       // 5. Auto-dropdown: campo com dropdownEndpoint do backend
@@ -540,12 +681,16 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           label: f.label,
           type: isMulti ? FieldType.multiselect : FieldType.dropdown,
           isRequired: f.isRequired,
-          vField:
-              f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value'
-                  ? f.dropdownValueField
-                  : 'id',
-          dField: f.dropdownDisplayField.isNotEmpty &&
-                  f.dropdownDisplayField != 'label'
+          // Bug: quando o backend configurava explicitamente 'value'/'label'
+          // (dropdowns baseados em enum, ex. /api/enums/Ambiente), o codigo
+          // tratava isso como "nao customizado" e trocava para 'id'/'nome' —
+          // que nao existem nesses objetos, entao o dropdown caia no
+          // fallback o[vf].toString() e mostrava o id numerico bruto da
+          // linha da tabela enum_values (ex. "651") em vez do valor do enum
+          // (ex. "HOMOLOGACAO"/"Homologação"). Usa a config do backend
+          // diretamente sempre que ela vier preenchida.
+          vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
+          dField: f.dropdownDisplayField.isNotEmpty
               ? f.dropdownDisplayField
               : 'nome',
           dropdownEndpoint: f.dropdownEndpoint,
@@ -870,6 +1015,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: _controllers[ef.fieldName],
+        enabled: ef.enabled,
         keyboardType: keyboardType,
         inputFormatters: formatters,
         maxLines: maxLines ?? 1,
@@ -901,26 +1047,29 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       child: TextFormField(
         controller: _controllers[ef.fieldName],
         readOnly: true,
+        enabled: ef.enabled,
         decoration: _dec(ef.label,
             prefix: const Icon(Icons.calendar_today_outlined),
             suffix: const Icon(Icons.arrow_drop_down),
             req: ef.isRequired),
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate:
-                DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ??
-                    DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) {
-            _controllers[ef.fieldName]?.text =
-                '${picked.year.toString().padLeft(4, '0')}-'
-                '${picked.month.toString().padLeft(2, '0')}-'
-                '${picked.day.toString().padLeft(2, '0')}';
-          }
-        },
+        onTap: ef.enabled
+            ? () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.tryParse(
+                          _controllers[ef.fieldName]?.text ?? '') ??
+                      DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  _controllers[ef.fieldName]?.text =
+                      '${picked.year.toString().padLeft(4, '0')}-'
+                      '${picked.month.toString().padLeft(2, '0')}-'
+                      '${picked.day.toString().padLeft(2, '0')}';
+                }
+              }
+            : null,
       ),
     );
   }
@@ -937,8 +1086,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             title: Text(ef.label),
             value: _checkboxValues[ef.fieldName] ?? false,
             activeColor: GridColors.primary,
-            onChanged: (v) =>
-                setState(() => _checkboxValues[ef.fieldName] = v ?? false),
+            onChanged: ef.enabled
+                ? (v) =>
+                    setState(() => _checkboxValues[ef.fieldName] = v ?? false)
+                : null,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             controlAffinity: ListTileControlAffinity.leading,
           ),
@@ -999,7 +1150,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                       overflow: TextOverflow.ellipsis),
                 ))
             .toList(),
-        onChanged: (val) => setState(() => _dropdownValues[ef.fieldName] = val),
+        onChanged: ef.enabled
+            ? (val) => setState(() => _dropdownValues[ef.fieldName] = val)
+            : null,
         validator: ef.isRequired
             ? (v) => v == null ? '${ef.label} é obrigatório' : null
             : null,
@@ -1056,7 +1209,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => _openMultiDialog(ef, options, vf, df),
+        onTap: ef.enabled ? () => _openMultiDialog(ef, options, vf, df) : null,
         borderRadius: BorderRadius.circular(8),
         child: InputDecorator(
           decoration: _dec(ef.label,
@@ -1226,8 +1379,7 @@ class _LazyTab extends StatefulWidget {
 
 typedef WidgetBuilder0 = Widget Function();
 
-class _LazyTabState extends State<_LazyTab>
-    with AutomaticKeepAliveClientMixin {
+class _LazyTabState extends State<_LazyTab> with AutomaticKeepAliveClientMixin {
   bool _activated = false;
 
   @override
@@ -1314,6 +1466,7 @@ class _EF {
   final String label;
   final FieldType type;
   final bool isRequired;
+  final bool enabled;
   final String vField;
   final String dField;
   final String? dropdownEndpoint;
@@ -1326,6 +1479,7 @@ class _EF {
       required this.label,
       required this.type,
       this.isRequired = false,
+      this.enabled = true,
       this.vField = 'id',
       this.dField = 'nome',
       this.dropdownEndpoint,
@@ -1338,6 +1492,7 @@ class _EF {
         label: f.label,
         type: type,
         isRequired: f.isRequired,
+        enabled: f.enabled,
         vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
         dField:
             f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
@@ -1356,6 +1511,7 @@ class _EF {
         label: o.label,
         type: o.fieldType,
         isRequired: o.isRequired,
+        enabled: o.enabled,
         vField: o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id',
         dField:
             o.dropdownDisplayField.isNotEmpty ? o.dropdownDisplayField : 'nome',

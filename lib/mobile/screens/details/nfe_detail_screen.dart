@@ -7,8 +7,10 @@ import '../../../../utils/grid_colors.dart';
 import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
 import '../../../../utils/tenant_context.dart';
+import '../../../../utils/nfe_emission_payload.dart';
+import '../../../../utils/nfe_action_feedback.dart';
 import '../../../../widgets/searchable_dropdown.dart';
-import '../../../../utils/grid_texts.dart';
+import '../../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../../widgets/accessibility/index.dart';
 
 const _red = GridColors.primary;
@@ -26,14 +28,15 @@ class MobileNfeSankhyaDetailScreen extends StatefulWidget {
 
 class _State extends State<MobileNfeSankhyaDetailScreen> {
   int _tab = 0;
-  bool _isLoading = false;
+  final bool _isLoading = false;
+  bool _emitindo = false;
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
   List<Map<String, dynamic>> _parceiros = [];
-  List<Map<String, dynamic>> _destinatarios = [];
+  final List<Map<String, dynamic>> _destinatarios = [];
   List<Map<String, dynamic>> _series = [];
   List<Map<String, dynamic>> _unidades = [];
   List<Map<String, dynamic>> _tiposOperacao = [];
@@ -57,7 +60,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfeId => widget.item['id']?.toString() ?? '';
-  bool get _isEntrada => widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
+  bool get _isEntrada =>
+      widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
 
   @override
   void initState() {
@@ -68,6 +72,14 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       _loadItens();
       _loadContas();
     }
+  }
+
+  @override
+  void dispose() {
+    _chaveCtrl.dispose();
+    _numeroCtrl.dispose();
+    _serieCtrl.dispose();
+    super.dispose();
   }
 
   void _initCabecalho() {
@@ -82,16 +94,27 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     _ambienteVal = i['ambiente']?.toString() ?? 'HOMOLOGACAO';
 
     final sessEmpId = login?.empresa?.id?.toString();
-    _empresaId = sessEmpId ?? (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
-    _empresaNome = login?.empresa?.nome ?? (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
+    _empresaId = sessEmpId ??
+        (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
+    _empresaNome = login?.empresa?.nome ??
+        (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
     final sessParcId = login?.parceiro?.id?.toString();
-    _parceiroId = sessParcId ?? (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])?.toString();
-    _parceiroNome = login?.parceiro?.nome ?? (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+    _parceiroId = sessParcId ??
+        (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+            ?.toString();
+    _parceiroNome = login?.parceiro?.nome ??
+        (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
 
-    _destinatarioId = (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])?.toString();
-    _formaPagId = (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)?.toString();
-    _finalidadeId = (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)?.toString();
+    _destinatarioId =
+        (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+            ?.toString();
+    _formaPagId =
+        (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)
+            ?.toString();
+    _finalidadeId =
+        (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)
+            ?.toString();
 
     final topData = i['nfeTipoOperacao'];
     _tipoOperacaoId = (topData is Map ? topData['id'] : topData)?.toString();
@@ -103,22 +126,33 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
     await Future.wait([
-      _loadList('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100', (d) => setState(() => _formasPagamento = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50', (d) => setState(() => _finalidades = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}', (d) {
+      _loadList('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100',
+          (d) => setState(() => _formasPagamento = d)),
+      _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50',
+          (d) => setState(() => _finalidades = d)),
+      _loadList(
+          '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+          (d) {
         setState(() => _series = d);
         if (_serieCtrl.text.isNotEmpty && _serieId == null) {
-          final match = d.where((s) => s['serie']?.toString() == _serieCtrl.text).firstOrNull;
+          final match = d
+              .where((s) => s['serie']?.toString() == _serieCtrl.text)
+              .firstOrNull;
           if (match != null) _serieId = match['id']?.toString();
         }
       }),
-      _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200', (d) => setState(() => _unidades = d)),
-      _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}', (d) => setState(() => _parceiros = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=200', (d) => setState(() => _tiposOperacao = d)),
+      _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200',
+          (d) => setState(() => _unidades = d)),
+      _loadList(
+          '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() => _parceiros = d)),
+      _loadList('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=200',
+          (d) => setState(() => _tiposOperacao = d)),
     ]);
   }
 
-  Future<void> _loadList(String url, void Function(List<Map<String, dynamic>>) cb) async {
+  Future<void> _loadList(
+      String url, void Function(List<Map<String, dynamic>>) cb) async {
     try {
       final r = await TenantContext.get(url);
       if (r.statusCode == 200) {
@@ -136,18 +170,26 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             raw = b['dados'] ?? b['content'] ?? b['items'] ?? [];
           }
         }
-        cb(raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        cb(raw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
 
   Future<void> _loadItens() async {
     try {
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe_item?nfeId=$_nfeId&tamanho=100');
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/nfe_item?nfeId=$_nfeId&tamanho=100');
       if (r.statusCode == 200) {
         final b = jsonDecode(r.body);
-        final d = b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _itens = (d as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        final d =
+            b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
+        setState(() => _itens = (d as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
@@ -155,11 +197,16 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   Future<void> _loadContas() async {
     try {
       final ep = _isEntrada ? 'conta_pagar' : 'conta_receber';
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/$ep?nfeId=$_nfeId&tamanho=100');
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/$ep?nfeId=$_nfeId&tamanho=100');
       if (r.statusCode == 200) {
         final b = jsonDecode(r.body);
-        final d = b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _contas = (d as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        final d =
+            b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
+        setState(() => _contas = (d as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
@@ -184,9 +231,13 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
                   TabBar(
                     onTap: (i) => setState(() => _tab = i),
                     tabs: const [
-                      Tab(text: 'Formulário', icon: Icon(Icons.description, size: 18)),
+                      Tab(
+                          text: 'Formulário',
+                          icon: Icon(Icons.description, size: 18)),
                       Tab(text: 'Itens', icon: Icon(Icons.list, size: 18)),
-                      Tab(text: 'Financeiro', icon: Icon(Icons.account_balance_wallet, size: 18)),
+                      Tab(
+                          text: 'Financeiro',
+                          icon: Icon(Icons.account_balance_wallet, size: 18)),
                     ],
                   ),
                   Expanded(
@@ -205,19 +256,20 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   List<Widget> _actionsSaida() => [
-    _appBarBtn(Icons.send, 'Emitir', () => _emitir()),
-    _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
-    _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
-    _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
-  ];
+        _appBarBtn(Icons.send, _emitindo ? 'Autorizando...' : 'Emitir',
+            _emitindo ? null : () => _emitir()),
+        _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
+        _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
+        _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
+      ];
 
   List<Widget> _actionsEntrada() => [
-    _appBarBtn(Icons.upload_file, 'XML', () => _importarXml()),
-    _appBarBtn(Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
-    _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
-  ];
+        _appBarBtn(Icons.upload_file, 'XML', () => _importarXml()),
+        _appBarBtn(Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
+        _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
+      ];
 
-  Widget _appBarBtn(IconData icon, String label, VoidCallback onTap) =>
+  Widget _appBarBtn(IconData icon, String label, VoidCallback? onTap) =>
       Tooltip(
         message: label,
         child: IconButton(
@@ -239,12 +291,18 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             _field('Série', _serieCtrl, flex: 1),
           ]),
           _field('Chave', _chaveCtrl),
+          NfeChaveQrCard(chave: _chaveCtrl.text),
           _row([
-            _dropField('Status', _statusVal, ['PENDENTE', 'AUTORIZADA', 'CANCELADA', 'REJEITADA'],
-                (v) => setState(() => _statusVal = v), flex: 1),
+            _dropField(
+                'Status',
+                _statusVal,
+                ['PENDENTE', 'AUTORIZADA', 'CANCELADA', 'REJEITADA'],
+                (v) => setState(() => _statusVal = v),
+                flex: 1),
             const SizedBox(width: 8),
             _dropField('Ambiente', _ambienteVal, ['PRODUCAO', 'HOMOLOGACAO'],
-                (v) => setState(() => _ambienteVal = v), flex: 1),
+                (v) => setState(() => _ambienteVal = v),
+                flex: 1),
           ]),
           const SizedBox(height: 16),
           _section('Dados'),
@@ -289,7 +347,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${item['descricao'] ?? 'Item ${i + 1}'}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -329,7 +388,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Conta #${conta['id'] ?? '—'}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -349,6 +409,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   // ── Ações ─────────────────────────────────────────────────────────────
 
   Future<void> _emitir() async {
+    if (_emitindo) return; // evita duplo-clique disparar 2 confirmacoes/POSTs
     if (_isNovo) {
       showAccessibleSnackBar(
         context: context,
@@ -366,28 +427,37 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           title: Semantics(
             header: true,
             label: 'Confirmar Emissão',
-            child: const Text('Confirmar Emissão', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('Confirmar Emissão',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           content: Semantics(
             liveRegion: true,
-            label: 'Deseja emitir a NF-e? Esta ação transmitirá os dados para a SEFAZ.',
-            child: Text('Deseja emitir a NF-e #$_nfeId?\n\nEsta ação transmitirá os dados para a SEFAZ.',
+            label:
+                'Deseja emitir a NF-e? Esta ação transmitirá os dados para a SEFAZ.',
+            child: Text(
+                'Deseja emitir a NF-e #$_nfeId?\n\nEsta ação transmitirá os dados para a SEFAZ.',
                 style: const TextStyle(fontSize: 14, height: 1.5)),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não emitir')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Não emitir')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: _green),
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sim, emitir NF-e', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text('Sim, emitir NF-e',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
       ),
     );
     if (confirmed != true || !mounted) return;
+    final payload = _payloadEmissaoOrSnack();
+    if (payload == null) return;
+    setState(() => _emitindo = true);
     try {
-      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), {});
+      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), payload);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
@@ -398,11 +468,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           type: AccessibleSnackBarType.success,
         );
       } else {
-        String msg = 'Erro ${r.statusCode}';
-        try {
-          final body = jsonDecode(r.body);
-          msg = body['message']?.toString() ?? body['mensagem']?.toString() ?? msg;
-        } catch (_) {}
+        final msg = NfeEmissionPayload.readableHttpError(r.statusCode, r.body);
         showAccessibleSnackBar(
           context: context,
           message: msg,
@@ -416,7 +482,65 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           message: 'Erro ao processar. Tente novamente.',
           type: AccessibleSnackBarType.error,
         );
+    } finally {
+      if (mounted) setState(() => _emitindo = false);
     }
+  }
+
+  String _finalidadeEmissao() {
+    final selected = _finalidades.firstWhere(
+      (e) => e['id']?.toString() == _finalidadeId,
+      orElse: () => {},
+    );
+    final value = selected['codigo'] ??
+        selected['descricao'] ??
+        selected['nome'] ??
+        widget.item['finalidade'] ??
+        (widget.item['nfeFinalidade'] is Map
+            ? widget.item['nfeFinalidade']['codigo'] ??
+                widget.item['nfeFinalidade']['descricao'] ??
+                widget.item['nfeFinalidade']['nome']
+            : null) ??
+        'NORMAL';
+    return value.toString();
+  }
+
+  Map<String, dynamic>? _payloadEmissaoOrSnack() {
+    final finalidade = _finalidadeEmissao();
+    final errors = NfeEmissionPayload.validate(
+      empresaId: _empresaId,
+      destinatarioId: _destinatarioId,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+    if (errors.isNotEmpty) {
+      showAccessibleSnackBar(
+        context: context,
+        message: 'Campos obrigatórios para emitir: ${errors.join('; ')}',
+        type: AccessibleSnackBarType.error,
+      );
+      return null;
+    }
+    return NfeEmissionPayload.build(
+      empresaId: _empresaId!,
+      destinatarioId: _destinatarioId!,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+  }
+
+  bool _permitirDownloadAutorizado(String tipo) {
+    if (NfeEmissionPayload.isAuthorized(_statusVal)) return true;
+    showAccessibleSnackBar(
+      context: context,
+      message: '$tipo disponível somente após a NF-e autorizada.',
+      type: AccessibleSnackBarType.warning,
+    );
+    return false;
   }
 
   Future<void> _cancelar() async {
@@ -430,13 +554,15 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           title: Semantics(
             header: true,
             label: 'Cancelar NF-e',
-            child: const Text('Cancelar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('Cancelar NF-e',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Semantics(
                 label: 'NF-e #$_nfeId',
-                child: Text('NF-e #$_nfeId', style: const TextStyle(fontSize: 13, color: _grey)),
+                child: Text('NF-e #$_nfeId',
+                    style: const TextStyle(fontSize: 13, color: _grey)),
               ),
               const SizedBox(height: 16),
               AccessibleTextField(
@@ -448,18 +574,26 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             ]),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Voltar')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: _red),
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sim, cancelar NF-e', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text('Sim, cancelar NF-e',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
       ),
     );
-    if (confirmed != true || !mounted) return;
-    if (motivoCtrl.text.trim().length < 15) {
+    if (confirmed != true || !mounted) {
+      motivoCtrl.dispose();
+      return;
+    }
+    final motivo = motivoCtrl.text.trim();
+    motivoCtrl.dispose();
+    if (motivo.length < 15) {
       showAccessibleSnackBar(
         context: context,
         message: 'Motivo deve ter pelo menos 15 caracteres',
@@ -468,7 +602,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       return;
     }
     try {
-      final r = await TenantContext.post(ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivoCtrl.text.trim()});
+      final r = await TenantContext.post(
+          ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivo});
       if (!mounted) return;
       if (r.statusCode == 200) {
         setState(() => _statusVal = 'CANCELADA');
@@ -481,7 +616,10 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       } else {
         showAccessibleSnackBar(
           context: context,
-          message: 'Erro ${r.statusCode}',
+          message: NfeActionFeedback.cancelamentoErrorMessage(
+            r.statusCode,
+            r.body,
+          ),
           type: AccessibleSnackBarType.error,
         );
       }
@@ -496,6 +634,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   Future<void> _imprimirDanfe() async {
+    if (!_permitirDownloadAutorizado('DANFE')) return;
     try {
       final r = await TenantContext.get(ApiLinks.danfeNfe(_nfeId));
       if (!mounted) return;
@@ -528,6 +667,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   Future<void> _baixarXml() async {
+    if (!_permitirDownloadAutorizado('XML')) return;
     try {
       final r = await TenantContext.get(ApiLinks.xmlNfe(_nfeId));
       if (!mounted) return;
@@ -560,7 +700,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   }
 
   Future<void> _importarXml() async {
-    final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['xml'], withData: true);
+    final result = await FilePicker.pickFiles(
+        type: FileType.custom, allowedExtensions: ['xml'], withData: true);
     if (result == null || result.files.isEmpty || !mounted) return;
     final file = result.files.first;
     if (file.bytes == null) return;
@@ -574,8 +715,12 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (!mounted) return;
       showAccessibleSnackBar(
         context: context,
-        message: r.statusCode == 200 ? 'XML importado com sucesso!' : 'Erro ${r.statusCode}',
-        type: r.statusCode == 200 ? AccessibleSnackBarType.success : AccessibleSnackBarType.error,
+        message: r.statusCode == 200
+            ? 'XML importado com sucesso!'
+            : 'Erro ${r.statusCode}',
+        type: r.statusCode == 200
+            ? AccessibleSnackBarType.success
+            : AccessibleSnackBarType.error,
       );
     } catch (e) {
       if (mounted)
@@ -597,20 +742,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           title: Semantics(
             header: true,
             label: 'Aceitar NF-e',
-            child: const Text('Aceitar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('Aceitar NF-e',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           content: Semantics(
             liveRegion: true,
             label: 'Deseja aceitar a NF-e?',
-            child: Text('Confirma o aceite da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
+            child: Text(
+                'Confirma o aceite da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
                 style: const TextStyle(fontSize: 14, height: 1.5)),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não aceitar')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Não aceitar')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: _green),
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sim, aceitar', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text('Sim, aceitar',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -621,6 +771,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.aceitarNfe(_nfeId), {});
       if (!mounted) return;
       if (r.statusCode == 200) {
+        setState(() => _statusVal = 'AUTORIZADA');
         _loadItens();
         showAccessibleSnackBar(
           context: context,
@@ -654,20 +805,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           title: Semantics(
             header: true,
             label: 'Recusar NF-e',
-            child: const Text('Recusar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('Recusar NF-e',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           content: Semantics(
             liveRegion: true,
             label: 'Deseja recusar a NF-e?',
-            child: Text('Confirma a recusa da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
+            child: Text(
+                'Confirma a recusa da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
                 style: const TextStyle(fontSize: 14, height: 1.5)),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não recusar')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Não recusar')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: _red),
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Sim, recusar', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text('Sim, recusar',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -678,6 +834,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.recusarNfe(_nfeId), {});
       if (!mounted) return;
       if (r.statusCode == 200) {
+        setState(() => _statusVal = NfeActionFeedback.recusaStatus);
         _loadItens();
         showAccessibleSnackBar(
           context: context,
@@ -704,14 +861,18 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   // ── Builders ──────────────────────────────────────────────────────────
 
   Widget _section(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 8, top: 8),
-    child: Semantics(
-      header: true,
-      label: title,
-      child: Text(title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark, height: 1.2)),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8, top: 8),
+        child: Semantics(
+          header: true,
+          label: title,
+          child: Text(title,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _dark,
+                  height: 1.2)),
+        ),
+      );
 
   Widget _field(String label, TextEditingController ctrl, {int flex = 1}) =>
       Expanded(
@@ -723,20 +884,21 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
         ),
       );
 
-  Widget _row(List<Widget> children) =>
-      Padding(
+  Widget _row(List<Widget> children) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(children: children),
       );
 
   Widget _dropField(String label, String? val, List<String> opts,
-          void Function(String?) cb, {int flex = 1}) =>
+          void Function(String?) cb,
+          {int flex = 1}) =>
       Expanded(
         flex: flex,
         child: SearchableDropdownField(
           label: label,
           value: val,
-          items: opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
+          items:
+              opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
           valueField: 'id',
           displayField: 'nome',
           nullable: true,
@@ -744,8 +906,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
         ),
       );
 
-  Widget _readField(String label, String val) =>
-      Padding(
+  Widget _readField(String label, String val) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: TextFormField(
           enabled: false,
@@ -756,7 +917,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             labelStyle: const TextStyle(fontSize: 11),
             border: const OutlineInputBorder(),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
         ),
       );

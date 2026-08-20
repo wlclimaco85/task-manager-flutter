@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_texts.dart';
+import '../../utils/tenant_context.dart';
 
 /// Tela de gerenciamento do certificado digital A1 da empresa.
 /// Permite upload do .pfx, visualização do status e remoção.
@@ -548,4 +549,135 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
           ],
         ),
       );
+}
+
+/// Entrada de menu (grupo Comercial) para o certificado digital do próprio
+/// tenant logado. CertificadoEmpresaScreen exige empresaId OU parceiroId no
+/// construtor (é reaproveitada dentro das abas de Empresa/Parceiro, onde
+/// esses dados já vêm carregados do registro aberto); aqui resolvemos qual
+/// dos dois é o dono do certificado antes de delegar para a tela real.
+///
+/// Prioridade: se o login logado tem parceiroId (é um parceiro/cliente
+/// específico, não a empresa como um todo), o certificado é o DO PARCEIRO —
+/// nunca o da empresa. O certificado da empresa só é exibido quando não há
+/// parceiroId no login (ex.: usuário master/empresa logado diretamente).
+class MeuCertificadoDigitalScreen extends StatefulWidget {
+  const MeuCertificadoDigitalScreen({super.key});
+
+  @override
+  State<MeuCertificadoDigitalScreen> createState() =>
+      _MeuCertificadoDigitalScreenState();
+}
+
+class _MeuCertificadoDigitalScreenState
+    extends State<MeuCertificadoDigitalScreen> {
+  bool _carregando = true;
+  String? _erro;
+  int? _empresaId;
+  int? _parceiroId;
+  String _nome = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDadosDoTenant();
+  }
+
+  Future<void> _carregarDadosDoTenant() async {
+    final parceiroId = TenantContext.parceiroId;
+    if (parceiroId != null) {
+      await _carregarNomeParceiro(parceiroId);
+      return;
+    }
+    await _carregarNomeEmpresa();
+  }
+
+  Future<void> _carregarNomeParceiro(int parceiroId) async {
+    try {
+      final response =
+          await TenantContext.get('${ApiLinks.baseUrl}/api/parceiro/$parceiroId');
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final dados = body['data'] as Map<String, dynamic>?;
+        if (dados == null) {
+          setState(() {
+            _carregando = false;
+            _erro = 'Parceiro não encontrado.';
+          });
+          return;
+        }
+        setState(() {
+          _parceiroId = parceiroId;
+          _nome = (dados['nome'] ?? dados['razaoSocial'] ?? 'Parceiro')
+              .toString();
+          _carregando = false;
+        });
+      } else {
+        setState(() {
+          _carregando = false;
+          _erro = 'Falha ao carregar dados do parceiro.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint(
+          'MeuCertificadoDigitalScreen: falha ao carregar parceiro $parceiroId: $e');
+      setState(() {
+        _carregando = false;
+        _erro = 'Falha ao carregar dados do parceiro.';
+      });
+    }
+  }
+
+  Future<void> _carregarNomeEmpresa() async {
+    final empresaId = TenantContext.empresaId;
+    if (empresaId == null) {
+      setState(() {
+        _carregando = false;
+        _erro = 'Empresa não identificada.';
+      });
+      return;
+    }
+    try {
+      final response =
+          await TenantContext.get(ApiLinks.empresaById(empresaId.toString()));
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final dados = jsonDecode(response.body) as Map<String, dynamic>;
+        setState(() {
+          _empresaId = empresaId;
+          _nome =
+              (dados['nome'] ?? dados['razaoSocial'] ?? 'Empresa').toString();
+          _carregando = false;
+        });
+      } else {
+        setState(() {
+          _carregando = false;
+          _erro = 'Falha ao carregar dados da empresa.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('MeuCertificadoDigitalScreen: falha ao carregar empresa $empresaId: $e');
+      setState(() {
+        _carregando = false;
+        _erro = 'Falha ao carregar dados da empresa.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_erro != null || (_empresaId == null && _parceiroId == null)) {
+      return Center(
+          child: Text(_erro ?? 'Empresa não identificada.',
+              style: const TextStyle(color: GridColors.error)));
+    }
+    return CertificadoEmpresaScreen(
+        empresaId: _empresaId, parceiroId: _parceiroId, empresaNome: _nome);
+  }
 }

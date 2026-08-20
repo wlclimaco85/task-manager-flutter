@@ -11,7 +11,11 @@ import '../../../models/nfe_fatura_model.dart';
 import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/nfe_emission_payload.dart';
+import '../../../utils/nfe_action_feedback.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../widgets/nfe/nfe_chave_qr_card.dart';
+import '../../../widgets/finance/gerar_contas_pagar_dialog.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
 
@@ -20,7 +24,7 @@ const _green = GridColors.secondary;
 const _bord = Color(0xFFDDDDDD);
 const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
-const _bg = Color(0xFFF5F5F5);
+const double _kCampoMinWidth = 260;
 
 class NfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -30,15 +34,11 @@ class NfeSankhyaDetailScreen extends StatefulWidget {
 }
 
 class _State extends State<NfeSankhyaDetailScreen> {
-  int _tab = 0;
   bool _itensGrid = true;
   bool _finGrid = true;
+  bool _emitindo = false;
   int _selItem = 0;
   int _selFin = 0;
-
-  // Divisórias redimensionáveis
-  double _cabWidth = 320;
-  double _rodapeHeight = 260;
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
@@ -63,7 +63,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
   // Dropdowns
   final List<Map<String, dynamic>> _empresas = [];
   List<Map<String, dynamic>> _parceiros = [];
-  List<Map<String, dynamic>> _destinatarios = []; // parceiros do parceiro logado
+  List<Map<String, dynamic>> _destinatarios =
+      []; // parceiros do parceiro logado
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
   List<Map<String, dynamic>> _produtos = [];
@@ -92,7 +93,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
   bool get _isNovo => widget.item['id'] == null;
 
   String get _nfeId => widget.item['id']?.toString() ?? '';
-  bool get _isEntrada => widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
+  bool get _isEntrada =>
+      widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
 
   @override
   void initState() {
@@ -104,6 +106,21 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _loadContas();
       _loadPagamentos();
     }
+  }
+
+  @override
+  void dispose() {
+    _novoPagVpag.dispose();
+    _fatNFat.dispose();
+    _fatVOrig.dispose();
+    _fatVLiq.dispose();
+    _dupNDup.dispose();
+    _dupDVenc.dispose();
+    _dupVDup.dispose();
+    _chaveCtrl.dispose();
+    _numeroCtrl.dispose();
+    _serieCtrl.dispose();
+    super.dispose();
   }
 
   void _initCabecalho() {
@@ -120,17 +137,28 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
     // Empresa: prioriza localstore, fallback para o item
     final sessEmpId = login?.empresa?.id?.toString();
-    _empresaId = sessEmpId ?? (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
-    _empresaNome = login?.empresa?.nome ?? (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
+    _empresaId = sessEmpId ??
+        (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
+    _empresaNome = login?.empresa?.nome ??
+        (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
     // Parceiro: prioriza localstore, fallback para o item
     final sessParcId = login?.parceiro?.id?.toString();
-    _parceiroId = sessParcId ?? (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])?.toString();
-    _parceiroNome = login?.parceiro?.nome ?? (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+    _parceiroId = sessParcId ??
+        (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+            ?.toString();
+    _parceiroNome = login?.parceiro?.nome ??
+        (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
 
-    _destinatarioId = (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])?.toString();
-    _formaPagId = (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)?.toString();
-    _finalidadeId = (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)?.toString();
+    _destinatarioId =
+        (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+            ?.toString();
+    _formaPagId =
+        (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)
+            ?.toString();
+    _finalidadeId =
+        (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)
+            ?.toString();
 
     final topData = i['nfeTipoOperacao'];
     _tipoOperacaoId = (topData is Map ? topData['id'] : topData)?.toString();
@@ -139,31 +167,42 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _loadDropdowns() async {
     final login = AuthUtility.userInfo?.login;
     final parcId = login?.parceiro?.id?.toString() ?? _parceiroId;
-    final empId  = login?.empresa?.id?.toString() ?? _empresaId;
+    final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
     await Future.wait([
-      _loadList('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100', (d) => setState(() => _formasPagamento = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50', (d) => setState(() => _finalidades = d)),
-      _loadList('${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
+      _loadList('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100',
+          (d) => setState(() => _formasPagamento = d)),
+      _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50',
+          (d) => setState(() => _finalidades = d)),
+      _loadList(
+          '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
           (d) => setState(() => _produtos = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+      _loadList(
+          '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() {
-            _series = d;
-            if (_serieCtrl.text.isNotEmpty && _serieId == null) {
-              final match = d.where((s) => s['serie']?.toString() == _serieCtrl.text).firstOrNull;
-              if (match != null) _serieId = match['id']?.toString();
-            }
-          })),
-      _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200', (d) => setState(() => _unidades = d)),
-      _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
+                _series = d;
+                if (_serieCtrl.text.isNotEmpty && _serieId == null) {
+                  final match = d
+                      .where((s) => s['serie']?.toString() == _serieCtrl.text)
+                      .firstOrNull;
+                  if (match != null) _serieId = match['id']?.toString();
+                }
+              })),
+      _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200',
+          (d) => setState(() => _unidades = d)),
+      _loadList(
+          '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _parceiros = d)),
-      _loadList('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=200', (d) => setState(() => _tiposOperacao = d)),
+      _loadList('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=200',
+          (d) => setState(() => _tiposOperacao = d)),
       // Destinatários: parceiros vinculados ao parceiro logado (mesma empresa)
       _loadDestinatarios(empId, parcId),
     ]);
 
     if (_tipoOperacaoId != null) {
-      final found = _tiposOperacao.firstWhere((e) => e['id']?.toString() == _tipoOperacaoId, orElse: () => {});
+      final found = _tiposOperacao.firstWhere(
+          (e) => e['id']?.toString() == _tipoOperacaoId,
+          orElse: () => {});
       if (found.isNotEmpty) setState(() => _topSelected = found);
     }
   }
@@ -176,12 +215,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
     await _loadList(url, (d) => setState(() => _destinatarios = d));
     // Se não retornou nada, busca sem filtro de parceiro (só empresa)
     if (_destinatarios.isEmpty && empId != null) {
-      await _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500&empId=$empId',
+      await _loadList(
+          '${ApiLinks.baseUrl}/api/parceiro?tamanho=500&empId=$empId',
           (d) => setState(() => _destinatarios = d));
     }
   }
 
-  Future<void> _loadList(String url, void Function(List<Map<String, dynamic>>) cb) async {
+  Future<void> _loadList(
+      String url, void Function(List<Map<String, dynamic>>) cb) async {
     try {
       final r = await TenantContext.get(url);
       if (r.statusCode == 200) {
@@ -199,18 +240,26 @@ class _State extends State<NfeSankhyaDetailScreen> {
             raw = b['dados'] ?? b['content'] ?? b['items'] ?? [];
           }
         }
-        cb(raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        cb(raw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
 
   Future<void> _loadItens() async {
     try {
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe_item?nfeId=$_nfeId&tamanho=100');
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/nfe_item?nfeId=$_nfeId&tamanho=100');
       if (r.statusCode == 200) {
         final b = jsonDecode(r.body);
-        final d = b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _itens = (d as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        final d =
+            b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
+        setState(() => _itens = (d as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
@@ -218,11 +267,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _loadContas() async {
     try {
       final ep = _isEntrada ? 'conta_pagar' : 'conta_receber';
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/$ep?nfeId=$_nfeId&tamanho=100');
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/$ep?nfeId=$_nfeId&tamanho=100');
       if (r.statusCode == 200) {
         final b = jsonDecode(r.body);
-        final d = b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _contas = (d as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList());
+        final d =
+            b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
+        setState(() => _contas = (d as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList());
       }
     } catch (_) {}
   }
@@ -234,14 +288,23 @@ class _State extends State<NfeSankhyaDetailScreen> {
     setState(() => _pagamentosLoading = true);
     try {
       // Pagamentos
-      final rp = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos');
+      final rp = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos');
       if (rp.statusCode == 200) {
         final b = jsonDecode(rp.body);
-        final List raw = b is List ? b : (b['data'] is List ? b['data'] : (b['data']?['dados'] ?? b['dados'] ?? []));
-        setState(() => _pagamentos = raw.whereType<Map>().map((e) => NfePagamento.fromJson(Map<String, dynamic>.from(e))).toList());
+        final List raw = b is List
+            ? b
+            : (b['data'] is List
+                ? b['data']
+                : (b['data']?['dados'] ?? b['dados'] ?? []));
+        setState(() => _pagamentos = raw
+            .whereType<Map>()
+            .map((e) => NfePagamento.fromJson(Map<String, dynamic>.from(e)))
+            .toList());
       }
       // Fatura
-      final rf = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura');
+      final rf =
+          await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura');
       if (rf.statusCode == 200) {
         try {
           final bf = jsonDecode(rf.body);
@@ -258,11 +321,19 @@ class _State extends State<NfeSankhyaDetailScreen> {
         } catch (_) {}
       }
       // Duplicatas
-      final rd = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas');
+      final rd = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas');
       if (rd.statusCode == 200) {
         final bd = jsonDecode(rd.body);
-        final List rawd = bd is List ? bd : (bd['data'] is List ? bd['data'] : (bd['data']?['dados'] ?? bd['dados'] ?? []));
-        setState(() => _duplicatas = rawd.whereType<Map>().map((e) => NfeDuplicata.fromJson(Map<String, dynamic>.from(e))).toList());
+        final List rawd = bd is List
+            ? bd
+            : (bd['data'] is List
+                ? bd['data']
+                : (bd['data']?['dados'] ?? bd['dados'] ?? []));
+        setState(() => _duplicatas = rawd
+            .whereType<Map>()
+            .map((e) => NfeDuplicata.fromJson(Map<String, dynamic>.from(e)))
+            .toList());
       }
     } catch (_) {}
     setState(() => _pagamentosLoading = false);
@@ -271,36 +342,49 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _adicionarPagamento() async {
     final vPag = double.tryParse(_novoPagVpag.text.replaceAll(',', '.'));
     if (vPag == null || vPag <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe um valor válido'), backgroundColor: _red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Informe um valor válido'), backgroundColor: _red));
       return;
     }
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos', {'tPag': _novoPagTpag, 'vPag': vPag});
+      final r = await TenantContext.post(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos',
+          {'tPag': _novoPagTpag, 'vPag': vPag});
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         _novoPagVpag.clear();
         await _loadPagamentos();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pagamento adicionado!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Pagamento adicionado!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _removerPagamento(NfePagamento pag) async {
     if (pag.id == null) return;
     try {
-      final r = await TenantContext.delete('${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos/${pag.id}');
+      final r = await TenantContext.delete(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos/${pag.id}');
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 204) {
         await _loadPagamentos();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
@@ -312,24 +396,32 @@ class _State extends State<NfeSankhyaDetailScreen> {
     };
     try {
       final r = _fatura?.id != null
-          ? await TenantContext.put('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura', body)
-          : await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura', body);
+          ? await TenantContext.put(
+              '${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura', body)
+          : await TenantContext.post(
+              '${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         await _loadPagamentos();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fatura salva!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Fatura salva!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _adicionarDuplicata() async {
     final vDup = double.tryParse(_dupVDup.text.replaceAll(',', '.'));
     if (vDup == null || vDup <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe um valor válido'), backgroundColor: _red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Informe um valor válido'), backgroundColor: _red));
       return;
     }
     final body = {
@@ -338,152 +430,286 @@ class _State extends State<NfeSankhyaDetailScreen> {
       'vDup': vDup,
     };
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas', body);
+      final r = await TenantContext.post(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
-        _dupNDup.clear(); _dupDVenc.clear(); _dupVDup.clear();
+        _dupNDup.clear();
+        _dupDVenc.clear();
+        _dupVDup.clear();
         await _loadPagamentos();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Duplicata adicionada!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Duplicata adicionada!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _removerDuplicata(NfeDuplicata dup) async {
     if (dup.id == null) return;
     try {
-      final r = await TenantContext.delete('${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas/${dup.id}');
+      final r = await TenantContext.delete(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas/${dup.id}');
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 204) {
         await _loadPagamentos();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _gerarContasPagar() async {
-    final confirmed = await showDialog<bool>(
+    final resultado = await showDialog<GerarContasPagarResultado>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Gerar Contas a Pagar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma a geração de Contas a Pagar para a NF-e #$_nfeId?\n'
-            'Serão criadas ${_duplicatas.length} conta(s) baseadas nas duplicatas.',
-            style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Gerar'),
-          ),
-        ],
+      builder: (_) => GerarContasPagarDialog(
+        nfeId: int.tryParse(_nfeId) ?? 0,
+        quantidadeDuplicatas: _duplicatas.length,
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (resultado == null || !mounted) return;
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {});
+      final r = await TenantContext.post(
+          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {
+        if (resultado.categoriaFinanceiraId != null)
+          'categoriaFinanceiraId': resultado.categoriaFinanceiraId,
+        if (resultado.contaBancariaId != null)
+          'contaBancariaId': resultado.contaBancariaId,
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'Contas a Pagar geradas com sucesso!' : 'Erro ${r.statusCode}. Tente novamente.'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
+          content: Text(r.statusCode == 200
+              ? 'Contas a Pagar geradas com sucesso!'
+              : 'Erro ${r.statusCode}. Tente novamente.'),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(backgroundColor: _red, foregroundColor: Colors.white,
-        title: Text('NF-e #$_nfeId - ${widget.item['tipoOperacao'] ?? ''}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        actions: _isEntrada ? _actionsEntrada() : _actionsSaida()),
-      body: LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth < 768) {
-          return SingleChildScrollView(child: Column(children: [
-            SizedBox(height: 400, child: _cabecalho()),
-            const Divider(height: 1),
-            SizedBox(height: 400, child: _itensPanel()),
-            const Divider(height: 1),
-            SizedBox(height: 300, child: _rodape()),
-          ]));
-        }
-        return Column(children: [
-          Expanded(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: _cabWidth, child: _cabecalho()),
-            GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(() => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
-              child: MouseRegion(cursor: SystemMouseCursors.resizeColumn,
-                child: Container(width: 6, color: _bord,
-                  child: const Center(child: Icon(Icons.drag_indicator, size: 14, color: _grey)))),
+      backgroundColor: GridColors.pageBackground,
+      appBar: AppBar(
+          backgroundColor: _red,
+          foregroundColor: Colors.white,
+          title: Text('NF-e #$_nfeId - ${widget.item['tipoOperacao'] ?? ''}',
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          actions: _isEntrada ? _actionsEntrada() : _actionsSaida()),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _secao(
+                  titulo: 'Dados da Nota',
+                  trailing: _btnSalvarCabecalho(),
+                  child: _camposDadosDaNota(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Empresa e Fornecedor',
+                  child: _camposEmpresaFornecedor(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Itens e Importação de XML',
+                  trailing: _isEntrada ? _btnImportarXml() : null,
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 480, child: _itensPanel()),
+                        _impostosTab(),
+                      ]),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Pagamento',
+                  child: _pagamentosTab(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: 'Totais',
+                  child: _totaisTab(),
+                ),
+                const SizedBox(height: 16),
+                _secao(
+                  titulo: _isEntrada ? 'Contas a Pagar' : 'Contas a Receber',
+                  child: SizedBox(height: 400, child: _financeiroTab()),
+                ),
+              ],
             ),
-            Expanded(child: _itensPanel()),
-          ])),
-          GestureDetector(
-            onVerticalDragUpdate: (d) => setState(() => _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
-            child: MouseRegion(cursor: SystemMouseCursors.resizeRow,
-              child: Container(height: 6, color: _bord,
-                child: const Center(child: Icon(Icons.drag_handle, size: 14, color: _grey)))),
           ),
-          SizedBox(height: _rodapeHeight, child: _rodape()),
-        ]);
-      }),
+        ),
+      ),
     );
   }
+
+  /// Card sequencial (cabeçalho verde + corpo), mesmo padrão já aprovado em
+  /// nfse_detail_screen.dart -- reorganiza o formulário longo em blocos
+  /// temáticos em vez de campos soltos em sequência.
+  Widget _secao({
+    required String titulo,
+    required Widget child,
+    Widget? trailing,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: GridColors.card,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: GridColors.borderSubtle),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          color: _green,
+          child: LayoutBuilder(builder: (context, constraints) {
+            final tituloWidget = Text(
+              titulo,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13),
+            );
+            if (trailing == null) return tituloWidget;
+            if (constraints.maxWidth < 640) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  tituloWidget,
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                      scrollDirection: Axis.horizontal, child: trailing),
+                ],
+              );
+            }
+            return Row(children: [Expanded(child: tituloWidget), trailing]);
+          }),
+        ),
+        Padding(padding: const EdgeInsets.all(14), child: child),
+      ]),
+    );
+  }
+
+  /// Grid responsivo de campos: quebra em colunas conforme a largura
+  /// disponível, em vez de empilhar tudo numa coluna estreita (herdado do
+  /// layout antigo, pensado para o painel lateral redimensionável).
+  Widget _grid(List<Widget> campos) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final double largura = constraints.maxWidth;
+      double colWidth;
+      if (largura < _kCampoMinWidth) {
+        colWidth = largura;
+      } else if ((largura - 24) / 3 >= _kCampoMinWidth) {
+        colWidth = (largura - 24) / 3;
+      } else if ((largura - 12) / 2 >= _kCampoMinWidth) {
+        colWidth = (largura - 12) / 2;
+      } else {
+        colWidth = largura;
+      }
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children:
+            campos.map((c) => SizedBox(width: colWidth, child: c)).toList(),
+      );
+    });
+  }
+
+  Widget _btnImportarXml() => SizedBox(
+      height: 26,
+      child: ElevatedButton.icon(
+          onPressed: () => _importarXml(),
+          icon: const Icon(Icons.upload_file, size: 12),
+          label: const Text('Importar XML', style: TextStyle(fontSize: 11)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _green,
+              padding: const EdgeInsets.symmetric(horizontal: 8))));
 
   // ── AppBar Actions ────────────────────────────────────────────────────────
 
   List<Widget> _actionsSaida() => [
-    _appBarBtn(Icons.send, 'Emitir', () => _emitir()),
-    _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
-    _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
-    _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
-    const SizedBox(width: 8),
-  ];
+        _appBarBtn(Icons.send, _emitindo ? 'Autorizando...' : 'Emitir',
+            _emitindo ? null : () => _emitir()),
+        _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
+        _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
+        _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
+        const SizedBox(width: 8),
+      ];
 
   List<Widget> _actionsEntrada() => [
-    _appBarBtn(Icons.upload_file, 'Importar XML', () => _importarXml()),
-    _appBarBtn(Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
-    _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
-    const SizedBox(width: 8),
-  ];
+        _appBarBtn(Icons.upload_file, 'Importar XML', () => _importarXml()),
+        _appBarBtn(Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
+        _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
+        const SizedBox(width: 8),
+      ];
 
-  Widget _appBarBtn(IconData icon, String label, VoidCallback onTap) =>
-    TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 16, color: Colors.white),
-      label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
-      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-    );
+  Widget _appBarBtn(IconData icon, String label, VoidCallback? onTap) =>
+      TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 16, color: Colors.white),
+        label: Text(label,
+            style: const TextStyle(color: Colors.white, fontSize: 11)),
+        style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8)),
+      );
 
   // ── Ações NF-e SAÍDA ──────────────────────────────────────────────────────
 
   // NF08: usa POST /api/nfe/{id}/emitir (geração de XML real)
   Future<void> _emitir() async {
+    if (_emitindo) return; // evita duplo-clique disparar 2 confirmacoes/POSTs
     if (_isNovo) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Salve a NF-e antes de emitir'), backgroundColor: _red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Salve a NF-e antes de emitir'),
+          backgroundColor: _red));
       return;
     }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Emitir NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Confirma a emissão da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
-          const SizedBox(height: 8),
-          const Text('O XML será gerado e assinado digitalmente.', style: TextStyle(fontSize: 11, color: _grey)),
-        ]),
+        title: const Text('Emitir NF-e',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Confirma a emissão da NF-e #$_nfeId?',
+                  style: const TextStyle(fontSize: 13)),
+              const SizedBox(height: 8),
+              const Text('O XML será gerado e assinado digitalmente.',
+                  style: TextStyle(fontSize: 11, color: _grey)),
+            ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _green, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Emitir'),
           ),
@@ -491,26 +717,84 @@ class _State extends State<NfeSankhyaDetailScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final payload = _payloadEmissaoOrSnack();
+    if (payload == null) return;
+    setState(() => _emitindo = true);
     try {
       // NF08: novo endpoint que gera XML real e assina digitalmente
-      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), {});
+      final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), payload);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('NF-e emitida com sucesso! XML gerado e assinado.'),
-          backgroundColor: _green));
+            content: Text('NF-e emitida com sucesso! XML gerado e assinado.'),
+            backgroundColor: _green));
       } else {
-        String msg = 'Erro ${r.statusCode}';
-        try {
-          final body = jsonDecode(r.body);
-          msg = body['message']?.toString() ?? body['mensagem']?.toString() ?? body['error']?.toString() ?? msg;
-        } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
+        final msg = NfeEmissionPayload.readableHttpError(r.statusCode, r.body);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
+    } finally {
+      if (mounted) setState(() => _emitindo = false);
     }
+  }
+
+  String _finalidadeEmissao() {
+    final selected = _finalidades.firstWhere(
+      (e) => e['id']?.toString() == _finalidadeId,
+      orElse: () => {},
+    );
+    final value = selected['codigo'] ??
+        selected['descricao'] ??
+        selected['nome'] ??
+        widget.item['finalidade'] ??
+        (widget.item['nfeFinalidade'] is Map
+            ? widget.item['nfeFinalidade']['codigo'] ??
+                widget.item['nfeFinalidade']['descricao'] ??
+                widget.item['nfeFinalidade']['nome']
+            : null) ??
+        'NORMAL';
+    return value.toString();
+  }
+
+  Map<String, dynamic>? _payloadEmissaoOrSnack() {
+    final finalidade = _finalidadeEmissao();
+    final errors = NfeEmissionPayload.validate(
+      empresaId: _empresaId,
+      destinatarioId: _destinatarioId,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text('Campos obrigatórios para emitir: ${errors.join('; ')}'),
+          backgroundColor: _red));
+      return null;
+    }
+    return NfeEmissionPayload.build(
+      empresaId: _empresaId!,
+      destinatarioId: _destinatarioId!,
+      serie: _serieCtrl.text,
+      numero: _numeroCtrl.text,
+      finalidade: finalidade,
+      itens: _itens,
+    );
+  }
+
+  bool _permitirDownloadAutorizado(String tipo) {
+    if (NfeEmissionPayload.isAuthorized(_statusVal)) return true;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('$tipo disponível somente após a NF-e autorizada.'),
+        backgroundColor: _red));
+    return false;
   }
 
   Future<void> _cancelar() async {
@@ -518,49 +802,71 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cancelar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: SizedBox(width: 360, child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('NF-e #$_nfeId', style: const TextStyle(fontSize: 12, color: _grey)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: motivoCtrl,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Motivo do cancelamento *',
-              labelStyle: TextStyle(fontSize: 12),
-              border: OutlineInputBorder(),
-              isDense: true,
-              hintText: 'Mínimo 15 caracteres',
-            ),
-          ),
-        ])),
+        title: const Text('Cancelar NF-e',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+            width: 360,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('NF-e #$_nfeId',
+                  style: const TextStyle(fontSize: 12, color: _grey)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: motivoCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo do cancelamento *',
+                  labelStyle: TextStyle(fontSize: 12),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  hintText: 'Mínimo 15 caracteres',
+                ),
+              ),
+            ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Voltar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Cancelar NF-e'),
           ),
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
-    if (motivoCtrl.text.trim().length < 15) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Motivo deve ter pelo menos 15 caracteres'), backgroundColor: _red));
+    if (confirmed != true || !mounted) {
+      motivoCtrl.dispose();
+      return;
+    }
+    final motivo = motivoCtrl.text.trim();
+    motivoCtrl.dispose();
+    if (motivo.length < 15) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Motivo deve ter pelo menos 15 caracteres'),
+          backgroundColor: _red));
       return;
     }
     try {
-      final r = await TenantContext.post(ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivoCtrl.text.trim()});
+      final r = await TenantContext.post(
+          ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivo});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'NF-e cancelada!' : 'Erro ${r.statusCode}. Tente novamente.'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
+          content: Text(r.statusCode == 200
+              ? 'NF-e cancelada!'
+              : NfeActionFeedback.cancelamentoErrorMessage(
+                  r.statusCode, r.body)),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _imprimirDanfe() async {
+    if (!_permitirDownloadAutorizado('DANFE')) return;
     try {
       final r = await TenantContext.get(ApiLinks.danfeNfe(_nfeId));
       if (!mounted) return;
@@ -570,16 +876,22 @@ class _State extends State<NfeSankhyaDetailScreen> {
           bytes: r.bodyBytes,
           fileExtension: 'pdf',
         );
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('DANFE baixado!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('DANFE baixado!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Future<void> _baixarXml() async {
+    if (!_permitirDownloadAutorizado('XML')) return;
     try {
       final r = await TenantContext.get(ApiLinks.xmlNfe(_nfeId));
       if (!mounted) return;
@@ -589,12 +901,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
           bytes: Uint8List.fromList(r.body.codeUnits),
           fileExtension: 'xml',
         );
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('XML baixado!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('XML baixado!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
@@ -618,10 +935,15 @@ class _State extends State<NfeSankhyaDetailScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'XML importado com sucesso!' : 'Erro ${r.statusCode}. Tente novamente.'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
+          content: Text(r.statusCode == 200
+              ? 'XML importado com sucesso!'
+              : 'Erro ${r.statusCode}. Tente novamente.'),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
@@ -629,12 +951,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Aceitar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma o aceite da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
+        title: const Text('Aceitar NF-e',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text('Confirma o aceite da NF-e #$_nfeId?',
+            style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _green, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Aceitar'),
           ),
@@ -646,11 +973,15 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.aceitarNfe(_nfeId), {});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'NF-e aceita!' : 'Erro ${r.statusCode}'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
+          content: Text(
+              r.statusCode == 200 ? 'NF-e aceita!' : 'Erro ${r.statusCode}'),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
       if (r.statusCode == 200) setState(() => _statusVal = 'AUTORIZADA');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
@@ -658,12 +989,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Recusar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma a recusa da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
+        title: const Text('Recusar NF-e',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text('Confirma a recusa da NF-e #$_nfeId?',
+            style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Recusar'),
           ),
@@ -675,69 +1011,94 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.recusarNfe(_nfeId), {});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'NF-e recusada!' : 'Erro ${r.statusCode}'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
-      if (r.statusCode == 200) setState(() => _statusVal = 'CANCELADA');
+          content: Text(
+              r.statusCode == 200 ? 'NF-e recusada!' : 'Erro ${r.statusCode}'),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
+      if (r.statusCode == 200) {
+        setState(() => _statusVal = NfeActionFeedback.recusaStatus);
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   // ── CABEÇALHO com dropdowns ──
-  Widget _cabecalho() {
-    final hasSession = AuthUtility.userInfo?.login != null;
+  Widget _btnSalvarCabecalho() => SizedBox(
+      height: 26,
+      child: ElevatedButton.icon(
+          onPressed: _salvarCabecalho,
+          icon: const Icon(Icons.save, size: 12),
+          label: const Text('Salvar', style: TextStyle(fontSize: 11)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _green,
+              padding: const EdgeInsets.symmetric(horizontal: 8))));
 
-    return Container(color: Colors.white, child: Column(children: [
-      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), color: _green,
-        child: Row(children: [
-          const Expanded(child: Text('Cabeçalho', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
-          SizedBox(height: 24, child: ElevatedButton.icon(
-            onPressed: _salvarCabecalho,
-            icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
-        ])),
-      Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(10), child: Column(children: [
-        // Chave: sempre disabled (gerada na transmissão)
-        _inpDisabled('Chave', _chaveCtrl),
-        // Número: disabled (preenchido automaticamente pela série)
-        _inpDisabled('Número', _numeroCtrl),
-        // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
-        _isEntrada
+  /// Card "Dados da Nota": identificação da NF-e. Tipo de Operação em
+  /// destaque porque controla CFOP/CST/Alíquota ICMS herdados pelos itens.
+  Widget _camposDadosDaNota() {
+    return _grid([
+      // Chave: sempre disabled (gerada na transmissão)
+      _inpDisabled('Chave', _chaveCtrl),
+      // QR code de consulta publica SEFAZ + copiar chave (card H2)
+      NfeChaveQrCard(chave: _chaveCtrl.text),
+      // Número: disabled (preenchido automaticamente pela série)
+      _inpDisabled('Número', _numeroCtrl),
+      // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
+      _isEntrada
           ? _inp('Série', _serieCtrl)
           : _ddObjSerie('Série', _serieId, _series),
-        // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
-        _ddTipoOperacao(),
-        // Status: disabled (PENDENTE no insert, muda só ao transmitir)
-        _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-        _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO','PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
-        // Empresa: disabled, vem do localstore
-        hasSession && _empresaNome != null
+      // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
+      _ddTipoOperacao(),
+      // Status: disabled (PENDENTE no insert, muda só ao transmitir)
+      _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
+      _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+          (v) => setState(() => _ambienteVal = v)),
+    ]);
+  }
+
+  /// Card "Empresa e Fornecedor": partes envolvidas na nota.
+  Widget _camposEmpresaFornecedor() {
+    final hasSession = AuthUtility.userInfo?.login != null;
+    return _grid([
+      // Empresa: disabled, vem do localstore
+      hasSession && _empresaNome != null
           ? _inpDisabledText('Empresa', _empresaNome!)
-          : _ddObj('Empresa', _empresaId, _empresas, 'nome', (v) => setState(() => _empresaId = v)),
-        // Parceiro: disabled, vem do localstore
-        hasSession && _parceiroNome != null
+          : _ddObj('Empresa', _empresaId, _empresas, 'nome',
+              (v) => setState(() => _empresaId = v)),
+      // Parceiro: disabled, vem do localstore
+      hasSession && _parceiroNome != null
           ? _inpDisabledText('Parceiro', _parceiroNome!)
-          : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome', (v) => setState(() => _parceiroId = v)),
-        // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
-        _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
-            (v) => setState(() => _destinatarioId = v)),
-        _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao', (v) => setState(() => _formaPagId = v)),
-        _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao', (v) => setState(() => _finalidadeId = v)),
-      ]))),
-    ]));
+          : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome',
+              (v) => setState(() => _parceiroId = v)),
+      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
+      _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
+          (v) => setState(() => _destinatarioId = v)),
+      _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
+          (v) => setState(() => _formaPagId = v)),
+      _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
+          (v) => setState(() => _finalidadeId = v)),
+    ]);
   }
 
   /// Dropdown de Tipo de Operação — define CFOP/CST/Alíquota ICMS herdados pelos itens
   Widget _ddTipoOperacao() {
-    final opts = _tiposOperacao.map((e) => <String, dynamic>{
-      'id': e['id']?.toString() ?? '',
-      'nome': '${e['codigo'] ?? ''} - ${e['descricao'] ?? ''}',
-    }).toList();
+    final opts = _tiposOperacao
+        .map((e) => <String, dynamic>{
+              'id': e['id']?.toString() ?? '',
+              'nome': '${e['codigo'] ?? ''} - ${e['descricao'] ?? ''}',
+            })
+        .toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: 'Tipo de Operação',
-        value: opts.any((o) => o['id'] == _tipoOperacaoId) ? _tipoOperacaoId : null,
+        value: opts.any((o) => o['id'] == _tipoOperacaoId)
+            ? _tipoOperacaoId
+            : null,
         items: opts,
         valueField: 'id',
         displayField: 'nome',
@@ -746,7 +1107,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
         onChanged: (v) {
           setState(() {
             _tipoOperacaoId = v;
-            _topSelected = _tiposOperacao.firstWhere((e) => e['id']?.toString() == v, orElse: () => {});
+            _topSelected = _tiposOperacao
+                .firstWhere((e) => e['id']?.toString() == v, orElse: () => {});
           });
         },
       ),
@@ -755,44 +1117,59 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   /// Campo de texto desabilitado (readonly visual)
   Widget _inpDisabled(String label, TextEditingController ctrl) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: TextFormField(
-      controller: ctrl,
-      enabled: false,
-      style: const TextStyle(fontSize: 12, color: _grey),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 11, color: _grey),
-        filled: true,
-        fillColor: const Color(0xFFF5F5F5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TextFormField(
+          controller: ctrl,
+          enabled: false,
+          style: const TextStyle(fontSize: 12, color: _grey),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(fontSize: 11, color: _grey),
+            filled: true,
+            fillColor: const Color(0xFFF5F5F5),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          ),
+        ),
+      );
 
   /// Campo de texto desabilitado com valor fixo (sem controller)
   Widget _inpDisabledText(String label, String value) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 11, color: _grey),
-        filled: true,
-        fillColor: const Color(0xFFF5F5F5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-      child: Text(value, style: const TextStyle(fontSize: 12, color: _grey)),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(fontSize: 11, color: _grey),
+            filled: true,
+            fillColor: const Color(0xFFF5F5F5),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: _bord)),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          ),
+          child:
+              Text(value, style: const TextStyle(fontSize: 12, color: _grey)),
+        ),
+      );
 
-  Widget _ddObjSearch(String label, String? val, List<Map<String, dynamic>> opts,
-      String displayField, void Function(String?) cb) {
+  Widget _ddObjSearch(
+      String label,
+      String? val,
+      List<Map<String, dynamic>> opts,
+      String displayField,
+      void Function(String?) cb) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
@@ -814,27 +1191,41 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Widget _inp(String label, TextEditingController ctrl) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: TextFormField(controller: ctrl, style: const TextStyle(fontSize: 12, color: _dark),
-      decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(fontSize: 11, color: _grey),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _green, width: 1.5)),
-        isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextFormField(
+          controller: ctrl,
+          style: const TextStyle(fontSize: 12, color: _dark),
+          decoration: InputDecoration(
+              labelText: label,
+              labelStyle: const TextStyle(fontSize: 11, color: _grey),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: _bord)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: _green, width: 1.5)),
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
 
-  Widget _dd(String label, String? val, List<String> opts, void Function(String?) cb) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: SearchableDropdownField(
-      label: label,
-      value: val,
-      items: opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
-      valueField: 'id',
-      displayField: 'nome',
-      nullable: true,
-      nullLabel: '— Selecione —',
-      onChanged: cb,
-    ));
+  Widget _dd(String label, String? val, List<String> opts,
+          void Function(String?) cb) =>
+      Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SearchableDropdownField(
+            label: label,
+            value: val,
+            items:
+                opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
+            valueField: 'id',
+            displayField: 'nome',
+            nullable: true,
+            nullLabel: '— Selecione —',
+            onChanged: cb,
+          ));
 
-  Widget _ddObj(String label, String? val, List<Map<String, dynamic>> opts, String displayField, void Function(String?) cb) {
+  Widget _ddObj(String label, String? val, List<Map<String, dynamic>> opts,
+      String displayField, void Function(String?) cb) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
@@ -857,25 +1248,27 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   Future<void> _salvarItem(Map<String, dynamic> item) async {
     final isNew = item['id'] == null;
+    _prepararItemFiscal(item);
     final body = <String, dynamic>{
       if (!isNew) 'id': item['id'],
       'nfeId': item['nfe_id'] ?? int.tryParse(_nfeId),
       if (item['produto'] != null) 'produto': item['produto'],
-      'xProd':    item['x_prod']    ?? item['xProd']    ?? '',
-      'ncm':      item['ncm']       ?? '',
-      'cfop':     item['cfop']      ?? '',
-      'uCom':     item['u_com']     ?? item['uCom']     ?? '',
-      'qCom':     double.tryParse((item['q_com']     ?? item['qCom']     ?? '').toString()),
-      'vUnCom':   double.tryParse((item['v_un_com']  ?? item['vUnCom']   ?? '').toString()),
-      'vProd':    double.tryParse((item['v_prod']    ?? item['vProd']    ?? '').toString()),
-      'cstIcms':  item['cst_icms']  ?? item['cstIcms']  ?? '',
-      'aliqIcms': double.tryParse((item['aliq_icms'] ?? item['aliqIcms'] ?? '').toString()),
-      'vIcms':    double.tryParse((item['v_icms']    ?? item['vIcms']    ?? '').toString()),
+      'xProd': item['x_prod'] ?? item['xProd'] ?? '',
+      'ncm': item['ncm'] ?? '',
+      'cfop': item['cfop'] ?? '',
+      'uCom': item['u_com'] ?? item['uCom'] ?? '',
+      'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
+      'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
+      'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
+      'cstIcms': item['cst_icms'] ?? item['cstIcms'] ?? '',
+      'aliqIcms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+      'vIcms': _asDouble(item['v_icms'] ?? item['vIcms']),
     };
     try {
       final r = isNew
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item', body)
-          : await TenantContext.put('${ApiLinks.baseUrl}/api/nfe_item/${item['id']}', body);
+          : await TenantContext.put(
+              '${ApiLinks.baseUrl}/api/nfe_item/${item['id']}', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (isNew) {
@@ -888,15 +1281,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
           } catch (_) {}
         }
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Item salvo!'), backgroundColor: _green));
+            content: Text('Item salvo!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
       }
     }
   }
@@ -904,28 +1298,43 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _salvarCabecalho() async {
     final body = <String, dynamic>{
       if (!_isNovo) 'id': widget.item['id'],
-      'chave': _chaveCtrl.text, 'numero': _numeroCtrl.text, 'serie': _serieCtrl.text,
+      'chave': _chaveCtrl.text,
+      'numero': _numeroCtrl.text,
+      'serie': _serieCtrl.text,
       if (_statusVal != null) 'status': _statusVal,
       if (_ambienteVal != null) 'ambiente': _ambienteVal,
       'tipoOperacao': widget.item['tipoOperacao'] ?? 'SAIDA',
-      if (_empresaId != null) 'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
-      if (_parceiroId != null) 'parceiro': {'id': int.tryParse(_parceiroId!) ?? _parceiroId},
-      if (_destinatarioId != null) 'destinatario': {'id': int.tryParse(_destinatarioId!) ?? _destinatarioId},
-      if (_formaPagId != null) 'formaPagamento': {'id': int.tryParse(_formaPagId!) ?? _formaPagId},
-      if (_finalidadeId != null) 'nfeFinalidade': {'id': int.tryParse(_finalidadeId!) ?? _finalidadeId},
-      if (_tipoOperacaoId != null) 'nfeTipoOperacao': {'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId},
+      if (_empresaId != null)
+        'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
+      if (_parceiroId != null)
+        'parceiro': {'id': int.tryParse(_parceiroId!) ?? _parceiroId},
+      if (_destinatarioId != null)
+        'destinatario': {
+          'id': int.tryParse(_destinatarioId!) ?? _destinatarioId
+        },
+      if (_formaPagId != null)
+        'formaPagamento': {'id': int.tryParse(_formaPagId!) ?? _formaPagId},
+      if (_finalidadeId != null)
+        'nfeFinalidade': {'id': int.tryParse(_finalidadeId!) ?? _finalidadeId},
+      if (_tipoOperacaoId != null)
+        'nfeTipoOperacao': {
+          'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
+        },
     };
     try {
       final r = _isNovo
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfe', body)
-          : await TenantContext.put('${ApiLinks.baseUrl}/api/nfe/${widget.item['id']}', body);
+          : await TenantContext.put(
+              '${ApiLinks.baseUrl}/api/nfe/${widget.item['id']}', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         // Para nova NF-e: captura o ID retornado e carrega os itens/contas
         if (_isNovo) {
           try {
             final b = jsonDecode(r.body);
-            final newId = b is Map ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id'])) : null;
+            final newId = b is Map
+                ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id']))
+                : null;
             if (newId != null) {
               setState(() => widget.item['id'] = newId);
               _loadItens();
@@ -933,170 +1342,286 @@ class _State extends State<NfeSankhyaDetailScreen> {
             }
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   // ── ITENS: DynamicGridWindowsScreen sem botão Novo + toggle para form ──
   Widget _itensPanel() {
-    return Container(color: Colors.white, child: Column(children: [
-      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), color: const Color(0xFFF8F8F8),
-        child: Row(children: [
-          const Text('Itens', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(width: 8),
-          _togBtn(Icons.view_list, _itensGrid, () => setState(() => _itensGrid = true)),
-          const SizedBox(width: 4),
-          _togBtn(Icons.edit_note, !_itensGrid, () => setState(() => _itensGrid = false)),
-          const SizedBox(width: 8),
-          // Botão Novo abre o form customizado
-          SizedBox(height: 24, child: ElevatedButton.icon(
-            onPressed: _novoItem,
-            icon: const Icon(Icons.add, size: 12), label: const Text('Novo', style: TextStyle(fontSize: 11)),
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10)))),
-          if (!_itensGrid && _itens.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            SizedBox(height: 24, child: ElevatedButton.icon(
-              onPressed: () => _salvarItem(_itens[_selItem]),
-              icon: const Icon(Icons.save, size: 12), label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _green, padding: const EdgeInsets.symmetric(horizontal: 8)))),
-          ],
-          const Spacer(),
-          if (!_itensGrid && _itens.isNotEmpty) ...[
-            _nb(Icons.first_page, () => setState(() => _selItem = 0)),
-            _nb(Icons.chevron_left, () => setState(() { if (_selItem > 0) _selItem--; })),
-            Text(' ${_selItem + 1}/${_itens.length} ', style: const TextStyle(fontSize: 11)),
-            _nb(Icons.chevron_right, () => setState(() { if (_selItem < _itens.length - 1) _selItem++; })),
-            _nb(Icons.last_page, () => setState(() => _selItem = _itens.length - 1)),
-          ],
-        ])),
-      Container(height: 1, color: _bord),
-      // Grid: usa DynamicGridWindowsScreen sem botão Novo (hasPermission create=false)
-      // Form: usa o form customizado com dropdowns
-      Expanded(child: _itensGrid
-        ? _gridSemHeader(
-            telaNome: 'nfe_item',
-            extraParams: {'nfeId': _nfeId, 'nfe_id': _nfeId},
-          )
-        : (_itens.isEmpty
-            ? const Center(child: Text('Nenhum item', style: TextStyle(color: _grey)))
-            : _iForm())),
-    ]));
+    return Container(
+        color: Colors.white,
+        child: Column(children: [
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              color: const Color(0xFFF8F8F8),
+              child: Row(children: [
+                const Text('Itens',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(width: 8),
+                _togBtn(Icons.view_list, _itensGrid,
+                    () => setState(() => _itensGrid = true), 'Ver como grade'),
+                const SizedBox(width: 4),
+                _togBtn(
+                    Icons.edit_note,
+                    !_itensGrid,
+                    () => setState(() => _itensGrid = false),
+                    'Ver como formulário'),
+                const SizedBox(width: 8),
+                // Botão Novo abre o form customizado
+                SizedBox(
+                    height: 24,
+                    child: ElevatedButton.icon(
+                        onPressed: _novoItem,
+                        icon: const Icon(Icons.add, size: 12),
+                        label:
+                            const Text('Novo', style: TextStyle(fontSize: 11)),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: _green,
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10)))),
+                if (!_itensGrid && _itens.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  SizedBox(
+                      height: 24,
+                      child: ElevatedButton.icon(
+                          onPressed: () => _salvarItem(_itens[_selItem]),
+                          icon: const Icon(Icons.save, size: 12),
+                          label: const Text('Salvar',
+                              style: TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: _green,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8)))),
+                ],
+                const Spacer(),
+                if (!_itensGrid && _itens.isNotEmpty) ...[
+                  _nb(Icons.first_page, () => setState(() => _selItem = 0),
+                      'Primeiro item'),
+                  _nb(
+                      Icons.chevron_left,
+                      () => setState(() {
+                            if (_selItem > 0) _selItem--;
+                          }),
+                      'Item anterior'),
+                  Text(' ${_selItem + 1}/${_itens.length} ',
+                      style: const TextStyle(fontSize: 11)),
+                  _nb(
+                      Icons.chevron_right,
+                      () => setState(() {
+                            if (_selItem < _itens.length - 1) _selItem++;
+                          }),
+                      'Próximo item'),
+                  _nb(
+                      Icons.last_page,
+                      () => setState(() => _selItem = _itens.length - 1),
+                      'Último item'),
+                ],
+              ])),
+          Container(height: 1, color: _bord),
+          // Grid: usa DynamicGridWindowsScreen sem botão Novo (hasPermission create=false)
+          // Form: usa o form customizado com dropdowns
+          Expanded(
+              child: _itensGrid
+                  ? _gridSemHeader(
+                      telaNome: 'nfe_item',
+                      extraParams: {'nfeId': _nfeId, 'nfe_id': _nfeId},
+                    )
+                  : (_itens.isEmpty
+                      ? const Center(
+                          child: Text('Nenhum item',
+                              style: TextStyle(color: _grey)))
+                      : _iForm())),
+        ]));
   }
 
   Widget _iForm() {
     if (_selItem >= _itens.length) return const SizedBox();
     final item = _itens[_selItem];
-    final prodId = (item['produto'] is Map ? item['produto']['id'] : item['produto_id'])?.toString();
-    return SingleChildScrollView(padding: const EdgeInsets.all(10), child: Column(children: [
-      // Produto dropdown — ao selecionar, preenche NCM, CFOP, Unidade, Vl. Unitário
-      _ddObjItem('Produto', prodId, _produtos, 'nome', (v) {
-        final prod = _produtos.firstWhere((p) => p['id']?.toString() == v, orElse: () => {});
-        setState(() {
-          item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
-          if (prod.isNotEmpty) {
-            item['x_prod'] = prod['nome']?.toString() ?? '';
-            item['ncm'] = prod['ncm']?.toString() ?? '';
-            item['cfop'] = prod['cfop']?.toString() ?? '';
-            item['u_com'] = prod['unidade']?.toString() ?? '';
-            item['v_un_com'] = prod['preco']?.toString() ?? '';
-          }
-        });
-      }),
-      // Estado vazio do lookup de Produto: oferece cadastro de novo produto
-      if (_produtos.isEmpty)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
-            onPressed: _abrirCadastroProduto,
-            icon: const Icon(Icons.add_business, size: 14),
-            label: const Text('Cadastrar novo produto', style: TextStyle(fontSize: 11)),
-            style: OutlinedButton.styleFrom(foregroundColor: _green, side: const BorderSide(color: _green),
-              padding: const EdgeInsets.symmetric(vertical: 6)),
-          )),
-        ),
-      _iInp('Descrição (xProd)', item, 'x_prod', 'xProd'),
-      _iInp('NCM', item, 'ncm', 'ncm'),
-      _iInp('CFOP', item, 'cfop', 'cfop'),
-      // Unidade como dropdown
-      _ddObjItem('Unidade', item['u_com']?.toString() ?? item['uCom']?.toString(), _unidades.isNotEmpty ? _unidades : _unidadesFallback(), 'nome', (v) {
-        setState(() { item['u_com'] = v; item['uCom'] = v; });
-      }),
-      _iInp('Quantidade', item, 'q_com', 'qCom'),
-      _iInp('Vl. Unitário', item, 'v_un_com', 'vUnCom'),
-      _iInp('Vl. Total', item, 'v_prod', 'vProd'),
-      _iInp('CST ICMS', item, 'cst_icms', 'cstIcms'),
-      _iInp('Alíq. ICMS', item, 'aliq_icms', 'aliqIcms'),
-      _iInp('BC ICMS', item, 'v_bc_icms', 'vBcIcms'),
-      _iInp('Vl. ICMS', item, 'v_icms', 'vIcms'),
-      // NF03: Botão Calcular ICMS
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
-          onPressed: () => _calcularIcms(item),
-          icon: const Icon(Icons.calculate_outlined, size: 14),
-          label: const Text('Calcular ICMS', style: TextStyle(fontSize: 11)),
-          style: OutlinedButton.styleFrom(foregroundColor: _green, side: const BorderSide(color: _green),
-            padding: const EdgeInsets.symmetric(vertical: 6)),
-        )),
-      ),
-      const SizedBox(height: 12),
-      SizedBox(width: double.infinity, child: ElevatedButton.icon(
-        onPressed: () => _salvarItem(item),
-        icon: const Icon(Icons.save, size: 14),
-        label: const Text('Salvar Item', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-        style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10)))),
-    ]));
+    final prodId =
+        (item['produto'] is Map ? item['produto']['id'] : item['produto_id'])
+            ?.toString();
+    return SingleChildScrollView(
+        padding: const EdgeInsets.all(10),
+        child: Column(children: [
+          // Produto dropdown — ao selecionar, preenche NCM, CFOP, Unidade, Vl. Unitário
+          _ddObjItem('Produto', prodId, _produtos, 'nome', (v) {
+            final prod = _produtos.firstWhere((p) => p['id']?.toString() == v,
+                orElse: () => {});
+            setState(() {
+              item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
+              if (prod.isNotEmpty) {
+                item['x_prod'] = prod['nome']?.toString() ?? '';
+                item['xProd'] = item['x_prod'];
+                item['ncm'] = prod['ncm']?.toString() ?? '';
+                item['cfop'] = prod['cfop']?.toString() ?? '';
+                item['u_com'] = prod['unidade']?.toString() ?? '';
+                item['uCom'] = item['u_com'];
+                item['v_un_com'] = prod['preco']?.toString() ?? '';
+                item['vUnCom'] = item['v_un_com'];
+                item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1';
+                item['qCom'] = item['q_com'];
+                _recalcularTotalItem(item);
+              }
+            });
+          }),
+          // Estado vazio do lookup de Produto: oferece cadastro de novo produto
+          if (_produtos.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _abrirCadastroProduto,
+                    icon: const Icon(Icons.add_business, size: 14),
+                    label: const Text('Cadastrar novo produto',
+                        style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: _green,
+                        side: const BorderSide(color: _green),
+                        padding: const EdgeInsets.symmetric(vertical: 6)),
+                  )),
+            ),
+          _iInp('Descrição (xProd)', item, 'x_prod', 'xProd'),
+          _iInp('NCM', item, 'ncm', 'ncm'),
+          _iInp('CFOP', item, 'cfop', 'cfop'),
+          // Unidade como dropdown
+          _ddObjItem(
+              'Unidade',
+              item['u_com']?.toString() ?? item['uCom']?.toString(),
+              _unidades.isNotEmpty ? _unidades : _unidadesFallback(),
+              'nome', (v) {
+            setState(() {
+              item['u_com'] = v;
+              item['uCom'] = v;
+            });
+          }),
+          _iInp('Quantidade', item, 'q_com', 'qCom'),
+          _iInp('Vl. Unitário', item, 'v_un_com', 'vUnCom'),
+          _iInp('Vl. Total', item, 'v_prod', 'vProd'),
+          _iInp('CST ICMS', item, 'cst_icms', 'cstIcms'),
+          _iInp('Alíq. ICMS', item, 'aliq_icms', 'aliqIcms'),
+          _iInp('BC ICMS', item, 'v_bc_icms', 'vBcIcms'),
+          _iInp('Vl. ICMS', item, 'v_icms', 'vIcms'),
+          // NF03: Botão Calcular Impostos
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _calcularIcms(item),
+                  icon: const Icon(Icons.calculate_outlined, size: 14),
+                  label: const Text('Calcular Impostos',
+                      style: TextStyle(fontSize: 11)),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: _green,
+                      side: const BorderSide(color: _green),
+                      padding: const EdgeInsets.symmetric(vertical: 6)),
+                )),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                  onPressed: () => _salvarItem(item),
+                  icon: const Icon(Icons.save, size: 14),
+                  label: const Text('Salvar Item',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: _green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10)))),
+        ]));
   }
 
   // NF03: Calculadora ICMS
   Future<void> _calcularIcms(Map<String, dynamic> item) async {
     try {
+      _prepararItemFiscal(item);
       final body = <String, dynamic>{
         if (item['id'] != null) 'id': item['id'],
         'cstIcms': item['cst_icms'] ?? item['cstIcms'],
-        'aliqIcms': double.tryParse((item['aliq_icms'] ?? item['aliqIcms'] ?? '').toString()),
-        'vProd': double.tryParse((item['v_prod'] ?? item['vProd'] ?? '').toString()),
-        'qCom': double.tryParse((item['q_com'] ?? item['qCom'] ?? '').toString()),
-        'vUnCom': double.tryParse((item['v_un_com'] ?? item['vUnCom'] ?? '').toString()),
+        'aliqIcms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+        'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
+        'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
+        'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
       };
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body);
+      final r = await TenantContext.post(
+          '${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body);
       if (!mounted) return;
       if (r.statusCode == 200) {
         final calculated = jsonDecode(r.body);
-        final data = calculated is Map ? (calculated['data'] ?? calculated) : calculated;
+        final data =
+            calculated is Map ? (calculated['data'] ?? calculated) : calculated;
         setState(() {
-          item['v_bc_icms'] = (data['vBcIcms'] ?? data['v_bc_icms'] ?? 0).toString();
-          item['vBcIcms']   = item['v_bc_icms'];
-          item['v_icms']    = (data['vIcms'] ?? data['v_icms'] ?? 0).toString();
-          item['vIcms']     = item['v_icms'];
+          item['v_bc_icms'] =
+              (data['vBcIcms'] ?? data['v_bc_icms'] ?? 0).toString();
+          item['vBcIcms'] = item['v_bc_icms'];
+          item['v_icms'] = (data['vIcms'] ?? data['v_icms'] ?? 0).toString();
+          item['vIcms'] = item['v_icms'];
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ICMS calculado!'), backgroundColor: _green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('ICMS calculado!'), backgroundColor: _green));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
     }
   }
 
   Widget _iInp(String label, Map<String, dynamic> item, String k1, String k2) {
-    return Padding(padding: const EdgeInsets.only(bottom: 8),
-      child: TextFormField(
-        initialValue: item[k1]?.toString() ?? item[k2]?.toString() ?? '',
-        onChanged: (v) { item[k1] = v; },
-        style: const TextStyle(fontSize: 12, color: _dark),
-        decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(fontSize: 11, color: _grey),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-          isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
+    return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TextFormField(
+            key: ValueKey('${_selItem}_$k1'),
+            initialValue: item[k1]?.toString() ?? item[k2]?.toString() ?? '',
+            onChanged: (v) {
+              item[k1] = v;
+              item[k2] = v;
+              if (k1 == 'q_com' || k1 == 'v_un_com') {
+                final quantidade = _asDouble(item['q_com'] ?? item['qCom']);
+                final valorUnitario =
+                    _asDouble(item['v_un_com'] ?? item['vUnCom']);
+                if (quantidade != null && valorUnitario != null) {
+                  item['v_prod'] = _valorMonetario(quantidade * valorUnitario);
+                  item['vProd'] = item['v_prod'];
+                }
+                setState(() {});
+              }
+            },
+            style: const TextStyle(fontSize: 12, color: _dark),
+            decoration: InputDecoration(
+                labelText: label,
+                labelStyle: const TextStyle(fontSize: 11, color: _grey),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: const BorderSide(color: _bord)),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
   }
 
   // Dropdown de série para NF-e SAÍDA — ao selecionar, busca próximo número
-  Widget _ddObjSerie(String label, String? val, List<Map<String, dynamic>> opts) {
+  Widget _ddObjSerie(
+      String label, String? val, List<Map<String, dynamic>> opts) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
@@ -1105,7 +1630,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
         items: opts
             .map((o) => <String, dynamic>{
                   'id': o['id']?.toString() ?? '',
-                  'nome': '${o['serie'] ?? ''} (atual: ${o['numeroAtual'] ?? 1})',
+                  'nome':
+                      '${o['serie'] ?? ''} (atual: ${o['numeroAtual'] ?? 1})',
                 })
             .toList(),
         valueField: 'id',
@@ -1114,14 +1640,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
         nullLabel: '— Selecione —',
         onChanged: (v) async {
           if (v == null) return;
-          final serie = opts.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
+          final serie = opts.firstWhere((o) => o['id']?.toString() == v,
+              orElse: () => {});
           setState(() {
             _serieId = v;
             _serieCtrl.text = serie['serie']?.toString() ?? '';
           });
           // Busca próximo número da série
           try {
-            final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe-serie/$v');
+            final r =
+                await TenantContext.get('${ApiLinks.baseUrl}/api/nfe-serie/$v');
             if (r.statusCode == 200) {
               final b = jsonDecode(r.body);
               final num = b['numeroAtual']?.toString() ?? '';
@@ -1133,7 +1661,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
     );
   }
 
-  Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts, String df, void Function(String?) cb) {
+  Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts,
+      String df, void Function(String?) cb) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
@@ -1154,17 +1683,68 @@ class _State extends State<NfeSankhyaDetailScreen> {
     );
   }
 
+  double? _asDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    final normalized = text.contains(',')
+        ? text.replaceAll('.', '').replaceAll(',', '.')
+        : text;
+    return double.tryParse(normalized);
+  }
+
+  String _valorDecimal(dynamic value) {
+    if (value == null) return '';
+    if (value is num) return value.toString();
+    final text = value.toString().trim();
+    return text.contains(',')
+        ? text.replaceAll('.', '').replaceAll(',', '.')
+        : text;
+  }
+
+  String _valorMonetario(double value) => value.toStringAsFixed(2);
+
+  void _recalcularTotalItem(Map<String, dynamic> item) {
+    final quantidade = _asDouble(item['q_com'] ?? item['qCom']) ?? 1;
+    final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0;
+    final total = quantidade * valorUnitario;
+    item['q_com'] = _valorDecimal(item['q_com'] ?? item['qCom'] ?? quantidade);
+    item['qCom'] = item['q_com'];
+    item['v_un_com'] =
+        _valorDecimal(item['v_un_com'] ?? item['vUnCom'] ?? valorUnitario);
+    item['vUnCom'] = item['v_un_com'];
+    item['v_prod'] = _valorMonetario(total);
+    item['vProd'] = item['v_prod'];
+  }
+
+  void _prepararItemFiscal(Map<String, dynamic> item) {
+    item['x_prod'] = (item['x_prod'] ?? item['xProd'] ?? '').toString();
+    item['xProd'] = item['x_prod'];
+    item['u_com'] = (item['u_com'] ?? item['uCom'] ?? '').toString();
+    item['uCom'] = item['u_com'];
+    _recalcularTotalItem(item);
+  }
+
   void _novoItem() => setState(() {
-    final novoItem = <String, dynamic>{'nfe_id': int.tryParse(_nfeId) ?? 0};
-    if (_topSelected.isNotEmpty) {
-      novoItem['cfop'] = _topSelected['cfop']?.toString() ?? '';
-      novoItem['cst_icms'] = _topSelected['cstIcms']?.toString() ?? '';
-      novoItem['aliq_icms'] = _topSelected['aliqIcms']?.toString() ?? '';
-    }
-    _itens.add(novoItem);
-    _selItem = _itens.length - 1;
-    _itensGrid = false;
-  });
+        final novoItem = <String, dynamic>{
+          'nfe_id': int.tryParse(_nfeId) ?? 0,
+          'q_com': '1.00',
+          'qCom': '1.00',
+          'v_un_com': '0.00',
+          'vUnCom': '0.00',
+          'v_prod': '0.00',
+          'vProd': '0.00',
+        };
+        if (_topSelected.isNotEmpty) {
+          novoItem['cfop'] = _topSelected['cfop']?.toString() ?? '';
+          novoItem['cst_icms'] = _topSelected['cstIcms']?.toString() ?? '';
+          novoItem['aliq_icms'] = _topSelected['aliqIcms']?.toString() ?? '';
+        }
+        _itens.add(novoItem);
+        _selItem = _itens.length - 1;
+        _itensGrid = false;
+      });
 
   /// Abre a tela de cadastro de Produto a partir do lookup vazio.
   /// Preserva o contexto da NF-e: ao retornar, recarrega a lista de produtos
@@ -1184,7 +1764,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _recarregarProdutos() async {
     final login = AuthUtility.userInfo?.login;
     final parcId = login?.parceiro?.id?.toString() ?? _parceiroId;
-    final empId  = login?.empresa?.id?.toString() ?? _empresaId;
+    final empId = login?.empresa?.id?.toString() ?? _empresaId;
     await _loadList(
       '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
       (d) => setState(() => _produtos = d),
@@ -1193,7 +1773,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   /// Grid sem AppBar — usa MediaQuery para dar padding zero ao topo
   /// evitando o header duplo dentro do detail
-  Widget _gridSemHeader({required String telaNome, Map<String, dynamic>? extraParams}) {
+  Widget _gridSemHeader(
+      {required String telaNome, Map<String, dynamic>? extraParams}) {
     return DynamicGridWindowsScreen<Map<String, dynamic>>(
       key: ValueKey('${telaNome}_$_nfeId'),
       telaNome: telaNome,
@@ -1207,109 +1788,130 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   // Unidades padrão quando o endpoint não existe
   List<Map<String, dynamic>> _unidadesFallback() => [
-    {'id': 'UN', 'nome': 'UN', 'descricao': 'Unidade'},
-    {'id': 'KG', 'nome': 'KG', 'descricao': 'Quilograma'},
-    {'id': 'G', 'nome': 'G', 'descricao': 'Grama'},
-    {'id': 'L', 'nome': 'L', 'descricao': 'Litro'},
-    {'id': 'ML', 'nome': 'ML', 'descricao': 'Mililitro'},
-    {'id': 'M', 'nome': 'M', 'descricao': 'Metro'},
-    {'id': 'M2', 'nome': 'M2', 'descricao': 'Metro Quadrado'},
-    {'id': 'M3', 'nome': 'M3', 'descricao': 'Metro Cúbico'},
-    {'id': 'CX', 'nome': 'CX', 'descricao': 'Caixa'},
-    {'id': 'PC', 'nome': 'PC', 'descricao': 'Peça'},
-    {'id': 'PAR', 'nome': 'PAR', 'descricao': 'Par'},
-    {'id': 'DZ', 'nome': 'DZ', 'descricao': 'Dúzia'},
-    {'id': 'SC', 'nome': 'SC', 'descricao': 'Saco'},
-    {'id': 'T', 'nome': 'T', 'descricao': 'Tonelada'},
-  ];
+        {'id': 'UN', 'nome': 'UN', 'descricao': 'Unidade'},
+        {'id': 'KG', 'nome': 'KG', 'descricao': 'Quilograma'},
+        {'id': 'G', 'nome': 'G', 'descricao': 'Grama'},
+        {'id': 'L', 'nome': 'L', 'descricao': 'Litro'},
+        {'id': 'ML', 'nome': 'ML', 'descricao': 'Mililitro'},
+        {'id': 'M', 'nome': 'M', 'descricao': 'Metro'},
+        {'id': 'M2', 'nome': 'M2', 'descricao': 'Metro Quadrado'},
+        {'id': 'M3', 'nome': 'M3', 'descricao': 'Metro Cúbico'},
+        {'id': 'CX', 'nome': 'CX', 'descricao': 'Caixa'},
+        {'id': 'PC', 'nome': 'PC', 'descricao': 'Peça'},
+        {'id': 'PAR', 'nome': 'PAR', 'descricao': 'Par'},
+        {'id': 'DZ', 'nome': 'DZ', 'descricao': 'Dúzia'},
+        {'id': 'SC', 'nome': 'SC', 'descricao': 'Saco'},
+        {'id': 'T', 'nome': 'T', 'descricao': 'Tonelada'},
+      ];
 
-  Widget _togBtn(IconData ic, bool on, VoidCallback cb) => InkWell(onTap: cb,
-    child: Container(padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: on ? _green : Colors.transparent, borderRadius: BorderRadius.circular(4), border: Border.all(color: on ? _green : _bord)),
-      child: Icon(ic, size: 16, color: on ? Colors.white : _grey)));
+  Widget _togBtn(IconData ic, bool on, VoidCallback cb, String tooltip) =>
+      Tooltip(
+          message: tooltip,
+          child: InkWell(
+              onTap: cb,
+              child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                      color: on ? _green : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: on ? _green : _bord)),
+                  child: Icon(ic,
+                      size: 16,
+                      color: on ? Colors.white : _grey,
+                      semanticLabel: tooltip))));
 
-  Widget _nb(IconData ic, VoidCallback cb) => InkWell(onTap: cb,
-    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 1), child: Icon(ic, size: 18, color: _dark)));
-
-  // ── RODAPÉ ──
-  Widget _rodape() {
-    final tabs = ['Totais', 'Impostos', 'Financeiro', 'Pagamentos'];
-    return Column(children: [
-      Container(color: const Color(0xFFF0F0F0), child: Row(children: [
-        const SizedBox(width: 8),
-        ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
-      ])),
-      Container(height: 1, color: _bord),
-      Expanded(child: _tabContent()),
-    ]);
-  }
-
-  Widget _tabBtn(int idx, String label) {
-    final on = _tab == idx;
-    return GestureDetector(onTap: () => setState(() => _tab = idx),
-      child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: on ? Colors.white : Colors.transparent,
-          border: Border(bottom: BorderSide(color: on ? _red : Colors.transparent, width: 2))),
-        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.bold : FontWeight.normal, color: on ? _red : _grey))));
-  }
-
-  Widget _tabContent() {
-    switch (_tab) {
-      case 0: return _totaisTab();
-      case 1: return _impostosTab();
-      case 2: return _financeiroTab();
-      case 3: return _pagamentosTab();
-      default: return const SizedBox();
-    }
-  }
+  Widget _nb(IconData ic, VoidCallback cb, String tooltip) => Tooltip(
+      message: tooltip,
+      child: InkWell(
+          onTap: cb,
+          child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1),
+              child:
+                  Icon(ic, size: 18, color: _dark, semanticLabel: tooltip))));
 
   Widget _totaisTab() {
     final vt = widget.item['valorTotal']?.toString() ?? '0,00';
-    return Padding(padding: const EdgeInsets.all(10), child: Row(children: [
-      _card('Vlr. Nota', vt), _card('Total Produtos', vt), _card('Total Serviços', '0,00'),
-    ]));
+    return Padding(
+        padding: const EdgeInsets.all(10),
+        child: Row(children: [
+          _card('Vlr. Nota', vt),
+          _card('Total Produtos', vt),
+          _card('Total Serviços', '0,00'),
+        ]));
   }
 
-  Widget _impostosTab() => const Padding(padding: EdgeInsets.all(10),
-    child: Text('Impostos calculados a partir dos itens.', style: TextStyle(color: _grey, fontSize: 12)));
+  Widget _impostosTab() => const Padding(
+      padding: EdgeInsets.all(10),
+      child: Text('Impostos calculados a partir dos itens.',
+          style: TextStyle(color: _grey, fontSize: 12)));
 
   // Financeiro com DynamicGridWindowsScreen no modo grid + form customizado
   Widget _financeiroTab() {
     final label = _isEntrada ? 'Contas a Pagar' : 'Contas a Receber';
     final telaNome = _isEntrada ? 'conta_pagar' : 'conta_receber';
     return Column(children: [
-      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), color: const Color(0xFFF8F8F8),
-        child: Row(children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(width: 8),
-          _togBtn(Icons.view_list, _finGrid, () => setState(() => _finGrid = true)),
-          const SizedBox(width: 4),
-          _togBtn(Icons.edit_note, !_finGrid, () => setState(() => _finGrid = false)),
-          const SizedBox(width: 8),
-          SizedBox(height: 24, child: ElevatedButton.icon(
-            onPressed: _novaConta,
-            icon: const Icon(Icons.add, size: 12), label: const Text('Nova', style: TextStyle(fontSize: 11)),
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10)))),
-          const Spacer(),
-          if (!_finGrid && _contas.isNotEmpty) ...[
-            _nb(Icons.first_page, () => setState(() => _selFin = 0)),
-            _nb(Icons.chevron_left, () => setState(() { if (_selFin > 0) _selFin--; })),
-            Text(' ${_selFin + 1}/${_contas.length} ', style: const TextStyle(fontSize: 11)),
-            _nb(Icons.chevron_right, () => setState(() { if (_selFin < _contas.length - 1) _selFin++; })),
-            _nb(Icons.last_page, () => setState(() => _selFin = _contas.length - 1)),
-          ],
-        ])),
+      Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          color: const Color(0xFFF8F8F8),
+          child: Row(children: [
+            Text(label,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const SizedBox(width: 8),
+            _togBtn(Icons.view_list, _finGrid,
+                () => setState(() => _finGrid = true), 'Ver como grade'),
+            const SizedBox(width: 4),
+            _togBtn(Icons.edit_note, !_finGrid,
+                () => setState(() => _finGrid = false), 'Ver como formulário'),
+            const SizedBox(width: 8),
+            SizedBox(
+                height: 24,
+                child: ElevatedButton.icon(
+                    onPressed: _novaConta,
+                    icon: const Icon(Icons.add, size: 12),
+                    label: const Text('Nova', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: _green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10)))),
+            const Spacer(),
+            if (!_finGrid && _contas.isNotEmpty) ...[
+              _nb(Icons.first_page, () => setState(() => _selFin = 0),
+                  'Primeira conta'),
+              _nb(
+                  Icons.chevron_left,
+                  () => setState(() {
+                        if (_selFin > 0) _selFin--;
+                      }),
+                  'Conta anterior'),
+              Text(' ${_selFin + 1}/${_contas.length} ',
+                  style: const TextStyle(fontSize: 11)),
+              _nb(
+                  Icons.chevron_right,
+                  () => setState(() {
+                        if (_selFin < _contas.length - 1) _selFin++;
+                      }),
+                  'Próxima conta'),
+              _nb(
+                  Icons.last_page,
+                  () => setState(() => _selFin = _contas.length - 1),
+                  'Última conta'),
+            ],
+          ])),
       Container(height: 1, color: _bord),
       // Grid: DynamicGridWindowsScreen sem botão Novo
       // Form: form customizado com scroll
-      Expanded(child: _finGrid
-        ? _gridSemHeader(
-            telaNome: telaNome,
-            extraParams: {'nfeId': _nfeId},
-          )
-        : (_contas.isEmpty
-            ? const Center(child: Text('Nenhuma conta vinculada', style: TextStyle(color: _grey)))
-            : _fForm())),
+      Expanded(
+          child: _finGrid
+              ? _gridSemHeader(
+                  telaNome: telaNome,
+                  extraParams: {'nfeId': _nfeId},
+                )
+              : (_contas.isEmpty
+                  ? const Center(
+                      child: Text('Nenhuma conta vinculada',
+                          style: TextStyle(color: _grey)))
+                  : _fForm())),
     ]);
   }
 
@@ -1317,41 +1919,62 @@ class _State extends State<NfeSankhyaDetailScreen> {
     if (_selFin >= _contas.length) return const SizedBox();
     final conta = _contas[_selFin];
     // Scroll para ver todos os campos
-    return SingleChildScrollView(padding: const EdgeInsets.all(10), child: Column(children: [
-      _fInp('Descrição', conta, 'descricao'),
-      _fInp('Valor', conta, 'valor'),
-      _fInp('Dt. Vencimento', conta, 'data_vencimento'),
-      _fInp('Status', conta, 'status'),
-      _fInp('Observação', conta, 'observacao'),
-      _fInp('Valor Baixa', conta, 'valor_baixa'),
-      _fInp('Dt. Baixa', conta, 'data_baixa'),
-    ]));
+    return SingleChildScrollView(
+        padding: const EdgeInsets.all(10),
+        child: Column(children: [
+          _fInp('Descrição', conta, 'descricao'),
+          _fInp('Valor', conta, 'valor'),
+          _fInp('Dt. Vencimento', conta, 'data_vencimento'),
+          _fInp('Status', conta, 'status'),
+          _fInp('Observação', conta, 'observacao'),
+          _fInp('Valor Baixa', conta, 'valor_baixa'),
+          _fInp('Dt. Baixa', conta, 'data_baixa'),
+        ]));
   }
 
   Widget _fInp(String label, Map<String, dynamic> conta, String key) {
-    final ctrl = TextEditingController(text: conta[key]?.toString() ?? '');
-    ctrl.addListener(() { conta[key] = ctrl.text; });
-    return Padding(padding: const EdgeInsets.only(bottom: 8),
-      child: TextFormField(controller: ctrl, style: const TextStyle(fontSize: 12, color: _dark),
-        decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(fontSize: 11, color: _grey),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-          isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
+    return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TextFormField(
+            initialValue: conta[key]?.toString() ?? '',
+            onChanged: (value) => conta[key] = value,
+            style: const TextStyle(fontSize: 12, color: _dark),
+            decoration: InputDecoration(
+                labelText: label,
+                labelStyle: const TextStyle(fontSize: 11, color: _grey),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: const BorderSide(color: _bord)),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
   }
 
-  void _novaConta() => setState(() { _contas.add({'nfe_id': int.tryParse(_nfeId) ?? 0}); _selFin = _contas.length - 1; _finGrid = false; });
+  void _novaConta() => setState(() {
+        _contas.add({'nfe_id': int.tryParse(_nfeId) ?? 0});
+        _selFin = _contas.length - 1;
+        _finGrid = false;
+      });
 
-  Widget _card(String label, String valor) => Container(margin: const EdgeInsets.only(right: 16),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(4), border: Border.all(color: _bord)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 9, color: _grey)),
-      Text(valor, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-    ]));
+  Widget _card(String label, String valor) => Container(
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF8F8F8),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: _bord)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(fontSize: 9, color: _grey)),
+        Text(valor,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      ]));
 
   // ── TAREFA NF07: Aba de Pagamentos ────────────────────────────────────────
   Widget _pagamentosTab() {
     if (_isNovo) {
-      return const Center(child: Text('Salve a NF-e antes de gerenciar pagamentos.', style: TextStyle(color: _grey, fontSize: 12)));
+      return const Center(
+          child: Text('Salve a NF-e antes de gerenciar pagamentos.',
+              style: TextStyle(color: _grey, fontSize: 12)));
     }
     if (_pagamentosLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -1362,54 +1985,89 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final diferenca = totalPago - valorTotal;
     final okPago = diferenca.abs() <= 0.01;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
         // ── Seção 1: Formas de Pagamento ──────────────────────────────────
         _secTitle('Formas de Pagamento'),
         const SizedBox(height: 6),
         ..._pagamentos.map((pag) => Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: _bord), borderRadius: BorderRadius.circular(4)),
-          child: Row(children: [
-            Expanded(child: Text(NfePagamento.labelTipo(pag.tPag), style: const TextStyle(fontSize: 12))),
-            const SizedBox(width: 8),
-            Text('R\$ ${pag.vPag.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 4),
-            IconButton(icon: const Icon(Icons.delete_outline, size: 16, color: _red),
-              padding: EdgeInsets.zero, constraints: const BoxConstraints(),
-              onPressed: () => _removerPagamento(pag)),
-          ]),
-        )),
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: _bord),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Row(children: [
+                Expanded(
+                    child: Text(NfePagamento.labelTipo(pag.tPag),
+                        style: const TextStyle(fontSize: 12))),
+                const SizedBox(width: 8),
+                Text('R\$ ${pag.vPag.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 4),
+                IconButton(
+                    icon:
+                        const Icon(Icons.delete_outline, size: 16, color: _red),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _removerPagamento(pag)),
+              ]),
+            )),
 
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: const Color(0xFFF8F8F8), border: Border.all(color: _bord), borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F8),
+              border: Border.all(color: _bord),
+              borderRadius: BorderRadius.circular(4)),
           child: Row(children: [
-            SizedBox(width: 160,
+            SizedBox(
+              width: 160,
               child: DropdownButtonFormField<String>(
-                value: _novoPagTpag, isDense: true,
-                decoration: const InputDecoration(labelText: 'Tipo', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()),
+                value: _novoPagTpag,
+                isDense: true,
+                decoration: const InputDecoration(
+                    labelText: 'Tipo',
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    border: OutlineInputBorder()),
                 style: const TextStyle(fontSize: 12, color: _dark),
-                items: NfePagamento.todosCodigos.map((c) => DropdownMenuItem(value: c, child: Text('$c - ${NfePagamento.labelTipo(c)}', style: const TextStyle(fontSize: 11)))).toList(),
+                items: NfePagamento.todosCodigos
+                    .map((c) => DropdownMenuItem(
+                        value: c,
+                        child: Text('$c - ${NfePagamento.labelTipo(c)}',
+                            style: const TextStyle(fontSize: 11))))
+                    .toList(),
                 onChanged: (v) => setState(() => _novoPagTpag = v ?? '01'),
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: TextFormField(
+            Expanded(
+                child: TextFormField(
               controller: _novoPagVpag,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(labelText: 'Valor (R\$)', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Valor (R\$)',
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  border: OutlineInputBorder()),
             )),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: _adicionarPagamento,
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Adicionar', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _green,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             ),
           ]),
         ),
@@ -1417,15 +2075,23 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: okPago ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(4), border: Border.all(color: okPago ? _green : _red)),
+          decoration: BoxDecoration(
+              color: okPago ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: okPago ? _green : _red)),
           child: Row(children: [
             const Icon(Icons.info_outline, size: 14),
             const SizedBox(width: 6),
-            Text('Total pago: R\$ ${totalPago.toStringAsFixed(2)}  |  Total NF-e: R\$ ${valorTotal.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 11, color: okPago ? _green : _red, fontWeight: FontWeight.bold)),
+            Text(
+                'Total pago: R\$ ${totalPago.toStringAsFixed(2)}  |  Total NF-e: R\$ ${valorTotal.toStringAsFixed(2)}',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: okPago ? _green : _red,
+                    fontWeight: FontWeight.bold)),
             if (!okPago) ...[
               const SizedBox(width: 6),
-              Text('(dif: R\$ ${diferenca.toStringAsFixed(2)})', style: const TextStyle(fontSize: 10, color: _red)),
+              Text('(dif: R\$ ${diferenca.toStringAsFixed(2)})',
+                  style: const TextStyle(fontSize: 10, color: _red)),
             ],
           ]),
         ),
@@ -1437,18 +2103,50 @@ class _State extends State<NfeSankhyaDetailScreen> {
         _secTitle('Fatura'),
         const SizedBox(height: 6),
         Row(children: [
-          Expanded(child: TextFormField(controller: _fatNFat, style: const TextStyle(fontSize: 12),
-            decoration: const InputDecoration(labelText: 'Número da Fatura', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+          Expanded(
+              child: TextFormField(
+                  controller: _fatNFat,
+                  style: const TextStyle(fontSize: 12),
+                  decoration: const InputDecoration(
+                      labelText: 'Número da Fatura',
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder()))),
           const SizedBox(width: 8),
-          Expanded(child: TextFormField(controller: _fatVOrig, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 12),
-            decoration: const InputDecoration(labelText: 'Valor Original', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+          Expanded(
+              child: TextFormField(
+                  controller: _fatVOrig,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(fontSize: 12),
+                  decoration: const InputDecoration(
+                      labelText: 'Valor Original',
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder()))),
           const SizedBox(width: 8),
-          Expanded(child: TextFormField(controller: _fatVLiq, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 12),
-            decoration: const InputDecoration(labelText: 'Valor Líquido', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+          Expanded(
+              child: TextFormField(
+                  controller: _fatVLiq,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(fontSize: 12),
+                  decoration: const InputDecoration(
+                      labelText: 'Valor Líquido',
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder()))),
           const SizedBox(width: 8),
           ElevatedButton(
             onPressed: _salvarFatura,
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
             child: const Text('Salvar Fatura', style: TextStyle(fontSize: 11)),
           ),
         ]),
@@ -1460,40 +2158,84 @@ class _State extends State<NfeSankhyaDetailScreen> {
         _secTitle('Duplicatas'),
         const SizedBox(height: 6),
         ..._duplicatas.map((dup) => Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: _bord), borderRadius: BorderRadius.circular(4)),
-          child: Row(children: [
-            Expanded(child: Text(dup.nDup ?? '-', style: const TextStyle(fontSize: 12))),
-            const SizedBox(width: 8),
-            Text(dup.dVenc ?? '-', style: const TextStyle(fontSize: 11, color: _grey)),
-            const SizedBox(width: 8),
-            Text('R\$ ${(dup.vDup ?? 0).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 4),
-            IconButton(icon: const Icon(Icons.delete_outline, size: 16, color: _red),
-              padding: EdgeInsets.zero, constraints: const BoxConstraints(),
-              onPressed: () => _removerDuplicata(dup)),
-          ]),
-        )),
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: _bord),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Row(children: [
+                Expanded(
+                    child: Text(dup.nDup ?? '-',
+                        style: const TextStyle(fontSize: 12))),
+                const SizedBox(width: 8),
+                Text(dup.dVenc ?? '-',
+                    style: const TextStyle(fontSize: 11, color: _grey)),
+                const SizedBox(width: 8),
+                Text('R\$ ${(dup.vDup ?? 0).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 4),
+                IconButton(
+                    icon:
+                        const Icon(Icons.delete_outline, size: 16, color: _red),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _removerDuplicata(dup)),
+              ]),
+            )),
 
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: const Color(0xFFF8F8F8), border: Border.all(color: _bord), borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F8),
+              border: Border.all(color: _bord),
+              borderRadius: BorderRadius.circular(4)),
           child: Row(children: [
-            Expanded(child: TextFormField(controller: _dupNDup, style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(labelText: 'Nº Dup.', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+            Expanded(
+                child: TextFormField(
+                    controller: _dupNDup,
+                    style: const TextStyle(fontSize: 12),
+                    decoration: const InputDecoration(
+                        labelText: 'Nº Dup.',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        border: OutlineInputBorder()))),
             const SizedBox(width: 8),
-            Expanded(child: TextFormField(controller: _dupDVenc, style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(labelText: 'Dt. Venc. (AAAA-MM-DD)', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+            Expanded(
+                child: TextFormField(
+                    controller: _dupDVenc,
+                    style: const TextStyle(fontSize: 12),
+                    decoration: const InputDecoration(
+                        labelText: 'Dt. Venc. (AAAA-MM-DD)',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        border: OutlineInputBorder()))),
             const SizedBox(width: 8),
-            Expanded(child: TextFormField(controller: _dupVDup, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(labelText: 'Valor', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()))),
+            Expanded(
+                child: TextFormField(
+                    controller: _dupVDup,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(fontSize: 12),
+                    decoration: const InputDecoration(
+                        labelText: 'Valor',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        border: OutlineInputBorder()))),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: _adicionarDuplicata,
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Adicionar', style: TextStyle(fontSize: 11)),
-              style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _green,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             ),
           ]),
         ),
@@ -1502,24 +2244,29 @@ class _State extends State<NfeSankhyaDetailScreen> {
         const Divider(),
 
         // ── Botão: Gerar Contas a Pagar ───────────────────────────────────
-        SizedBox(width: double.infinity, child: ElevatedButton.icon(
-          icon: const Icon(Icons.receipt_long),
-          label: const Text('Gerar Contas a Pagar', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12)),
-          onPressed: _duplicatas.isEmpty ? null : _gerarContasPagar,
-        )),
+        SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Gerar Contas a Pagar',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12)),
+              onPressed: _duplicatas.isEmpty ? null : _gerarContasPagar,
+            )),
         if (_duplicatas.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 6),
-            child: Text('Adicione duplicatas antes de gerar as contas.', style: TextStyle(fontSize: 11, color: _grey)),
+            child: Text('Adicione duplicatas antes de gerar as contas.',
+                style: TextStyle(fontSize: 11, color: _grey)),
           ),
-
       ]),
     );
   }
 
   Widget _secTitle(String title) => Text(title,
-    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _dark));
+      style: const TextStyle(
+          fontSize: 12, fontWeight: FontWeight.bold, color: _dark));
 }
-

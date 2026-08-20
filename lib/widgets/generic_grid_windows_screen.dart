@@ -90,8 +90,15 @@ String _mimeFromFileName(String name) {
 // prontos como Map -- por isso a conversao so acontece quando o valor
 // ainda e String/num (idempotente, nao mexe em quem ja e objeto).
 const entityRelationshipFields = [
-  'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
-  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+  'empresa',
+  'parceiro',
+  'aplicativo',
+  'fornecedor',
+  'cliente',
+  'contaBancaria',
+  'setor',
+  'centroCusto',
+  'formaPagamento',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(
@@ -538,8 +545,13 @@ class FieldFactory {
       case FieldType.url:
         return _buildUrlField(config, controller);
       case FieldType.multiselect:
+        final dependsOnCtrl =
+            config.dependsOnField != null && allControllers != null
+                ? allControllers[config.dependsOnField]
+                : null;
         return _buildMultiselectField(
-            config, controller, dropdownCache, context);
+            config, controller, dropdownCache, context,
+            dependsOnController: dependsOnCtrl);
       default:
         return _buildTextField(config, controller);
     }
@@ -780,7 +792,10 @@ class FieldFactory {
     final cep = cepController.text.replaceAll(RegExp(r'\D'), '');
     if (cep.length != 8) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('CEP deve ter 8 dígitos', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('CEP deve ter 8 dígitos',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -792,7 +807,10 @@ class FieldFactory {
         if (data['erro'] == true) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('CEP não encontrado', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.warning),
+              const SnackBar(
+                  content: Text('CEP não encontrado',
+                      style: TextStyle(color: Colors.white)),
+                  backgroundColor: GridColors.warning),
             );
           }
           return;
@@ -802,7 +820,8 @@ class FieldFactory {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}', style: const TextStyle(color: Colors.white)),
+                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}',
+                    style: const TextStyle(color: Colors.white)),
                 backgroundColor: GridColors.success),
           );
         }
@@ -810,7 +829,10 @@ class FieldFactory {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao buscar CEP: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+          SnackBar(
+              content: Text('Erro ao buscar CEP: $e',
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     }
@@ -964,8 +986,8 @@ class FieldFactory {
             ),
           ),
         ElevatedButton.icon(
-          onPressed: () =>
-              _selectFiles(config, controller, fileCache, context, onFileChanged),
+          onPressed: () => _selectFiles(
+              config, controller, fileCache, context, onFileChanged),
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
@@ -1187,8 +1209,9 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<Map<String, dynamic>>> dropdownCache,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    TextEditingController? dependsOnController,
+  }) {
     final cacheKey = '${config.fieldName}_dropdown';
     final cached = dropdownCache[cacheKey];
     return _MultiSelectField(
@@ -1200,10 +1223,13 @@ class FieldFactory {
       initialOptions: cached,
       dropdownFutureBuilder:
           cached == null ? config.dropdownFutureBuilder : null,
+      dropdownFutureBuilderWithParam:
+          cached == null ? config.dropdownFutureBuilderWithParam : null,
       dropdownOptions: cached == null && config.dropdownFutureBuilder == null
           ? (config.dropdownOptions ?? [])
           : null,
       onOptionsLoaded: (opts) => dropdownCache[cacheKey] = opts,
+      dependsOnController: dependsOnController,
     );
   }
 
@@ -1234,18 +1260,26 @@ class _MultiSelectField extends StatefulWidget {
   /// [dropdownFutureBuilder] ou usa [dropdownOptions] estático.
   final List<Map<String, dynamic>>? initialOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  final Future<List<Map<String, dynamic>>> Function(String? param)?
+      dropdownFutureBuilderWithParam;
   final List<Map<String, dynamic>>? dropdownOptions;
 
   /// Callback para propagar o resultado carregado de volta ao cache externo.
   final void Function(List<Map<String, dynamic>> opts)? onOptionsLoaded;
+
+  /// Controller do campo pai (para cascade).
+  /// Quando o campo pai muda, este widget refaz o fetch com o novo valor.
+  final TextEditingController? dependsOnController;
 
   const _MultiSelectField({
     required this.config,
     required this.controller,
     this.initialOptions,
     this.dropdownFutureBuilder,
+    this.dropdownFutureBuilderWithParam,
     this.dropdownOptions,
     this.onOptionsLoaded,
+    this.dependsOnController,
   });
 
   @override
@@ -1256,6 +1290,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
   List<Map<String, dynamic>> _options = [];
   bool _loadingOptions = false;
+  String? _lastDependsOnValue;
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
@@ -1269,6 +1304,13 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     super.initState();
     _selectedValues = _parseController();
     widget.controller.addListener(_onControllerChanged);
+
+    // Se há cascade, registra listener para o campo pai
+    if (widget.dependsOnController != null) {
+      widget.dependsOnController!.addListener(_onDependencyChanged);
+      _lastDependsOnValue = widget.dependsOnController!.text;
+    }
+
     // Inicia carga de opções UMA ÚNICA VEZ — o Future fica cacheado no estado
     if (widget.initialOptions != null) {
       _options = widget.initialOptions!;
@@ -1283,6 +1325,10 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
           widget.onOptionsLoaded?.call(opts);
         }
       });
+    } else if (widget.dropdownFutureBuilderWithParam != null &&
+        widget.dependsOnController != null) {
+      _loadingOptions = true;
+      _fetchCascade(widget.dependsOnController!.text);
     } else {
       _options = widget.dropdownOptions ?? [];
     }
@@ -1301,6 +1347,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
+    widget.dependsOnController?.removeListener(_onDependencyChanged);
     super.dispose();
   }
 
@@ -1308,6 +1355,44 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     final parsed = _parseController();
     if (mounted && parsed.join(',') != _selectedValues.join(',')) {
       setState(() => _selectedValues = parsed);
+    }
+  }
+
+  void _onDependencyChanged() {
+    final newVal = widget.dependsOnController!.text;
+    if (newVal == _lastDependsOnValue) return;
+    _lastDependsOnValue = newVal;
+    if (mounted) {
+      setState(() {
+        widget.controller.text = ''; // Limpa seleção anterior
+        _selectedValues = [];
+        _options = [];
+      });
+    }
+    _fetchCascade(newVal);
+  }
+
+  Future<void> _fetchCascade(String? paramValue) async {
+    if (widget.dropdownFutureBuilderWithParam == null) return;
+    if (!mounted) return;
+
+    setState(() => _loadingOptions = true);
+    try {
+      final opts = await widget.dropdownFutureBuilderWithParam!(paramValue);
+      if (mounted) {
+        setState(() {
+          _options = opts;
+          _loadingOptions = false;
+        });
+        widget.onOptionsLoaded?.call(opts);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _options = [];
+          _loadingOptions = false;
+        });
+      }
     }
   }
 
@@ -1662,8 +1747,18 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
+
+  /// Quando true, a ação "Editar" do menu de ações abre o mesmo
+  /// [detailScreenBuilder] usado por "Visualizar", em vez do popup de
+  /// formulário genérico ([_openForm]). Default false para não alterar o
+  /// comportamento das telas que já usam o popup.
+  /// Ao voltar da tela, o grid é recarregado automaticamente — não é
+  /// necessário nenhum callback de salvar na tela de destino, mas ela deve
+  /// persistir de fato as alterações antes do usuário navegar de volta.
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
+
   /// Hook opcional para ajustar o formData final antes do envio (ex.: copiar
   /// um campo do form para outro campo fixo do payload). Aplicado após o
   /// merge de [additionalFormData]. Não afeta telas que não o utilizarem.
@@ -1721,6 +1816,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.initialFilters,
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
@@ -1864,14 +1960,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final empresaId = TenantContext.empresaId;
     final parceiroId = TenantContext.parceiroId;
     final empresaNome = AuthUtility.userInfo?.login?.empresa?.nome ??
-        AuthUtility.userInfo?.login?.empresa?.razaoSocial ?? '';
+        AuthUtility.userInfo?.login?.empresa?.razaoSocial ??
+        '';
     final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome ??
-        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ?? '';
+        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ??
+        '';
 
     const empresaKeys = {'empresa', 'empresaId', 'empresa.id', 'empId'};
     const parceiroKeys = {'parceiro', 'parceiroId', 'parceiro.id', 'parcId'};
 
-    for (final config in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
+    for (final config
+        in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
       final fn = config.fieldName;
       if (empresaId != null && empresaKeys.contains(fn)) {
         _filterControllers[fn]?.text = empresaId.toString();
@@ -2804,7 +2903,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['create']!) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sem permissão para criar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error));
+      ).showSnackBar(const SnackBar(
+          content: Text('Sem permissão para criar',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: GridColors.error));
       return false;
     }
 
@@ -2818,8 +2920,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     if (widget.transformFormData != null) {
-      final transformed =
-          widget.transformFormData!(Map<String, dynamic>.from(enrichedFormData));
+      final transformed = widget
+          .transformFormData!(Map<String, dynamic>.from(enrichedFormData));
       enrichedFormData
         ..clear()
         ..addAll(transformed);
@@ -3005,7 +3107,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<bool> _updateItem(Map<String, dynamic> formData) async {
     if (!widget.hasPermission('edit') || !widget.buttonPermissions['edit']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para editar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para editar',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return false;
     }
@@ -3019,8 +3124,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     if (widget.transformFormData != null) {
-      final transformed =
-          widget.transformFormData!(Map<String, dynamic>.from(adjustedFormData));
+      final transformed = widget
+          .transformFormData!(Map<String, dynamic>.from(adjustedFormData));
       adjustedFormData
         ..clear()
         ..addAll(transformed);
@@ -3086,7 +3191,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('delete') ||
         !widget.buttonPermissions['delete']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para excluir', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para excluir',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -3122,7 +3230,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['deleteMultiple']!) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sem permissão para excluir múltiplos itens', style: TextStyle(color: Colors.white)),
+          content: Text('Sem permissão para excluir múltiplos itens',
+              style: TextStyle(color: Colors.white)),
           backgroundColor: GridColors.error,
         ),
       );
@@ -3150,7 +3259,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               setState(() => selectedRows.clear());
             },
             style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.error, foregroundColor: Colors.white),
+                backgroundColor: GridColors.error,
+                foregroundColor: Colors.white),
             child: const Text('Excluir'),
           ),
         ],
@@ -3162,7 +3272,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('export') ||
         !widget.buttonPermissions['export']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para exportar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para exportar',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -3659,27 +3772,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final isLocked = _lockedFilters.contains(config.fieldName);
 
     return GestureDetector(
-      onTap: isLocked ? null : () async {
-        final result = await showDialog<Map<String, dynamic>>(
-          context: context,
-          builder: (_) => _FilterSearchDialog(options: options, vf: vf, df: df),
-        );
-        if (result == null) return; // cancelado
-        final val = result[vf]?.toString() ?? '';
-        setState(() {
-          if (val.isEmpty) {
-            _filterControllers[config.fieldName]?.clear();
-            _filterDropdownValues.remove(config.fieldName);
-            _filterDropdownLabels.remove(config.fieldName);
-          } else {
-            _filterControllers[config.fieldName]!.text = val;
-            _filterDropdownValues[config.fieldName] = val;
-            _filterDropdownLabels[config.fieldName] =
-                result[df]?.toString() ?? val;
-          }
-        });
-        _applyFilters();
-      },
+      onTap: isLocked
+          ? null
+          : () async {
+              final result = await showDialog<Map<String, dynamic>>(
+                context: context,
+                builder: (_) =>
+                    _FilterSearchDialog(options: options, vf: vf, df: df),
+              );
+              if (result == null) return; // cancelado
+              final val = result[vf]?.toString() ?? '';
+              setState(() {
+                if (val.isEmpty) {
+                  _filterControllers[config.fieldName]?.clear();
+                  _filterDropdownValues.remove(config.fieldName);
+                  _filterDropdownLabels.remove(config.fieldName);
+                } else {
+                  _filterControllers[config.fieldName]!.text = val;
+                  _filterDropdownValues[config.fieldName] = val;
+                  _filterDropdownLabels[config.fieldName] =
+                      result[df]?.toString() ?? val;
+                }
+              });
+              _applyFilters();
+            },
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: config.label,
@@ -3721,7 +3837,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 14,
-            color: isLocked ? Colors.grey.shade600 : (hasValue ? null : Colors.grey.shade500),
+            color: isLocked
+                ? Colors.grey.shade600
+                : (hasValue ? null : Colors.grey.shade500),
           ),
         ),
       ),
@@ -4364,24 +4482,29 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             config.fieldType == FieldType.dropdown &&
             config.dropdownDisplayField.isNotEmpty) {
           // CR-02: Verificar se chave existe antes de acessar
-          final displayField = displayValue.containsKey(config.dropdownDisplayField)
-              ? displayValue[config.dropdownDisplayField]
-              : null;
+          final displayField =
+              displayValue.containsKey(config.dropdownDisplayField)
+                  ? displayValue[config.dropdownDisplayField]
+                  : null;
           if (displayField != null) {
             displayValue = displayField;
-          } else if (displayValue.containsKey('nome') && displayValue['nome'] != null) {
+          } else if (displayValue.containsKey('nome') &&
+              displayValue['nome'] != null) {
             displayValue = displayValue['nome'];
-          } else if (displayValue.containsKey('name') && displayValue['name'] != null) {
+          } else if (displayValue.containsKey('name') &&
+              displayValue['name'] != null) {
             displayValue = displayValue['name'];
-          } else if (displayValue.containsKey('label') && displayValue['label'] != null) {
+          } else if (displayValue.containsKey('label') &&
+              displayValue['label'] != null) {
             displayValue = displayValue['label'];
           } else {
             // CR-01: Log warning se nenhum field de display foi encontrado
-            L.w('No display field found for dropdown. Map keys: ${(displayValue as Map).keys.join(", ")}');
+            L.w('No display field found for dropdown. Map keys: ${displayValue.keys.join(", ")}');
             // Fallback seguro: se houver id, converter para string; senão usar placeholder
-            displayValue = displayValue.containsKey('id') && displayValue['id'] != null
-                ? displayValue['id'].toString()
-                : '---';
+            displayValue =
+                displayValue.containsKey('id') && displayValue['id'] != null
+                    ? displayValue['id'].toString()
+                    : '---';
           }
         }
 
@@ -4528,7 +4651,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   itemBuilder: (_) => menuItems,
                   onSelected: (value) {
                     if (value == '__edit__') {
-                      _openForm(item: item);
+                      if (widget.editUsesDetailScreen &&
+                          widget.detailScreenBuilder != null) {
+                        Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        widget.detailScreenBuilder!(item)))
+                            .then((_) {
+                          if (mounted) _loadItems(_currentPage, rowsPerPage);
+                        });
+                      } else {
+                        _openForm(item: item);
+                      }
                     } else if (value == '__view__') {
                       Navigator.push(
                           context,
