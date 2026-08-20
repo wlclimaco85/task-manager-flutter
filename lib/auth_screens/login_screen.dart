@@ -88,6 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       await AuthUtility.setUserInfo(model);
+      // reset() força releitura de empresa-modulo/parceiro-modulo para o
+      // usuário recém-logado — load() agora tem cache de sessão (guarda
+      // _loaded) para evitar chamadas de rede redundantes, então sem o
+      // reset aqui um segundo login (outro usuário/empresa) na mesma
+      // sessão web reaproveitaria indevidamente os módulos do login
+      // anterior.
+      ModuloAccess.reset();
       await ModuloAccess.load();
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {

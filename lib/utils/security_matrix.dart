@@ -559,6 +559,15 @@ class ModuloAccess {
   static bool _loaded = false;
 
   static Future<void> load() async {
+    // Cache de sessao: evita refazer as 2 chamadas de rede
+    // (empresa-modulo + parceiro-modulo) quando load() e chamado mais de
+    // uma vez na mesma sessao (ex: main.dart no boot + login_screen apos
+    // login). Sem essa guarda, cada chamada redundante soma no limite de
+    // rate limiting por tenant (RateLimitingFilter/RateLimiterUtil no
+    // backend). Para forcar releitura (ex: apos login com outro usuario),
+    // chamar reset() antes de load().
+    if (_loaded) return;
+
     final login = AuthUtility.userInfo?.login;
     final parceiroId = login?.parceiro?.id;
     final empresaId = login?.empresa?.id;
