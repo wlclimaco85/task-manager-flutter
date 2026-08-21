@@ -182,7 +182,10 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Salvo'), duration: Duration(seconds: 1)),
+            content: Text('Salvo'),
+            backgroundColor: GridColors.success,
+            duration: Duration(seconds: 1),
+          ),
         );
       }
     } catch (e) {
