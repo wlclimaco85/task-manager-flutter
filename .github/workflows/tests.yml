@@ -32,6 +32,17 @@ jobs:
         run: flutter test --coverage
         working-directory: task_manager_flutter
 
+      - name: Flutter test — cenario de producao (context-path /boletobancos)
+        # Regressao do incidente P0 2026-08-21: sem este dart-define, o teste
+        # dedicado (api_links_production_context_path_test.dart) roda com o
+        # backend local (http) e nao exercita o ramo https real. Ver
+        # comentario no topo do arquivo de teste.
+        run: >
+          flutter test
+          --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
+          test/utils/api_links_production_context_path_test.dart
+        working-directory: task_manager_flutter
+
   android-tests:
     name: Android Unit Tests
     runs-on: ubuntu-latest

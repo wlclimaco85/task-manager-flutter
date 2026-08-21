@@ -14,33 +14,42 @@ class ApiLinks {
     defaultValue: 'http://127.0.0.1:9001',
   );
 
-  // Context-path do backend: server.servlet.context-path=/boletobancos SO no
-  // application.properties (perfil dev/local). Em producao/staging (perfil
-  // prod, application-prod.properties) o context-path e vazio — sem essa
-  // distincao, toda chamada de API em producao levava um redirect 308
-  // desnecessario (LegacyBoletobancosPathFilter) antes de chegar na rota
-  // real.
+  // Context-path do backend: server.servlet.context-path=/boletobancos em
+  // TODOS os perfis (application.properties, que se aplica sempre, e
+  // application-prod.properties desde o commit fced12a3 de 2026-08-13
+  // "fix: corrigir context-path e schema de contrato em producao" —
+  // LegacyBoletobancosPathFilter so agiria se o context-path estivesse
+  // vazio, o que nao e mais o caso). Por isso o prefixo e SEMPRE anexado,
+  // independente de dev local ou producao.
   //
-  // So usar o prefixo quando o backend e "local" — mas dev local nao e so
-  // localhost/127.0.0.1: a equipe tambem builda contra o emulador Android
-  // (10.0.2.2) e contra IP de rede local/BlueStacks (ex.: 192.168.100.113),
-  // ver network_security_config.xml. Listar IPs especificos e fragil (quebra
-  // pra qualquer IP de rede novo). O sinal real e o esquema: todo backend
-  // local roda em HTTP puro (sem TLS configurado); producao/staging (Railway
-  // e afins) sempre roda atras de HTTPS. Usar isso em vez de allowlist de IP.
-  static bool get _isBackendLocal => !_backendUrl.startsWith('https://');
-  static final String _baseIp =
-      _isBackendLocal ? '$_backendUrl/boletobancos' : _backendUrl;
+  // HISTORICO (nao repetir o erro): entre 2026-08-13 e 2026-08-14 esse
+  // prefixo virou condicional (so para backend "local", detectado por nao
+  // comecar com "https://") com base num comentario que dizia "em producao
+  // o context-path e vazio" — verdade so ANTES do commit fced12a3 do mesmo
+  // dia 08-13. Isso quebrou TODA chamada de API em producao (login incluido)
+  // silenciosamente por 8 dias: a URL final ficava sem /boletobancos, o
+  // Tomcat devolvia 404 fora do context-path (sem passar pelo CorsFilter do
+  // Spring, que so roda dentro do context-path), e o navegador reportava
+  // isso como bloqueio de CORS (mensagem generica do Chrome para qualquer
+  // fetch cross-origin sem resposta), mascarando a causa real. Ver incidente
+  // P0 2026-08-21 (escritorio-contabil-production.up.railway.app).
+  //
+  // String.fromEnvironment SO funciona como const constructor (mesmo motivo
+  // de _backendUrl acima) — manter const, nunca converter para final.
+  static const String _backendContextPath = String.fromEnvironment(
+    'BACKEND_CONTEXT_PATH',
+    defaultValue: '/boletobancos',
+  );
+  static final String _baseIp = '$_backendUrl$_backendContextPath';
 
   // WebSocket: converte http→ws e https→wss
   static String get _wsUrl => _backendUrl
       .replaceFirst('https://', 'wss://')
       .replaceFirst('http://', 'ws://');
 
-  // _chatId usado apenas por chatStart (WebSocket) — derivada do host do backend.
-  // Mesma logica de context-path condicional do _baseIp (ver comentario acima).
-  static final String _chatId =
-      _isBackendLocal ? '$_wsUrl/boletobancos' : _wsUrl;
+  // _chatId usado apenas por chatStart (WebSocket) — derivada do host do
+  // backend. Mesmo context-path configurado para as chamadas HTTP.
+  static final String _chatId = '$_wsUrl$_backendContextPath';
   static final String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static final String _baseUrlNew = _baseIp;
   static final String allPersonal = '$_baseUrlNew/personal/findAll';
