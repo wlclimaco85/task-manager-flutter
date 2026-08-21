@@ -41,7 +41,8 @@ void main() {
   // ========================================================================
 
   group('ModuloAccess.isScreenAllowed — lista vazia = deny', () {
-    test('tela de modulo (contasPagar/Financeiro) NEGADA quando lista vazia', () {
+    test('tela de modulo (contasPagar/Financeiro) NEGADA quando lista vazia',
+        () {
       ModuloAccess.setContratadosParaTeste([]);
       expect(ModuloAccess.isScreenAllowed(AppScreen.contasPagar), isFalse);
     });
@@ -51,7 +52,8 @@ void main() {
       expect(ModuloAccess.isScreenAllowed(AppScreen.chamados), isFalse);
     });
 
-    test('tela de modulo (nfeSaida/Notas Fiscais) NEGADA quando lista vazia', () {
+    test('tela de modulo (nfeSaida/Notas Fiscais) NEGADA quando lista vazia',
+        () {
       ModuloAccess.setContratadosParaTeste([]);
       expect(ModuloAccess.isScreenAllowed(AppScreen.nfeSaida), isFalse);
     });
@@ -99,7 +101,7 @@ void main() {
   // ========================================================================
 
   group('SecurityMatrix.allowedTelaIds — deny-by-default', () {
-    test('usuario sem permissoes backend usa fallback hardcoded, nao mostra tudo', () {
+    test('usuario com snapshot backend vazio nao usa fallback hardcoded', () {
       final info = buildCliente(
         modulosContratados: ['Financeiro'],
         permissoes: [], // sem permissoes do backend
@@ -110,9 +112,8 @@ void main() {
 
       // NAO deve retornar null (que significava "mostrar tudo")
       expect(allowed, isNotNull);
-      // Deve usar fallback hardcoded para ESCRITORIO
-      // contasPagar deve estar permitido (modulo Financeiro + role ESCRITORIO)
-      expect(allowed!.contains('contasPagar'), isTrue);
+      // Snapshot RBAC vazio significa sem tela liberada.
+      expect(allowed, isEmpty);
     });
 
     test('MASTER retorna null (acesso total)', () {
@@ -147,6 +148,25 @@ void main() {
       expect(allowed, isNotNull);
       expect(allowed!.contains('contasPagar'), isTrue);
       expect(allowed.contains('chamados'), isFalse);
+    });
+
+    test('usuario com permissoes backend normaliza nomes de tela', () {
+      final info = buildCliente(
+        modulosContratados: ['Financeiro'],
+        permissoes: [
+          RolePermissaoItem(
+            telaNome: 'Contas_Pagar',
+            podeVer: true,
+            podeInserir: false,
+            podeEditar: false,
+            podeDeletar: false,
+          ),
+        ],
+      );
+      final matrix = SecurityMatrix.of(info);
+      final allowed = matrix.allowedTelaIds({'contasPagar', 'chamados'});
+
+      expect(allowed, {'contasPagar'});
     });
   });
 

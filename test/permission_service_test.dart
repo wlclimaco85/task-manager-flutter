@@ -42,6 +42,28 @@ void main() {
       expect(PermissionService().canViewScreen('nfe_entrada'), true);
     });
 
+    test('canViewScreen normaliza telaNome independente de formato', () {
+      PermissionService().setPermissoes([
+        const RolePermissaoItem(
+          telaNome: 'pdv_nfce',
+          podeVer: true,
+          podeInserir: false,
+          podeEditar: false,
+          podeDeletar: false,
+        ),
+        const RolePermissaoItem(
+          telaNome: 'ConfigFiscal',
+          podeVer: false,
+          podeInserir: false,
+          podeEditar: false,
+          podeDeletar: false,
+        ),
+      ]);
+
+      expect(PermissionService().canViewScreen('pdv_nfce'), isTrue);
+      expect(PermissionService().canViewScreen('config_fiscal'), isFalse);
+    });
+
     test('getFilteredMenuGroups remove grupos sem itens permitidos', () {
       final permissoes = [
         RolePermissaoItem(

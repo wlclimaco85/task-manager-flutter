@@ -69,10 +69,18 @@ class _AppSidebarState extends State<AppSidebar> {
       final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
-    // Primeiro: verificar permissões dinâmicas do backend via PermissionService
-    if (PermissionService().canViewScreen(item.id)) {
-      return true;
+    // Quando o backend enviou permissões RBAC, elas são a fonte de verdade.
+    // Snapshot vazio também é decisão válida: nenhuma tela liberada.
+    final permissionService = PermissionService();
+    if (permissionService.hasPermissionSnapshot) {
+      return permissionService.canViewScreen(item.id);
     }
+    final sessionPermissoes = AuthUtility.userInfo?.permissoes;
+    if (sessionPermissoes != null) {
+      permissionService.setPermissoes(sessionPermissoes);
+      return permissionService.canViewScreen(item.id);
+    }
+
     // Fallback: manter compatibilidade com SecurityMatrix (módulos legados)
     // Converte item.id (snake_case) para camelCase para comparar com telaNome (backend).
     final camelCaseId = StringUtils.snakeToCamelCase(item.id);
@@ -86,7 +94,8 @@ class _AppSidebarState extends State<AppSidebar> {
     _applyDefaultExpansion();
     _loadFavorites();
     _searchCtrl.addListener(() {
-      if (mounted && !_disposed) setState(() => _searchQuery = _searchCtrl.text);
+      if (mounted && !_disposed)
+        setState(() => _searchQuery = _searchCtrl.text);
     });
   }
 
@@ -150,23 +159,25 @@ class _AppSidebarState extends State<AppSidebar> {
 
   Future<void> _toggleFavorite(String itemId) async {
     final newState = await FavoritesService.toggle(_userId, itemId);
-    if (mounted && !_disposed) setState(() {
-      if (newState) {
-        _favorites.add(itemId);
-      } else {
-        _favorites.remove(itemId);
-      }
-    });
+    if (mounted && !_disposed)
+      setState(() {
+        if (newState) {
+          _favorites.add(itemId);
+        } else {
+          _favorites.remove(itemId);
+        }
+      });
   }
 
   void _toggleGroup(String groupId) {
-    if (mounted && !_disposed) setState(() {
-      if (_expandedGroups.contains(groupId)) {
-        _expandedGroups.remove(groupId);
-      } else {
-        _expandedGroups.add(groupId);
-      }
-    });
+    if (mounted && !_disposed)
+      setState(() {
+        if (_expandedGroups.contains(groupId)) {
+          _expandedGroups.remove(groupId);
+        } else {
+          _expandedGroups.add(groupId);
+        }
+      });
   }
 
   void _navigate(MenuItem item) {
@@ -196,8 +207,7 @@ class _AppSidebarState extends State<AppSidebar> {
           ? raw.substring(raw.indexOf(';base64,') + 8)
           : raw.trim();
       // Usa generic MIME type para suportar múltiplos formatos de imagem
-      final UriData? data =
-          Uri.parse('data:image/*;base64,$base64Only').data;
+      final UriData? data = Uri.parse('data:image/*;base64,$base64Only').data;
       if (data != null) return data.contentAsBytes();
     } catch (_) {}
     return Uint8List(0);
