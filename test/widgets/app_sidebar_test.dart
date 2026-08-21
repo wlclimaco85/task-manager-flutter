@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
@@ -12,10 +13,12 @@ void main() {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       AuthUtility.userInfo = null;
+      PermissionService().clear();
     });
 
     tearDown(() {
       AuthUtility.userInfo = null;
+      PermissionService().clear();
     });
 
     Widget buildSidebar({
@@ -46,19 +49,17 @@ void main() {
           id: 1,
           tipoLogin: LoginEnum.APP_ABRACO,
         ),
-        permissoes: ids
-            .map((id) {
-              // Converter snake_case para camelCase para corresponder aos AppScreen names
-              final camelCase = StringUtils.snakeToCamelCase(id);
-              return RolePermissaoItem(
-                telaNome: camelCase,
-                podeVer: true,
-                podeInserir: false,
-                podeEditar: false,
-                podeDeletar: false,
-              );
-            })
-            .toList(),
+        permissoes: ids.map((id) {
+          // Converter snake_case para camelCase para corresponder aos AppScreen names
+          final camelCase = StringUtils.snakeToCamelCase(id);
+          return RolePermissaoItem(
+            telaNome: camelCase,
+            podeVer: true,
+            podeInserir: false,
+            podeEditar: false,
+            podeDeletar: false,
+          );
+        }).toList(),
       );
     }
 
@@ -90,12 +91,15 @@ void main() {
 
     testWidgets('recalcula grupo expandido quando a tela selecionada muda',
         (tester) async {
+      allowMenuIds(['contas_pagar', 'pdv_nfce', 'chat']);
+
       await tester.pumpWidget(buildSidebar(selectedIndex: 25));
       await tester.pump(const Duration(milliseconds: 250));
 
       expect(find.text('Financeiro'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsNothing);
+      expect(find.text('Chat'), findsNothing);
 
       await tester.pumpWidget(buildSidebar(selectedIndex: 80));
       await tester.pump(const Duration(milliseconds: 250));
@@ -103,6 +107,20 @@ void main() {
       expect(find.text('Fiscal / NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsNothing);
+    });
+
+    testWidgets('nao usa fallback antigo quando RBAC nega uma tela',
+        (tester) async {
+      allowMenuIds(['calendario', 'conta_bancaria']);
+
+      await tester.pumpWidget(buildSidebar(selectedIndex: 80));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Fiscal / NFC-e'), findsNothing);
+      expect(find.text('PDV / NFC-e'), findsNothing);
+      expect(find.text('Config. Fiscal'), findsNothing);
+      expect(find.text('Calendário'), findsOneWidget);
+      expect(find.text('Conta Bancária'), findsOneWidget);
     });
 
     testWidgets('renderiza itens flat quando so um grupo fica visivel',

@@ -13,6 +13,10 @@ class PermissionService {
   /// Cache de permissões do login atual
   List<RolePermissaoItem>? _currentPermissoes;
 
+  /// Indica que o backend já enviou um snapshot de permissões para a sessão.
+  /// Snapshot vazio é válido e significa "sem telas liberadas".
+  bool get hasPermissionSnapshot => _currentPermissoes != null;
+
   /// Atualizar permissões (chamado após login)
   void setPermissoes(List<RolePermissaoItem>? permissoes) {
     _currentPermissoes = permissoes ?? [];
@@ -33,7 +37,8 @@ class PermissionService {
     // Procurar permissão correspondente
     return _currentPermissoes!.any(
       (perm) =>
-          perm.telaNome.toLowerCase() == telaNome.toLowerCase() && perm.podeVer,
+          normalizeTelaNome(perm.telaNome) == normalizeTelaNome(telaNome) &&
+          perm.podeVer,
     );
   }
 
@@ -45,7 +50,7 @@ class PermissionService {
     if (telaNome == null) return null;
 
     return _currentPermissoes!.firstWhereOrNull(
-      (perm) => perm.telaNome.toLowerCase() == telaNome.toLowerCase(),
+      (perm) => normalizeTelaNome(perm.telaNome) == normalizeTelaNome(telaNome),
     );
   }
 
@@ -254,6 +259,10 @@ class PermissionService {
   /// Obter telaNome para um menuItem.id
   static String? telaNomeForMenuItem(String menuItemId) {
     return _menuIdToTelaNome[menuItemId];
+  }
+
+  static String normalizeTelaNome(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
   static String? _getTelaNomeForMenuItem(String menuItemId) {
