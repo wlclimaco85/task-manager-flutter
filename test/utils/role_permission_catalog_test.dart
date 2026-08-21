@@ -42,4 +42,20 @@ void main() {
 
     expect(itensDoCatalogo, containsAll(itensDoMenu));
   });
+
+  test('catalogo de permissoes mostra Fiscal NFC-e para controle pela tela',
+      () {
+    final fiscal = RolePermissionCatalog.groups()
+        .firstWhere((grupo) => grupo.label == 'Fiscal / NFC-e');
+    final telas = fiscal.entries.map((tela) => tela.label).toSet();
+
+    expect(telas, contains('PDV / NFC-e'));
+    expect(telas, contains('Config. Fiscal'));
+    expect(telas, contains('Consulta DF-e'));
+    expect(telas, contains('Manifestação Destinatário'));
+    expect(telas, contains('NFSe'));
+    expect(telas, contains('Cancelamento e CC-e'));
+    expect(telas, contains('Dashboard Fiscal'));
+    expect(telas, contains('Agendar NFe Recorrente'));
+  });
 }
