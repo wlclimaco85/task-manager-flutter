@@ -27,6 +27,15 @@ class WebParceiroDetailScreen extends StatefulWidget {
 class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
   late Map<String, dynamic> _item;
 
+  // Bug de producao (card modulo_servicos vazio ao reabrir): GenericDetailFormScreen
+  // le _item UMA UNICA VEZ (guardado por _initialized) para preencher os chips do
+  // multiselect. _preCarregarModulos() e assincrono e antes preenchia _item bem depois
+  // desse init ja ter rodado, entao o valor buscado do backend chegava tarde demais e
+  // o campo ficava "Selecione..." pra sempre, mesmo com o dado certo salvo no backend.
+  // Trava a construcao do form ate o fetch terminar, garantindo que _item ja chega
+  // completo na primeira (e unica) inicializacao do GenericDetailFormScreen.
+  bool _modulosCarregados = false;
+
   @override
   void initState() {
     super.initState();
@@ -63,19 +72,27 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
 
   Future<void> _preCarregarModulos() async {
     final parceiroId = _item['id'];
-    if (parceiroId == null) return;
-    final r = await NetworkCaller().getRequest(
-      '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
-    );
-    if (!r.isSuccess || r.body == null) return;
-    final body = r.body;
-    final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
-    if (raw is! List) return;
-    final ids = raw
-        .map((e) => e['id']?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .join(', ');
-    if (mounted) setState(() => _item['modulo_servicos'] = ids);
+    if (parceiroId == null) {
+      if (mounted) setState(() => _modulosCarregados = true);
+      return;
+    }
+    try {
+      final r = await NetworkCaller().getRequest(
+        '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
+      );
+      if (!r.isSuccess || r.body == null) return;
+      final body = r.body;
+      final raw =
+          body is List ? body : (body?['data'] ?? body?['content'] ?? []);
+      if (raw is! List) return;
+      final ids = raw
+          .map((e) => e['id']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .join(', ');
+      _item['modulo_servicos'] = ids;
+    } finally {
+      if (mounted) setState(() => _modulosCarregados = true);
+    }
   }
 
   static Map<String, dynamic> _limparPayloadParceiro(
@@ -143,6 +160,9 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_modulosCarregados) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final podeEditarModulos = _podeEditarModulosServico();
     final id = _item['id']?.toString() ?? '';
     final parceiroId = _item['id'] as int? ?? 0;

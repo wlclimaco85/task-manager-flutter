@@ -63,12 +63,34 @@ dynamic resolveGenericDetailFormValue(
   return null;
 }
 
+/// Alias irregulares que a conversão camel<->snake genérica não resolve.
+///
+/// Bug de produção (parceiro/empresa: campos "Tipo Parceiros" e "Modulo
+/// Servicos" sempre voltavam vazios ao reabrir um registro já salvo, mesmo
+/// com o PUT retornando os dados certos): o gerador de tela no backend
+/// (`TelaGeneratorServiceImpl.loadFields`) nomeia campos multiselect
+/// ManyToMany auto-detectados como `otherTable + "s"` (ex.: tabela
+/// `tipo_parceiro` -> campo de tela `tipo_parceiros`), mas o nome real da
+/// propriedade serializada na entidade/DTO é `tiposParceiro` (plural
+/// irregular, "tipos" na frente). `tipo_parceiros` normalizado vira
+/// "tipoparceiros" e `tiposParceiro` normalizado vira "tiposparceiro" — o
+/// "s" troca de posição, então nenhuma conversão camel<->snake genérica
+/// encontra o valor salvo, e o multiselect sempre inicializa vazio.
+/// Mapear aqui os dois sentidos até o backend nomear o campo de forma
+/// consistente com a propriedade real da entidade.
+const Map<String, List<String>> _genericDetailIrregularAliases = {
+  'tipo_parceiros': ['tiposParceiro', 'tipos_parceiro'],
+  'tiposparceiro': ['tipo_parceiros', 'tiposParceiro'],
+};
+
 List<String> _genericDetailFieldAliases(String fieldName) {
   final aliases = <String>[];
   final snake = _genericDetailCamelToSnake(fieldName);
   final camel = _genericDetailSnakeToCamel(fieldName);
   if (snake != fieldName) aliases.add(snake);
   if (camel != fieldName) aliases.add(camel);
+  final irregular = _genericDetailIrregularAliases[fieldName.toLowerCase()];
+  if (irregular != null) aliases.addAll(irregular);
   return aliases;
 }
 
