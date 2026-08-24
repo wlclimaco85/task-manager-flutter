@@ -10,7 +10,8 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
 import '../../../widgets/boleto_importacao_lote_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows, FieldType;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows, FieldType;
 import '../../../web/screens/baixa_dialog_receber.dart';
 import '../../../web/dialogs/baixa_lote_dialog.dart';
 import '../../../web/dialogs/parcelar_receber_dialog.dart';
@@ -21,6 +22,7 @@ import 'package:http/http.dart' as http;
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/finance/financeiro_parceiro_field_rules.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../models/auth_utility.dart';
@@ -56,7 +58,14 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
   DateTime? _dataFim;
   int? _parceiroId;
   String _tipoFilter = 'Todos';
-  final _statusOptions = ['Todos', 'ABERTA', 'BAIXADA', 'VENCIDO', 'PARCIAL', 'CANCELADA'];
+  final _statusOptions = [
+    'Todos',
+    'ABERTA',
+    'BAIXADA',
+    'VENCIDO',
+    'PARCIAL',
+    'CANCELADA'
+  ];
   final _tipoOptions = ['Todos', 'AVULSO', 'RECORRENTE', 'PARCELADO'];
 
   Key _gridKey = UniqueKey();
@@ -66,8 +75,10 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
     if (_statusFilter != 'Todos') params['status'] = _statusFilter;
-    if (_dataInicio != null) params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
-    if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
+    if (_dataInicio != null)
+      params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
+    if (_dataFim != null)
+      params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != 'Todos') params['tipo'] = _tipoFilter;
     if (widget.categoriaFinanceiraIdFixa != null) {
@@ -147,7 +158,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
     ));
   }
 
-  void _onSelectedRowsChanged(Set<String> rows, List<Map<String, dynamic>> rowData) {
+  void _onSelectedRowsChanged(
+      Set<String> rows, List<Map<String, dynamic>> rowData) {
     setState(() {
       _selectedRows = rows;
       _selectedRowData = rowData;
@@ -184,118 +196,158 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
     );
     if (picked != null) {
       setState(() {
-        if (isInicio) _dataInicio = picked;
-        else _dataFim = picked;
+        if (isInicio)
+          _dataInicio = picked;
+        else
+          _dataFim = picked;
       });
     }
   }
 
   Widget _buildFilterBar() {
     return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: GridColors.filterBackground.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Wrap(
-          spacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            SizedBox(
-              width: 140,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: GridColors.filterBackground.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Text('Status:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          SizedBox(
+            width: 140,
+            height: 36,
+            child: DropdownButtonFormField<String>(
+              value: _statusFilter,
+              isDense: true,
+              decoration: const InputDecoration(
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                border: OutlineInputBorder(),
+              ),
+              items: _statusOptions
+                  .map((s) => DropdownMenuItem(
+                      value: s,
+                      child: Text(s, style: const TextStyle(fontSize: 13))))
+                  .toList(),
+              onChanged: (v) => setState(() => _statusFilter = v!),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text('Período:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          InkWell(
+            onTap: () => _pickDate(isInicio: true),
+            child: Container(
               height: 36,
-              child: DropdownButtonFormField<String>(
-                value: _statusFilter,
-                isDense: true,
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  border: OutlineInputBorder(),
-                ),
-                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
-                onChanged: (v) => setState(() => _statusFilter = v!),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                  border: Border.all(color: GridColors.divider),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.calendar_today, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                    _dataInicio != null
+                        ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}'
+                        : 'Início',
+                    style: const TextStyle(fontSize: 13)),
+              ]),
             ),
-            const SizedBox(width: 12),
-            const Text('Período:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            InkWell(
-              onTap: () => _pickDate(isInicio: true),
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : 'Início', style: const TextStyle(fontSize: 13)),
-                ]),
-              ),
-            ),
-            const Text(' até ', style: TextStyle(fontSize: 13)),
-            InkWell(
-              onTap: () => _pickDate(isInicio: false),
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 4),
-                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : 'Fim', style: const TextStyle(fontSize: 13)),
-                ]),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Tipo:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            SizedBox(
-              width: 160,
+          ),
+          const Text(' até ', style: TextStyle(fontSize: 13)),
+          InkWell(
+            onTap: () => _pickDate(isInicio: false),
+            child: Container(
               height: 36,
-              child: DropdownButtonFormField<String>(
-                value: _tipoFilter,
-                isDense: true,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  border: OutlineInputBorder(),
-                ),
-                items: _tipoOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
-                onChanged: (v) => setState(() => _tipoFilter = v!),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                  border: Border.all(color: GridColors.divider),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.calendar_today, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                    _dataFim != null
+                        ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}'
+                        : 'Fim',
+                    style: const TextStyle(fontSize: 13)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text('Tipo:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          SizedBox(
+            width: 160,
+            height: 36,
+            child: DropdownButtonFormField<String>(
+              value: _tipoFilter,
+              isDense: true,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                border: OutlineInputBorder(),
+              ),
+              items: _tipoOptions
+                  .map((t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(t, style: const TextStyle(fontSize: 13))))
+                  .toList(),
+              onChanged: (v) => setState(() => _tipoFilter = v!),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 36,
+            child: ElevatedButton.icon(
+              onPressed: _applyFilters,
+              icon: const Icon(Icons.search, size: 18),
+              label: const Text('Filtrar', style: TextStyle(fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
             ),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 36,
-              child: ElevatedButton.icon(
-                onPressed: _applyFilters,
-                icon: const Icon(Icons.search, size: 18),
-                label: const Text('Filtrar', style: TextStyle(fontSize: 13)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GridColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
+          ),
+          const SizedBox(width: 4),
+          SizedBox(
+            height: 36,
+            child: OutlinedButton.icon(
+              onPressed: _clearFilters,
+              icon: const Icon(Icons.clear, size: 18),
+              label: const Text('Limpar', style: TextStyle(fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
             ),
-            const SizedBox(width: 4),
-            SizedBox(
-              height: 36,
-              child: OutlinedButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.clear, size: 18),
-                label: const Text('Limpar', style: TextStyle(fontSize: 13)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final parceiroIdContexto =
+        FinanceiroParceiroFieldRules.normalizarParceiroId(
+      TenantContext.parceiroId,
+    );
+    final parceiroSelecionado = parceiroIdContexto?.toString();
+    final parceiroHabilitado = FinanceiroParceiroFieldRules.parceiroHabilitado(
+      parceiroId: parceiroIdContexto,
+    );
+    final fornecedorHabilitado =
+        FinanceiroParceiroFieldRules.fornecedorHabilitado(
+      parceiroId: parceiroIdContexto,
+    );
+
     return Column(
       children: [
         _buildFilterBar(),
@@ -322,12 +374,12 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: true,
+                  enabled: fornecedorHabilitado,
                   fieldOrder: 11,
                   dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
-              // Parceiro: locked no parceiro do login
+              // Parceiro: travado apenas quando existe parceiro no login.
               FieldConfigWindows(
                   fieldName: 'parceiro',
                   label: 'Parceiro',
@@ -335,14 +387,16 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: false,
+                  enabled: parceiroHabilitado,
                   fieldOrder: 12,
-                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownSelectedValue: parceiroSelecionado,
                   dropdownFutureBuilder: () async {
-                    final id = TenantContext.parceiroId;
-                    if (id == null) return <Map<String, dynamic>>[];
                     final all = await DropdownHelpers.parceiros();
-                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                    final id = parceiroIdContexto;
+                    if (id == null) return all;
+                    return all
+                        .where((p) => p['id']?.toString() == id.toString())
+                        .toList();
                   },
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
@@ -356,7 +410,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   fieldType: FieldType.dropdown,
                   enabled: true,
                   fieldOrder: 13,
-                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownSelectedValue: parceiroSelecionado,
                   dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
@@ -380,12 +434,16 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List
+                          ? decoded
+                          : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list.map<Map<String, dynamic>>((e) => {
-                        'value': e['descricao'] ?? e['nome'] ?? '',
-                        'label': e['descricao'] ?? e['nome'] ?? '',
-                      }).toList();
+                      return list
+                          .map<Map<String, dynamic>>((e) => {
+                                'value': e['descricao'] ?? e['nome'] ?? '',
+                                'label': e['descricao'] ?? e['nome'] ?? '',
+                              })
+                          .toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -406,17 +464,23 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   dropdownFutureBuilder: () async {
                     final token = AuthUtility.userInfo?.token;
                     final resp = await http.get(
-                      Uri.parse('${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
+                      Uri.parse(
+                          '${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
                       headers: {'Authorization': 'Bearer $token'},
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List
+                          ? decoded
+                          : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list.map<Map<String, dynamic>>((e) => {
-                        'value': e['value'] ?? e,
-                        'label': e['label'] ?? e['value'] ?? e.toString(),
-                      }).toList();
+                      return list
+                          .map<Map<String, dynamic>>((e) => {
+                                'value': e['value'] ?? e,
+                                'label':
+                                    e['label'] ?? e['value'] ?? e.toString(),
+                              })
+                          .toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -460,15 +524,18 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: GridColors.secondary),
                       )
                     : const Icon(Icons.upload_file, size: 18),
                 label: const Text('Importar Retorno CSV'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.secondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
                 ),
               ),
               // Fix card #470: import multi-arquivo de boletos PDF com
@@ -482,7 +549,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     context: context,
                     builder: (dialogContext) => Dialog(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+                        constraints:
+                            const BoxConstraints(maxWidth: 900, maxHeight: 700),
                         child: Stack(
                           children: [
                             const BoletoImportacaoLoteScreen(),
@@ -492,7 +560,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                               child: IconButton(
                                 icon: const Icon(Icons.close),
                                 tooltip: 'Fechar',
-                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(),
                               ),
                             ),
                           ],
@@ -509,9 +578,11 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                 label: const Text('Importar Boletos (PDF)'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
                 ),
               ),
               if (_selectedRows.isNotEmpty)
@@ -522,23 +593,28 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: GridColors.secondary,
                     backgroundColor: GridColors.secondarySoft,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
                     side: const BorderSide(color: GridColors.secondary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
                   ),
                 ),
               OutlinedButton.icon(
                 onPressed: () => showDialog(
                   context: context,
-                  builder: (_) => const ExportPowerBiDialog(tipoInicial: 'conta_receber'),
+                  builder: (_) =>
+                      const ExportPowerBiDialog(tipoInicial: 'conta_receber'),
                 ),
                 icon: const Icon(Icons.download, size: 18),
                 label: const Text('Exportar'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
                 ),
               ),
             ],
@@ -553,7 +629,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     conta: ContaReceber.fromJson(object),
                   ),
                 ),
-                isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.price_check,
@@ -561,41 +638,49 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                 onPressed: (context, object) {
                   showDialog(
                     context: context,
-                    builder: (_) => WebBaixaDialogReceber(conta: ContaReceber.fromJson(object)),
+                    builder: (_) => WebBaixaDialogReceber(
+                        conta: ContaReceber.fromJson(object)),
                   ).then((result) {
                     if (result == true && context.mounted) {
                       setState(() => _gridKey = UniqueKey());
                     }
                   });
                 },
-                isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.credit_card,
                 label: GridTexts.installment,
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebParcelarReceberDialog(conta: ContaReceber.fromJson(object)),
+                  builder: (_) => WebParcelarReceberDialog(
+                      conta: ContaReceber.fromJson(object)),
                 ),
-                isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.repeat,
                 label: GridTexts.recurrence,
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebRecorrenciaReceberDialog(conta: ContaReceber.fromJson(object)),
+                  builder: (_) => WebRecorrenciaReceberDialog(
+                      conta: ContaReceber.fromJson(object)),
                 ),
-                isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.swap_horiz,
                 label: GridTexts.renegotiate,
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebRenegociacaoReceberDialog(conta: ContaReceber.fromJson(object)),
+                  builder: (_) => WebRenegociacaoReceberDialog(
+                      conta: ContaReceber.fromJson(object)),
                 ),
-                isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.attach_file,
@@ -626,9 +711,11 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     // ja tem seu proprio header/close, entao nao duplicamos.
                     builder: (_) => Dialog(
                       backgroundColor: Colors.transparent,
-                      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                      insetPadding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 32),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 560),
+                        constraints:
+                            const BoxConstraints(maxWidth: 500, maxHeight: 560),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Material(
@@ -636,9 +723,11 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                             elevation: 8,
                             shadowColor: GridColors.shadow,
                             child: AnexoFinanceiroWidget(
-                              lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                              lancamentoId:
+                                  id is int ? id : int.tryParse('$id') ?? 0,
                               lancamentoTipo: 'RECEBER',
-                              empresaId: (object['empresa']?['id'] as num?)?.toInt(),
+                              empresaId:
+                                  (object['empresa']?['id'] as num?)?.toInt(),
                             ),
                           ),
                         ),
@@ -677,7 +766,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                       headers: TenantContext.headers,
                     );
                     if (!context.mounted) return;
-                    if (response.statusCode == 200 || response.statusCode == 201) {
+                    if (response.statusCode == 200 ||
+                        response.statusCode == 201) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Lançamento #$id clonado com sucesso!'),
@@ -688,7 +778,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Erro ao clonar: ${response.statusCode}'),
+                          content:
+                              Text('Erro ao clonar: ${response.statusCode}'),
                           backgroundColor: GridColors.error,
                         ),
                       );
