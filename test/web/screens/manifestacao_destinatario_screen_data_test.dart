@@ -116,6 +116,48 @@ void main() {
       expect(find.byIcon(Icons.error), findsOneWidget);
     });
 
+    testWidgets(
+        'semantics dos badges de tipo/status não duplicam o texto anunciado (WR-01 do code review)',
+        (tester) async {
+      // Trava a regressão de a11y encontrada no code review: sem
+      // `excludeSemantics: true` no Semantics wrapper, o Icon.semanticLabel
+      // e o Text filhos também geram conteúdo de semantics, fazendo o
+      // leitor de tela anunciar o texto duplicado (ex:
+      // "Status: Enviado\nEnviado\nEnviado" em vez de só "Status: Enviado").
+      final handle = tester.ensureSemantics();
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('pendentes')) {
+          return http.Response(
+            jsonEncode({
+              'data': [
+                pendente(chave: '1' * 44, tipo: 'CIENCIA', status: 'ENVIADO'),
+              ]
+            }),
+            200,
+          );
+        }
+        return http.Response(jsonEncode({'data': []}), 200);
+      });
+
+      await http.runWithClient(() async {
+        await tester.pumpWidget(wrap(const ManifestacaoDestinatarioScreen()));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+      }, () => mockClient);
+
+      final tipoSemantics =
+          tester.getSemantics(find.text('Ciência da Emissão'));
+      expect(tipoSemantics.label, 'Tipo de Manifestação: Ciência da Emissão');
+      expect('\n'.allMatches(tipoSemantics.label).length, 0,
+          reason: 'label não deve ter texto duplicado por nó filho');
+
+      final statusSemantics = tester.getSemantics(find.text('Enviado'));
+      expect(statusSemantics.label, 'Status: Enviado');
+      expect('\n'.allMatches(statusSemantics.label).length, 0,
+          reason: 'label não deve ter texto duplicado por nó filho');
+
+      handle.dispose();
+    });
+
     testWidgets('chave de 44 dígitos é exibida formatada em blocos de 4',
         (tester) async {
       final mockClient = MockClient((request) async {

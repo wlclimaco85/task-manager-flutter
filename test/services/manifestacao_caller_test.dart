@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -102,20 +103,32 @@ void main() {
 
   group('ManifestacaoCaller.registrarManifestacao - contrato de requisição',
       () {
-    // Estes testes documentam o contrato esperado (nomes de parâmetros e
-    // chaves de body) sem depender de rede — a chamada real de rede em
-    // ambiente de teste falha (sem servidor), o que é esperado e tratado
-    // pelo try/catch do caller retornando success=false.
+    // FIX (achado real do code review - WR-02): estes 4 testes faziam uma
+    // chamada de REDE REAL (sem mock) contra a URL default de dev
+    // (http://127.0.0.1:9001, ver lib/utils/api_links.dart) — medido ~2s
+    // de wall-clock por teste. Se um backend local estivesse rodando
+    // nessa porta durante `flutter test`, o teste passaria a depender de
+    // estado externo (instável) e ainda por cima poderia gravar dado
+    // sintético num banco real. Corrigido com http.runWithClient/
+    // MockClient simulando falha de rede (SocketException), mesmo padrão
+    // já usado no restante deste arquivo — determinístico e sem I/O real.
     test('aceita nfeChave/tipoEvento/justificativa (contrato real do backend)',
         () async {
-      final result = await ManifestacaoCaller.registrarManifestacao(
-        nfeChave: '3' * 44,
-        tipoEvento: ManifestacaoTipoEvento.confirmacao,
-        justificativa: 'Mercadoria recebida conforme nota fiscal emitida',
+      final mockClient = MockClient((request) async {
+        throw const SocketException('sem rede (simulado)');
+      });
+
+      final result = await http.runWithClient(
+        () => ManifestacaoCaller.registrarManifestacao(
+          nfeChave: '3' * 44,
+          tipoEvento: ManifestacaoTipoEvento.confirmacao,
+          justificativa: 'Mercadoria recebida conforme nota fiscal emitida',
+        ),
+        () => mockClient,
       );
 
-      // Sem servidor de teste, a chamada real falha rápido; o caller nunca
-      // deve lançar exceção — sempre retorna um ManifestacaoResult.
+      // O caller nunca deve lançar exceção — sempre retorna um
+      // ManifestacaoResult, mesmo quando a chamada HTTP falha.
       expect(result, isA<ManifestacaoResult>());
       expect(result.success, isFalse);
       expect(result.message, isNotNull);
@@ -123,26 +136,47 @@ void main() {
 
     test('funciona sem justificativa quando tipo não exige (CIENCIA)',
         () async {
-      final result = await ManifestacaoCaller.registrarManifestacao(
-        nfeChave: '4' * 44,
-        tipoEvento: ManifestacaoTipoEvento.ciencia,
+      final mockClient = MockClient((request) async {
+        throw const SocketException('sem rede (simulado)');
+      });
+
+      final result = await http.runWithClient(
+        () => ManifestacaoCaller.registrarManifestacao(
+          nfeChave: '4' * 44,
+          tipoEvento: ManifestacaoTipoEvento.ciencia,
+        ),
+        () => mockClient,
       );
 
       expect(result, isA<ManifestacaoResult>());
-      expect(result.success, isFalse); // sem rede no ambiente de teste
+      expect(result.success, isFalse);
     });
   });
 
   group('ManifestacaoCaller.listarPendentes/listarHistorico - resiliência',
       () {
     test('listarPendentes nunca lança exceção mesmo sem rede', () async {
-      final result = await ManifestacaoCaller.listarPendentes();
+      final mockClient = MockClient((request) async {
+        throw const SocketException('sem rede (simulado)');
+      });
+
+      final result = await http.runWithClient(
+        () => ManifestacaoCaller.listarPendentes(),
+        () => mockClient,
+      );
       expect(result, isA<ManifestacaoResult>());
       expect(result.success, isFalse);
     });
 
     test('listarHistorico nunca lança exceção mesmo sem rede', () async {
-      final result = await ManifestacaoCaller.listarHistorico();
+      final mockClient = MockClient((request) async {
+        throw const SocketException('sem rede (simulado)');
+      });
+
+      final result = await http.runWithClient(
+        () => ManifestacaoCaller.listarHistorico(),
+        () => mockClient,
+      );
       expect(result, isA<ManifestacaoResult>());
       expect(result.success, isFalse);
     });

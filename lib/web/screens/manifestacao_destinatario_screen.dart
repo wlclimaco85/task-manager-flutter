@@ -561,6 +561,12 @@ class _ManifestacaoDestinatarioScreenState
     // textos curtos na mesma linha/celula da tabela).
     return Semantics(
       label: '${GridTexts.manifestationType}: $label',
+      // excludeSemantics: true (achado real do code review - WR-01): sem
+      // isso, o Icon.semanticLabel e o Text filhos tambem geram conteudo
+      // de semantics, resultando em leitor de tela anunciando o texto
+      // duplicado (ex: "Tipo de Manifestação: X\nX"). Confirmado
+      // empiricamente via debugDumpSemanticsTree() em teste de widget.
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -603,6 +609,12 @@ class _ManifestacaoDestinatarioScreenState
     // nfse_detail_screen.dart (Icon(..., semanticLabel: ...)).
     return Semantics(
       label: '${GridTexts.status}: $label',
+      // excludeSemantics: true (achado real do code review - WR-01): sem
+      // isso, o Icon.semanticLabel e o Text filhos tambem geram conteudo
+      // de semantics, resultando em leitor de tela anunciando o texto
+      // duplicado (ex: "Status: Enviado\nEnviado\nEnviado"). Confirmado
+      // empiricamente via debugDumpSemanticsTree() em teste de widget.
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
