@@ -47,13 +47,20 @@ class GridColors {
   static const Color statusHoliday = Color(0xFF1565C0);
   static const Color statusClosed = Color(0xFF6A1B9A);
   static const Color statusNew = Color(0xFFFF9800);
-  // WCAG AA FIX (card P2-502, achado do QA de 11/08/2026): 0xFFFFA000
-  // (mesmo tom de `warning`) usado como cor de TEXTO no badge "Desconhecimento
-  // da Operação" (manifestacao_destinatario_screen.dart) media ~1.9:1 de
-  // contraste contra fundo claro -- muito abaixo do minimo WCAG AA 4.5:1
-  // para texto pequeno. Usado APENAS pelas telas de Manifestacao (confirmado
-  // por grep), escurecido aqui para ~6.7:1 sem trocar a familia de cor
-  // (continua ambar/laranja, so mais escuro). Nao afeta nenhuma outra tela.
+  // WCAG AA FIX (card P2-502, achado do QA de 11/08/2026, revisado no code
+  // review da 4a tentativa - WR-02): 0xFFFFA000 (mesmo tom de `warning`)
+  // usado como cor de TEXTO no badge "Desconhecimento da Operação"
+  // (manifestacao_destinatario_screen.dart) media ~1.9:1 de contraste --
+  // muito abaixo do minimo WCAG AA 4.5:1 para texto pequeno. O fundo real
+  // do badge e este mesmo tom com opacidade 10% (`cor.withOpacity(0.1)`)
+  // composto sobre GridColors.pageBackground (0xFFF6FAF7, bem claro) -- o
+  // resultado composto fica proximo do branco, entao a aproximacao contra
+  // branco solido (~6.5:1) e valida na pratica, mas nao e exata: se a
+  // opacidade do badge ou o fundo da tela mudarem, reconferir contraste
+  // contra a cor composta real, nao so contra branco. Usado APENAS pelas
+  // telas de Manifestacao (confirmado por grep), escurecido aqui para
+  // ~6.5:1 sem trocar a familia de cor (continua ambar/laranja, so mais
+  // escuro). Nao afeta nenhuma outra tela.
   static const Color statusUnknown = Color(0xFF8B5000);
   static const Color pageBackground = Color(0xFFF6FAF7);
   static const Color surfaceMuted = Color(0xFFF3F7F4);
