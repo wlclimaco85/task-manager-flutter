@@ -555,19 +555,32 @@ class _ManifestacaoDestinatarioScreenState
   Widget _buildTipoBadge(String tipo) {
     final label = _traduzirTipo(tipo);
     final cor = _corTipo(tipo);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cor, width: 1),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: cor,
+    // WCAG a11y FIX (card P2-502): rotulo explicito "Tipo de manifestacao: X"
+    // para screen reader (o texto visivel sozinho ja e legivel, mas o
+    // Semantics evita ambiguidade quando o badge aparece ao lado de outros
+    // textos curtos na mesma linha/celula da tabela).
+    return Semantics(
+      label: '${GridTexts.manifestationType}: $label',
+      // excludeSemantics: true (achado real do code review - WR-01): sem
+      // isso, o Icon.semanticLabel e o Text filhos tambem geram conteudo
+      // de semantics, resultando em leitor de tela anunciando o texto
+      // duplicado (ex: "Tipo de Manifestação: X\nX"). Confirmado
+      // empiricamente via debugDumpSemanticsTree() em teste de widget.
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: cor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cor, width: 1),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: cor,
+          ),
         ),
       ),
     );
@@ -590,27 +603,40 @@ class _ManifestacaoDestinatarioScreenState
         icone = Icons.schedule;
         label = GridTexts.pending;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cor, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icone, size: 12, color: cor),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: cor,
+    // WCAG a11y FIX (card P2-502): Semantics agrupa icone+texto numa unica
+    // leitura coerente para screen reader ("Status: Enviado" em vez de
+    // "check circle, Enviado" separados); mesmo padrao ja usado em
+    // nfse_detail_screen.dart (Icon(..., semanticLabel: ...)).
+    return Semantics(
+      label: '${GridTexts.status}: $label',
+      // excludeSemantics: true (achado real do code review - WR-01): sem
+      // isso, o Icon.semanticLabel e o Text filhos tambem geram conteudo
+      // de semantics, resultando em leitor de tela anunciando o texto
+      // duplicado (ex: "Status: Enviado\nEnviado\nEnviado"). Confirmado
+      // empiricamente via debugDumpSemanticsTree() em teste de widget.
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: cor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cor, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, size: 12, color: cor, semanticLabel: label),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: cor,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
