@@ -27,6 +27,10 @@ void main() {
         () async {
       final client = MockClient((request) async {
         expect(request.method, 'POST');
+        // Bug de producao: apontava para '/api/fiscal/nfe-importacao/preview'
+        // (404 -- rota nunca existiu). Rota real do backend
+        // (NfeImportController) e '/api/nfe-import/importacao-xml/preview'.
+        expect(request.url.path, contains('/api/nfe-import/importacao-xml/preview'));
         // MockClient finaliza o multipart e entrega o corpo já codificado
         // (boundary + headers de cada parte); o conteúdo do XML e o nome do
         // arquivo devem estar presentes ali -- prova de que os bytes vieram
@@ -34,6 +38,12 @@ void main() {
         final corpo = latin1.decode(request.bodyBytes);
         expect(corpo, contains('nota-real.xml'));
         expect(corpo, contains(utf8.decode(xmlFalso)));
+        // Bug de producao: o campo multipart era enviado como "file", mas
+        // NfeImportController.preview espera @RequestParam("xml") -- o
+        // backend nunca reconhecia o arquivo enviado.
+        expect(corpo, contains('name="xml"'),
+            reason: 'campo multipart deve se chamar "xml", igual ao '
+                '@RequestParam("xml") do NfeImportController');
         return http.Response(jsonEncode({'chaveAcesso': '123'}), 200);
       });
 

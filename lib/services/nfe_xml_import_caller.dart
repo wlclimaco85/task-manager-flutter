@@ -61,8 +61,11 @@ class NfeXmlImportCaller {
       if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
+      // Nome do campo multipart deve casar com @RequestParam("xml") em
+      // NfeImportController.preview/confirmar -- "file" nunca bateu com o
+      // parametro real esperado pelo backend.
       request.files.add(http.MultipartFile.fromBytes(
-        'file',
+        'xml',
         bytes,
         filename: fileName,
       ));
