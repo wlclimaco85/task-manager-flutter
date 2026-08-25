@@ -115,6 +115,52 @@ Map<String, dynamic> normalizeEntityRelationships(
   return updated;
 }
 
+bool _hasUsableStorageId(Object? value) {
+  final text = value?.toString().trim();
+  if (text == null || text.isEmpty) return false;
+  final normalized = text.toLowerCase();
+  return normalized != '0' && normalized != 'null' && normalized != 'false';
+}
+
+@visibleForTesting
+bool hasParceiroIdOrParcIdInStorageValues(Map<String, Object?> values) {
+  return _hasUsableStorageId(values['parceiroId']) ||
+      _hasUsableStorageId(values['parcId']);
+}
+
+bool _isParceiroLockField(FieldConfigWindows config) {
+  final field = config.fieldName.toLowerCase();
+  final label = config.label.toLowerCase();
+  return field == 'parceiro' ||
+      field == 'parceiroid' ||
+      field == 'parceiro.id' ||
+      field == 'parcid' ||
+      label == 'parceiro';
+}
+
+bool _isFornecedorLockField(FieldConfigWindows config) {
+  final field = config.fieldName.toLowerCase();
+  final label = config.label.toLowerCase();
+  return field == 'fornecedor' ||
+      field == 'fornecedorid' ||
+      field == 'fornecedor.id' ||
+      label == 'fornecedor';
+}
+
+@visibleForTesting
+bool isParceiroFieldDisabledByStorage(
+  FieldConfigWindows config,
+  bool hasParceiroIdOrParcId,
+) =>
+    _isParceiroLockField(config) && hasParceiroIdOrParcId;
+
+@visibleForTesting
+bool isFornecedorFieldEnabledByStorage(
+  FieldConfigWindows config,
+  bool hasParceiroIdOrParcId,
+) =>
+    !_isFornecedorLockField(config) || hasParceiroIdOrParcId;
+
 class FieldConfigWindows {
   final String label;
   final String fieldName;
@@ -2255,6 +2301,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null
         ? Map<String, dynamic>.from(widget.toJson(item))
         : <String, dynamic>{};
+    final prefs = await SharedPreferences.getInstance();
+    final hasParceiroIdOrParcIdStorage = hasParceiroIdOrParcIdInStorageValues({
+      'parceiroId': prefs.get('parceiroId'),
+      'parcId': prefs.get('parcId'),
+    });
 
     // Busca dados extras (ex.: vínculos M:N que não vêm na entidade) ANTES de
     // montar os controllers, mesclando no itemMap no formato que os campos
@@ -2345,7 +2396,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   fn == 'cliente') &&
               TenantContext.hasParceiro) {
             initialValue = TenantContext.parceiroId.toString();
-            preFilledFields.add(config.fieldName);
+            if (isParceiroFieldDisabledByStorage(
+              config,
+              hasParceiroIdOrParcIdStorage,
+            )) {
+              preFilledFields.add(config.fieldName);
+            }
           }
         }
       }
@@ -2367,8 +2423,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) =>
-            _buildForm(ctx, item, controllers, preFilledFields, setDialogState),
+        builder: (ctx, setDialogState) => _buildForm(
+          ctx,
+          item,
+          controllers,
+          preFilledFields,
+          hasParceiroIdOrParcIdStorage,
+          setDialogState,
+        ),
       ),
     );
   }
@@ -2378,6 +2440,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     T? item,
     Map<String, TextEditingController> controllers,
     Set<String> preFilledFields,
+    bool hasParceiroIdOrParcIdStorage,
     StateSetter setDialogState,
   ) {
     final preFilledFields0 = preFilledFields;
@@ -2490,6 +2553,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 final isEditMode = item != null;
                 bool effectiveEnabled;
                 if (isPreFilled || isIdField) {
+                  effectiveEnabled = false;
+                } else if (!isFornecedorFieldEnabledByStorage(
+                  config,
+                  hasParceiroIdOrParcIdStorage,
+                )) {
                   effectiveEnabled = false;
                 } else if (!isEditMode && config.enabledOnInsert != null) {
                   effectiveEnabled = config.enabledOnInsert!;
