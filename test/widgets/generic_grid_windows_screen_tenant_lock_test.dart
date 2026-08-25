@@ -150,7 +150,7 @@ void main() {
         label: 'Parceiro',
       );
       const fornecedorField = FieldConfigWindows(
-        fieldName: 'parceiroDev',
+        fieldName: 'fornecedor',
         label: 'Fornecedor',
       );
 
@@ -180,7 +180,7 @@ void main() {
         label: 'Parceiro',
       );
       const fornecedorField = FieldConfigWindows(
-        fieldName: 'parceiroDev',
+        fieldName: 'fornecedor',
         label: 'Fornecedor',
       );
 
