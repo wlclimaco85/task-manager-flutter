@@ -2851,12 +2851,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               IconButton(
                 icon: const Icon(Icons.visibility, size: 20),
                 onPressed: () {
+                  // Bug de producao ("sai e volta, nao salvou nada"): a
+                  // tela de detalhe salva de verdade no backend, mas sem
+                  // recarregar o grid ao voltar o item exibido na lista
+                  // continua o valor antigo em memoria -- reabrir o mesmo
+                  // registro reexibia o dado desatualizado.
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => widget.detailScreenBuilder!(item),
                     ),
-                  );
+                  ).then((_) {
+                    if (mounted) _loadItems(_currentPage, rowsPerPage);
+                  });
                 },
               ),
             if (widget.hasPermission('edit') &&

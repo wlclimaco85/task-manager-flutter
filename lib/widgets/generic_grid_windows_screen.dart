@@ -4819,11 +4819,25 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         _openForm(item: item);
                       }
                     } else if (value == '__view__') {
+                      // Bug de producao ("sai e volta, nao salvou nada"):
+                      // diferente do ramo __edit__ acima, este nunca dava
+                      // reload no grid ao voltar. A tela de detalhe
+                      // (GenericDetailFormScreen) salva de verdade no
+                      // backend (PUT confirmado 200), mas o item exibido
+                      // na LISTA continuava o valor antigo em memoria --
+                      // reabrir o mesmo registro (por "Visualizar" ou por
+                      // "Editar" quando editUsesDetailScreen=false, unico
+                      // caminho pra telas como Parceiro) reexibia o item
+                      // desatualizado do grid, dando a impressao de que
+                      // nada foi salvo.
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  widget.detailScreenBuilder!(item)));
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      widget.detailScreenBuilder!(item)))
+                          .then((_) {
+                        if (mounted) _loadItems(_currentPage, rowsPerPage);
+                      });
                     } else if (value == '__delete__') {
                       _deleteItem(_getNestedValue(itemMap, widget.idFieldName)
                           .toString());
