@@ -69,13 +69,17 @@ class DropdownHelpers {
   /// página nunca apareciam na busca. Agora reconsulta o backend a cada
   /// termo digitado (ver `busca=` no ParceiroController) e devolve o total
   /// real para o diálogo poder paginar via scroll até esgotar os resultados.
+  /// [empresaId] restringe a busca a uma empresa específica (ex.: tela GED,
+  /// onde o usuário escolhe a empresa num filtro à parte antes de escolher
+  /// o parceiro) — sem ele, o backend usa a empresa do tenant logado.
   static Future<PaginaDropdown> parceirosBusca({
     String? busca,
     required int pagina,
     int tamanho = 25,
+    String? empresaId,
   }) async {
     final url =
-        '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho)}';
+        '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho, empresaId: empresaId)}';
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (!resp.isSuccess || resp.body == null) {
@@ -87,18 +91,22 @@ class DropdownHelpers {
     }
   }
 
-  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...]`) de
-  /// [parceirosBusca] — extraído em função pura para poder ser testado sem
+  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...][&empresaId=...]`)
+  /// de [parceirosBusca] — extraído em função pura para poder ser testado sem
   /// rede (ver dropdown_helpers_busca_test.dart).
   static String buildParceirosBuscaQuery({
     String? busca,
     required int pagina,
     int tamanho = 25,
+    String? empresaId,
   }) {
     final termo = busca?.trim();
     final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
     if (termo != null && termo.isNotEmpty) {
       query.write('&busca=${Uri.encodeQueryComponent(termo)}');
+    }
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empresaId=${Uri.encodeQueryComponent(empresaId)}');
     }
     return query.toString();
   }

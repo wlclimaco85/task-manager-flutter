@@ -44,6 +44,22 @@ void main() {
       expect(query, contains('busca=a%26b+c'));
     });
 
+    test('inclui empresaId quando fornecido (tela GED filtra por empresa)',
+        () {
+      final query = DropdownHelpers.buildParceirosBuscaQuery(
+          busca: null, pagina: 0, empresaId: '20001');
+      expect(query, contains('empresaId=20001'));
+    });
+
+    test('nao inclui empresaId quando nulo ou vazio', () {
+      final semEmpresa =
+          DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
+      final empresaVazia = DropdownHelpers.buildParceirosBuscaQuery(
+          busca: null, pagina: 0, empresaId: '');
+      expect(semEmpresa, isNot(contains('empresaId')));
+      expect(empresaVazia, isNot(contains('empresaId')));
+    });
+
     test('avanca a pagina ao rolar a lista (scroll pagination)', () {
       final pagina0 =
           DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
