@@ -1018,12 +1018,16 @@ class ApiLinks {
   static String get allNfeTipoOperacao => '$_baseUrlNew/api/nfe-tipo-operacao';
 
   // NFe XML Import
+  // Bug de producao: apontava para '/api/fiscal/nfe-importacao/...', rota
+  // que nunca existiu no backend -- NfeImportController (real) expoe
+  // '/api/nfe-import/importacao-xml/...'. Toda chamada retornava 404
+  // ("Recurso nao encontrado: api/fiscal/nfe-importacao/preview").
   static String get nfeImportacaoPreview =>
-      '$_baseUrlNew/api/fiscal/nfe-importacao/preview';
+      '$_baseUrlNew/api/nfe-import/importacao-xml/preview';
   static String get nfeImportacaoConfirmar =>
-      '$_baseUrlNew/api/fiscal/nfe-importacao/confirmar';
+      '$_baseUrlNew/api/nfe-import/importacao-xml/confirmar';
   static String get nfeImportacaoListar =>
-      '$_baseUrlNew/api/fiscal/nfe-importacao';
+      '$_baseUrlNew/api/nfe-import/importacao-xml';
 
   // NFS-e / Nota Fiscal de ServiÃ§o
   static String get nfseIssue => '$_baseUrlNew/api/nfse/issue';
