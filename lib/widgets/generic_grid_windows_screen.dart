@@ -5453,7 +5453,7 @@ class _SearchableDropdownWindowsState
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => remoteSearch != null
-          ? _RemoteDropdownSearchDialog(
+          ? RemoteDropdownSearchDialog(
               title: widget.config.label,
               valueField: widget.config.dropdownValueField,
               displayField: widget.config.dropdownDisplayField,
@@ -5554,7 +5554,7 @@ class _SearchableDropdownWindowsState
 // apareciam. Este dialog reconsulta o backend a cada termo digitado
 // (debounce) e carrega mais paginas conforme o usuario rola a lista, ate
 // esgotar os resultados reais.
-class _RemoteDropdownSearchDialog extends StatefulWidget {
+class RemoteDropdownSearchDialog extends StatefulWidget {
   final String title;
   final String valueField;
   final String displayField;
@@ -5562,7 +5562,8 @@ class _RemoteDropdownSearchDialog extends StatefulWidget {
   final Future<PaginaDropdown> Function({String? busca, required int pagina})
       loadPage;
 
-  const _RemoteDropdownSearchDialog({
+  const RemoteDropdownSearchDialog({
+    super.key,
     required this.title,
     required this.valueField,
     required this.displayField,
@@ -5571,12 +5572,12 @@ class _RemoteDropdownSearchDialog extends StatefulWidget {
   });
 
   @override
-  State<_RemoteDropdownSearchDialog> createState() =>
-      _RemoteDropdownSearchDialogState();
+  State<RemoteDropdownSearchDialog> createState() =>
+      RemoteDropdownSearchDialogState();
 }
 
-class _RemoteDropdownSearchDialogState
-    extends State<_RemoteDropdownSearchDialog> {
+class RemoteDropdownSearchDialogState
+    extends State<RemoteDropdownSearchDialog> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   Timer? _debounce;

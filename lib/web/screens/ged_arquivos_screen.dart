@@ -5,9 +5,12 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show RemoteDropdownSearchDialog;
 import '../../../widgets/user_banners.dart'
     show AppBarActions, UserBannerAppBar;
 import '../../services/ai_assistant_service.dart';
@@ -60,12 +63,12 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _empresas = [];
-  List<Map<String, dynamic>> _parceiros = [];
   List<Map<String, dynamic>> _diretorios = [];
 
   int? _empresaFiltroId;
   String? _empresaFiltroNome;
   int? _parceiroFiltroId;
+  String? _parceiroFiltroNome;
 
   // ── Filtro por módulo de origem ───────────────────────────────────────────
   String? _moduloOrigemFiltro;
@@ -75,6 +78,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   PlatformFile? _arquivoSelecionado;
   int? _diretorioUploadId;
   int? _parceiroUploadId;
+  String? _parceiroUploadNome;
   bool _enviando = false;
 
   bool get _contextualizado =>
@@ -93,12 +97,23 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       final empresaInicial = widget.empresaId ?? TenantContext.empresaId;
       if (empresaInicial != null) {
         setState(() => _empresaFiltroId = empresaInicial);
-        _carregarParceiros(empresaInicial);
       }
       if (_contextoParceiro) {
-        setState(() => _parceiroFiltroId = widget.idOrigem);
+        setState(() {
+          _parceiroFiltroId = widget.idOrigem;
+          _parceiroFiltroNome = widget.nomeOrigem;
+        });
       } else if (TenantContext.hasParceiro) {
-        setState(() => _parceiroFiltroId = TenantContext.parceiroId);
+        final parceiroId = TenantContext.parceiroId;
+        setState(() => _parceiroFiltroId = parceiroId);
+        if (parceiroId != null) {
+          DropdownHelpers.parceiroLabelPorId(parceiroId.toString())
+              .then((nome) {
+            if (mounted && nome != null) {
+              setState(() => _parceiroFiltroNome = nome);
+            }
+          });
+        }
       }
       if (widget.moduloOrigem != null && widget.idOrigem != null) {
         setState(() {
@@ -127,26 +142,6 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       if (raw is List) {
         setState(() {
           _empresas = raw
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
-        });
-      }
-    }
-  }
-
-  Future<void> _carregarParceiros(int empresaId) async {
-    setState(() => _parceiros = []);
-    final r = await NetworkCaller()
-        .getRequest(ApiLinks.allParceirosPorEmp(empresaId.toString()));
-    if (!mounted) return;
-    if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ??
-          r.body!['data'] ??
-          r.body!['content'] ??
-          r.body;
-      if (raw is List) {
-        setState(() {
-          _parceiros = raw
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
               .toList();
         });
@@ -535,30 +530,28 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                       .firstWhere((e) => e['id'] == v, orElse: () => {})['nome']
                       ?.toString();
                   _parceiroFiltroId = null;
+                  _parceiroFiltroNome = null;
                   _parceiroUploadId = null;
-                  _parceiros = [];
+                  _parceiroUploadNome = null;
                   _arquivos = [];
                 });
-                if (v != null) _carregarParceiros(v);
               },
               icon: Icons.business,
             ),
           ),
           SizedBox(
             width: 200,
-            child: _buildDropdown<int>(
+            child: _buildParceiroBuscaField(
               label: 'Parceiro/Cliente',
-              value: _parceiroFiltroId,
+              placeholder: 'Todos',
               enabled: _empresaFiltroId != null,
-              items: [
-                const DropdownMenuItem<int>(value: null, child: Text('Todos')),
-                ..._parceiros.map((p) => DropdownMenuItem<int>(
-                      value: p['id'] as int?,
-                      child: Text(p['nome']?.toString() ?? ''),
-                    )),
-              ],
-              onChanged: (v) => setState(() => _parceiroFiltroId = v),
-              icon: Icons.person,
+              empresaId: _empresaFiltroId,
+              valorId: _parceiroFiltroId,
+              valorNome: _parceiroFiltroNome,
+              onSelecionado: (id, nome) => setState(() {
+                _parceiroFiltroId = id;
+                _parceiroFiltroNome = nome;
+              }),
             ),
           ),
           SizedBox(
@@ -742,6 +735,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       _diretorioUploadId = null;
       _parceiroUploadId =
           _contextoParceiro ? widget.idOrigem : _parceiroFiltroId;
+      _parceiroUploadNome =
+          _contextoParceiro ? widget.nomeOrigem : _parceiroFiltroNome;
     });
 
     showDialog(
@@ -818,22 +813,19 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (!_contextoParceiro) ...[
-                  _buildDropdown<int>(
+                  _buildParceiroBuscaField(
                     label: 'Parceiro/Cliente (opcional)',
-                    value: _parceiroUploadId,
-                    items: [
-                      const DropdownMenuItem<int>(
-                          value: null, child: Text('Sem parceiro')),
-                      ..._parceiros.map((p) => DropdownMenuItem<int>(
-                            value: p['id'] as int?,
-                            child: Text(p['nome']?.toString() ?? ''),
-                          )),
-                    ],
-                    onChanged: (v) {
-                      setState(() => _parceiroUploadId = v);
+                    placeholder: 'Sem parceiro',
+                    empresaId: _empresaFiltroId,
+                    valorId: _parceiroUploadId,
+                    valorNome: _parceiroUploadNome,
+                    onSelecionado: (id, nome) {
+                      setState(() {
+                        _parceiroUploadId = id;
+                        _parceiroUploadNome = nome;
+                      });
                       setStateDialog(() {});
                     },
-                    icon: Icons.person,
                   ),
                   const SizedBox(height: 16),
                 ] else
@@ -910,6 +902,65 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       decoration: _inputDecoration(label, icon),
       items: items,
       onChanged: enabled ? onChanged : null,
+    );
+  }
+
+  /// Campo de Parceiro/Cliente com busca remota (LIKE multi-campo + scroll
+  /// infinito) — mesmo padrão já usado em Contas a Pagar/Receber (card 580).
+  /// Substitui o antigo dropdown simples (GET /api/parceiro/empresa/{id} sem
+  /// paginação, só os 25 primeiros, sem filtro) pelo mesmo componente
+  /// (RemoteDropdownSearchDialog) usado no resto do sistema.
+  Widget _buildParceiroBuscaField({
+    required String label,
+    required String placeholder,
+    required int? empresaId,
+    required int? valorId,
+    required String? valorNome,
+    required void Function(int? id, String? nome) onSelecionado,
+    bool enabled = true,
+  }) {
+    return InkWell(
+      onTap: !enabled
+          ? null
+          : () async {
+              final resultado = await showDialog<Map<String, dynamic>>(
+                context: context,
+                builder: (_) => RemoteDropdownSearchDialog(
+                  title: label,
+                  valueField: 'id',
+                  displayField: 'nome',
+                  currentValue: valorId?.toString(),
+                  loadPage: ({busca, required pagina}) =>
+                      DropdownHelpers.parceirosBusca(
+                    busca: busca,
+                    pagina: pagina,
+                    empresaId: empresaId?.toString(),
+                  ),
+                ),
+              );
+              if (resultado == null) return;
+              if (resultado.isEmpty) {
+                onSelecionado(null, null);
+                return;
+              }
+              onSelecionado(
+                int.tryParse(resultado['id']?.toString() ?? ''),
+                resultado['nome']?.toString(),
+              );
+            },
+      child: InputDecorator(
+        decoration: _inputDecoration(label, Icons.person).copyWith(
+          suffixIcon: const Icon(Icons.arrow_drop_down),
+          enabled: enabled,
+        ),
+        child: Text(
+          valorNome ?? placeholder,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: valorNome == null ? Colors.grey.shade600 : null,
+          ),
+        ),
+      ),
     );
   }
 
