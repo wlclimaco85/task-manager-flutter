@@ -6,6 +6,7 @@ import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
+import '../alvara_grid_screen.dart' show WebAlvaraGridScreen;
 import '../ged_arquivos_screen.dart';
 import '../login_grid_screen.dart' show WebLoginGridScreen;
 import '../comunicado_componente_screen.dart'
@@ -26,6 +27,21 @@ class WebParceiroDetailScreen extends StatefulWidget {
 
 class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
   late Map<String, dynamic> _item;
+
+  // Bug de producao (card modulo_servicos vazio ao reabrir): GenericDetailFormScreen
+  // le _item UMA UNICA VEZ (guardado por _initialized) para preencher os chips do
+  // multiselect. _preCarregarModulos() e assincrono e antes preenchia _item bem depois
+  // desse init ja ter rodado, entao o valor buscado do backend chegava tarde demais e
+  // o campo ficava "Selecione..." pra sempre, mesmo com o dado certo salvo no backend.
+  // Trava a construcao do form ate o fetch terminar, garantindo que _item ja chega
+  // completo na primeira (e unica) inicializacao do GenericDetailFormScreen.
+  bool _modulosCarregados = false;
+
+  // WR-01 (code review): falha de rede ao pre-carregar modulos nao pode
+  // virar spinner preso nem falha silenciosa (o campo pareceria "vazio de
+  // verdade" quando na real e so o fetch que falhou). Guarda a mensagem
+  // pra exibir um aviso visivel assim que o form aparecer.
+  String? _modulosErro;
 
   @override
   void initState() {
@@ -63,19 +79,64 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
 
   Future<void> _preCarregarModulos() async {
     final parceiroId = _item['id'];
-    if (parceiroId == null) return;
-    final r = await NetworkCaller().getRequest(
-      '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
-    );
-    if (!r.isSuccess || r.body == null) return;
-    final body = r.body;
-    final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
-    if (raw is! List) return;
-    final ids = raw
-        .map((e) => e['id']?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .join(', ');
-    if (mounted) setState(() => _item['modulo_servicos'] = ids);
+    if (parceiroId == null) {
+      if (mounted) setState(() => _modulosCarregados = true);
+      return;
+    }
+    try {
+      final r = await NetworkCaller().getRequest(
+        '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
+      );
+      if (!r.isSuccess || r.body == null) {
+        _modulosErro =
+            'Nao foi possivel carregar Modulo Servicos (HTTP ${r.statusCode}).';
+        return;
+      }
+      final body = r.body;
+      final raw =
+          body is List ? body : (body?['data'] ?? body?['content'] ?? []);
+      if (raw is! List) {
+        _modulosErro = 'Resposta invalida ao carregar Modulo Servicos.';
+        return;
+      }
+      // CR-01 (code review): tem que ser List<String>, nao String juntada
+      // com join(', '). GenericDetailFormScreen._initMultiValue so semeia
+      // _multiValues quando o valor e uma List (val is List) -- uma String
+      // cai no else e vira [], entao o multiselect continuava vazio mesmo
+      // com o gate de loading certo. Pior: com _multiValues vazio, salvar
+      // qualquer campo do parceiro disparava _salvarModulos com
+      // modulos: [], APAGANDO os modulos ja contratados no backend.
+      final ids = raw
+          .map((e) => e['id']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+      _item['modulo_servicos'] = ids;
+    } catch (e) {
+      // Bug documentado no CLAUDE.md (spinner preso sem erro visivel): sem
+      // este catch, uma excecao aqui (ex.: SocketException) vira unhandled
+      // Future rejection e o usuario nunca sabe que Modulo Servicos nao
+      // carregou de verdade.
+      _modulosErro = 'Erro ao carregar Modulo Servicos: $e';
+    } finally {
+      if (mounted) setState(() => _modulosCarregados = true);
+      if (_modulosErro != null) _avisarErroModulos();
+    }
+  }
+
+  void _avisarErroModulos() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _modulosErro == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '$_modulosErro Os modulos exibidos podem estar desatualizados.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    });
   }
 
   static Map<String, dynamic> _limparPayloadParceiro(
@@ -143,6 +204,9 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_modulosCarregados) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final podeEditarModulos = _podeEditarModulosServico();
     final id = _item['id']?.toString() ?? '';
     final parceiroId = _item['id'] as int? ?? 0;
@@ -165,7 +229,16 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
       telaNome: 'parceiro',
       hasPermission: widget.hasPermission,
       transformFormData: _limparPayloadParceiro,
-      onAfterSave: podeEditarModulos ? _salvarModulos : null,
+      // BLOCKER (code review): se _preCarregarModulos falhou (_modulosErro
+      // != null), _item['modulo_servicos'] nunca foi preenchido e o
+      // multiselect inicializa vazio ([]). Sem essa guarda, salvar QUALQUER
+      // campo do parceiro nesse estado disparava _salvarModulos com
+      // modulos: [], apagando os modulos ja contratados no backend -- o
+      // mesmo bug de perda de dados que este fix pretendia corrigir (CR-01),
+      // so que disparado por falha de rede em vez de join(',').
+      onAfterSave: podeEditarModulos && _modulosErro == null
+          ? _salvarModulos
+          : null,
       fieldOverrides: [
         FieldConfigWindows(
           label: 'Modulo Servicos',
@@ -282,6 +355,21 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
           extraParams: {'parcId': id, 'empresaId': empresaId},
+        ),
+        RelatedGridTab(
+          title: 'Alvarás',
+          icon: Icons.verified_user,
+          customWidget: parceiroId > 0
+              ? WebAlvaraGridScreen(
+                  hasPermission: widget.hasPermission,
+                  extraParams: {'parceiroId': id, 'empresaId': empresaId},
+                  additionalFormData: {
+                    'parceiro': id,
+                    if (empresaId.isNotEmpty) 'empresa': empresaId,
+                  },
+                  showAppBar: false,
+                )
+              : const Center(child: Text('ID do parceiro não disponível')),
         ),
         // ── Cobrança de Módulos ───────────────────────────────────────
         RelatedGridTab(
