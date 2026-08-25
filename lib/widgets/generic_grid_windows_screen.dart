@@ -188,15 +188,6 @@ bool _isParceiroLockField(FieldConfigWindows config) {
       label == 'parceiro';
 }
 
-bool _isFornecedorLockField(FieldConfigWindows config) {
-  final field = config.fieldName.toLowerCase();
-  final label = config.label.toLowerCase();
-  return field == 'fornecedor' ||
-      field == 'fornecedorid' ||
-      field == 'fornecedor.id' ||
-      label == 'fornecedor';
-}
-
 @visibleForTesting
 bool isParceiroFieldDisabledByStorage(
   FieldConfigWindows config,
@@ -204,12 +195,16 @@ bool isParceiroFieldDisabledByStorage(
 ) =>
     _isParceiroLockField(config) && hasParceiroIdOrParcId;
 
-@visibleForTesting
-bool isFornecedorFieldEnabledByStorage(
-  FieldConfigWindows config,
-  bool hasParceiroIdOrParcId,
-) =>
-    !_isFornecedorLockField(config) || hasParceiroIdOrParcId;
+// Fix (pedido explicito do usuario): o campo Fornecedor tinha uma trava
+// hardcoded por nome de campo/label ("fornecedor") aqui no widget generico,
+// que ignorava por completo o FieldConfigWindows.enabled passado pelas telas
+// (conta_pagar_grid_screen.dart e parceiro_detail_screen.dart, ambos com
+// enabled: true) -- o campo continuava bloqueado em QUALQUER contexto sem
+// parceiro vinculado, mesmo com as duas telas ja ajustadas. Fornecedor deve
+// ficar sempre acessivel; quem decide isso agora e so o enabled de cada
+// FieldConfigWindows especifico, sem essa segunda trava paralela.
+// isFornecedorFieldEnabledByStorage/_isFornecedorLockField removidos (nao
+// tinham mais nenhum papel depois dessa mudanca).
 
 class FieldConfigWindows {
   final String label;
@@ -2644,11 +2639,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 final isEditMode = item != null;
                 bool effectiveEnabled;
                 if (isPreFilled || isIdField) {
-                  effectiveEnabled = false;
-                } else if (!isFornecedorFieldEnabledByStorage(
-                  config,
-                  hasParceiroContext,
-                )) {
                   effectiveEnabled = false;
                 } else if (!isEditMode && config.enabledOnInsert != null) {
                   effectiveEnabled = config.enabledOnInsert!;

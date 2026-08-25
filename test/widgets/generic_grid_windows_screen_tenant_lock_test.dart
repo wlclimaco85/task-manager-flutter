@@ -11,14 +11,8 @@ void main() {
       fieldName: 'parceiro',
       label: 'Parceiro',
     );
-    const fornecedorField = FieldConfigWindows(
-      fieldName: 'fornecedor',
-      label: 'Fornecedor',
-    );
 
-    test(
-        'sem parceiroId/parcId, Parceiro fica acessivel e Fornecedor bloqueado',
-        () {
+    test('sem parceiroId/parcId, Parceiro fica acessivel', () {
       final hasContextParceiro = hasParceiroContextInExtraParams({});
 
       expect(hasContextParceiro, isFalse);
@@ -26,13 +20,9 @@ void main() {
         isParceiroFieldDisabledByStorage(parceiroField, hasContextParceiro),
         isFalse,
       );
-      expect(
-        isFornecedorFieldEnabledByStorage(fornecedorField, hasContextParceiro),
-        isFalse,
-      );
     });
 
-    test('com parceiroId, Parceiro trava e Fornecedor fica acessivel', () {
+    test('com parceiroId, Parceiro trava', () {
       final hasContextParceiro = hasParceiroContextInExtraParams({
         'parceiroId': '17',
       });
@@ -42,13 +32,9 @@ void main() {
         isParceiroFieldDisabledByStorage(parceiroField, hasContextParceiro),
         isTrue,
       );
-      expect(
-        isFornecedorFieldEnabledByStorage(fornecedorField, hasContextParceiro),
-        isTrue,
-      );
     });
 
-    test('com parcId, Parceiro trava e Fornecedor fica acessivel', () {
+    test('com parcId, Parceiro trava', () {
       final hasContextParceiro = hasParceiroContextInExtraParams({
         'parcId': 23,
       });
@@ -56,10 +42,6 @@ void main() {
       expect(hasContextParceiro, isTrue);
       expect(
         isParceiroFieldDisabledByStorage(parceiroField, hasContextParceiro),
-        isTrue,
-      );
-      expect(
-        isFornecedorFieldEnabledByStorage(fornecedorField, hasContextParceiro),
         isTrue,
       );
     });
@@ -85,6 +67,15 @@ void main() {
   // a Pagar/Receber" dentro de parceiro_detail_screen.dart passa
   // parceiro/parceiroId; dentro de empresa_detail_screen.dart passa so
   // empresa/empresaId).
+  //
+  // Fix seguinte (pedido explicito do usuario): "Fornecedor" nunca deveria
+  // ficar bloqueado -- a trava hardcoded por nome/label desse campo foi
+  // removida do widget generico (ver generic_grid_windows_screen.dart).
+  // Quem decide "enabled" pra Fornecedor agora e so o FieldConfigWindows de
+  // cada tela (conta_pagar_grid_screen.dart, parceiro_detail_screen.dart),
+  // sem segunda trava paralela. Os testes abaixo cobrem so o que continua
+  // existindo: o contexto efetivo de parceiro e o travamento do campo
+  // "Parceiro" (isso nao mudou).
   group('contexto efetivo de parceiro (extraParams + login)', () {
     tearDown(() => AuthUtility.userInfo = null);
 
@@ -128,8 +119,8 @@ void main() {
     });
 
     test(
-        'cenario real do bug: campo Parceiro fica acessivel e Fornecedor '
-        'bloqueado ao abrir "Novo Item" dentro de uma Empresa', () {
+        'cenario real: campo Parceiro fica acessivel ao abrir "Novo Item" '
+        'dentro de uma Empresa', () {
       AuthUtility.userInfo = LoginModel(
         token: 'token-test',
         login: Login(
@@ -149,10 +140,6 @@ void main() {
         fieldName: 'parceiro',
         label: 'Parceiro',
       );
-      const fornecedorField = FieldConfigWindows(
-        fieldName: 'fornecedor',
-        label: 'Fornecedor',
-      );
 
       expect(hasContext, isFalse);
       expect(
@@ -160,16 +147,11 @@ void main() {
         isFalse,
         reason: 'Parceiro deve ficar ACESSIVEL dentro de uma Empresa',
       );
-      expect(
-        isFornecedorFieldEnabledByStorage(fornecedorField, hasContext),
-        isFalse,
-        reason: 'Fornecedor deve ficar BLOQUEADO dentro de uma Empresa',
-      );
     });
 
     test(
-        'cenario real: campo Parceiro trava e Fornecedor fica acessivel ao '
-        'abrir "Novo Item" dentro de um Parceiro especifico', () {
+        'cenario real: campo Parceiro trava ao abrir "Novo Item" dentro de '
+        'um Parceiro especifico', () {
       final hasContext = effectiveHasParceiroContext(
         {'parceiro': 99, 'empresaId': 5},
         false,
@@ -179,21 +161,12 @@ void main() {
         fieldName: 'parceiro',
         label: 'Parceiro',
       );
-      const fornecedorField = FieldConfigWindows(
-        fieldName: 'fornecedor',
-        label: 'Fornecedor',
-      );
 
       expect(hasContext, isTrue);
       expect(
         isParceiroFieldDisabledByStorage(parceiroField, hasContext),
         isTrue,
         reason: 'Parceiro deve ficar BLOQUEADO dentro de um Parceiro',
-      );
-      expect(
-        isFornecedorFieldEnabledByStorage(fornecedorField, hasContext),
-        isTrue,
-        reason: 'Fornecedor deve ficar ACESSIVEL dentro de um Parceiro',
       );
     });
   });
