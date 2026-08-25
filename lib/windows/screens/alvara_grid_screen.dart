@@ -7,17 +7,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../customization/dynamic_grid_windows_screen.dart';
+import '../../customization/dynamic_grid_windows_screen.dart' hide SecurityCheck;
 import '../../models/alvara_model.dart';
 import '../../models/auth_utility.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType, CustomAction;
+    show FieldConfigWindows, FieldType, CustomAction, SecurityCheck;
 import './ged_arquivos_screen.dart';
 
-// Alias de tipo para checar permissões (mesmo padrão dos outros screens)
-typedef SecurityCheck = bool Function(String permission);
+// Correcao minima (autorizada pelo usuario) para destravar erro de
+// compilacao: este arquivo declarava seu proprio typedef SecurityCheck,
+// duplicado do que ja existe em generic_grid_windows_screen.dart. Quando
+// os dois eram importados sem prefixo no mesmo arquivo (ex.: telas de
+// detail de Parceiro/Empresa que passaram a importar alvara_grid_screen.dart
+// para a nova aba "Alvaras"), o Dart nao consegue resolver qual
+// SecurityCheck usar -- erro "is imported from both". Nao muda nenhuma
+// logica/funcionalidade da feature de Alvaras, so remove a duplicacao de
+// tipo e importa o typedef canonico.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tela Web/Windows de Alvarás
