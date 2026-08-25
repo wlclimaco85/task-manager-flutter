@@ -13,6 +13,7 @@ import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
 import '../services/network_caller.dart';
+import '../services/push_notification_service.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
 
@@ -55,7 +56,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
+    if (_formKey.currentState == null || !_formKey.currentState!.validate())
+      return;
     setState(() => _loginInProgress = true);
     // Bug de producao: uma excecao nao tratada aqui (ex.: erro de
     // configuracao em ApiLinks.login) travava o botao com o spinner ativo
@@ -71,7 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _loginInProgress = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Erro ao conectar: $e', style: const TextStyle(color: Colors.white)),
+          content: Text('Erro ao conectar: $e',
+              style: const TextStyle(color: Colors.white)),
           backgroundColor: Colors.red.shade700,
         ));
       }
@@ -96,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // anterior.
       ModuloAccess.reset();
       await ModuloAccess.load();
+      await PushNotificationService.registrarDispositivoLogado();
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
         final email = model.login?.email ?? '';
@@ -120,11 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showTrocarSenhaDialog(String email) async {
-    final atualCtrl  = TextEditingController();
-    final novaCtrl   = TextEditingController();
+    final atualCtrl = TextEditingController();
+    final novaCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
-    bool obscureAtual   = true;
-    bool obscureNova    = true;
+    bool obscureAtual = true;
+    bool obscureNova = true;
     bool obscureConfirm = true;
     bool loading = false;
     String? erro;
@@ -134,11 +138,13 @@ class _LoginScreenState extends State<LoginScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Row(children: [
             Icon(Icons.lock_reset, color: GridColors.secondary, size: 24),
             const SizedBox(width: 8),
-            const Text('Trocar senha', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const Text('Trocar senha',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           ]),
           content: SizedBox(
             width: 320,
@@ -151,13 +157,16 @@ class _LoginScreenState extends State<LoginScreen> {
               if (erro != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red.shade200),
                   ),
-                  child: Text(erro!, style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                  child: Text(erro!,
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 12)),
                 ),
               _SenhaField(
                 label: 'Senha atual',
@@ -189,34 +198,43 @@ class _LoginScreenState extends State<LoginScreen> {
                   backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: loading
                     ? null
                     : () async {
-                        final atual   = atualCtrl.text.trim();
-                        final nova    = novaCtrl.text.trim();
+                        final atual = atualCtrl.text.trim();
+                        final nova = novaCtrl.text.trim();
                         final confirm = confirmCtrl.text.trim();
                         if (atual.isEmpty || nova.isEmpty || confirm.isEmpty) {
                           setS(() => erro = 'Preencha todos os campos.');
                           return;
                         }
                         if (nova.length < 6) {
-                          setS(() => erro = 'A nova senha deve ter pelo menos 6 caracteres.');
+                          setS(() => erro =
+                              'A nova senha deve ter pelo menos 6 caracteres.');
                           return;
                         }
                         if (nova != confirm) {
-                          setS(() => erro = 'Nova senha e confirmação não conferem.');
+                          setS(() =>
+                              erro = 'Nova senha e confirmação não conferem.');
                           return;
                         }
-                        setS(() { loading = true; erro = null; });
+                        setS(() {
+                          loading = true;
+                          erro = null;
+                        });
                         // Valida senha atual tentando autenticar
                         final checkResp = await NetworkCaller().postRequest(
                           ApiLinks.login,
                           {'email': email, 'password': atual},
                         );
                         if (!checkResp.isSuccess) {
-                          setS(() { loading = false; erro = 'Senha atual incorreta.'; });
+                          setS(() {
+                            loading = false;
+                            erro = 'Senha atual incorreta.';
+                          });
                           return;
                         }
                         // Altera senha
@@ -228,12 +246,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (alterResp.isSuccess) {
                           Navigator.of(ctx).pop(true);
                         } else {
-                          setS(() => erro = 'Erro ao alterar senha. Tente novamente.');
+                          setS(() =>
+                              erro = 'Erro ao alterar senha. Tente novamente.');
                         }
                       },
                 child: loading
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Confirmar', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('Confirmar',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -418,7 +442,8 @@ class _LoginBanner extends StatelessWidget {
                             backgroundColor: GridColors.primary,
                             foregroundColor: Colors.white,
                             elevation: 4,
-                            shadowColor: GridColors.primary.withValues(alpha: 0.4),
+                            shadowColor:
+                                GridColors.primary.withValues(alpha: 0.4),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -464,7 +489,8 @@ class _LoginBanner extends StatelessWidget {
                                 color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 13,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                                decorationColor:
+                                    Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -482,7 +508,8 @@ class _LoginBanner extends StatelessWidget {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                                decorationColor:
+                                    Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -530,12 +557,10 @@ class _LoginBanner extends StatelessWidget {
         filled: true,
         fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-                color: GridColors.divider, width: 1.5),
+            borderSide: BorderSide(color: GridColors.divider, width: 1.5),
             borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(
-                color: GridColors.secondary, width: 2),
+            borderSide: const BorderSide(color: GridColors.secondary, width: 2),
             borderRadius: BorderRadius.circular(12)),
         errorBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: GridColors.error, width: 1.5),
@@ -575,6 +600,7 @@ class _SafeLogoWidget extends StatelessWidget {
     );
   }
 }
+
 /// Campo de senha reutilizável dentro do dialog de troca de senha.
 class _SenhaField extends StatelessWidget {
   final String label;
@@ -598,9 +624,11 @@ class _SenhaField extends StatelessWidget {
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 18),
+          icon:
+              Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 18),
           onPressed: onToggle,
         ),
       ),
