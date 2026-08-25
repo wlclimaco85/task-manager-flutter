@@ -5,7 +5,8 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart' show GestureBinding;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -15,6 +16,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
 import 'services/session_expired_handler.dart';
+import 'services/push_notification_service.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'utils/app_logger.dart';
@@ -33,6 +35,7 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     _log('WidgetsFlutterBinding pronto');
+    await PushNotificationService.inicializarFirebaseSeDisponivel();
 
     // Desliga o resampling de eventos de ponteiro (Flutter guarda amostras e
     // as reproduz num callback do scheduler para suavizar toques). O crash
@@ -65,7 +68,8 @@ void main() {
     // Erros do framework -> console (com biblioteca/contexto/stack, que apontam o widget).
     FlutterError.onError = (FlutterErrorDetails details) {
       print('[APP-ERROR] FlutterError: ${details.exceptionAsString()}');
-      print('[APP-ERROR] biblioteca: ${details.library} | contexto: ${details.context}');
+      print(
+          '[APP-ERROR] biblioteca: ${details.library} | contexto: ${details.context}');
       print('[APP-ERROR] stack:\n${details.stack}');
       FlutterError.presentError(details);
     };
@@ -86,7 +90,8 @@ void main() {
     // tamanho certo via LayoutBuilder. O erro detalhado já sai pelo
     // FlutterError.onError acima — aqui não duplicar.
     ErrorWidget.builder = (FlutterErrorDetails details) {
-      print('[APP-ERROR] _AdaptiveErrorBox exibida (detalhes acima via FlutterError).');
+      print(
+          '[APP-ERROR] _AdaptiveErrorBox exibida (detalhes acima via FlutterError).');
       return const _AdaptiveErrorBox();
     };
 
@@ -138,6 +143,12 @@ void main() {
         _log('ModuloAccess.load ok');
       } catch (e, s) {
         _logErr('ModuloAccess.load', e, s);
+      }
+      try {
+        await PushNotificationService.registrarDispositivoLogado();
+        _log('PushNotificationService.registrarDispositivoLogado ok');
+      } catch (e, s) {
+        _logErr('PushNotificationService.registrarDispositivoLogado', e, s);
       }
     }
 
@@ -277,7 +288,8 @@ class _AdaptiveErrorBox extends StatelessWidget {
           return const Center(
             child: Tooltip(
               message: 'Erro ao carregar',
-              child: Icon(Icons.error_outline, size: 20, color: GridColors.error),
+              child:
+                  Icon(Icons.error_outline, size: 20, color: GridColors.error),
             ),
           );
         }
@@ -339,8 +351,7 @@ class _ErroTelaCompleta extends StatelessWidget {
                   const Text(
                     'Não foi possível carregar o sistema',
                     textAlign: TextAlign.center,
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
