@@ -31,8 +31,17 @@ import './ged_arquivos_screen.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 class WindowsAlvaraGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
+  final Map<String, dynamic>? extraParams;
+  final Map<String, dynamic>? additionalFormData;
+  final bool showAppBar;
 
-  const WindowsAlvaraGridScreen({super.key, required this.hasPermission});
+  const WindowsAlvaraGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.extraParams,
+    this.additionalFormData,
+    this.showAppBar = true,
+  });
 
   // ── Dropdown helpers ────────────────────────────────────────────────────────
   static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
@@ -47,7 +56,10 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       if (r.statusCode != 200) return [];
       final body = jsonDecode(r.body);
       final List lista = body['data']?['dados'] ?? body['data'] ?? [];
-      return lista.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return lista
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     } catch (_) {
       return [];
     }
@@ -88,6 +100,9 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => AlvaraModel.fromJson(json),
       toJson: (a) => a.toJson(),
+      extraParams: extraParams,
+      additionalFormData: additionalFormData,
+      showAppBar: showAppBar,
 
       fieldOverrides: [
         // ── Suprimir IDs de FK brutos ──────────────────────────────────────
@@ -157,11 +172,11 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () async => const [
             {'id': 'Funcionamento', 'nome': GridTexts.businessLicense},
-            {'id': 'Sanitário',     'nome': GridTexts.healthLicense},
-            {'id': 'Bombeiros',     'nome': GridTexts.fireDepartment},
-            {'id': 'Ambiental',     'nome': GridTexts.environmental},
-            {'id': 'Publicidade',   'nome': GridTexts.advertising},
-            {'id': 'Outros',        'nome': GridTexts.others},
+            {'id': 'Sanitário', 'nome': GridTexts.healthLicense},
+            {'id': 'Bombeiros', 'nome': GridTexts.fireDepartment},
+            {'id': 'Ambiental', 'nome': GridTexts.environmental},
+            {'id': 'Publicidade', 'nome': GridTexts.advertising},
+            {'id': 'Outros', 'nome': GridTexts.others},
           ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -245,13 +260,15 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
           label: GridTexts.viewGed,
           isVisible: (item) => item.id != null,
           onPressed: (ctx, item) {
-            Navigator.push(ctx, MaterialPageRoute(
-              builder: (_) => GedArquivosScreen(
-                moduloOrigem: 'alvara',
-                idOrigem: item.id,
-                nomeOrigem: item.descricao,
-              ),
-            ));
+            Navigator.push(
+                ctx,
+                MaterialPageRoute(
+                  builder: (_) => GedArquivosScreen(
+                    moduloOrigem: 'alvara',
+                    idOrigem: item.id,
+                    nomeOrigem: item.descricao,
+                  ),
+                ));
           },
         ),
       ],
@@ -275,7 +292,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
     final arquivo = result.files.first;
     final bytes = arquivo.bytes ?? Uint8List(0);
     if (bytes.isEmpty) {
-      if (!context.mounted) return;                     // guard após await
+      if (!context.mounted) return; // guard após await
       _snack(context, GridTexts.emptyFile, GridColors.error);
       return;
     }
@@ -295,14 +312,15 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
 
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
-      if (!context.mounted) return;                     // guard após await
+      if (!context.mounted) return; // guard após await
       if (resp.statusCode == 200) {
         _snack(context, GridTexts.pdfUploadSuccess, GridColors.success);
       } else {
-        _snack(context, GridTexts.pdfUploadError(resp.statusCode), GridColors.error);
+        _snack(context, GridTexts.pdfUploadError(resp.statusCode),
+            GridColors.error);
       }
     } catch (e) {
-      if (!context.mounted) return;                     // guard no catch
+      if (!context.mounted) return; // guard no catch
       _snack(context, GridTexts.genericError(e.toString()), GridColors.error);
     }
   }
@@ -338,8 +356,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
                   const Icon(Icons.picture_as_pdf,
                       size: 64, color: GridColors.error),
                   const SizedBox(height: 12),
-                  SelectableText(url,
-                      style: const TextStyle(fontSize: 13)),
+                  SelectableText(url, style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.open_in_new),
