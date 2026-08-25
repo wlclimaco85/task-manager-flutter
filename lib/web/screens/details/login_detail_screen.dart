@@ -58,6 +58,22 @@ class WebLoginDetailScreen extends StatelessWidget {
         dropdownFutureBuilder: () =>
             _loadRolesDisponiveis(parceiroId, empresaId),
       ),
+      // Bug de producao: o campo "Setores" auto-detectado pelo backend
+      // (TelaGeneratorServiceImpl, via join table login_setor) aparecia como
+      // multiselect editavel dentro da aba Cadastro, mas PUT/POST
+      // /api/login nunca leem 'setores' do payload (LoginController so
+      // processa email/senha/nome/cpfCnpj/tipoLogin/empresa/parceiro/
+      // aplicativo/roles/ativo) -- qualquer edicao feita ali era descartada
+      // silenciosamente, dando a impressao de "salvou" (200 OK) e sumindo ao
+      // recarregar. A aba dedicada "Setores" abaixo (RelatedGridTab) e quem
+      // gerencia essa associacao de verdade, via
+      // POST/DELETE /api/login/{id}/setores -- por isso o campo duplicado
+      // da aba Cadastro fica oculto aqui.
+      const FieldConfigWindows(
+        fieldName: 'setores',
+        label: 'Setores',
+        isInForm: false,
+      ),
     ];
 
     return GenericDetailFormScreen(
