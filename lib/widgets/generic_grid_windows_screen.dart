@@ -122,10 +122,59 @@ bool _hasUsableStorageId(Object? value) {
   return normalized != '0' && normalized != 'null' && normalized != 'false';
 }
 
+const _parceiroScopeKeys = ['parceiro', 'parceiroid', 'parcid', 'clienteid'];
+const _empresaScopeKeys = ['empresa', 'empresaid', 'empid'];
+
+/// `true` se `extraParams` (contexto de navegação — ex.: aba "Contas a
+/// Pagar" dentro da tela de um Parceiro específico) traz explicitamente um
+/// parceiro/parcId. Bug (card campo-parceiro-fornecedor-disabled-invertido):
+/// a versão anterior lia `SharedPreferences.get('parceiroId'/'parcId')`, mas
+/// NADA no app grava essas chaves — a leitura sempre retornava null,
+/// deixando o campo "Fornecedor" travado para sempre e o campo "Parceiro"
+/// dependente só do login (ver `effectiveHasParceiroContext`).
 @visibleForTesting
-bool hasParceiroIdOrParcIdInStorageValues(Map<String, Object?> values) {
-  return _hasUsableStorageId(values['parceiroId']) ||
-      _hasUsableStorageId(values['parcId']);
+bool hasParceiroContextInExtraParams(Map<String, dynamic>? extraParams) {
+  if (extraParams == null) return false;
+  for (final entry in extraParams.entries) {
+    if (_parceiroScopeKeys.contains(entry.key.toLowerCase()) &&
+        _hasUsableStorageId(entry.value)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// `true` se `extraParams` escopa explicitamente por empresa (ex.: aba
+/// "Contas a Pagar" dentro da tela de uma Empresa) SEM trazer parceiro —
+/// nesse caso o contexto de parceiro NUNCA se aplica, mesmo que o login do
+/// usuário logado seja de um parceiro (ex.: escritório contábil navegando
+/// dentro de uma empresa cliente).
+@visibleForTesting
+bool hasExplicitEmpresaOnlyScope(Map<String, dynamic>? extraParams) {
+  if (extraParams == null) return false;
+  final hasEmpresaKey = extraParams.keys
+      .any((k) => _empresaScopeKeys.contains(k.toLowerCase()));
+  return hasEmpresaKey && !hasParceiroContextInExtraParams(extraParams);
+}
+
+/// Contexto efetivo de parceiro usado para travar "Parceiro" e liberar
+/// "Fornecedor" (e vice-versa) nos formulários financeiros.
+///
+/// Prioridade:
+/// 1. `extraParams` com parceiro/parceiroId/parcId explícito (drill-down a
+///    partir da tela de um Parceiro específico) → SEMPRE contexto de parceiro.
+/// 2. `extraParams` com empresa/empresaId explícito e SEM parceiro (drill-down
+///    a partir da tela de uma Empresa) → NUNCA contexto de parceiro.
+/// 3. Sem `extraParams` (acesso direto pelo menu principal, sem navegação
+///    aninhada) → cai no próprio login (`TenantContext.hasParceiro`).
+@visibleForTesting
+bool effectiveHasParceiroContext(
+  Map<String, dynamic>? extraParams,
+  bool tenantHasParceiro,
+) {
+  if (hasParceiroContextInExtraParams(extraParams)) return true;
+  if (hasExplicitEmpresaOnlyScope(extraParams)) return false;
+  return tenantHasParceiro;
 }
 
 bool _isParceiroLockField(FieldConfigWindows config) {
@@ -2301,11 +2350,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null
         ? Map<String, dynamic>.from(widget.toJson(item))
         : <String, dynamic>{};
-    final prefs = await SharedPreferences.getInstance();
-    final hasParceiroIdOrParcIdStorage = hasParceiroIdOrParcIdInStorageValues({
-      'parceiroId': prefs.get('parceiroId'),
-      'parcId': prefs.get('parcId'),
-    });
+    final hasParceiroContext = effectiveHasParceiroContext(
+      widget.extraParams,
+      TenantContext.hasParceiro,
+    );
 
     // Busca dados extras (ex.: vínculos M:N que não vêm na entidade) ANTES de
     // montar os controllers, mesclando no itemMap no formato que os campos
@@ -2398,7 +2446,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             initialValue = TenantContext.parceiroId.toString();
             if (isParceiroFieldDisabledByStorage(
               config,
-              hasParceiroIdOrParcIdStorage,
+              hasParceiroContext,
             )) {
               preFilledFields.add(config.fieldName);
             }
@@ -2428,7 +2476,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           item,
           controllers,
           preFilledFields,
-          hasParceiroIdOrParcIdStorage,
+          hasParceiroContext,
           setDialogState,
         ),
       ),
@@ -2440,7 +2488,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     T? item,
     Map<String, TextEditingController> controllers,
     Set<String> preFilledFields,
-    bool hasParceiroIdOrParcIdStorage,
+    bool hasParceiroContext,
     StateSetter setDialogState,
   ) {
     final preFilledFields0 = preFilledFields;
@@ -2556,7 +2604,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   effectiveEnabled = false;
                 } else if (!isFornecedorFieldEnabledByStorage(
                   config,
-                  hasParceiroIdOrParcIdStorage,
+                  hasParceiroContext,
                 )) {
                   effectiveEnabled = false;
                 } else if (!isEditMode && config.enabledOnInsert != null) {
