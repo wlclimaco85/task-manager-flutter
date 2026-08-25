@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -16,68 +16,58 @@ class NfeXmlImportResult {
 }
 
 class NfeXmlImportCaller {
-  static Future<NfeXmlImportResult> preview(String filePath) async {
-    try {
-      final uri = TenantContext.applyToUrl(ApiLinks.nfeImportacaoPreview);
-      final token = AuthUtility.userInfo?.token;
-
-      final request = http.MultipartRequest('POST', Uri.parse(uri));
-      if (token != null && token.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      final bytes = await File(filePath).readAsBytes();
-      final fileName = filePath.split(Platform.pathSeparator).last;
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        bytes,
-        filename: fileName,
-      ));
-
-      final streamed = await request.send();
-      final resp = await http.Response.fromStream(streamed);
-
-      if (resp.statusCode == 200 || resp.statusCode == 201) {
-        final body = resp.body.isNotEmpty ? jsonDecode(resp.body) : <String, dynamic>{};
-        return NfeXmlImportResult(
-          success: true,
-          data: body is Map<String, dynamic> ? body : {'data': body},
-        );
-      }
-
-      String msg = 'Erro no preview (${resp.statusCode})';
-      try {
-        final body = jsonDecode(resp.body);
-        msg = body['mensagem']?.toString() ??
-            body['message']?.toString() ??
-            body['error']?.toString() ??
-            msg;
-      } catch (_) {}
-      return NfeXmlImportResult(success: false, message: msg);
-    } catch (e) {
-      return NfeXmlImportResult(success: false, message: 'Erro ao conectar: $e');
-    }
+  /// Envia o XML para o backend a partir dos BYTES já lidos pelo FilePicker
+  /// (`withData: true`), nunca reabrindo o arquivo pelo `path` via `dart:io`.
+  ///
+  /// Bug de produção: a versão anterior recebia `filePath` e fazia
+  /// `File(filePath).readAsBytes()`. Isso funciona no Windows (path real de
+  /// disco), mas quebra no Flutter Web com
+  /// "Erro ao conectar: Unsupported operation: _Namespace" -- `dart:io` não
+  /// tem implementação real no navegador, e qualquer uso de `File` estoura
+  /// essa exceção antes mesmo de tentar a requisição HTTP. Os bytes já
+  /// carregados em `PlatformFile.bytes` (web+windows+mobile) eliminam essa
+  /// dependência de disco.
+  static Future<NfeXmlImportResult> preview(
+    Uint8List bytes,
+    String fileName, {
+    http.Client? client,
+  }) {
+    return _enviar(ApiLinks.nfeImportacaoPreview, bytes, fileName,
+        mensagemErroPadrao: 'Erro no preview', client: client);
   }
 
-  static Future<NfeXmlImportResult> confirmar(String filePath) async {
+  static Future<NfeXmlImportResult> confirmar(
+    Uint8List bytes,
+    String fileName, {
+    http.Client? client,
+  }) {
+    return _enviar(ApiLinks.nfeImportacaoConfirmar, bytes, fileName,
+        mensagemErroPadrao: 'Erro na importação', client: client);
+  }
+
+  static Future<NfeXmlImportResult> _enviar(
+    String endpoint,
+    Uint8List bytes,
+    String fileName, {
+    required String mensagemErroPadrao,
+    http.Client? client,
+  }) async {
+    final httpClient = client ?? http.Client();
     try {
-      final uri = TenantContext.applyToUrl(ApiLinks.nfeImportacaoConfirmar);
+      final uri = TenantContext.applyToUrl(endpoint);
       final token = AuthUtility.userInfo?.token;
 
       final request = http.MultipartRequest('POST', Uri.parse(uri));
       if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-
-      final bytes = await File(filePath).readAsBytes();
-      final fileName = filePath.split(Platform.pathSeparator).last;
       request.files.add(http.MultipartFile.fromBytes(
         'file',
         bytes,
         filename: fileName,
       ));
 
-      final streamed = await request.send();
+      final streamed = await httpClient.send(request);
       final resp = await http.Response.fromStream(streamed);
 
       if (resp.statusCode == 200 || resp.statusCode == 201) {
@@ -88,7 +78,7 @@ class NfeXmlImportCaller {
         );
       }
 
-      String msg = 'Erro na importação (${resp.statusCode})';
+      String msg = '$mensagemErroPadrao (${resp.statusCode})';
       try {
         final body = jsonDecode(resp.body);
         msg = body['mensagem']?.toString() ??
@@ -99,6 +89,8 @@ class NfeXmlImportCaller {
       return NfeXmlImportResult(success: false, message: msg);
     } catch (e) {
       return NfeXmlImportResult(success: false, message: 'Erro ao conectar: $e');
+    } finally {
+      if (client == null) httpClient.close();
     }
   }
 
