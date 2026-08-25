@@ -14,7 +14,6 @@ class WebNfeImportXmlScreen extends StatefulWidget {
 
 class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
   PlatformFile? _arquivoXml;
-  String? _xmlPath;
   bool _carregando = false;
   bool _confirmando = false;
 
@@ -40,14 +39,13 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
       final file = result.files.first;
       setState(() {
         _arquivoXml = file;
-        _xmlPath = file.path;
         _reset();
       });
     }
   }
 
   Future<void> _carregarPreview() async {
-    if (_arquivoXml == null) {
+    if (_arquivoXml?.bytes == null) {
       _mostrarSnack('Selecione um arquivo XML primeiro');
       return;
     }
@@ -57,7 +55,8 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
       _reset();
     });
 
-    final result = await NfeXmlImportCaller.preview(_xmlPath!);
+    final result = await NfeXmlImportCaller.preview(
+        _arquivoXml!.bytes!, _arquivoXml!.name);
 
     if (!mounted) return;
 
@@ -78,7 +77,8 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
   Future<void> _confirmarImportacao() async {
     setState(() => _confirmando = true);
 
-    final result = await NfeXmlImportCaller.confirmar(_xmlPath!);
+    final result = await NfeXmlImportCaller.confirmar(
+        _arquivoXml!.bytes!, _arquivoXml!.name);
 
     if (!mounted) return;
 
