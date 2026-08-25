@@ -92,11 +92,16 @@ class DropdownHelpers {
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (!resp.isSuccess || resp.body == null) {
-        return const PaginaDropdown([], 0);
+        // WR-01 (debito conhecido desde o card 580): erro de rede/servidor
+        // nao pode parecer "busca sem resultado" -- usuario via "Nenhum
+        // resultado" e nao dava pra saber se o parceiro simplesmente nao
+        // existia ou se o backend tinha quebrado.
+        return PaginaDropdown([], 0,
+            erro: 'Erro ao buscar (status ${resp.statusCode}).');
       }
       return parsePaginaDropdown(resp.body);
-    } catch (_) {
-      return const PaginaDropdown([], 0);
+    } catch (e) {
+      return PaginaDropdown([], 0, erro: 'Erro ao buscar: $e');
     }
   }
 

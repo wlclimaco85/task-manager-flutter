@@ -326,7 +326,12 @@ class PaginaDropdown {
   final List<Map<String, dynamic>> items;
   final int total;
 
-  const PaginaDropdown(this.items, this.total);
+  /// Preenchido quando a busca falhou (erro de rede, status != 200, corpo
+  /// invalido) -- diferencia "erro real" de "busca sem resultado", que antes
+  /// pareciam a mesma coisa ("Nenhum resultado") na tela.
+  final String? erro;
+
+  const PaginaDropdown(this.items, this.total, {this.erro});
 }
 
 // Configuração de exportação
@@ -5588,6 +5593,7 @@ class RemoteDropdownSearchDialogState
   bool _loadingMore = false;
   String _termoAtual = '';
   int _requestToken = 0;
+  String? _erro;
 
   @override
   void initState() {
@@ -5629,6 +5635,7 @@ class RemoteDropdownSearchDialogState
       _total = pagina.total;
       _pagina = 0;
       _loading = false;
+      _erro = pagina.erro;
     });
   }
 
@@ -5650,6 +5657,7 @@ class RemoteDropdownSearchDialogState
       _total = pagina.total;
       _pagina = proximaPagina;
       _loadingMore = false;
+      _erro = pagina.erro;
     });
   }
 
@@ -5758,9 +5766,20 @@ class RemoteDropdownSearchDialogState
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _items.isEmpty
-                      ? const Center(
-                          child: Text('Nenhum resultado',
-                              style: TextStyle(color: Colors.grey)))
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              _erro ?? 'Nenhum resultado',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _erro != null
+                                    ? GridColors.error
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        )
                       : ListView.builder(
                           controller: _scrollCtrl,
                           itemCount: _items.length + (_loadingMore ? 1 : 0),
