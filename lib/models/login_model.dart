@@ -21,6 +21,13 @@ class Login {
   Parceiro? parceiro;
   Aplicativo? aplicativo;
   bool? trocarSenhaProximoLogin;
+  // Bug de producao: campo "Ativo" da tela de Cadastro sempre voltava vazio
+  // ao reabrir/salvar o registro. Login.fromJson/toJson descartavam esse
+  // campo (nao existia no model), entao mesmo depois do backend passar a
+  // persistir 'ativo' de verdade (Login.java/LoginController), o round-trip
+  // fromJson->toJson feito por WebLoginDetailScreen ao montar o formulario
+  // apagava o valor antes mesmo de chegar no GenericDetailFormScreen.
+  bool? ativo;
   DateTime? dhCreatedAt;
   DateTime? dhUpdatedAt;
 
@@ -37,6 +44,7 @@ class Login {
     this.parceiro,
     this.aplicativo,
     this.trocarSenhaProximoLogin,
+    this.ativo,
     this.dhCreatedAt,
     this.dhUpdatedAt,
   });
@@ -55,6 +63,7 @@ class Login {
       'parceiro': parceiro?.toJson(),
       'aplicativo': aplicativo?.toJson(),
       'trocarSenhaProximoLogin': trocarSenhaProximoLogin,
+      'ativo': ativo,
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
       'dhUpdatedAt': dhUpdatedAt?.toIso8601String(),
     };
@@ -91,6 +100,7 @@ class Login {
           json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null;
 
       trocarSenhaProximoLogin = json['trocarSenhaProximoLogin'] == true;
+      ativo = json['ativo'] == null ? null : json['ativo'] == true;
 
       // CORRIGIDO: chaves corretas para as datas
       dhCreatedAt = json['dhCreatedAt'] != null
