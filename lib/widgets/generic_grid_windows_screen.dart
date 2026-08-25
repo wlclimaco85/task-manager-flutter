@@ -5618,7 +5618,11 @@ class _RemoteDropdownSearchDialogState
   }
 
   Future<void> _carregarProximaPagina() async {
-    final token = _requestToken;
+    // Incrementa (não só lê) o token — mesma defesa de _carregarPrimeiraPagina.
+    // Hoje o único chamador é _onScroll, já protegido por _loading/_loadingMore,
+    // mas sem incrementar aqui um futuro segundo chamador (ex.: botão "carregar
+    // mais" manual) poderia invalidar-se mutuamente de forma incorreta.
+    final token = ++_requestToken;
     setState(() => _loadingMore = true);
     final proximaPagina = _pagina + 1;
     final pagina = await widget.loadPage(
