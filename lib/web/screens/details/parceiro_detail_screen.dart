@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
@@ -317,6 +318,29 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
           icon: Icons.money_off,
           telaNome: 'conta_pagar',
           extraParams: {'parceiro': id, 'empresaId': empresaId},
+          // Fix: dentro do detail do Parceiro este form usava so os campos
+          // genericos do TelaConfig do backend (sem os overrides curados da
+          // tela WebContaPagarGridScreen) -- faltava o campo Fornecedor
+          // (busca server-side, restrito a TipoParceiro "Fornecedor").
+          fieldOverrides: [
+            FieldConfigWindows(
+                fieldName: 'parceiroDev',
+                label: 'Fornecedor',
+                isInForm: true,
+                isInGrid: false,
+                isVisibleByDefault: false,
+                fieldType: FieldType.dropdown,
+                enabled: true,
+                fieldOrder: 11,
+                dropdownRemoteSearch: ({busca, required pagina}) =>
+                    DropdownHelpers.parceirosBusca(
+                        busca: busca,
+                        pagina: pagina,
+                        tipoParceiro: 'Fornecedor'),
+                dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
+                dropdownValueField: 'id',
+                dropdownDisplayField: 'nome'),
+          ],
         ),
         RelatedGridTab(
           title: 'Contas a Receber',

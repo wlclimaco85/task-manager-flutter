@@ -355,10 +355,6 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     final parceiroHabilitado = FinanceiroParceiroFieldRules.parceiroHabilitado(
       parceiroId: parceiroIdContexto,
     );
-    final fornecedorHabilitado =
-        FinanceiroParceiroFieldRules.fornecedorHabilitado(
-      parceiroId: parceiroIdContexto,
-    );
 
     return Column(
       children: [
@@ -378,7 +374,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros (quem devemos pagar)
+              // Fornecedor (parceiroDev): 2o campo, dropdown com busca server-side
+              // restrito aos parceiros com TipoParceiro "Fornecedor" vinculado
+              // (quem devemos pagar). Sempre habilitado -- se o usuario esta
+              // nesta tela, ja tem permissao pra escolher o fornecedor.
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: 'Fornecedor',
@@ -386,9 +385,13 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: fornecedorHabilitado,
+                  enabled: true,
                   fieldOrder: 11,
-                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownRemoteSearch: ({busca, required pagina}) =>
+                      DropdownHelpers.parceirosBusca(
+                          busca: busca,
+                          pagina: pagina,
+                          tipoParceiro: 'Fornecedor'),
                   dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
