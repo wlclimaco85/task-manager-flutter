@@ -376,7 +376,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   fieldType: FieldType.dropdown,
                   enabled: fornecedorHabilitado,
                   fieldOrder: 11,
-                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Parceiro: travado apenas quando existe parceiro no login.
@@ -390,14 +391,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   enabled: parceiroHabilitado,
                   fieldOrder: 12,
                   dropdownSelectedValue: parceiroSelecionado,
-                  dropdownFutureBuilder: () async {
-                    final all = await DropdownHelpers.parceiros();
-                    final id = parceiroIdContexto;
-                    if (id == null) return all;
-                    return all
-                        .where((p) => p['id']?.toString() == id.toString())
-                        .toList();
-                  },
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
@@ -411,7 +406,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   enabled: true,
                   fieldOrder: 13,
                   dropdownSelectedValue: parceiroSelecionado,
-                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string

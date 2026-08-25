@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -266,6 +267,22 @@ class FieldConfigWindows {
   final bool? enabledOnInsert;
   final bool? enabledOnEdit;
 
+  /// Busca remota paginada (server-side) — para dropdowns cujo universo de
+  /// opções é grande demais para carregar de uma vez (ex: Parceiro). Quando
+  /// definido, o dropdown NÃO faz o fetch único de [dropdownFutureBuilder]/
+  /// [dropdownOptions]: abre um diálogo com busca debounced (reconsulta o
+  /// backend a cada termo digitado) e paginação real via scroll (carrega
+  /// mais páginas conforme o usuário rola a lista), em vez de filtrar
+  /// localmente sobre um lote fixo já carregado.
+  final Future<PaginaDropdown> Function({String? busca, required int pagina})?
+      dropdownRemoteSearch;
+
+  /// Resolve o rótulo exibido para o valor pré-selecionado (edição/valor
+  /// travado) quando [dropdownRemoteSearch] está definido — o registro
+  /// selecionado pode não estar na página atualmente carregada pelo
+  /// dropdown remoto. Ignorado quando [dropdownRemoteSearch] é null.
+  final Future<String?> Function(String id)? dropdownResolveLabel;
+
   const FieldConfigWindows({
     required this.label,
     required this.fieldName,
@@ -298,7 +315,18 @@ class FieldConfigWindows {
     this.visibleWhenValue,
     this.enabledOnInsert,
     this.enabledOnEdit,
+    this.dropdownRemoteSearch,
+    this.dropdownResolveLabel,
   });
+}
+
+/// Página de resultados de um dropdown com busca remota paginada (ver
+/// [FieldConfigWindows.dropdownRemoteSearch]).
+class PaginaDropdown {
+  final List<Map<String, dynamic>> items;
+  final int total;
+
+  const PaginaDropdown(this.items, this.total);
 }
 
 // Configuração de exportação
@@ -999,6 +1027,16 @@ class FieldFactory {
         controller: controller,
         options: const [],
         dependsOnController: dependsOnController,
+      );
+    }
+
+    // Busca remota paginada: o widget gerencia o próprio fetch por página
+    // dentro do diálogo — não carrega a lista inteira de uma vez.
+    if (config.dropdownRemoteSearch != null) {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: const [],
       );
     }
 
@@ -5313,9 +5351,28 @@ class _SearchableDropdownWindowsState
       _lastDependsOnValue = widget.dependsOnController!.text;
       _fetchCascade(_lastDependsOnValue);
       widget.dependsOnController!.addListener(_onDependencyChanged);
+    } else if (widget.config.dropdownRemoteSearch != null) {
+      _resolveRemoteLabelIfNeeded();
     } else {
       _resolvedOptions = widget.options;
       _resolveLabel();
+    }
+  }
+
+  /// Resolve o rótulo exibido para um valor já selecionado quando o dropdown
+  /// usa busca remota (não há lista local para procurar) — ex: tela de
+  /// edição de Conta a Pagar/Receber com Fornecedor/Parceiro já preenchido.
+  Future<void> _resolveRemoteLabelIfNeeded() async {
+    final val = widget.controller.text.isNotEmpty
+        ? widget.controller.text
+        : widget.config.dropdownSelectedValue?.toString();
+    if (val == null || val.isEmpty) return;
+    if (widget.controller.text.isEmpty) widget.controller.text = val;
+    final resolver = widget.config.dropdownResolveLabel;
+    if (resolver == null) return;
+    final label = await resolver(val);
+    if (mounted && label != null) {
+      setState(() => _selectedLabel = label);
     }
   }
 
@@ -5378,15 +5435,24 @@ class _SearchableDropdownWindowsState
 
   Future<void> _openSearch() async {
     if (!widget.config.enabled) return;
+    final remoteSearch = widget.config.dropdownRemoteSearch;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _DropdownSearchDialog(
-        title: widget.config.label,
-        options: _resolvedOptions,
-        valueField: widget.config.dropdownValueField,
-        displayField: widget.config.dropdownDisplayField,
-        currentValue: widget.controller.text,
-      ),
+      builder: (_) => remoteSearch != null
+          ? _RemoteDropdownSearchDialog(
+              title: widget.config.label,
+              valueField: widget.config.dropdownValueField,
+              displayField: widget.config.dropdownDisplayField,
+              currentValue: widget.controller.text,
+              loadPage: remoteSearch,
+            )
+          : _DropdownSearchDialog(
+              title: widget.config.label,
+              options: _resolvedOptions,
+              valueField: widget.config.dropdownValueField,
+              displayField: widget.config.dropdownDisplayField,
+              currentValue: widget.controller.text,
+            ),
     );
     if (result != null) {
       setState(() {
@@ -5459,6 +5525,273 @@ class _SearchableDropdownWindowsState
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dialog de busca remota (server-side + scroll pagination) ────────────────
+//
+// Bug de producao corrigido aqui: o dropdown de Parceiro/Fornecedor em Contas
+// a Pagar/Receber carregava so o 1o lote de 25 registros (GET /api/parceiro
+// sem parametros de busca/paginacao) e filtrava so client-side sobre esse
+// lote pequeno — termos que so batiam em registros fora da 1a pagina nunca
+// apareciam. Este dialog reconsulta o backend a cada termo digitado
+// (debounce) e carrega mais paginas conforme o usuario rola a lista, ate
+// esgotar os resultados reais.
+class _RemoteDropdownSearchDialog extends StatefulWidget {
+  final String title;
+  final String valueField;
+  final String displayField;
+  final String? currentValue;
+  final Future<PaginaDropdown> Function({String? busca, required int pagina})
+      loadPage;
+
+  const _RemoteDropdownSearchDialog({
+    required this.title,
+    required this.valueField,
+    required this.displayField,
+    required this.loadPage,
+    this.currentValue,
+  });
+
+  @override
+  State<_RemoteDropdownSearchDialog> createState() =>
+      _RemoteDropdownSearchDialogState();
+}
+
+class _RemoteDropdownSearchDialogState
+    extends State<_RemoteDropdownSearchDialog> {
+  final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  Timer? _debounce;
+  final List<Map<String, dynamic>> _items = [];
+  int _pagina = 0;
+  int _total = 0;
+  bool _loading = false;
+  bool _loadingMore = false;
+  String _termoAtual = '';
+  int _requestToken = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _carregarPrimeiraPagina();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_loading || _loadingMore) return;
+    if (_items.length >= _total) return;
+    if (!_scrollCtrl.hasClients) return;
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 80) {
+      _carregarProximaPagina();
+    }
+  }
+
+  Future<void> _carregarPrimeiraPagina() async {
+    final token = ++_requestToken;
+    setState(() => _loading = true);
+    final pagina = await widget.loadPage(
+      busca: _termoAtual.isEmpty ? null : _termoAtual,
+      pagina: 0,
+    );
+    if (!mounted || token != _requestToken) return;
+    setState(() {
+      _items
+        ..clear()
+        ..addAll(pagina.items);
+      _total = pagina.total;
+      _pagina = 0;
+      _loading = false;
+    });
+  }
+
+  Future<void> _carregarProximaPagina() async {
+    final token = _requestToken;
+    setState(() => _loadingMore = true);
+    final proximaPagina = _pagina + 1;
+    final pagina = await widget.loadPage(
+      busca: _termoAtual.isEmpty ? null : _termoAtual,
+      pagina: proximaPagina,
+    );
+    if (!mounted || token != _requestToken) return;
+    setState(() {
+      _items.addAll(pagina.items);
+      _total = pagina.total;
+      _pagina = proximaPagina;
+      _loadingMore = false;
+    });
+  }
+
+  void _onSearchChanged(String q) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _termoAtual = q.trim();
+      _carregarPrimeiraPagina();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+        child: Column(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: GridColors.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Buscar ${widget.title.toLowerCase()}...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _onSearchChanged('');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: GridColors.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: GridColors.primary, width: 2),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    _loading ? 'Buscando...' : '$_total resultado(s)',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(<String, dynamic>{}),
+                    child: const Text(GridTexts.clearSelection,
+                        style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _items.isEmpty
+                      ? const Center(
+                          child: Text('Nenhum resultado',
+                              style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          controller: _scrollCtrl,
+                          itemCount: _items.length + (_loadingMore ? 1 : 0),
+                          itemBuilder: (_, i) {
+                            if (i >= _items.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                ),
+                              );
+                            }
+                            final o = _items[i];
+                            final val = o[widget.valueField]?.toString();
+                            final label =
+                                o[widget.displayField]?.toString() ??
+                                    val ??
+                                    '';
+                            final isSelected = val == widget.currentValue;
+                            return ListTile(
+                              dense: true,
+                              selected: isSelected,
+                              selectedTileColor:
+                                  GridColors.primary.withValues(alpha: 0.08),
+                              leading: isSelected
+                                  ? const Icon(Icons.check_circle,
+                                      color: GridColors.primary, size: 18)
+                                  : const Icon(Icons.radio_button_unchecked,
+                                      color: Colors.grey, size: 18),
+                              title: Text(label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? GridColors.primary
+                                        : const Color(0xFF212121),
+                                  )),
+                              onTap: () => Navigator.of(context).pop(o),
+                            );
+                          },
+                        ),
+            ),
+          ],
         ),
       ),
     );

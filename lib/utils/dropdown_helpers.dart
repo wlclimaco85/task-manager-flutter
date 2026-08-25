@@ -2,7 +2,7 @@ import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 import '../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType;
+    show FieldConfigWindows, FieldType, PaginaDropdown;
 
 /// Helper centralizado para carregar dropdowns comuns
 class DropdownHelpers {
@@ -57,6 +57,101 @@ class DropdownHelpers {
       String? empresaId) {
     if (empresaId == null || empresaId.isEmpty) return parceiros();
     return load(ApiLinks.allParceirosPorEmp(empresaId), displayField: 'nome');
+  }
+
+  /// Busca paginada + server-side (LIKE multi-campo: nome, razão social,
+  /// CPF/CNPJ, email) de parceiros — usada pelo dropdown de Parceiro/
+  /// Fornecedor em Contas a Pagar/Receber.
+  ///
+  /// Corrige bug de produção: o dropdown antes carregava só o 1º lote de 25
+  /// registros (GET /api/parceiro sem parâmetros) e filtrava só client-side
+  /// sobre esse lote pequeno — termos que só batiam em parceiros fora da 1ª
+  /// página nunca apareciam na busca. Agora reconsulta o backend a cada
+  /// termo digitado (ver `busca=` no ParceiroController) e devolve o total
+  /// real para o diálogo poder paginar via scroll até esgotar os resultados.
+  static Future<PaginaDropdown> parceirosBusca({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) async {
+    final url =
+        '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho)}';
+    try {
+      final resp = await NetworkCaller().getRequest(url);
+      if (!resp.isSuccess || resp.body == null) {
+        return const PaginaDropdown([], 0);
+      }
+      return parsePaginaDropdown(resp.body);
+    } catch (_) {
+      return const PaginaDropdown([], 0);
+    }
+  }
+
+  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...]`) de
+  /// [parceirosBusca] — extraído em função pura para poder ser testado sem
+  /// rede (ver dropdown_helpers_busca_test.dart).
+  static String buildParceirosBuscaQuery({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) {
+    final termo = busca?.trim();
+    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
+    if (termo != null && termo.isNotEmpty) {
+      query.write('&busca=${Uri.encodeQueryComponent(termo)}');
+    }
+    return query.toString();
+  }
+
+  /// Converte o corpo `{data: {dados: [...], totalElements: N}}` retornado
+  /// pelo backend em [PaginaDropdown] — extraído em função pura para poder
+  /// ser testado sem rede (ver dropdown_helpers_busca_test.dart).
+  static PaginaDropdown parsePaginaDropdown(dynamic raw) {
+    if (raw is! Map) return const PaginaDropdown([], 0);
+    final data = raw['data'];
+    if (data is! Map) return const PaginaDropdown([], 0);
+    final lista = (data['dados'] as List?) ?? const [];
+    final total = (data['totalElements'] as num?)?.toInt() ?? lista.length;
+    final items = lista.whereType<Map>().map((e) {
+      final item = Map<String, dynamic>.from(e);
+      if (item['nome'] == null || item['nome'].toString().isEmpty) {
+        item['nome'] =
+            item['razaoSocial'] ?? item['email'] ?? item['id']?.toString() ?? '';
+      }
+      return item;
+    }).toList();
+    return PaginaDropdown(items, total);
+  }
+
+  /// Resolve o rótulo de exibição de um parceiro pelo id — usado para
+  /// mostrar o valor pré-selecionado do dropdown de busca remota
+  /// ([parceirosBusca]) quando o registro não está na página carregada
+  /// (ex: tela de edição de Conta a Pagar/Receber já com Fornecedor/
+  /// Parceiro preenchido).
+  static Future<String?> parceiroLabelPorId(String id) async {
+    try {
+      final resp =
+          await NetworkCaller().getRequest('${ApiLinks.allParceiros}/$id');
+      if (!resp.isSuccess || resp.body == null) return null;
+      return parseParceiroLabel(resp.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrai o rótulo de exibição (nome, com fallback para razão social e
+  /// email) do corpo `{data: {...}}` de `GET /api/parceiro/{id}` — extraído
+  /// em função pura para poder ser testado sem rede (ver
+  /// dropdown_helpers_busca_test.dart).
+  static String? parseParceiroLabel(dynamic raw) {
+    if (raw is! Map) return null;
+    final data = raw['data'];
+    if (data is! Map) return null;
+    final nome = data['nome']?.toString();
+    if (nome != null && nome.isNotEmpty) return nome;
+    final razaoSocial = data['razaoSocial']?.toString();
+    if (razaoSocial != null && razaoSocial.isNotEmpty) return razaoSocial;
+    return data['email']?.toString();
   }
 
   static Future<List<Map<String, dynamic>>> aplicativos() =>
