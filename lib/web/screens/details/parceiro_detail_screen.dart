@@ -229,7 +229,16 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
       telaNome: 'parceiro',
       hasPermission: widget.hasPermission,
       transformFormData: _limparPayloadParceiro,
-      onAfterSave: podeEditarModulos ? _salvarModulos : null,
+      // BLOCKER (code review): se _preCarregarModulos falhou (_modulosErro
+      // != null), _item['modulo_servicos'] nunca foi preenchido e o
+      // multiselect inicializa vazio ([]). Sem essa guarda, salvar QUALQUER
+      // campo do parceiro nesse estado disparava _salvarModulos com
+      // modulos: [], apagando os modulos ja contratados no backend -- o
+      // mesmo bug de perda de dados que este fix pretendia corrigir (CR-01),
+      // so que disparado por falha de rede em vez de join(',').
+      onAfterSave: podeEditarModulos && _modulosErro == null
+          ? _salvarModulos
+          : null,
       fieldOverrides: [
         FieldConfigWindows(
           label: 'Modulo Servicos',
