@@ -10,6 +10,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/boleto_viewer_widget.dart';
 import '../../../services/anexo_financeiro_service.dart';
+import '../../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../utils/document_baixa_helper.dart';
 import '../../../models/conta_pagar_model.dart';
@@ -804,6 +805,20 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     }
   }
 
+  // Baixa o boleto realmente postado/importado (BoletoImportServiceImpl),
+  // persistido em ContaPagar/ContaReceber.file (FileAttachment). Distinto do
+  // _abrirBoletoViewer acima, que le do sistema separado de AnexoFinanceiro.
+  Future<void> _baixarBoletoPostado(int fileId, String fileName) async {
+    try {
+      final status = await UploadFileCaller().downloadFile(fileId, fileName);
+      if (status != 200 && mounted) {
+        _mostrarErro('Erro ao baixar boleto (status $status).');
+      }
+    } catch (e) {
+      _mostrarErro('Erro ao baixar boleto: $e');
+    }
+  }
+
   // Ícone de ação compacto usado nos itens do detalhe do dia.
   Widget _miniActionBtn({
     required IconData icon,
@@ -1233,6 +1248,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
     final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
+    final boletoFileId = (item['boletoFileId'] as num?)?.toInt();
+    final boletoFileName = item['boletoFileName'] as String? ?? 'boleto.pdf';
 
     final today = DateTime.now();
     final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
@@ -1338,8 +1355,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
                 ),
-                // Ações: ver anexo (se houver) e baixar conta (se ABERTA)
-                if (status == 'ABERTA' || qtdAnexos > 0) ...[
+                // Ações: ver anexo (se houver), baixar boleto postado (se
+                // houver) e baixar conta (se ABERTA)
+                if (status == 'ABERTA' ||
+                    qtdAnexos > 0 ||
+                    boletoFileId != null) ...[
                   const SizedBox(height: 4),
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1360,6 +1380,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                           tooltip: 'Boleto viewer',
                           onTap: () =>
                               _abrirBoletoViewer(item, isPagar: isPagar),
+                        ),
+                      ],
+                      if (boletoFileId != null) ...[
+                        const SizedBox(width: 2),
+                        _miniActionBtn(
+                          icon: Icons.download,
+                          color: GridColors.primary,
+                          tooltip: 'Baixar boleto',
+                          onTap: () => _baixarBoletoPostado(
+                              boletoFileId, boletoFileName),
                         ),
                       ],
                       if (status == 'ABERTA') ...[

@@ -15,6 +15,7 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/boleto_viewer_widget.dart';
+import '../../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
 import './baixa_dialog.dart';
 import './baixa_dialog_receber.dart';
@@ -641,6 +642,26 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao abrir boleto: $e')),
+        );
+      }
+    }
+  }
+
+  // Baixa o boleto realmente postado/importado (BoletoImportServiceImpl),
+  // persistido em ContaPagar/ContaReceber.file (FileAttachment). Distinto do
+  // _abrirBoletoViewer acima, que le do sistema separado de AnexoFinanceiro.
+  Future<void> _baixarBoletoPostado(int fileId, String fileName) async {
+    try {
+      final status = await UploadFileCaller().downloadFile(fileId, fileName);
+      if (status != 200 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao baixar boleto (status $status).')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao baixar boleto: $e')),
         );
       }
     }
@@ -1408,6 +1429,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         '';
 
     final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
+    final boletoFileId = (item['boletoFileId'] as num?)?.toInt();
+    final boletoFileName = item['boletoFileName'] as String? ?? 'boleto.pdf';
 
     final today = DateTime.now();
     final vencStr = _dateKey(item);
@@ -1522,6 +1545,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 color: GridColors.primary,
                 tooltip: 'Boleto viewer',
                 onTap: () => _abrirBoletoViewer(item, isPagar: isPagar),
+              ),
+            ],
+            if (boletoFileId != null) ...[
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.download,
+                color: GridColors.primary,
+                tooltip: 'Baixar boleto',
+                onTap: () =>
+                    _baixarBoletoPostado(boletoFileId, boletoFileName),
               ),
             ],
             const SizedBox(width: 6),
