@@ -72,14 +72,23 @@ class DropdownHelpers {
   /// [empresaId] restringe a busca a uma empresa específica (ex.: tela GED,
   /// onde o usuário escolhe a empresa num filtro à parte antes de escolher
   /// o parceiro) — sem ele, o backend usa a empresa do tenant logado.
+  /// [tipoParceiro] restringe aos parceiros com esse TipoParceiro vinculado
+  /// (ex.: "Fornecedor") — usado pelo campo Fornecedor de Contas a Pagar/
+  /// Receber, que não deve trazer todos os parceiros da empresa.
   static Future<PaginaDropdown> parceirosBusca({
     String? busca,
     required int pagina,
     int tamanho = 25,
     String? empresaId,
+    String? tipoParceiro,
   }) async {
-    final url =
-        '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho, empresaId: empresaId)}';
+    final url = '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(
+      busca: busca,
+      pagina: pagina,
+      tamanho: tamanho,
+      empresaId: empresaId,
+      tipoParceiro: tipoParceiro,
+    )}';
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (!resp.isSuccess || resp.body == null) {
@@ -91,7 +100,7 @@ class DropdownHelpers {
     }
   }
 
-  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...][&empresaId=...]`)
+  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...][&empresaId=...][&tipoParceiro=...]`)
   /// de [parceirosBusca] — extraído em função pura para poder ser testado sem
   /// rede (ver dropdown_helpers_busca_test.dart).
   static String buildParceirosBuscaQuery({
@@ -99,6 +108,7 @@ class DropdownHelpers {
     required int pagina,
     int tamanho = 25,
     String? empresaId,
+    String? tipoParceiro,
   }) {
     final termo = busca?.trim();
     final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
@@ -107,6 +117,9 @@ class DropdownHelpers {
     }
     if (empresaId != null && empresaId.isNotEmpty) {
       query.write('&empresaId=${Uri.encodeQueryComponent(empresaId)}');
+    }
+    if (tipoParceiro != null && tipoParceiro.isNotEmpty) {
+      query.write('&tipoParceiro=${Uri.encodeQueryComponent(tipoParceiro)}');
     }
     return query.toString();
   }

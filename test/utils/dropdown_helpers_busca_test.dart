@@ -60,6 +60,23 @@ void main() {
       expect(empresaVazia, isNot(contains('empresaId')));
     });
 
+    test(
+        'inclui tipoParceiro quando fornecido (campo Fornecedor filtra por '
+        'TipoParceiro=Fornecedor)', () {
+      final query = DropdownHelpers.buildParceirosBuscaQuery(
+          busca: null, pagina: 0, tipoParceiro: 'Fornecedor');
+      expect(query, contains('tipoParceiro=Fornecedor'));
+    });
+
+    test('nao inclui tipoParceiro quando nulo ou vazio', () {
+      final semTipo =
+          DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
+      final tipoVazio = DropdownHelpers.buildParceirosBuscaQuery(
+          busca: null, pagina: 0, tipoParceiro: '');
+      expect(semTipo, isNot(contains('tipoParceiro')));
+      expect(tipoVazio, isNot(contains('tipoParceiro')));
+    });
+
     test('avanca a pagina ao rolar a lista (scroll pagination)', () {
       final pagina0 =
           DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
