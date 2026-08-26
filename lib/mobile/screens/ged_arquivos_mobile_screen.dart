@@ -207,7 +207,8 @@ class _GedArquivosMobileScreenState extends State<GedArquivosMobileScreen> {
                         final arq = _arquivos[idx];
                         return GedFileCardMobile(
                           arq: arq,
-                          podeExcluir: true, // TODO: Validar permissão
+                          podeExcluir: arq['usuarioUploadId']?.toString() ==
+                              TenantContext.userId?.toString(),
                           onDownload: () => _baixarArquivo(arq),
                           onDelete: () => _excluirArquivo(arq),
                           onRename: (novoNome) =>

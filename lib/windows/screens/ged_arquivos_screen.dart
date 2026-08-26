@@ -720,7 +720,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 padding: const EdgeInsets.all(4),
               ),
             // Deletar
-            if (!isEditando)
+            if (!isEditando && arq['usuarioUploadId']?.toString() ==
+                TenantContext.userId?.toString())
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Excluir',
