@@ -75,11 +75,13 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
     }
   }
 
-  Future<void> _confirmarImportacao() async {
+  Future<void> _confirmarImportacao(
+      List<Map<String, dynamic>> conciliacoes) async {
     setState(() => _confirmando = true);
 
     final result = await NfeXmlImportCaller.confirmar(
-        _arquivoXml!.bytes!, _arquivoXml!.name);
+        _arquivoXml!.bytes!, _arquivoXml!.name,
+        conciliacoes: conciliacoes);
 
     if (!mounted) return;
 
