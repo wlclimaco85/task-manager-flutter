@@ -8,6 +8,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../utils/ged_file_type.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show RemoteDropdownSearchDialog;
@@ -238,7 +239,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         filename: _arquivoSelecionado!.name,
       ));
       req.fields['fileName'] = _arquivoSelecionado!.name;
-      req.fields['fileType'] = _arquivoSelecionado!.extension ?? 'bin';
+      req.fields['fileType'] =
+          gedMimeTypeForFileName(_arquivoSelecionado!.name);
       req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
       req.fields['empresa'] = '{"id":$_empresaFiltroId}';
       req.fields['parceiro'] = '{"id":${_parceiroUploadId ?? 0}}';
