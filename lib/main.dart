@@ -17,6 +17,7 @@ import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
 import 'services/session_expired_handler.dart';
 import 'services/push_notification_service.dart';
+import 'services/alerta_polling_service.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'utils/app_logger.dart';
@@ -149,6 +150,12 @@ void main() {
         _log('PushNotificationService.registrarDispositivoLogado ok');
       } catch (e, s) {
         _logErr('PushNotificationService.registrarDispositivoLogado', e, s);
+      }
+      try {
+        await AlertaPollingService.instance.iniciar();
+        _log('AlertaPollingService.iniciar ok');
+      } catch (e, s) {
+        _logErr('AlertaPollingService.iniciar', e, s);
       }
     }
 

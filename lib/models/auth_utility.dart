@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
+import 'package:task_manager_flutter/services/alerta_polling_service.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
@@ -142,6 +143,10 @@ class AuthUtility {
     userInfo = null;
     // Limpar permissões ao fazer logout
     PermissionService().clear();
+    // Encerra o polling de notificacoes nativas (toast/browser) da sessao
+    // encerrada -- senao continuaria rodando e notificando com o
+    // TenantContext de um usuario que ja fez logout.
+    AlertaPollingService.instance.parar();
   }
 
   /// Retorna o LoginModel do usuário logado (lê de SharedPreferences se necessário).

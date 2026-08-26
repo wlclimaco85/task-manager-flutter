@@ -14,6 +14,7 @@ import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
 import '../services/network_caller.dart';
 import '../services/push_notification_service.dart';
+import '../services/alerta_polling_service.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
 
@@ -100,6 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ModuloAccess.reset();
       await ModuloAccess.load();
       await PushNotificationService.registrarDispositivoLogado();
+      await AlertaPollingService.instance.iniciar();
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
         final email = model.login?.email ?? '';
