@@ -6,6 +6,7 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../widgets/smtp_config_tab.dart';
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
 import '../alvara_grid_screen.dart' show WebAlvaraGridScreen;
 import '../ged_arquivos_screen.dart';
@@ -237,9 +238,8 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
       // modulos: [], apagando os modulos ja contratados no backend -- o
       // mesmo bug de perda de dados que este fix pretendia corrigir (CR-01),
       // so que disparado por falha de rede em vez de join(',').
-      onAfterSave: podeEditarModulos && _modulosErro == null
-          ? _salvarModulos
-          : null,
+      onAfterSave:
+          podeEditarModulos && _modulosErro == null ? _salvarModulos : null,
       fieldOverrides: [
         FieldConfigWindows(
           label: 'Modulo Servicos',
@@ -363,6 +363,17 @@ class _WebParceiroDetailScreenState extends State<WebParceiroDetailScreen> {
               WebComunicadoGridComponentesScreen.transformFormData,
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
+        RelatedGridTab(
+          title: 'SMTP',
+          icon: Icons.mail_outline,
+          customWidget: parceiroId > 0
+              ? SmtpConfigTab(
+                  scope: SmtpConfigScope.parceiro,
+                  id: parceiroId,
+                  nome: parceiroNome,
+                )
+              : const Center(child: Text('ID do parceiro nao disponivel')),
+        ),
         RelatedGridTab(
           title: 'Certificado Digital',
           icon: Icons.security,

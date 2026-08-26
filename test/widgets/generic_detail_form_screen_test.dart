@@ -154,6 +154,35 @@ void main() {
       expect(resolveGenericDetailFormValue(item, 'dia_vencimento_mensalidade'),
           '05');
     });
+
+    // Bug de producao (card modulo_servicos/tipo_parceiros vazio ao reabrir
+    // Parceiro): a tela 'parceiro' (gerada por TelaGeneratorServiceImpl no
+    // backend) nomeia o campo ManyToMany como 'tipo_parceiros'
+    // (tabela `tipo_parceiro` + "s"), mas a entidade Parceiro.java serializa
+    // a lista com o nome real 'tiposParceiro' (plural irregular: "tipos" na
+    // frente, "Parceiro" no singular). "tipo_parceiros" normalizado vira
+    // "tipoparceiros" e "tiposParceiro" normalizado vira "tiposparceiro" —
+    // nenhuma conversao camel<->snake generica bate, entao o multiselect
+    // "Tipo Parceiros" da tela de Parceiro sempre carregava vazio mesmo com
+    // o registro ja tendo tipos salvos no backend. Ver Parceiro.java linha 89.
+    test(
+        'campo tipo_parceiros encontra o valor real tiposParceiro (plural irregular) da entidade',
+        () {
+      final item = {
+        'tiposParceiro': [
+          {'id': '1', 'nome': 'Cliente'},
+          {'id': '2', 'nome': 'Fornecedor'},
+          {'id': '4', 'nome': 'Parceiro'},
+        ],
+      };
+
+      expect(
+        resolveGenericDetailFormValue(item, 'tipo_parceiros'),
+        item['tiposParceiro'],
+        reason:
+            'sem o alias irregular, o multiselect "Tipo Parceiros" reabre sempre vazio',
+      );
+    });
   });
 
   group(

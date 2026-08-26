@@ -4,6 +4,7 @@ import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../widgets/smtp_config_tab.dart';
 import '../certificado_empresa_screen.dart';
 import '../alvara_grid_screen.dart' show WindowsAlvaraGridScreen;
 import '../login_grid_screen.dart' show WindowsLoginGridScreen;
@@ -186,6 +187,17 @@ class _WindowsEmpresaDetailScreenState
           extraParams: {'empId': id},
           transformFormData:
               WebComunicadoGridComponentesScreen.transformFormData,
+        ),
+        RelatedGridTab(
+          title: 'SMTP',
+          icon: Icons.mail_outline,
+          customWidget: empresaId > 0
+              ? SmtpConfigTab(
+                  scope: SmtpConfigScope.empresa,
+                  id: empresaId,
+                  nome: empresaNome,
+                )
+              : const Center(child: Text('ID da empresa nao disponivel')),
         ),
         RelatedGridTab(
           title: 'Certificado Digital',
