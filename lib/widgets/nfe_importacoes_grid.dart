@@ -6,14 +6,16 @@ import '../utils/grid_colors.dart';
 
 /// Pedido explicito do usuario: a tela de Importar XML precisa ter uma grid
 /// padrao do sistema mostrando o que ja foi importado, com status, e um
-/// delete que so pode deletar se a NF-e Entrada ainda nao tiver sido
-/// confirmada -- senao e preciso excluir a Entrada antes.
+/// delete que funciona nos dois status.
 ///
 /// Backend: GET /api/nfe-import/importacao-xml lista as Nfe importadas
 /// (TipoOperacao.ENTRADA), cada uma com status RASCUNHO_IMPORTACAO (ainda
-/// nao virou Entrada oficial, deletavel livremente) ou AUTORIZADA (Entrada
-/// ja confirmada, exclusao bloqueada pela regra de negocio existente em
-/// NfeServiceImpl.validarPodeDeletar).
+/// nao virou Entrada oficial) ou AUTORIZADA (Entrada ja confirmada). BUG
+/// produção corrigido: excluir uma Entrada ja confirmada (AUTORIZADA)
+/// tambem e permitido -- NfeServiceImpl.validarPodeDeletar nunca bloqueia
+/// TipoOperacao.ENTRADA (so bloqueia SAIDA, documento que a propria empresa
+/// emitiu). O DELETE reverte estoque e remove a(s) conta(s) a pagar geradas
+/// (NfeImportService.reverterEntrada, chamado por NfeController.deletar()).
 typedef ListarImportacoesFn = Future<List<Map<String, dynamic>>?> Function();
 
 class NfeImportacoesGrid extends StatefulWidget {
@@ -83,6 +85,7 @@ class NfeImportacoesGridState extends State<NfeImportacoesGrid> {
   Future<void> _excluir(Map<String, dynamic> item) async {
     final id = item['id'];
     if (id == null) return;
+    final rascunho = _isRascunho(item);
 
     final confirmar = await showDialog<bool>(
       context: context,
@@ -110,14 +113,18 @@ class NfeImportacoesGridState extends State<NfeImportacoesGrid> {
     setState(() => _emAcao.remove(id));
 
     if (sucesso) {
-      _mostrarSnack('Importação excluída.');
+      _mostrarSnack(rascunho
+          ? 'Importação excluída.'
+          : 'Entrada excluída. Estoque e contas a pagar gerados foram revertidos.');
       await recarregar();
     } else {
-      // O backend ja bloqueia excluir uma NFe AUTORIZADA (Entrada ja
-      // confirmada) -- NetworkCaller.deleteRequest nao repassa o corpo da
-      // resposta de erro, entao a orientacao explicita fica fixa aqui.
-      _mostrarSnack(
-          'Não foi possível excluir. Se a Entrada já foi confirmada, ela precisa ser excluída antes pelo fluxo de NF-e Entrada.');
+      // BUG produção corrigido: o backend NAO bloqueia mais excluir uma NFe
+      // de ENTRADA por estar AUTORIZADA (Entrada ja confirmada) -- essa
+      // mensagem so aparece agora por outro motivo real (rede, tenant,
+      // NFe ja excluida por outra sessao etc.), entao nao deve mais
+      // orientar erroneamente para um fluxo alternativo que nem sempre
+      // exibe o registro (bug relacionado, filtro da grid "NF-e Entrada").
+      _mostrarSnack('Não foi possível excluir a importação. Tente novamente.');
     }
   }
 
@@ -221,7 +228,7 @@ class NfeImportacoesGridState extends State<NfeImportacoesGrid> {
                             color: Colors.red),
                         tooltip: rascunho
                             ? 'Excluir'
-                            : 'Entrada já confirmada -- exclusão bloqueada',
+                            : 'Excluir (reverte estoque e contas a pagar geradas)',
                       ),
                     ],
                   )),
