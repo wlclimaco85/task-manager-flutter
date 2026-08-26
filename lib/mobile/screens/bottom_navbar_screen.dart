@@ -26,6 +26,7 @@ import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
+import '../../services/ged_download_service.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
 import '../../web/screens/manifestacao_destinatario_screen.dart';
@@ -287,26 +288,25 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// Baixa o arquivo do GED (mobile) — mesma acao ja existente no Web.
   Future<void> _baixarArquivo(
       BuildContext ctx, Map<String, dynamic> item) async {
-    final id = item['id'];
+    final id = int.tryParse('${item['id']}');
     if (id == null) return;
+    final nome = (item['fileName'] ?? item['nome'] ?? 'arquivo_$id').toString();
     try {
-      final response = await NetworkCaller().getRequest(
-        ApiLinks.downloadArquivo(id.toString()),
-      );
+      await GedDownloadService().download(id, nome);
       if (!ctx.mounted) return;
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          const SnackBar(content: Text('Download iniciado.')),
-        );
-      } else {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar arquivo: ${response.statusCode}')),
-        );
-      }
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('Arquivo baixado com sucesso.')),
+      );
+    } on GedDownloadException catch (e) {
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(content: Text('Erro ao baixar arquivo: ${e.statusCode}')),
+      );
     } catch (e) {
       if (!ctx.mounted) return;
-      ScaffoldMessenger.of(ctx)
-          .showSnackBar(SnackBar(content: Text('Erro ao baixar arquivo: $e')));
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('Erro ao baixar arquivo.')),
+      );
     }
   }
 
