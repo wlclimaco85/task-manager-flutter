@@ -194,5 +194,57 @@ void main() {
           find.byIcon(Icons.visibility);
       expect(visibilityIcons2, findsWidgets);
     });
+
+    // Pedido explicito do usuario: novo campo "Seu CPF" (identidade pessoal
+    // do solicitante), separado do campo "CPF ou CNPJ" (empresa/parceiro de
+    // destino) -- antes so existia o segundo, e a checagem de duplicidade no
+    // backend usava esse mesmo campo compartilhado, causando falso "ja
+    // existe solicitacao pendente" pra pessoas diferentes solicitando acesso
+    // pra mesma empresa.
+    testWidgets('renderiza o novo campo "Seu CPF", separado de "CPF ou CNPJ"',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const SolicitacaoAcessoScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Seu CPF'), findsOneWidget);
+      expect(find.text('CPF ou CNPJ'), findsOneWidget);
+      expect(
+          find.text('Seu CPF pessoal (de quem está solicitando o acesso)'),
+          findsOneWidget);
+    });
+
+    testWidgets('"Seu CPF" exige exatamente 11 dígitos (nunca aceita CNPJ)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const SolicitacaoAcessoScreen()));
+      await tester.pumpAndSettle();
+
+      final cpfSolicitanteField =
+          find.widgetWithText(TextFormField, 'Seu CPF').first;
+
+      await tester.enterText(cpfSolicitanteField, '123456789'); // 9 dígitos
+      await tester.pumpAndSettle();
+      await tester.testTextInput.receiveAction(TextInputAction.next);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Informe um CPF válido (11 dígitos)'), findsOneWidget);
+    });
+
+    testWidgets('"Seu CPF" aplica máscara de CPF (XXX.XXX.XXX-XX), nunca de CNPJ',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const SolicitacaoAcessoScreen()));
+      await tester.pumpAndSettle();
+
+      final cpfSolicitanteField =
+          find.widgetWithText(TextFormField, 'Seu CPF').first;
+
+      // 14 dígitos digitados -- o formatador de "Seu CPF" deve truncar em 11
+      // e nunca aplicar a barra "/" (formato de CNPJ).
+      await tester.enterText(cpfSolicitanteField, '11222333000181');
+      await tester.pumpAndSettle();
+
+      final campo = tester.widget<TextFormField>(cpfSolicitanteField);
+      expect(campo.controller?.text, '112.223.330-00');
+      expect(campo.controller?.text.contains('/'), isFalse);
+    });
   });
 }

@@ -13,6 +13,9 @@ class SolicitacaoAcessoItem {
   final String cpfCnpj;
   final String status;
   final int? parceiroIdResolvido;
+  final String? parceiroNomeResolvido;
+  final int? empresaIdResolvida;
+  final String? empresaNomeResolvida;
   final DateTime? dataCriacao;
 
   SolicitacaoAcessoItem({
@@ -22,10 +25,23 @@ class SolicitacaoAcessoItem {
     required this.cpfCnpj,
     required this.status,
     this.parceiroIdResolvido,
+    this.parceiroNomeResolvido,
+    this.empresaIdResolvida,
+    this.empresaNomeResolvida,
     this.dataCriacao,
   });
 
-  bool get destinoFilaEscritorio => parceiroIdResolvido == null;
+  bool get destinoFilaEscritorio =>
+      parceiroIdResolvido == null && empresaIdResolvida == null;
+
+  // Pedido explicito do usuario: "quando a solicitacao for aparecer para o
+  // usuario aprovar ja tem que aparecer qual empresa/parceiro ele e" -- nome
+  // real resolvido, nao so um chip generico.
+  String get destinoDescricao {
+    if (parceiroNomeResolvido != null) return parceiroNomeResolvido!;
+    if (empresaNomeResolvida != null) return empresaNomeResolvida!;
+    return 'Fila do escritório';
+  }
 
   factory SolicitacaoAcessoItem.fromJson(Map<String, dynamic> json) {
     return SolicitacaoAcessoItem(
@@ -35,6 +51,9 @@ class SolicitacaoAcessoItem {
       cpfCnpj: json['cpfCnpj']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PENDENTE',
       parceiroIdResolvido: json['parceiroIdResolvido'] as int?,
+      parceiroNomeResolvido: json['parceiroNomeResolvido']?.toString(),
+      empresaIdResolvida: json['empresaIdResolvida'] as int?,
+      empresaNomeResolvida: json['empresaNomeResolvida']?.toString(),
       dataCriacao: DateTime.tryParse(json['dataCriacao']?.toString() ?? ''),
     );
   }
