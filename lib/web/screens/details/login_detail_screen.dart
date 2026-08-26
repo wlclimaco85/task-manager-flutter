@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldType, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show SecurityCheck, FieldType, FieldConfigWindows, FileConfig;
 import '../../../services/network_caller.dart';
 
 class WebLoginDetailScreen extends StatelessWidget {
@@ -73,6 +74,21 @@ class WebLoginDetailScreen extends StatelessWidget {
         fieldName: 'setores',
         label: 'Setores',
         isInForm: false,
+      ),
+      // Bug de producao: "Foto" caia no default do formulario generico
+      // (campo de texto) e mostrava a representacao bruta do valor salvo
+      // (ex.: "{id: 0, nome: }"). FieldType.file agora tem implementacao
+      // real (GenericDetailFormScreen._buildFileField) -- mesmo padrao ja
+      // usado no dialogo de criar/editar do grid (login_grid_screen.dart).
+      const FieldConfigWindows(
+        fieldName: 'foto',
+        label: 'Foto',
+        icon: Icons.photo_camera,
+        fieldType: FieldType.file,
+        fileConfig: FileConfig(
+          allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+          maxFileSize: 2 * 1024 * 1024,
+        ),
       ),
     ];
 

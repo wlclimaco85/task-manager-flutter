@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,7 +13,7 @@ import '../services/tela_caller.dart';
 import '../customization/dynamic_grid_dynamic_screen.dart' as mobile_dyn;
 import '../customization/dynamic_grid_windows_screen.dart' as dyn;
 import 'generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType, SecurityCheck;
+    show FieldConfigWindows, FieldType, SecurityCheck, FileConfig, platformFileToDataUri;
 
 /// Avalia a expressão `visibleWhen` (formato "<fieldName>==<valor>") contra o
 /// estado atual do formulário. Sem expressão, o campo é sempre visível.
@@ -42,6 +45,56 @@ bool avaliarVisibleWhen(
   }
 
   return valorAtual == valorEsperado;
+}
+
+/// Decide se um campo de `tela.fields` (config vinda do backend) deve
+/// entrar no formulário, dado um possível [override] client-side.
+///
+/// Bug de produção (sistêmico -- reproduzido em Login > Cadastro, mas
+/// afeta QUALQUER tela que use `fieldOverrides` pra esconder um campo):
+/// `_buildFormTab` checava `if (!f.isInForm) continue` usando SÓ o
+/// `isInForm` que o backend manda pra aquele campo -- um override
+/// declarando `isInForm: false` nunca era consultado nesse gate, então um
+/// campo "fantasma"/redundante que o backend já expõe como `isInForm:true`
+/// (ex.: "Setores" texto solto, sem uso real, com a gestão de verdade numa
+/// aba dedicada) continuava aparecendo no Cadastro mesmo com o override
+/// pedindo pra escondê-lo. Regra correta: o override, quando existe, tem
+/// prioridade TOTAL sobre o `isInForm` do backend -- pra mostrar OU pra
+/// esconder.
+@visibleForTesting
+bool resolveFieldVisibility(
+    {required bool backendIsInForm, FieldConfigWindows? override}) {
+  if (override != null) return override.isInForm;
+  return backendIsInForm;
+}
+
+/// Resolve o rótulo exibido no chip de um valor já selecionado num campo
+/// multiselect (ex.: Roles, Setores).
+///
+/// Bug de produção: um valor JÁ selecionado (ex.: `roles: [{"id":"21"}]`
+/// salvo no registro) que a lista de OPÇÕES disponíveis (buscada de forma
+/// assíncrona, ex. roles filtradas por parceiro/empresa) não devolve de
+/// volta -- ex. role atribuída manualmente, fora do fallback "sempre
+/// disponível" do backend -- nunca virava chip. O campo aparecia
+/// "Selecione..." (como se nada estivesse selecionado) mesmo com o dado
+/// real salvo no registro. Esta função resolve o rótulo em 3 níveis:
+/// 1) a opção carregada (rótulo real e atualizado), 2) o rótulo capturado
+/// do PRÓPRIO registro na inicialização (`savedLabels`, independente da
+/// lista de opções ter chegado ou não), 3) o id bruto como último recurso.
+@visibleForTesting
+String resolveMultiSelectChipLabel({
+  required String selectedId,
+  required List<Map<String, dynamic>> loadedOptions,
+  required String valueField,
+  required String displayField,
+  required Map<String, String> savedLabels,
+}) {
+  for (final opcao in loadedOptions) {
+    if (opcao[valueField]?.toString() == selectedId) {
+      return opcao[displayField]?.toString() ?? '';
+    }
+  }
+  return savedLabels[selectedId] ?? '#$selectedId';
 }
 
 @visibleForTesting
@@ -190,6 +243,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _controllers = <String, TextEditingController>{};
   final _dropdownValues = <String, dynamic>{};
   final _multiValues = <String, List<dynamic>>{};
+  // Bug de producao: multiselect (ex.: Roles) abria "Selecione..." mesmo com
+  // o registro tendo valores reais salvos, sempre que a lista de OPCOES
+  // disponiveis (buscada de forma assincrona, ex. roles filtradas por
+  // parceiro/empresa) nao trazia de volta um item ja selecionado (ex.: role
+  // atribuida manualmente, fora do fallback "sempre disponivel" do backend).
+  // O valor continuava certo em _multiValues (e era enviado certinho no
+  // save), so o CHIP nunca aparecia porque _multiWidget so desenhava chips
+  // pra selecionados que batessem com as opcoes carregadas. Este mapa guarda
+  // o rotulo de cada selecionado a partir do PROPRIO dado do registro (ex.:
+  // roles[].description), independente da lista de opcoes ter chegado ou
+  // nao -- assim o chip aparece sempre que ha um valor real salvo.
+  final _multiValueLabels = <String, Map<String, String>>{};
   final _checkboxValues = <String, bool>{};
   final _dropdownCache = <String, List<Map<String, dynamic>>>{};
   // Memoiza o Future em andamento por campo: evita recriar a requisição HTTP
@@ -273,7 +338,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else if (f.fieldType == TelaFieldType.multiselect) {
         // Mesmo bug do dropdown, para multiselect (ex.: Modulo Servicos,
         // Tipo Parceiros): chips sempre voltavam a "Selecione..." ao editar.
-        _initMultiValue(fn, val, f.dropdownValueField);
+        _initMultiValue(fn, val, f.dropdownValueField, f.dropdownDisplayField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -287,7 +352,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (o.fieldType == FieldType.dropdown) {
         _initDropdownValue(fn, val, o.dropdownValueField);
       } else if (o.fieldType == FieldType.multiselect) {
-        _initMultiValue(fn, val, o.dropdownValueField);
+        _initMultiValue(fn, val, o.dropdownValueField, o.dropdownDisplayField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -317,17 +382,35 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   /// Mesma logica de _initDropdownValue, para multiselect.
-  void _initMultiValue(String fn, dynamic val, String dropdownValueField) {
+  ///
+  /// [dropdownDisplayField] captura o rotulo de cada selecionado a partir do
+  /// PROPRIO dado do registro (ex.: roles[].description), guardado em
+  /// _multiValueLabels -- garante que o chip apareca mesmo se a lista de
+  /// opcoes disponiveis (async, separada) nao trouxer esse item de volta.
+  void _initMultiValue(String fn, dynamic val, String dropdownValueField,
+      [String dropdownDisplayField = '']) {
     if (_multiValues.containsKey(fn)) return;
     final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    final df = dropdownDisplayField.isNotEmpty ? dropdownDisplayField : 'nome';
     if (val is List) {
+      final labels = <String, String>{};
       _multiValues[fn] = val
           .map((e) {
-            if (e is Map) return (e[vf] ?? e['id'])?.toString();
+            if (e is Map) {
+              final id = (e[vf] ?? e['id'])?.toString();
+              if (id != null) {
+                final label = e[df]?.toString() ??
+                    e['nome']?.toString() ??
+                    e['description']?.toString();
+                if (label != null && label.isNotEmpty) labels[id] = label;
+              }
+              return id;
+            }
             return e?.toString();
           })
           .whereType<String>()
           .toList();
+      if (labels.isNotEmpty) _multiValueLabels[fn] = labels;
     } else {
       _multiValues[fn] = [];
     }
@@ -632,7 +715,6 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     };
 
     for (final f in tela.fields) {
-      if (!f.isInForm) continue;
       final fnL = f.fieldName.toLowerCase();
       if (fnL == 'dh_created_at' ||
           fnL == 'dh_updated_at' ||
@@ -642,14 +724,33 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       }
       if (fnL == 'id') continue;
 
-      // 1. Override explícito
+      // 1. Override explícito -- tem PRIORIDADE TOTAL sobre a config do
+      // backend, inclusive pra ESCONDER um campo que o backend marca
+      // isInForm=true.
+      //
+      // Bug de producao (sistemico, reproduzido em Login > Cadastro): um
+      // campo "fantasma"/redundante que o backend expunha como isInForm=true
+      // (ex.: "setores" -- texto solto sem uso real, com a gestao de
+      // verdade acontecendo numa aba dedicada) continuava aparecendo no
+      // formulario MESMO com um override client-side declarando
+      // isInForm:false -- porque o gate `if (!f.isInForm) continue` logo
+      // acima so olhava o isInForm DO BACKEND, nunca o do override, e so
+      // depois disso o override era consultado. Qualquer tela que usasse
+      // fieldOverrides pra esconder um campo ja visivel no backend tinha o
+      // mesmo problema (afeta o componente inteiro, nao so uma tela).
       if (_overrideMap.containsKey(f.fieldName)) {
         if (!inserted.contains(f.fieldName)) {
-          effectiveFields.add(_EF.fromOverride(_overrideMap[f.fieldName]!));
+          final override = _overrideMap[f.fieldName]!;
+          if (resolveFieldVisibility(
+              backendIsInForm: f.isInForm, override: override)) {
+            effectiveFields.add(_EF.fromOverride(override));
+          }
           inserted.add(f.fieldName);
         }
         continue;
       }
+
+      if (!resolveFieldVisibility(backendIsInForm: f.isInForm)) continue;
 
       // 2. Campo FK de um override (ex: empresa_id → override 'empresa')
       if (_suppressedFkFields.contains(fnL)) {
@@ -707,7 +808,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     // Overrides não inseridos
     for (final o in (widget.fieldOverrides ?? [])) {
       if (!inserted.contains(o.fieldName)) {
-        effectiveFields.add(_EF.fromOverride(o));
+        if (resolveFieldVisibility(backendIsInForm: false, override: o)) {
+          effectiveFields.add(_EF.fromOverride(o));
+        }
         inserted.add(o.fieldName);
       }
     }
@@ -950,6 +1053,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         return _buildDropdown(ef);
       case FieldType.multiselect:
         return _buildMultiSelect(ef);
+      case FieldType.file:
+        return _buildFileField(ef);
       case FieldType.date:
         return _buildDate(ef);
       case FieldType.password:
@@ -1027,6 +1132,153 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             : null,
       ),
     );
+  }
+
+  // Bug de producao: o campo "Foto" da tela de Cadastro do Login (e de
+  // qualquer outra tela que usasse fieldType: FieldType.file no formulario
+  // de DETALHE) sempre caia no `default: _buildText(ef)` -- este widget
+  // generico nunca teve implementacao pra FieldType.file (so o dialogo de
+  // criar/editar do GRID tinha, em generic_grid_windows_screen.dart). O
+  // campo aparecia como texto puro mostrando a representacao bruta do valor
+  // salvo (ex.: "{id: 0, nome: }"), sem nenhuma forma de selecionar uma foto
+  // de verdade.
+  //
+  // Login.foto (backend) e uma coluna String simples -- sem endpoint de
+  // upload multipart dedicado. Por isso a foto escolhida e convertida pra
+  // data URI base64 e enviada como texto normal no mesmo PUT/POST JSON que
+  // ja existe (via _controllers, igual qualquer outro campo de texto), sem
+  // precisar de nenhuma mudanca no backend.
+  final _filePickedNames = <String, String>{};
+
+  Widget _buildFileField(_EF ef) {
+    _controllers.putIfAbsent(ef.fieldName, () => TextEditingController());
+    final valorAtual = _controllers[ef.fieldName]!.text;
+    final nomeEscolhido = _filePickedNames[ef.fieldName];
+    final temImagemValida = valorAtual.startsWith('data:image') ||
+        valorAtual.startsWith('http://') ||
+        valorAtual.startsWith('https://');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(ef.label + (ef.isRequired ? ' *' : ''),
+              style: const TextStyle(
+                  color: GridColors.textSecondary, fontSize: 12)),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBFCFE),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: GridColors.divider),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: temImagemValida
+                    ? (valorAtual.startsWith('data:image')
+                        ? Image.memory(
+                            base64Decode(valorAtual.split(',').last),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person, color: GridColors.textSecondary),
+                          )
+                        : Image.network(
+                            valorAtual,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person, color: GridColors.textSecondary),
+                          ))
+                    : const Icon(Icons.person,
+                        color: GridColors.textSecondary, size: 28),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: ef.enabled
+                          ? () => _selecionarFoto(ef.fieldName, ef.fileConfig)
+                          : null,
+                      icon: const Icon(Icons.photo_camera, size: 18),
+                      label: const Text('Selecionar Foto'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    if (nomeEscolhido != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(nomeEscolhido,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: GridColors.textSecondary)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selecionarFoto(String fieldName, FileConfig? fileConfig) async {
+    final config = fileConfig ?? const FileConfig();
+    try {
+      final resultado = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: config.allowedExtensions.isNotEmpty
+            ? config.allowedExtensions
+            : const ['jpg', 'jpeg', 'png', 'webp'],
+        withData: true,
+      );
+      if (resultado == null || resultado.files.isEmpty) return;
+      final arquivo = resultado.files.first;
+
+      if (config.maxFileSize > 0 &&
+          (arquivo.bytes?.length ?? arquivo.size) > config.maxFileSize) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              'Arquivo maior que o limite permitido (${(config.maxFileSize / (1024 * 1024)).toStringAsFixed(1)} MB).'),
+          backgroundColor: GridColors.error,
+        ));
+        return;
+      }
+
+      // Reaproveita o mesmo helper ja usado no dialogo de criar/editar do
+      // grid generico (generic_grid_windows_screen.dart) -- ja trata Web
+      // (bytes) e desktop/mobile (path via dart:io, guardado por !kIsWeb).
+      final dataUri = await platformFileToDataUri(arquivo);
+      if (dataUri == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Não foi possível ler o arquivo selecionado.'),
+          backgroundColor: GridColors.error,
+        ));
+        return;
+      }
+
+      setState(() {
+        _controllers.putIfAbsent(fieldName, () => TextEditingController());
+        _controllers[fieldName]!.text = dataUri;
+        _filePickedNames[fieldName] = arquivo.name;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erro ao selecionar foto: $e'),
+        backgroundColor: GridColors.error,
+      ));
+    }
   }
 
   Widget _buildPassword(_EF ef) {
@@ -1194,17 +1446,34 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     final vf = ef.vField;
     final df = ef.dField;
     final selected = _multiValues[ef.fieldName] ?? [];
-    final chips = options
-        .where((o) => selected.any((s) => s.toString() == o[vf]?.toString()))
-        .map((o) => Container(
-              margin: const EdgeInsets.only(right: 4, bottom: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                  color: GridColors.secondary,
-                  borderRadius: BorderRadius.circular(12)),
-              child: Text(o[df]?.toString() ?? '',
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
-            ))
+    final rotulosSalvos = _multiValueLabels[ef.fieldName] ?? const {};
+
+    Widget chip(String texto) => Container(
+          margin: const EdgeInsets.only(right: 4, bottom: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+              color: GridColors.secondary,
+              borderRadius: BorderRadius.circular(12)),
+          child: Text(texto,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
+        );
+
+    // Bug de producao: um valor ja selecionado que a lista de opcoes
+    // (assincrona, ex.: roles filtradas por parceiro/empresa) NAO devolve --
+    // ex. role atribuida manualmente, fora do fallback "sempre disponivel"
+    // do backend -- nunca virava chip, mesmo com o dado real salvo em
+    // _multiValues. resolveMultiSelectChipLabel usa o rotulo real da opcao
+    // quando ela veio carregada; senao cai pro rotulo capturado do proprio
+    // registro na inicializacao (_multiValueLabels); so cai pro id bruto se
+    // nem isso existir (situacao rara, sem nenhum dado de rotulo).
+    final chips = selected
+        .map((s) => chip(resolveMultiSelectChipLabel(
+              selectedId: s.toString(),
+              loadedOptions: options,
+              valueField: vf,
+              displayField: df,
+              savedLabels: rotulosSalvos,
+            )))
         .toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -1473,6 +1742,7 @@ class _EF {
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
   final List<Map<String, dynamic>>? dropdownOptions;
   final String? visibleWhen;
+  final FileConfig? fileConfig;
 
   _EF(
       {required this.fieldName,
@@ -1485,7 +1755,8 @@ class _EF {
       this.dropdownEndpoint,
       this.dropdownFutureBuilder,
       this.dropdownOptions,
-      this.visibleWhen});
+      this.visibleWhen,
+      this.fileConfig});
 
   factory _EF.fromTelaField(TelaField f, FieldType type) => _EF(
         fieldName: f.fieldName,
@@ -1520,6 +1791,7 @@ class _EF {
             ?.map((e) => Map<String, dynamic>.from(e as Map))
             .toList(),
         visibleWhen: null,
+        fileConfig: o.fileConfig,
       );
 }
 
