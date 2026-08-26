@@ -41,7 +41,8 @@ void main() {
     });
 
     test('application/vnd.ms-excel retorna table_chart', () {
-      expect(iconeParaTipoArquivo('application/vnd.ms-excel'), Icons.table_chart);
+      expect(
+          iconeParaTipoArquivo('application/vnd.ms-excel'), Icons.table_chart);
     });
 
     test('text/csv retorna table_chart', () {
@@ -55,5 +56,17 @@ void main() {
     test('tipo desconhecido retorna insert_drive_file', () {
       expect(iconeParaTipoArquivo('text/plain'), Icons.insert_drive_file);
     });
+  });
+
+  test('upload GED envia MIME application/pdf para arquivo PDF', () {
+    expect(
+      gedMimeTypeForFileName('DAM_2068841_2026_08_24_04_52_50.pdf'),
+      'application/pdf',
+    );
+  });
+
+  test('upload GED usa octet-stream quando extensao nao e reconhecida', () {
+    expect(gedMimeTypeForFileName('arquivo.tipo-desconhecido'),
+        'application/octet-stream');
   });
 }
