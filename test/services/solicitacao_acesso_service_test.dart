@@ -22,6 +22,7 @@ void main() {
           'nome': 'QA Teste Solicitacao',
           'email': email,
           'cpfCnpj': '99988877766',
+          'cpfSolicitante': '12312312300',
           'senha': '123456',
         }),
       );
@@ -29,13 +30,20 @@ void main() {
           reason: 'Criar solicitacao esperado 201, recebido ${res.statusCode}\n${res.body}');
     });
 
-    test('Criar duplicada (mesmo email/cpfCnpj, ainda PENDENTE) → 409', () async {
+    // Bug de producao corrigido: a checagem de duplicidade usava cpfCnpj
+    // (documento da empresa/parceiro de destino, compartilhado por varias
+    // pessoas) -- agora usa cpfSolicitante (identidade pessoal), entao o
+    // cenario de "duplicada" precisa repetir o MESMO cpfSolicitante, nao
+    // so o mesmo cpfCnpj.
+    test('Criar duplicada (mesmo email/cpfSolicitante, ainda PENDENTE) → 409', () async {
       final email = 'qa_dup_${DateTime.now().millisecondsSinceEpoch}@teste.com';
       const cpfCnpj = '11122233344';
+      const cpfSolicitante = '32132132100';
       final body = jsonEncode({
         'nome': 'QA Dup',
         'email': email,
         'cpfCnpj': cpfCnpj,
+        'cpfSolicitante': cpfSolicitante,
         'senha': '123456',
       });
 
@@ -53,6 +61,48 @@ void main() {
       );
       expect(segunda.statusCode, 409,
           reason: 'Duplicada esperado 409, recebido ${segunda.statusCode}\n${segunda.body}');
+    });
+
+    // BUG DE PRODUCAO reportado com screenshot: 2 pessoas DIFERENTES
+    // (CPFs pessoais distintos) solicitando acesso pra vincular na MESMA
+    // empresa/parceiro (mesmo CNPJ) nao podem colidir -- a checagem de
+    // duplicidade e por (email, cpfSolicitante), nunca por cpfCnpj (que e
+    // compartilhado por design entre varios solicitantes legitimos).
+    test('2 solicitantes DIFERENTES para o MESMO cnpj (empresa/parceiro) → ambos 201, sem 409',
+        () async {
+      final cnpjCompartilhado = '19364209${DateTime.now().millisecondsSinceEpoch % 1000000}'
+          .padRight(14, '0')
+          .substring(0, 14);
+
+      final primeiraPessoa = await http.post(
+        Uri.parse(ApiLinks.solicitacaoAcesso),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nome': 'QA Pessoa Um',
+          'email': 'qa_pessoa1_${DateTime.now().millisecondsSinceEpoch}@teste.com',
+          'cpfCnpj': cnpjCompartilhado,
+          'cpfSolicitante': '11111111111',
+          'senha': '123456',
+        }),
+      );
+      expect(primeiraPessoa.statusCode, 201,
+          reason: 'Primeiro solicitante deveria criar, recebido ${primeiraPessoa.statusCode}\n${primeiraPessoa.body}');
+
+      final segundaPessoa = await http.post(
+        Uri.parse(ApiLinks.solicitacaoAcesso),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nome': 'QA Pessoa Dois',
+          'email': 'qa_pessoa2_${DateTime.now().millisecondsSinceEpoch}@teste.com',
+          'cpfCnpj': cnpjCompartilhado, // MESMO cnpj da empresa/parceiro
+          'cpfSolicitante': '22222222222', // CPF pessoal DIFERENTE
+          'senha': '123456',
+        }),
+      );
+      expect(segundaPessoa.statusCode, 201,
+          reason: 'Segundo solicitante (mesmo cnpj, cpf pessoal diferente) '
+              'nao deveria ser bloqueado como duplicata -- recebido '
+              '${segundaPessoa.statusCode}\n${segundaPessoa.body}');
     });
 
     test('Listar pendentes (autenticado) → 200', () async {

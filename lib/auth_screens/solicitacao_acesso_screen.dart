@@ -24,6 +24,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
   final _senhaCtrl = TextEditingController();
   final _confirmarSenhaCtrl = TextEditingController();
   final _cpfCnpjCtrl = TextEditingController();
+  final _cpfSolicitanteCtrl = TextEditingController();
 
   bool _obscureSenha = true;
   bool _obscureConfirmar = true;
@@ -38,6 +39,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
     _senhaCtrl.dispose();
     _confirmarSenhaCtrl.dispose();
     _cpfCnpjCtrl.dispose();
+    _cpfSolicitanteCtrl.dispose();
     super.dispose();
   }
 
@@ -53,6 +55,19 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
     if (digitos.isEmpty) return 'CPF ou CNPJ é obrigatório';
     if (digitos.length != 11 && digitos.length != 14) {
       return 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido';
+    }
+    return null;
+  }
+
+  // Pedido explicito do usuario: campo separado pro CPF PESSOAL de quem esta
+  // solicitando o acesso -- distinto do CPF/CNPJ da empresa/parceiro acima
+  // (esse so identifica a EMPRESA/PARCEIRO ao qual o solicitante sera
+  // vinculado, nunca a identidade pessoal dele).
+  String? _validarCpfSolicitante(String? v) {
+    final digitos = _apenasDigitos(v ?? '');
+    if (digitos.isEmpty) return 'CPF é obrigatório';
+    if (digitos.length != 11) {
+      return 'Informe um CPF válido (11 dígitos)';
     }
     return null;
   }
@@ -92,6 +107,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
               'nome': _nomeCtrl.text.trim(),
               'email': _emailCtrl.text.trim(),
               'cpfCnpj': _apenasDigitos(_cpfCnpjCtrl.text),
+              'cpfSolicitante': _apenasDigitos(_cpfSolicitanteCtrl.text),
               'senha': _senhaCtrl.text,
             }),
           )
@@ -109,7 +125,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
 
       String mensagem = 'Erro ao enviar solicitação. Tente novamente.';
       if (response.statusCode == 409) {
-        mensagem = 'Já existe uma solicitação pendente para este email/CPF-CNPJ.';
+        mensagem = 'Já existe uma solicitação pendente para este email/CPF.';
       }
       try {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -364,6 +380,18 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
           ),
           const SizedBox(height: 14),
           _field(
+            ctrl: _cpfSolicitanteCtrl,
+            label: 'Seu CPF',
+            icon: Icons.badge_outlined,
+            light: lightInputs,
+            enabled: !_enviando,
+            keyboardType: TextInputType.number,
+            inputFormatters: [_CpfInputFormatter()],
+            helperText: 'Seu CPF pessoal (de quem está solicitando o acesso)',
+            validator: _validarCpfSolicitante,
+          ),
+          const SizedBox(height: 14),
+          _field(
             ctrl: _cpfCnpjCtrl,
             label: 'CPF ou CNPJ',
             icon: Icons.apartment_outlined,
@@ -551,6 +579,26 @@ class _CpfCnpjInputFormatter extends TextInputFormatter {
         if (i == 2 || i == 5) buffer.write('.');
         if (i == 8) buffer.write('-');
       }
+    }
+    final text = buffer.toString();
+    return TextEditingValue(
+        text: text, selection: TextSelection.collapsed(offset: text.length));
+  }
+}
+
+/// Aplica máscara de CPF (sempre 11 dígitos, nunca CNPJ) -- campo do CPF
+/// pessoal do próprio solicitante.
+class _CpfInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limited = digits.length > 11 ? digits.substring(0, 11) : digits;
+    final buffer = StringBuffer();
+    for (var i = 0; i < limited.length; i++) {
+      buffer.write(limited[i]);
+      if (i == 2 || i == 5) buffer.write('.');
+      if (i == 8) buffer.write('-');
     }
     final text = buffer.toString();
     return TextEditingValue(

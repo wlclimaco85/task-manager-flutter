@@ -298,23 +298,35 @@ class _SolicitacaoAcessoAprovacaoScreenState
     );
   }
 
+  // Pedido explicito do usuario: "quando a solicitacao for aparecer para o
+  // usuario aprovar ja tem que aparecer qual empresa/parceiro ele e" -- o
+  // chip generico "Usuário do CNPJ" nao dizia NADA sobre o destino real;
+  // agora mostra o nome de fato resolvido (empresa ou parceiro).
   Widget _buildChipDestino(SolicitacaoAcessoItem item) {
     final filaEscritorio = item.destinoFilaEscritorio;
-    return Chip(
-      label: Text(
-        filaEscritorio ? 'Fila do escritório' : 'Usuário do CNPJ',
-        style: const TextStyle(fontSize: 11),
+    return Tooltip(
+      message: filaEscritorio
+          ? 'Sem empresa/parceiro resolvido automaticamente -- triagem manual'
+          : (item.empresaNomeResolvida != null
+              ? 'Solicitação de acesso à própria empresa'
+              : 'Solicitação de acesso como cliente/parceiro'),
+      child: Chip(
+        label: Text(
+          item.destinoDescricao,
+          style: const TextStyle(fontSize: 11),
+          overflow: TextOverflow.ellipsis,
+        ),
+        backgroundColor: filaEscritorio
+            ? GridColors.warning.withValues(alpha: 0.15)
+            : GridColors.secondarySoft,
+        side: BorderSide(
+          color: filaEscritorio
+              ? GridColors.warningDark.withValues(alpha: 0.3)
+              : GridColors.secondary.withValues(alpha: 0.3),
+        ),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
       ),
-      backgroundColor: filaEscritorio
-          ? GridColors.warning.withValues(alpha: 0.15)
-          : GridColors.secondarySoft,
-      side: BorderSide(
-        color: filaEscritorio
-            ? GridColors.warningDark.withValues(alpha: 0.3)
-            : GridColors.secondary.withValues(alpha: 0.3),
-      ),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
     );
   }
 
