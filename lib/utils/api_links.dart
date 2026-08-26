@@ -1028,6 +1028,12 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe-import/importacao-xml/confirmar';
   static String get nfeImportacaoListar =>
       '$_baseUrlNew/api/nfe-import/importacao-xml';
+  // Pedido explicito do usuario: confirmar a NF-e Entrada e um passo
+  // separado da importacao (RASCUNHO_IMPORTACAO -> AUTORIZADA). Enquanto
+  // nao confirmado, o registro pode ser excluido via deleteNfe/nfeById
+  // (DELETE /api/nfe/{id}) normalmente.
+  static String nfeImportacaoConfirmarEntrada(String id) =>
+      '$_baseUrlNew/api/nfe-import/importacao-xml/$id/confirmar-entrada';
 
   // NFS-e / Nota Fiscal de ServiÃ§o
   static String get nfseIssue => '$_baseUrlNew/api/nfse/issue';
