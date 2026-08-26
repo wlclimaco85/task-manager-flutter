@@ -76,4 +76,27 @@ void main() {
 
     expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
   });
+
+  // BUG produção corrigido: excluir uma Entrada ja confirmada (AUTORIZADA)
+  // nao e mais bloqueado pelo backend -- a tooltip antiga prometia
+  // "exclusão bloqueada" pra esse item, o que nao e mais verdade e confundia
+  // o usuario ("nao pode excluir, mas tambem nao aparece em NF-e Entrada
+  // pra excluir por la"). A tooltip agora avisa o efeito colateral real
+  // (reverte estoque/contas a pagar) em vez de prometer um bloqueio que nao
+  // existe mais.
+  testWidgets(
+      'tooltip do item AUTORIZADA avisa sobre reversão de estoque/contas a '
+      'pagar, NÃO promete mais "exclusão bloqueada"', (tester) async {
+    await tester.pumpWidget(wrap(NfeImportacoesGrid(
+      listarOverride: () async => [itemRascunho, itemConfirmado],
+    )));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.byTooltip(
+            'Excluir (reverte estoque e contas a pagar geradas)'),
+        findsOneWidget);
+    expect(find.byTooltip('Entrada já confirmada -- exclusão bloqueada'),
+        findsNothing);
+  });
 }
