@@ -183,6 +183,10 @@ class ApiLinks {
       '$_baseUrlNew/api/empresa/update/$id'; // controller tem /update/{id}
   static String deleteEmpresa(String id) => '$_baseUrlNew/api/empresa/$id';
   static String empresaById(String id) => '$_baseUrlNew/api/empresa/$id';
+  static String smtpConfigEmpresa(int empresaId) =>
+      '$_baseUrlNew/api/smtp-config/empresa/$empresaId';
+  static String smtpConfigParceiro(int parceiroId) =>
+      '$_baseUrlNew/api/smtp-config/parceiro/$parceiroId';
   static String atualizarDadosPessoais(dynamic id) =>
       '$_baseUrlNew/api/dadospessoais/$id';
 
