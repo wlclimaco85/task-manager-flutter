@@ -701,7 +701,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                   crossAxisCount: colunas,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 0.85,
+                  childAspectRatio: 1.65,
                 ),
                 itemCount: itens.length,
                 itemBuilder: (context, index) =>
@@ -716,9 +716,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   // ── Card individual ───────────────────────────────────────────────────────
   Widget _buildCard(Map<String, dynamic> arq) {
-    final audit = arq['audit'] as Map<String, dynamic>?;
-    final podeExcluir =
-        audit?['userLogadoId']?.toString() == TenantContext.userId?.toString();
+    final podeExcluir = arq['usuarioUploadId']?.toString() ==
+        TenantContext.userId?.toString();
 
     return GedFileCard(
       arq: arq,
