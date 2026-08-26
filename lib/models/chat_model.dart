@@ -19,6 +19,7 @@ class ChatMessage {
   // Fix card #444: status real da conversa (Aberto/Finalizado), vindo do
   // backend agrupado por chatId (antes nao existia e a UI usava 'Ativo' fixo).
   final String? status;
+  final int? atendenteId;
 
   ChatMessage({
     required this.sender,
@@ -37,6 +38,7 @@ class ChatMessage {
     this.text,
     this.fileUrl,
     this.status,
+    this.atendenteId,
   });
 
   // Construtor a partir de JSON
@@ -58,6 +60,7 @@ class ChatMessage {
       uploadDate: json['uploadDate'],
       text: json['text'],
       status: json['status'],
+      atendenteId: json['atendenteId'],
     );
   }
 
@@ -82,6 +85,7 @@ class ChatMessage {
     data['uploadDate'] = uploadDate;
     data['text'] = text;
     data['status'] = status;
+    data['atendenteId'] = atendenteId;
 
     return data;
   }
@@ -131,7 +135,8 @@ class ChatKanbanItem {
       clienteEmail: json['clienteEmail']?.toString(),
       setor: json['setor']?.toString() ?? json['sector']?.toString(),
       setorId: json['setorId']?.toString(),
-      ultimaMensagem: json['ultimaMensagem']?.toString() ?? json['lastMessage']?.toString(),
+      ultimaMensagem:
+          json['ultimaMensagem']?.toString() ?? json['lastMessage']?.toString(),
       status: json['status']?.toString() ?? 'Aguardando',
       naoLidos: int.tryParse(json['naoLidos']?.toString() ?? '0') ?? 0,
       dataUltimaMensagem: json['dataUltimaMensagem'] != null
@@ -144,19 +149,19 @@ class ChatKanbanItem {
   }
 
   Map<String, dynamic> toJson() => {
-    'chatId': chatId,
-    'cliente': cliente,
-    'clienteEmail': clienteEmail,
-    'setor': setor,
-    'setorId': setorId,
-    'ultimaMensagem': ultimaMensagem,
-    'status': status,
-    'naoLidos': naoLidos,
-    'dataUltimaMensagem': dataUltimaMensagem?.toIso8601String(),
-    'usuarioResponsavel': usuarioResponsavel,
-    'usuarioResponsavelId': usuarioResponsavelId,
-    'empresaId': empresaId,
-  };
+        'chatId': chatId,
+        'cliente': cliente,
+        'clienteEmail': clienteEmail,
+        'setor': setor,
+        'setorId': setorId,
+        'ultimaMensagem': ultimaMensagem,
+        'status': status,
+        'naoLidos': naoLidos,
+        'dataUltimaMensagem': dataUltimaMensagem?.toIso8601String(),
+        'usuarioResponsavel': usuarioResponsavel,
+        'usuarioResponsavelId': usuarioResponsavelId,
+        'empresaId': empresaId,
+      };
 }
 
 class ChatMessageModel {

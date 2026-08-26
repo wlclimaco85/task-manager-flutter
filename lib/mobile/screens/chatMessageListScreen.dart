@@ -8,6 +8,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
+import '../../../widgets/chat/chat_list_logic.dart';
 import '../../../widgets/user_banners.dart';
 import '../../services/chat_caller.dart';
 import '../screens/chatMenssageScreen.dart';
@@ -114,25 +115,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _loadChats() async {
     try {
       final data = await ChatCaller().fetchChats(context);
-      final chats = data
+      final chats = buildChatListItemsFromMessages(data)
           .map(
-            (msg) => Chat(
-              chatId: msg.chatId ?? '0',
-              sector: msg.sector ?? 'Setor desconhecido',
-              lastMessage: msg.text ?? msg.content,
-              timestamp:
-                  DateTime.tryParse(msg.uploadDate ?? msg.timestamp ?? '') ??
-                      DateTime.now(),
-              // Fix card #444: status real vindo do backend (agrupado por
-              // chatId), antes hardcoded 'Ativo' para toda conversa.
-              // Fix card #469: backend usa o enum FECHADO (nao "Finalizado")
-              // para marcar conversa encerrada -- startsWith('final') nunca
-              // batia com nenhum valor real, entao a conversa nunca saia de
-              // "Abertos" mesmo apos finalizar com sucesso.
-              status: (msg.status ?? '').toUpperCase() == 'FECHADO'
-                  ? 'Finalizado'
-                  : 'Ativo',
-              responsavelId: msg.codUsuDest,
+            (item) => Chat(
+              chatId: item.chatId,
+              sector: item.sector,
+              lastMessage: item.lastMessage,
+              timestamp: item.timestamp,
+              status: item.status,
+              responsavelId: item.responsavelId,
             ),
           )
           .toList();
@@ -149,18 +140,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   List<Chat> get _filteredChats => _chats
-      .where((c) =>
-          (c.status == 'Finalizado') == _mostrarFinalizados)
+      .where((c) => (c.status == 'Finalizado') == _mostrarFinalizados)
       .toList();
 
   List<String> get _sectorLabels {
-    final labels = _setores
-        .map((item) =>
-            (item['label'] ?? item['descricao'] ?? item['nome'] ?? '')
-                .toString())
-        .where((label) => label.trim().isNotEmpty)
-        .toList();
-    return labels.isEmpty ? _fallbackSectors : labels;
+    return sectorLabelsFromCadastro(_setores, fallback: _fallbackSectors);
   }
 
   void _startNewChat(String sector) {
@@ -258,7 +242,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
               // aguardando (so quando ainda nao ha responsavel).
               if (chat.responsavelId == null)
                 ListTile(
-                  leading: const Icon(Icons.pan_tool_outlined, color: GridColors.primary),
+                  leading: const Icon(Icons.pan_tool_outlined,
+                      color: GridColors.primary),
                   title: const Text('Pegar atendimento'),
                   onTap: () {
                     Navigator.pop(context);
@@ -305,16 +290,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _finalizeChat(Chat chat) async {
     if (chat.chatId.isEmpty || chat.chatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.',
+          error: true);
       return;
     }
     try {
       // Fix card #444: usava ApiLinks.chatFinalize (PUT /api/chat/{id} sem
       // corpo, id Integer de mensagem) -- mesmo bug ja corrigido no card
       // #430 dentro da tela de conversa, mas nao replicado aqui na lista.
-      final url = TenantContext.applyToUrl(
-          ApiLinks.chatFinalizarConversa(chat.chatId));
-      final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
+      final url =
+          TenantContext.applyToUrl(ApiLinks.chatFinalizarConversa(chat.chatId));
+      final response =
+          await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
           final index = _chats.indexWhere((item) => item.chatId == chat.chatId);
@@ -342,7 +329,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _pegarAtendimento(Chat chat) async {
     final usuarioId = AuthUtility.userInfo?.login?.id;
     if (usuarioId == null) {
-      _showSnack('Usuario nao identificado, faca login novamente.', error: true);
+      _showSnack('Usuario nao identificado, faca login novamente.',
+          error: true);
       return;
     }
     final ok = await ChatCaller().pegarAtendimento(chat.chatId, usuarioId);
@@ -351,16 +339,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _showSnack('Atendimento assumido com sucesso.');
       _bootstrap();
     } else {
-      _showSnack('Atendimento ja possui responsavel ou ocorreu um erro.', error: true);
+      _showSnack('Atendimento ja possui responsavel ou ocorreu um erro.',
+          error: true);
     }
   }
 
   Future<void> _deleteChat(Chat chat) async {
     try {
       final url = TenantContext.applyToUrl(ApiLinks.chatDelete(chat.chatId));
-      final response = await http.delete(Uri.parse(url), headers: TenantContext.headers);
+      final response =
+          await http.delete(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
-        setState(() => _chats.removeWhere((item) => item.chatId == chat.chatId));
+        setState(
+            () => _chats.removeWhere((item) => item.chatId == chat.chatId));
         _showSnack('Chat excluído com sucesso');
       } else {
         _showSnack('Erro ao excluir (${response.statusCode})', error: true);
@@ -428,8 +419,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         message: _mostrarFinalizados
                             ? 'Conversas finalizadas aparecem aqui.'
                             : 'Abra um atendimento para falar com o setor responsavel.',
-                        onStart:
-                            _mostrarFinalizados ? null : _showSectorSelectionDialog,
+                        onStart: _mostrarFinalizados
+                            ? null
+                            : _showSectorSelectionDialog,
                       )
                     : RefreshIndicator(
                         color: GridColors.primary,
@@ -439,7 +431,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           itemCount: _filteredChats.length,
                           itemBuilder: (context, index) {
                             final chat = _filteredChats[index];
-                            final chamadoId = extrairChamadoIdDoChatId(chat.chatId);
+                            final chamadoId =
+                                extrairChamadoIdDoChatId(chat.chatId);
                             return ChatListTileCard(
                               title: chamadoId != null
                                   ? 'Chamado #$chamadoId · ${chat.sector}'
