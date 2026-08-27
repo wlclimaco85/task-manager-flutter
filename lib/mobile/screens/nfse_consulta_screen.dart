@@ -68,7 +68,16 @@ class _NfseConsultaScreenState extends State<NfseConsultaScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _resultadoEmissao = 'Erro: $e');
+      // BUG produção (card #504): mostrava o toString() cru da exceção
+      // ("Erro: NfseException(400): ...") -- NfseException já carrega uma
+      // mensagem de negócio legível (extraída do corpo da resposta em
+      // _extractError); exibida direto quando disponível, com fallback
+      // pro toString() genérico só pra exceções de outro tipo (ex.: erro
+      // de rede).
+      if (mounted) {
+        setState(() => _resultadoEmissao =
+            e is NfseException ? 'Erro: ${e.message}' : 'Erro: $e');
+      }
     } finally {
       if (mounted) setState(() => _emitindo = false);
     }

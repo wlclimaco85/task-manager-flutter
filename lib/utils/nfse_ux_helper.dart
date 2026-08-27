@@ -43,6 +43,24 @@ class NfseUxHelper {
   static String statusPrefeituraLabel(dynamic status) {
     final texto = status?.toString().trim().toUpperCase() ?? '';
     if (texto.isEmpty || texto == 'PENDENTE') return 'Pendente de envio';
+    // BUG produção (card #504): os adaptadores reais de município
+    // (SaoPauloMunicipioAdapter/BrasiliaMunicipioAdapter, em
+    // AppAcademia/src/main/java/br/com/model/fiscal/MunicipioAdapter.java)
+    // retornam status em INGLÊS -- ISSUED/AUTHORIZED/CANCELLED/CONTINGENCY
+    // -- que nunca batiam com nenhum dos "contains" em português abaixo.
+    // "CANCELLED" nem sequer contém "CANCELAD" (grafia com LL dobrado em
+    // inglês), por isso precisa de checagem explícita, não só um novo
+    // "contains".
+    if (texto == 'ISSUED' || texto == 'AUTHORIZED') {
+      return 'Autorizada pela prefeitura';
+    }
+    if (texto == 'CANCELLED') return 'Cancelada na prefeitura';
+    // Ambas as grafias: "CONTINGENCY" (adaptador real, em inglês) e
+    // "CONTINGENCIA" (SafeMockAdapter, em português) -- nenhuma batia com
+    // os "contains" abaixo antes desta checagem explícita.
+    if (texto == 'CONTINGENCY' || texto == 'CONTINGENCIA') {
+      return 'Emitida em contingência';
+    }
     if (texto.contains('AUTORIZAD') ||
         texto.contains('EMITID') ||
         texto.contains('APROVAD')) {
