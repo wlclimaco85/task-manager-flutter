@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
@@ -431,7 +430,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
       if (r.statusCode == 200) {
         await FileSaver.instance.saveFile(
           name: 'nfe_$id',
-          bytes: Uint8List.fromList(r.body.codeUnits),
+          bytes: r.bodyBytes,
           fileExtension: 'xml',
         );
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

@@ -410,8 +410,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Item salvo!'), backgroundColor: _green));
       } else {
+        // BUG produção (card #504): _salvarItem mostrava "Erro <statusCode>"
+        // cru, sem parsear o corpo da resposta -- apontado como o MESMO
+        // achado em 2 ciclos consecutivos de QA (07/08 e 11/08/24/08),
+        // enquanto _salvarCabecalho (acima) já usava _mensagemErro desde o
+        // início. Unifica o tratamento de erro entre os dois.
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text(_mensagemErro(r.statusCode, r.body)),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
@@ -450,8 +456,25 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       appBar: AppBar(
         backgroundColor: _red,
         foregroundColor: Colors.white,
-        title: Text('NFSe #$_nfseId',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('NFSe #$_nfseId',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(width: 6),
+            // BUG produção (card #504): nenhum texto/tooltip explicava a
+            // diferença entre NFSe e NFe (critério de aceite apontado como
+            // FAIL desde 28/07, nunca corrigido).
+            Tooltip(
+              message: 'NFSe (Nota Fiscal de Serviços) é municipal e tributa '
+                  'ISS, diferente da NFe (estadual, tributa ICMS sobre '
+                  'mercadorias). Por isso os campos e o fluxo de envio são '
+                  'diferentes: aqui a nota é enviada para a prefeitura do '
+                  'município de prestação, não para a SEFAZ estadual.',
+              child: Icon(Icons.info_outline, size: 16, color: Colors.white.withOpacity(0.85)),
+            ),
+          ],
+        ),
         actions: [
           TextButton.icon(
             onPressed: _salvarCabecalho,

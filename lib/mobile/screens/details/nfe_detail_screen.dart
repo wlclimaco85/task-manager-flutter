@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import '../../../../utils/tenant_context.dart';
 import '../../../../utils/nfe_emission_payload.dart';
 import '../../../../utils/nfe_action_feedback.dart';
 import '../../../../widgets/searchable_dropdown.dart';
+import '../../../../widgets/fiscal/nfe_authorization_status_banner.dart';
 import '../../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../../widgets/accessibility/index.dart';
 
@@ -228,6 +228,11 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
               length: 3,
               child: Column(
                 children: [
+                  NfeAuthorizationStatusBanner(
+                    status: _statusVal,
+                    emitindo: _emitindo,
+                    margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  ),
                   TabBar(
                     onTap: (i) => setState(() => _tab = i),
                     tabs: const [
@@ -652,7 +657,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       } else {
         showAccessibleSnackBar(
           context: context,
-          message: 'Erro ${r.statusCode}',
+          message: NfeEmissionPayload.readableHttpError(r.statusCode, r.body),
           type: AccessibleSnackBarType.error,
         );
       }
@@ -674,7 +679,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (r.statusCode == 200) {
         await FileSaver.instance.saveFile(
           name: 'nfe_$_nfeId',
-          bytes: Uint8List.fromList(r.body.codeUnits),
+          bytes: r.bodyBytes,
           fileExtension: 'xml',
         );
         showAccessibleSnackBar(
@@ -685,7 +690,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       } else {
         showAccessibleSnackBar(
           context: context,
-          message: 'Erro ${r.statusCode}',
+          message: NfeEmissionPayload.readableHttpError(r.statusCode, r.body),
           type: AccessibleSnackBarType.error,
         );
       }

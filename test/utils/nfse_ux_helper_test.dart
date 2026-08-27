@@ -66,5 +66,41 @@ void main() {
 
       expect(texto, 'Código municipal inválido');
     });
+
+    // BUG produção (card #504, reprovado 5x): os adaptadores reais de
+    // município (SaoPauloMunicipioAdapter/BrasiliaMunicipioAdapter, em
+    // AppAcademia/.../fiscal/MunicipioAdapter.java) retornam status em
+    // INGLÊS -- ISSUED/AUTHORIZED/CANCELLED/CONTINGENCY -- que nunca
+    // batiam com nenhum "contains" em português no helper.
+    group('statusPrefeituraLabel reconhece valores reais em inglês dos adaptadores', () {
+      test('ISSUED e AUTHORIZED mapeiam para "Autorizada pela prefeitura"', () {
+        expect(NfseUxHelper.statusPrefeituraLabel('ISSUED'),
+            'Autorizada pela prefeitura');
+        expect(NfseUxHelper.statusPrefeituraLabel('AUTHORIZED'),
+            'Autorizada pela prefeitura');
+      });
+
+      test('CANCELLED mapeia para "Cancelada na prefeitura" '
+          '(não é capturado por "contains(CANCELAD)" -- grafia com LL dobrado)',
+          () {
+        expect(NfseUxHelper.statusPrefeituraLabel('CANCELLED'),
+            'Cancelada na prefeitura');
+      });
+
+      test('CONTINGENCY mapeia para um texto legível dedicado', () {
+        expect(NfseUxHelper.statusPrefeituraLabel('CONTINGENCY'),
+            'Emitida em contingência');
+      });
+
+      test('continua reconhecendo os valores em português do mock adapter',
+          () {
+        expect(NfseUxHelper.statusPrefeituraLabel('EMITIDA'),
+            'Autorizada pela prefeitura');
+        expect(NfseUxHelper.statusPrefeituraLabel('CANCELADA'),
+            'Cancelada na prefeitura');
+        expect(NfseUxHelper.statusPrefeituraLabel('CONTINGENCIA'),
+            'Emitida em contingência');
+      });
+    });
   });
 }

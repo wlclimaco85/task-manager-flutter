@@ -24,6 +24,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // flutter_local_notifications 19.x exige desugaring da core library
+        // (usa APIs java.time/java.util.stream via desugar_jdk_libs no Android).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -69,4 +72,5 @@ dependencies {
     androidTestImplementation("tools.fastlane:screengrab:2.1.1")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test:rules:1.5.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
