@@ -20,10 +20,17 @@ class Diretorio {
   });
 
   factory Diretorio.fromJson(Map<String, dynamic> json) {
+    // Bug de producao: 'nome'/'descricao' sao required String (nao
+    // nullable) no construtor, mas registros existentes no banco podem ter
+    // esses campos nulos (nunca preenchidos, ou legado). json['nome'] nulo
+    // caia direto no parametro required, gerando
+    // "TypeError: null: type 'Null' is not a subtype of type 'String'" e
+    // derrubando a listagem inteira de Diretorios (tela ficava com "Nenhum
+    // item encontrado" + banner de erro, mesmo havendo registros).
     return Diretorio(
       id: json['id'],
-      nome: json['nome'],
-      descricao: json['descricao'],
+      nome: json['nome']?.toString() ?? '',
+      descricao: json['descricao']?.toString() ?? '',
       empresa:
           json['empresa'] != null ? Empresa.fromJson(json['empresa']) : null,
     );
