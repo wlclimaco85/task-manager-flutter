@@ -5,6 +5,7 @@ import '../../models/role_permissao_model.dart';
 import '../../models/auth_utility.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/role_permission_group_selection.dart';
 import '../../utils/role_permission_catalog.dart';
 import '../../utils/tenant_context.dart';
 
@@ -51,6 +52,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   int? _roleId;
   String _busca = '';
   bool _carregando = true;
+  final Set<String> _gruposSalvando = <String>{};
 
   @override
   void initState() {
@@ -197,6 +199,101 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     }
   }
 
+  Future<void> _salvarGrupo(RolePermissionGroup grupo, bool marcar) async {
+    if (_roleId == null || grupo.entries.isEmpty) return;
+    final roleId = _roleId!;
+    final grupoCompleto = resolveRolePermissionCompleteGroup(grupo);
+    final grupoKey = grupoCompleto.id;
+    if (_gruposSalvando.contains(grupoKey)) return;
+    setState(() => _gruposSalvando.add(grupoKey));
+
+    final token = AuthUtility.userInfo?.token ?? '';
+    final tenantId = TenantContext.empresaId?.toString() ?? '';
+
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/batch'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Tenant-ID': tenantId,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(buildRolePermissionGroupBatch(
+          roleId: roleId,
+          grupo: grupoCompleto,
+          marcar: marcar,
+        )),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao salvar menu: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() => _atualizarGrupoLocal(roleId, grupoCompleto, marcar));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(marcar ? 'Menu liberado' : 'Menu bloqueado'),
+            backgroundColor: GridColors.success,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _gruposSalvando.remove(grupoKey));
+      }
+    }
+  }
+
+  void _atualizarGrupoLocal(
+    int roleId,
+    RolePermissionGroup grupo,
+    bool marcar,
+  ) {
+    for (final tela in grupo.entries) {
+      final index = _permissoes.indexWhere(
+        (p) =>
+            p.roleId == roleId &&
+            _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(tela.telaNome),
+      );
+      if (index >= 0) {
+        _permissoes[index] = rolePermissionWithAllFields(
+          _permissoes[index],
+          valor: marcar,
+        );
+      } else {
+        _permissoes.add(RolePermissao(
+          id: 0,
+          roleId: roleId,
+          roleKey: '',
+          roleDescription: '',
+          telaNome: tela.telaNome,
+          podeVer: marcar,
+          podeInserir: marcar,
+          podeEditar: marcar,
+          podeDeletar: marcar,
+          podeBaixar: marcar,
+        ));
+      }
+    }
+  }
+
   RolePermissao _permissaoDe(RolePermissionMenuEntry tela) {
     final telaNomeNormalizado = _normalizeTelaNome(tela.telaNome);
     return _permissoes.firstWhere(
@@ -292,7 +389,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       rows.add(TableRow(
         decoration: BoxDecoration(color: GridColors.primary.withOpacity(0.06)),
         children: [
-          _cell(grupo.label, bold: true),
+          _groupCell(grupo),
           const SizedBox(),
           const SizedBox(),
           const SizedBox(),
@@ -357,6 +454,43 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
         text,
         style:
             TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal),
+      ),
+    );
+  }
+
+  Widget _groupCell(RolePermissionGroup grupo) {
+    final grupoCompleto = resolveRolePermissionCompleteGroup(grupo);
+    final value = rolePermissionGroupCheckboxValue(
+      grupo: grupoCompleto,
+      permissaoDe: _permissaoDe,
+    );
+    final salvando = _gruposSalvando.contains(grupoCompleto.id);
+    final tooltip = salvando
+        ? 'Salvando permissões de ${grupo.label}'
+        : 'Marcar ou desmarcar todas as permissões de ${grupo.label}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        children: [
+          Tooltip(
+            message: tooltip,
+            child: Checkbox(
+              value: value,
+              tristate: true,
+              semanticLabel: tooltip,
+              onChanged:
+                  salvando ? null : (_) => _salvarGrupo(grupo, value != true),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              grupo.label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
