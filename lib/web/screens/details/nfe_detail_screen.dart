@@ -13,6 +13,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../utils/nfe_emission_payload.dart';
 import '../../../utils/nfe_action_feedback.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../widgets/fiscal/nfe_authorization_status_banner.dart';
 import '../../../widgets/nfe/nfe_chave_qr_card.dart';
 import '../../../widgets/finance/gerar_contas_pagar_dialog.dart';
 import '../../../utils/grid_texts.dart';
@@ -523,6 +524,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                NfeAuthorizationStatusBanner(
+                  status: _statusVal,
+                  emitindo: _emitindo,
+                ),
+                const SizedBox(height: 16),
                 _secao(
                   titulo: 'Dados da Nota',
                   trailing: _btnSalvarCabecalho(),
@@ -863,7 +869,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('DANFE baixado!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text(
+                NfeEmissionPayload.readableHttpError(r.statusCode, r.body)),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
@@ -888,7 +896,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('XML baixado!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text(
+                NfeEmissionPayload.readableHttpError(r.statusCode, r.body)),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)

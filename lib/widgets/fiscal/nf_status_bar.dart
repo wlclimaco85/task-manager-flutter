@@ -14,6 +14,7 @@ class NfStatusBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onEmitir;
   final bool podEmitir;
   final bool loading;
+
   /// Ação alternativa (ex: "+ Nova NFSe") usada na tela de listagem.
   final Widget? acaoExtra;
 
@@ -38,64 +39,99 @@ class NfStatusBar extends StatelessWidget implements PreferredSizeWidget {
       height: 56,
       color: GridColors.shellBackground,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Icon(icone, color: GridColors.textPrimary, size: 20),
-          const SizedBox(width: 10),
-          Text(
-            titulo,
-            style: const TextStyle(
-              color: GridColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (ambiente != null) ...[
-            const SizedBox(width: 12),
-            AmbienteBadge(ambiente: ambiente!),
-          ],
-          const Spacer(),
-          if (loading)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+
+          return Row(
+            children: [
+              Icon(icone, color: GridColors.textPrimary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: GridColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (ambiente != null && !compact) ...[
+                      const SizedBox(width: 12),
+                      AmbienteBadge(ambiente: ambiente!),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          if (acaoExtra != null) ...[
-            const SizedBox(width: 8),
-            acaoExtra!,
-          ],
-          if (onSalvarRascunho != null) ...[
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: loading ? null : onSalvarRascunho,
-              icon: const Icon(Icons.save_outlined, size: 16, color: Colors.white),
-              label: const Text('Salvar', style: TextStyle(color: Colors.white)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white54),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              ),
-            ),
-          ],
-          if (onEmitir != null) ...[
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: (loading || !podEmitir) ? null : onEmitir,
-              icon: const Icon(Icons.send, size: 16),
-              label: const Text('Emitir'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.success,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              ),
-            ),
-          ],
-        ],
+              if (loading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+              if (acaoExtra != null && !compact) ...[
+                const SizedBox(width: 8),
+                acaoExtra!,
+              ],
+              if (onSalvarRascunho != null) ...[
+                const SizedBox(width: 8),
+                compact
+                    ? IconButton(
+                        tooltip: 'Salvar',
+                        onPressed: loading ? null : onSalvarRascunho,
+                        icon: const Icon(Icons.save_outlined,
+                            size: 18, color: Colors.white),
+                      )
+                    : OutlinedButton.icon(
+                        onPressed: loading ? null : onSalvarRascunho,
+                        icon: const Icon(Icons.save_outlined,
+                            size: 16, color: Colors.white),
+                        label: const Text('Salvar',
+                            style: TextStyle(color: Colors.white)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white54),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+              ],
+              if (onEmitir != null) ...[
+                const SizedBox(width: 8),
+                compact
+                    ? IconButton(
+                        tooltip: 'Emitir',
+                        onPressed: (loading || !podEmitir) ? null : onEmitir,
+                        icon: const Icon(Icons.send,
+                            size: 18, color: GridColors.success),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: (loading || !podEmitir) ? null : onEmitir,
+                        icon: const Icon(Icons.send, size: 16),
+                        label: const Text('Emitir'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GridColors.success,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

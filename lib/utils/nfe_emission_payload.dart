@@ -110,19 +110,45 @@ class NfeEmissionPayload {
     var fallback = 'Erro $statusCode';
     try {
       final decoded = jsonDecode(body);
-      if (decoded is Map) {
-        final data = decoded['data'];
-        final message = decoded['message'] ??
-            decoded['mensagem'] ??
-            decoded['error'] ??
-            decoded['motivoAut'] ??
-            (data is Map
-                ? data['message'] ?? data['mensagem'] ?? data['error']
-                : null);
-        if (!_isBlank(message)) return message.toString();
-      }
+      final message = _extractMessage(decoded);
+      final sanitized = _sanitizeMessage(message);
+      if (!_isBlank(sanitized)) return sanitized;
     } catch (_) {}
     return fallback;
+  }
+
+  static dynamic _extractMessage(dynamic decoded) {
+    if (decoded is Map) {
+      for (final key in [
+        'message',
+        'mensagem',
+        'error',
+        'motivoAut',
+        'motivoRejeicao',
+        'motivo',
+        'descricao',
+        'detail',
+        'details',
+      ]) {
+        final value = decoded[key];
+        if (!_isBlank(value)) return value;
+      }
+      final nested = _extractMessage(decoded['data']);
+      if (!_isBlank(nested)) return nested;
+    }
+    return null;
+  }
+
+  static String _sanitizeMessage(dynamic value) {
+    var text = value?.toString().trim() ?? '';
+    if (text.isEmpty) return '';
+    text = text.split(RegExp(r'\r?\n')).first.trim();
+    text = text.replaceFirst(
+      RegExp(r'^(?:[a-zA-Z_$][\w$]*\.)+[A-Za-z_$][\w$]*(?::\s*)?'),
+      '',
+    );
+    text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text;
   }
 
   static List<String> _validateItem(Map<String, dynamic> item) {
