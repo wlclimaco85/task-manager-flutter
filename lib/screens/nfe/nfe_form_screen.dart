@@ -250,9 +250,9 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     }
 
     if (_clienteSelecionado == null) {
-      setState(() => _validationError = 'Selecione um cliente');
+      setState(() => _validationError = 'Selecione um destinatário');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um cliente')),
+        const SnackBar(content: Text('Selecione um destinatário')),
       );
       return;
     }
@@ -508,14 +508,19 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Cliente *',
+          // BUG produção (card #503): rótulo "Cliente" divergia da
+          // terminologia usada em web/windows ("Destinatário") pro mesmo
+          // conceito -- quem recebe a NF-e. Unifica a nomenclatura entre
+          // as 3 plataformas sem mudar a fonte de dados/seleção (continua
+          // NfeTomadorModel).
+          'Destinatário *',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
-        // Dropdown de clientes
+        // Dropdown de destinatários
         DropdownButtonFormField<NfeTomadorModel>(
           value: _clienteSelecionado,
-          hint: const Text('Selecione um cliente'),
+          hint: const Text('Selecione um destinatário'),
           items: _clientes.map((cliente) {
             return DropdownMenuItem(
               value: cliente,
@@ -527,9 +532,9 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
               _selecionarCliente(cliente);
             }
           },
-          validator: (value) => value == null ? 'Cliente obrigatório' : null,
+          validator: (value) => value == null ? 'Destinatário obrigatório' : null,
           decoration: InputDecoration(
-            hintText: 'Selecione um cliente',
+            hintText: 'Selecione um destinatário',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),

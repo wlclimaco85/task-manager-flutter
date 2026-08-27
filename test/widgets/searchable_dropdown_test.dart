@@ -555,4 +555,66 @@ void main() {
       expect(find.byType(Dialog), findsNothing);
     });
   });
+
+  // Card #503 (UI/UX Audit NF-e): QA apontou em vários ciclos que
+  // nfe_saida_create_screen.dart (web/windows) declarava e atribuía
+  // _formKey ao Form, mas NUNCA chamava .validate() -- os campos
+  // obrigatórios (SearchableDropdownField com isRequired:true, ex.:
+  // "Destinatário") já implementam validação real via FormField (esta
+  // classe), mas nunca tinham a chance de mostrar o erro inline porque
+  // validate() nunca rodava. O fix chama _formKey.currentState!.validate()
+  // no início de _salvar(); este grupo prova que o mecanismo de validação
+  // que esse fix agora ativa realmente funciona.
+  group('SearchableDropdownField — integração real com Form.validate()', () {
+    testWidgets(
+        'Form.validate() exibe erro inline quando campo isRequired está vazio',
+        (tester) async {
+      final formKey = GlobalKey<FormState>();
+      await tester.pumpWidget(_wrap(
+        Form(
+          key: formKey,
+          child: SearchableDropdownField(
+            label: 'Destinatário',
+            items: _items,
+            valueField: 'id',
+            displayField: 'nome',
+            onChanged: (_) {},
+            isRequired: true,
+          ),
+        ),
+      ));
+
+      final valido = formKey.currentState!.validate();
+      await tester.pump();
+
+      expect(valido, isFalse);
+      expect(find.text('Destinatário é obrigatório'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Form.validate() NÃO mostra erro quando campo isRequired já tem valor',
+        (tester) async {
+      final formKey = GlobalKey<FormState>();
+      await tester.pumpWidget(_wrap(
+        Form(
+          key: formKey,
+          child: SearchableDropdownField(
+            label: 'Destinatário',
+            items: _items,
+            valueField: 'id',
+            displayField: 'nome',
+            value: '2',
+            onChanged: (_) {},
+            isRequired: true,
+          ),
+        ),
+      ));
+
+      final valido = formKey.currentState!.validate();
+      await tester.pump();
+
+      expect(valido, isTrue);
+      expect(find.text('Destinatário é obrigatório'), findsNothing);
+    });
+  });
 }

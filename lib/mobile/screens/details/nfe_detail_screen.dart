@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
@@ -674,7 +673,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (r.statusCode == 200) {
         await FileSaver.instance.saveFile(
           name: 'nfe_$_nfeId',
-          bytes: Uint8List.fromList(r.body.codeUnits),
+          bytes: r.bodyBytes,
           fileExtension: 'xml',
         );
         showAccessibleSnackBar(

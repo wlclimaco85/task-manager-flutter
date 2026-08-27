@@ -210,6 +210,16 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   }
 
   Future<void> _salvar() async {
+    // BUG produção (card #503): _formKey era declarado e atribuído ao Form,
+    // mas .validate() nunca era chamado -- os campos SearchableDropdownField
+    // com isRequired:true (ex.: "Destinatário") já implementam validação
+    // real via FormField (ver widgets/searchable_dropdown.dart), mas nunca
+    // recebiam a chance de mostrar o erro inline porque validate() nunca
+    // rodava. A checagem manual de `erros` abaixo continua necessária pra
+    // validações que não são campo de Form (ex.: lista de itens vazia).
+    if (!(_formKey.currentState?.validate() ?? true)) {
+      return;
+    }
     final erros = <String>[];
     if (_topSelected == null) erros.add('Tipo de Operação');
     if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');

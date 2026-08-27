@@ -3,6 +3,7 @@ import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/nfse_ux_helper.dart';
+import '../../widgets/fiscal/nf_status_bar.dart';
 import '../../widgets/searchable_dropdown.dart';
 import 'details/nfse_detail_screen.dart';
 
@@ -282,23 +283,14 @@ class _NfseScreenState extends State<NfseScreen> {
     return Column(
       children: [
         // Header
-        Container(
-          height: 56,
-          color: GridColors.error,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Row(
-            children: [
-              Icon(Icons.receipt_long, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'NFSe - Nota Fiscal de Serviços',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+        // NfStatusBar (card #503 -- ver task_manager_flutter_merged_final):
+        // mesmo header padrão já usado no app base pras telas fiscais, no
+        // lugar do Container avulso -- widget existia no repo mas nunca
+        // era referenciado em nenhuma tela real (apontado em vários ciclos
+        // de QA como divergência de replicação entre os dois repos).
+        const NfStatusBar(
+          titulo: 'NFSe - Nota Fiscal de Serviços',
+          icone: Icons.receipt_long,
         ),
         // Conteúdo: filtros laterais + grid
         Expanded(
