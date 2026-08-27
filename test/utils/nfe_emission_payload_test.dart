@@ -69,6 +69,17 @@ void main() {
       expect(message, 'cStat=539 - Duplicidade de NF-e');
     });
 
+    test('remove stack trace tecnico da mensagem Sefaz', () {
+      final message = NfeEmissionPayload.readableHttpError(
+        400,
+        '{"data":{"message":"java.lang.IllegalStateException: cStat=539 - Duplicidade de NF-e\\n\\tat br.com.appAcademia.NfeService.emitir(NfeService.java:42)"}}',
+      );
+
+      expect(message, 'cStat=539 - Duplicidade de NF-e');
+      expect(message, isNot(contains('java.lang')));
+      expect(message, isNot(contains('br.com.appAcademia')));
+    });
+
     test('identifica status autorizado para liberar XML e DANFE', () {
       expect(NfeEmissionPayload.isAuthorized('AUTORIZADA'), isTrue);
       expect(NfeEmissionPayload.isAuthorized(' autorizada '), isTrue);
@@ -80,7 +91,9 @@ void main() {
       expect(NfeEmissionPayload.isAuthorized('REJEITADA'), isFalse);
     });
 
-    test('monta payload a partir do shape real retornado por GET /api/nfe_item (cProd/xProd/qCom/vUnCom/vProd)', () {
+    test(
+        'monta payload a partir do shape real retornado por GET /api/nfe_item (cProd/xProd/qCom/vUnCom/vProd)',
+        () {
       // Diferente do teste acima (que usa NfeItemModel.toJson(), so usado em
       // nfe_saida_create_screen.dart), este reproduz o shape que _itens
       // realmente tem dentro de nfe_detail_screen.dart -- e o branch
