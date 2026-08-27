@@ -112,8 +112,14 @@ class NfStatusBar extends StatelessWidget implements PreferredSizeWidget {
                     ? IconButton(
                         tooltip: 'Emitir',
                         onPressed: (loading || !podEmitir) ? null : onEmitir,
+                        // WCAG AA (1.4.11): verde sobre o fundo vermelho
+                        // escuro da barra tinha contraste ~2.5:1 (abaixo do
+                        // minimo 3:1) -- icone branco sobre fundo verde
+                        // (igual ao botao expandido) resolve.
+                        style: IconButton.styleFrom(
+                            backgroundColor: GridColors.success),
                         icon: const Icon(Icons.send,
-                            size: 18, color: GridColors.success),
+                            size: 18, color: Colors.white),
                       )
                     : ElevatedButton.icon(
                         onPressed: (loading || !podEmitir) ? null : onEmitir,
