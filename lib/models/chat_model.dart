@@ -9,6 +9,7 @@ class ChatMessage {
 
   // Novos campos do payload
   final int? empId;
+  final int? parceiroId;
   final int? codApp;
   final int? codUsuOrig;
   final int? codUsuDest;
@@ -29,6 +30,7 @@ class ChatMessage {
     this.fileName,
     this.timestamp,
     this.empId,
+    this.parceiroId,
     this.codApp,
     this.codUsuOrig,
     this.codUsuDest,
@@ -47,20 +49,22 @@ class ChatMessage {
       sender: json['sender'] ?? '',
       content: json['content'] ?? '',
       type: json['type'] ?? '',
-      fileId: json['fileId'],
+      fileId: _intFromJson(json['fileId']),
       fileName: json['fileName'],
       timestamp: json['timestamp'],
       fileUrl: json['fileUrl'],
-      empId: json['empId'],
-      codApp: json['codApp'],
-      codUsuOrig: json['codUsuOrig'],
-      codUsuDest: json['codUsuDest'],
+      empId: _intFromJson(json['empId'] ?? json['empresaId']),
+      parceiroId: _intFromJson(
+          json['parceiroId'] ?? json['parcId'] ?? json['clienteId']),
+      codApp: _intFromJson(json['codApp']),
+      codUsuOrig: _intFromJson(json['codUsuOrig']),
+      codUsuDest: _intFromJson(json['codUsuDest']),
       sector: json['sector'],
       chatId: json['chatId'],
       uploadDate: json['uploadDate'],
       text: json['text'],
       status: json['status'],
-      atendenteId: json['atendenteId'],
+      atendenteId: _intFromJson(json['atendenteId']),
     );
   }
 
@@ -77,6 +81,7 @@ class ChatMessage {
 
     // Novos campos
     data['empId'] = empId;
+    data['parceiroId'] = parceiroId;
     data['codApp'] = codApp;
     data['codUsuOrig'] = codUsuOrig;
     data['codUsuDest'] = codUsuDest;
@@ -95,6 +100,12 @@ class ChatMessage {
     return jsonList
         .map((item) => ChatMessage.fromJson(Map<String, dynamic>.from(item)))
         .toList();
+  }
+
+  static int? _intFromJson(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
   }
 }
 
