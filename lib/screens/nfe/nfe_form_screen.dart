@@ -513,11 +513,15 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         const SizedBox(height: 8),
         DropdownButtonFormField<Map<String, dynamic>>(
           value: _topSelecionado,
+          isExpanded: true,
           hint: const Text('Selecione um TOP'),
           items: _topList.map((top) {
             return DropdownMenuItem(
               value: top,
-              child: Text('${top['codigo'] ?? ''} - ${top['descricao'] ?? ''}'),
+              child: Text(
+                '${top['codigo'] ?? ''} - ${top['descricao'] ?? ''}',
+                overflow: TextOverflow.ellipsis,
+              ),
             );
           }).toList(),
           onChanged: (top) => setState(() => _topSelecionado = top),
@@ -548,6 +552,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _ambienteSelecionado,
+          isExpanded: true,
           decoration: InputDecoration(
             labelText: 'Ambiente',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -575,10 +580,14 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _finalidadeSelecionada,
+          isExpanded: true,
           hint: const Text('Selecione a finalidade'),
           items: _finalidades.map((f) {
             final id = f['id']?.toString() ?? '';
-            return DropdownMenuItem(value: id, child: Text(f['descricao']?.toString() ?? id));
+            return DropdownMenuItem(
+              value: id,
+              child: Text(f['descricao']?.toString() ?? id, overflow: TextOverflow.ellipsis),
+            );
           }).toList(),
           onChanged: (v) => setState(() => _finalidadeSelecionada = v),
           decoration: InputDecoration(
@@ -590,10 +599,14 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _formaPagamentoSelecionada,
+          isExpanded: true,
           hint: const Text('Selecione a forma de pagamento'),
           items: _formasPagamento.map((f) {
             final id = f['id']?.toString() ?? '';
-            return DropdownMenuItem(value: id, child: Text(f['descricao']?.toString() ?? id));
+            return DropdownMenuItem(
+              value: id,
+              child: Text(f['descricao']?.toString() ?? id, overflow: TextOverflow.ellipsis),
+            );
           }).toList(),
           onChanged: (v) => setState(() => _formaPagamentoSelecionada = v),
           decoration: InputDecoration(
@@ -677,8 +690,18 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // Achado durante o card de unificação mobile (X6onSLzo, replicado
+        // para merged_final): Row com spaceBetween e sem Expanded/Wrap não
+        // encolhe o botão em telas realmente estreitas (<400px) --
+        // "Itens *" + "Adicionar Item" ultrapassa a largura disponível e
+        // gera RenderFlex overflow (confirmado via widget test em
+        // merged_final). Wrap deixa o botão cair pra linha de baixo nesse
+        // caso, sem afetar telas maiores.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             const Text(
               'Itens *',
