@@ -1,7 +1,15 @@
 fastlane_version "2.0.0"
 
+def app_root
+  File.expand_path("..", __dir__)
+end
+
+def app_path(path)
+  File.expand_path(path, app_root)
+end
+
 def flutter_version
-  pubspec = File.read("../pubspec.yaml")
+  pubspec = File.read(app_path("pubspec.yaml"))
   version_line = pubspec.match(/^version:\s*(.+)/)
   raise "Versão não encontrada no pubspec.yaml" unless version_line
   parts = version_line[1].strip.split("+")
@@ -12,7 +20,9 @@ def flutter_version
 end
 
 def flutter(args)
-  sh("flutter #{args}")
+  Dir.chdir(app_root) do
+    sh("flutter #{args}")
+  end
 end
 
 def railway_backend_url
@@ -28,7 +38,9 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 platform :ios do
 
-  before_all do
+  before_all do |lane|
+    next if lane == :tests
+
     ensure_env_vars(
       env_vars: [
         "APP_STORE_CONNECT_API_KEY_KEY_ID",
@@ -41,7 +53,7 @@ platform :ios do
     app_store_connect_api_key(
       key_id:       ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
       issuer_id:    ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"],
+      key_filepath: app_path(ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"]),
       duration:     1200,
       in_house:     false
     )
@@ -50,20 +62,20 @@ platform :ios do
   desc "Roda os testes do iOS"
   lane :tests do
     run_tests(
-      workspace:  "ios/Runner.xcworkspace",
+      workspace:  app_path("ios/Runner.xcworkspace"),
       scheme:     "Runner",
       devices:    ["iPhone 15", "iPhone 15 Pro"],
       clean:      true,
-      output_dir: "fastlane/test_output/ios"
+      output_dir: app_path("fastlane/test_output/ios")
     )
   end
 
   desc "Captura screenshots em todos os dispositivos e idiomas"
   lane :screenshots do
     capture_screenshots(
-      workspace:                  "ios/Runner.xcworkspace",
+      workspace:                  app_path("ios/Runner.xcworkspace"),
       scheme:                     "RunnerUITests",
-      output_directory:           "fastlane/screenshots/ios",
+      output_directory:           app_path("fastlane/screenshots/ios"),
       clear_previous_screenshots: true
     )
     frame_screenshots(white: true)
@@ -82,10 +94,10 @@ platform :ios do
   lane :beta do
     ver = flutter_version
     match(type: "appstore", readonly: true)
-    increment_build_number(build_number: ver[:build], xcodeproj: "ios/Runner.xcodeproj")
+    increment_build_number(build_number: ver[:build], xcodeproj: app_path("ios/Runner.xcodeproj"))
     flutter("build ipa --release --build-name=#{ver[:name]} --build-number=#{ver[:build]}")
     upload_to_testflight(
-      ipa:                               "build/ios/ipa/Runner.ipa",
+      ipa:                               app_path("build/ios/ipa/Runner.ipa"),
       skip_waiting_for_build_processing: true
     )
     slack(message: "✅ iOS beta #{ver[:name]}+#{ver[:build]} enviado para TestFlight!", slack_url: ENV["SLACK_URL"]) if ENV["SLACK_URL"]
@@ -95,10 +107,10 @@ platform :ios do
   lane :release do
     ver = flutter_version
     match(type: "appstore", readonly: true)
-    increment_build_number(build_number: ver[:build], xcodeproj: "ios/Runner.xcodeproj")
+    increment_build_number(build_number: ver[:build], xcodeproj: app_path("ios/Runner.xcodeproj"))
     flutter("build ipa --release --build-name=#{ver[:name]} --build-number=#{ver[:build]}")
     upload_to_app_store(
-      ipa:               "build/ios/ipa/Runner.ipa",
+      ipa:               app_path("build/ios/ipa/Runner.ipa"),
       skip_metadata:     false,
       skip_screenshots:  false,
       submit_for_review: false,
@@ -118,7 +130,9 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 platform :android do
 
-  before_all do
+  before_all do |lane|
+    next if lane == :tests
+
     ensure_env_vars(
       env_vars: ["ANDROID_KEYSTORE_PATH", "ANDROID_KEY_ALIAS",
                  "ANDROID_STORE_PASSWORD", "ANDROID_KEY_PASSWORD"]
@@ -128,20 +142,20 @@ platform :android do
   desc "Roda os testes unitários"
   lane :tests do
     flutter("test")
-    gradle(task: "test", project_dir: "android")
+    gradle(task: "test", project_dir: app_path("android"))
   end
 
   desc "Captura screenshots via Espresso"
   lane :screenshots do
-    gradle(task: "clean",               project_dir: "android")
-    gradle(task: "assembleDebug",       project_dir: "android")
-    gradle(task: "assembleAndroidTest", project_dir: "android")
+    gradle(task: "clean",               project_dir: app_path("android"))
+    gradle(task: "assembleDebug",       project_dir: app_path("android"))
+    gradle(task: "assembleAndroidTest", project_dir: app_path("android"))
     capture_android_screenshots(
-      output_directory:           "fastlane/screenshots/android",
+      output_directory:           app_path("fastlane/screenshots/android"),
       clear_previous_screenshots: true,
       locales:                    ["pt-BR", "en-US"],
-      app_apk_path:               "android/app/build/outputs/apk/debug/app-debug.apk",
-      tests_apk_path:             "android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+      app_apk_path:               app_path("android/app/build/outputs/apk/debug/app-debug.apk"),
+      tests_apk_path:             app_path("android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
     )
   end
 
@@ -151,7 +165,7 @@ platform :android do
     flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
     upload_to_play_store(
       track:                "internal",
-      aab:                  "build/app/outputs/bundle/release/app-release.aab",
+      aab:                  app_path("build/app/outputs/bundle/release/app-release.aab"),
       skip_upload_metadata: true,
       skip_upload_images:   true,
       skip_upload_screenshots: true
@@ -165,7 +179,7 @@ platform :android do
     flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
     upload_to_play_store(
       track:                   "production",
-      aab:                     "build/app/outputs/bundle/release/app-release.aab",
+      aab:                     app_path("build/app/outputs/bundle/release/app-release.aab"),
       skip_upload_metadata:    false,
       skip_upload_images:      false,
       skip_upload_screenshots: false

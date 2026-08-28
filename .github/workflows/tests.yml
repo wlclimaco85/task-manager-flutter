@@ -22,15 +22,12 @@ jobs:
 
       - name: Flutter pub get
         run: flutter pub get
-        working-directory: task_manager_flutter
 
       - name: Flutter analyze
         run: flutter analyze
-        working-directory: task_manager_flutter
 
       - name: Flutter test
         run: flutter test --coverage
-        working-directory: task_manager_flutter
 
       - name: Flutter test — cenario de producao (context-path /boletobancos)
         # Regressao do incidente P0 2026-08-21: sem este dart-define, o teste
@@ -41,7 +38,6 @@ jobs:
           flutter test
           --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
           test/utils/api_links_production_context_path_test.dart
-        working-directory: task_manager_flutter
 
   android-tests:
     name: Android Unit Tests
@@ -68,15 +64,12 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: task_manager_flutter
 
       - name: Flutter pub get
         run: flutter pub get
-        working-directory: task_manager_flutter
 
       - name: Run Android tests via Fastlane
         run: bundle exec fastlane android tests
-        working-directory: task_manager_flutter
 
   ios-tests:
     name: iOS Unit Tests
@@ -97,15 +90,12 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: task_manager_flutter
 
       - name: Flutter pub get
         run: flutter pub get
-        working-directory: task_manager_flutter
 
       - name: Run iOS tests via Fastlane
         run: bundle exec fastlane ios tests
-        working-directory: task_manager_flutter
         env:
           APP_STORE_CONNECT_API_KEY_KEY_ID:       ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID:    ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
