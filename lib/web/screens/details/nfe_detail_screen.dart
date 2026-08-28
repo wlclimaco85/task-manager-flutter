@@ -27,6 +27,14 @@ const _dark = Color(0xFF212121);
 
 const double _kCampoMinWidth = 260;
 
+@visibleForTesting
+bool isNfeRascunhoImportacao(Object? status) =>
+    (status?.toString() ?? '').toUpperCase() == 'RASCUNHO_IMPORTACAO';
+
+@visibleForTesting
+String nfeEntradaPrimaryActionLabel(Object? status) =>
+    isNfeRascunhoImportacao(status) ? 'Confirmar Entrada' : 'Aceitar';
+
 class NfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   const NfeSankhyaDetailScreen({super.key, required this.item});
@@ -96,6 +104,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
   String get _nfeId => widget.item['id']?.toString() ?? '';
   bool get _isEntrada =>
       widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
+  bool get _isRascunhoImportacao =>
+      isNfeRascunhoImportacao(_statusVal ?? widget.item['status']);
 
   @override
   void initState() {
@@ -288,10 +298,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _loadPagamentos() async {
     if (_isNovo) return;
     setState(() => _pagamentosLoading = true);
+    var financeiroCarregado = false;
     try {
       // Pagamentos
       final rp = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos');
+      final pagamentosOk = rp.statusCode == 200;
       if (rp.statusCode == 200) {
         final b = jsonDecode(rp.body);
         final List raw = b is List
@@ -307,6 +319,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Fatura
       final rf =
           await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura');
+      final faturaOk = rf.statusCode == 200 || rf.statusCode == 404;
       if (rf.statusCode == 200) {
         try {
           final bf = jsonDecode(rf.body);
@@ -325,6 +338,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Duplicatas
       final rd = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas');
+      final duplicatasOk = rd.statusCode == 200;
       if (rd.statusCode == 200) {
         final bd = jsonDecode(rd.body);
         final List rawd = bd is List
@@ -337,8 +351,40 @@ class _State extends State<NfeSankhyaDetailScreen> {
             .map((e) => NfeDuplicata.fromJson(Map<String, dynamic>.from(e)))
             .toList());
       }
+      financeiroCarregado = pagamentosOk && faturaOk && duplicatasOk;
     } catch (_) {}
+    if (!mounted) return;
+    if (financeiroCarregado && _isRascunhoImportacao) {
+      _aplicarDefaultsFinanceirosDaImportacao();
+    }
     setState(() => _pagamentosLoading = false);
+  }
+
+  void _aplicarDefaultsFinanceirosDaImportacao() {
+    final valorTotal = _valorNfe();
+    if (valorTotal <= 0) return;
+
+    if (_pagamentos.isEmpty) {
+      _pagamentos = [NfePagamento(tPag: '01', vPag: valorTotal)];
+    }
+    if (_novoPagVpag.text.trim().isEmpty) {
+      _novoPagVpag.text = _valorMonetario(valorTotal);
+    }
+    if (_fatura == null && _fatNFat.text.trim().isEmpty) {
+      final numeroFatura =
+          _numeroCtrl.text.trim().isNotEmpty ? _numeroCtrl.text.trim() : _nfeId;
+      _fatNFat.text = numeroFatura;
+      _fatVOrig.text = _valorMonetario(valorTotal);
+      _fatVLiq.text = _valorMonetario(valorTotal);
+    }
+    if (_duplicatas.isEmpty) {
+      _duplicatas = [
+        NfeDuplicata(nDup: '001', dVenc: _hojeIso(), vDup: valorTotal),
+      ];
+      _dupNDup.text = '001';
+      _dupDVenc.text = _hojeIso();
+      _dupVDup.text = _valorMonetario(valorTotal);
+    }
   }
 
   Future<void> _adicionarPagamento() async {
@@ -651,7 +697,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   List<Widget> _actionsEntrada() => [
         _appBarBtn(Icons.upload_file, 'Importar XML', () => _importarXml()),
-        _appBarBtn(Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
+        _isRascunhoImportacao
+            ? _appBarBtn(Icons.check_circle_outline, 'Confirmar Entrada',
+                () => _confirmarEntrada())
+            : _appBarBtn(
+                Icons.check_circle_outline, 'Aceitar', () => _aceitar()),
         _appBarBtn(Icons.cancel_outlined, 'Recusar', () => _recusar()),
         const SizedBox(width: 8),
       ];
@@ -978,6 +1028,53 @@ class _State extends State<NfeSankhyaDetailScreen> {
     }
   }
 
+  Future<void> _confirmarEntrada() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmar NF-e Entrada',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text('Confirma a entrada da NF-e #$_nfeId?',
+            style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: _green, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final r = await TenantContext.post(
+          ApiLinks.nfeImportacaoConfirmarEntrada(_nfeId), {});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(r.statusCode == 200
+              ? 'NF-e Entrada confirmada!'
+              : 'Erro ${r.statusCode}'),
+          backgroundColor: r.statusCode == 200 ? _green : _red));
+      if (r.statusCode == 200) {
+        setState(() {
+          _statusVal = 'AUTORIZADA';
+          widget.item['status'] = 'AUTORIZADA';
+        });
+        await _loadContas();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: _red));
+      }
+    }
+  }
+
   Future<void> _recusar() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1289,31 +1386,47 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Future<void> _salvarCabecalho() async {
-    final body = <String, dynamic>{
-      if (!_isNovo) 'id': widget.item['id'],
-      'chave': _chaveCtrl.text,
-      'numero': _numeroCtrl.text,
-      'serie': _serieCtrl.text,
-      if (_statusVal != null) 'status': _statusVal,
-      if (_ambienteVal != null) 'ambiente': _ambienteVal,
-      'tipoOperacao': widget.item['tipoOperacao'] ?? 'SAIDA',
-      if (_empresaId != null)
-        'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
-      if (_parceiroId != null)
-        'parceiro': {'id': int.tryParse(_parceiroId!) ?? _parceiroId},
-      if (_destinatarioId != null)
-        'destinatario': {
-          'id': int.tryParse(_destinatarioId!) ?? _destinatarioId
-        },
-      if (_formaPagId != null)
-        'formaPagamento': {'id': int.tryParse(_formaPagId!) ?? _formaPagId},
-      if (_finalidadeId != null)
-        'nfeFinalidade': {'id': int.tryParse(_finalidadeId!) ?? _finalidadeId},
-      if (_tipoOperacaoId != null)
-        'nfeTipoOperacao': {
-          'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
-        },
-    };
+    final body = _isNovo
+        ? <String, dynamic>{
+            'chave': _chaveCtrl.text,
+            'numero': _numeroCtrl.text,
+            'serie': _serieCtrl.text,
+            if (_statusVal != null) 'status': _statusVal,
+            if (_ambienteVal != null) 'ambiente': _ambienteVal,
+            'tipoOperacao': widget.item['tipoOperacao'] ?? 'SAIDA',
+            if (_empresaId != null)
+              'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
+            if (_parceiroId != null)
+              'parceiro': {'id': int.tryParse(_parceiroId!) ?? _parceiroId},
+            if (_destinatarioId != null)
+              'destinatario': {
+                'id': int.tryParse(_destinatarioId!) ?? _destinatarioId
+              },
+            if (_formaPagId != null)
+              'formaPagamento': {
+                'id': int.tryParse(_formaPagId!) ?? _formaPagId
+              },
+            if (_finalidadeId != null)
+              'nfeFinalidade': {
+                'id': int.tryParse(_finalidadeId!) ?? _finalidadeId
+              },
+            if (_tipoOperacaoId != null)
+              'nfeTipoOperacao': {
+                'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
+              },
+          }
+        : <String, dynamic>{
+            if (_tipoOperacaoId != null)
+              'nfeTipoOperacaoId':
+                  int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
+            if (widget.item['natOp'] != null) 'natOp': widget.item['natOp'],
+            if (widget.item['indFinal'] != null)
+              'indFinal': widget.item['indFinal'],
+            if (widget.item['indPres'] != null)
+              'indPres': widget.item['indPres'],
+            if (widget.item['finalidade'] != null)
+              'finalidade': widget.item['finalidade'],
+          };
     try {
       final r = _isNovo
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfe', body)
@@ -1428,16 +1541,51 @@ class _State extends State<NfeSankhyaDetailScreen> {
           // Form: usa o form customizado com dropdowns
           Expanded(
               child: _itensGrid
-                  ? _gridSemHeader(
-                      telaNome: 'nfe_item',
-                      extraParams: {'nfeId': _nfeId, 'nfe_id': _nfeId},
-                    )
+                  ? _itensTabelaResumo()
                   : (_itens.isEmpty
                       ? const Center(
                           child: Text('Nenhum item',
                               style: TextStyle(color: _grey)))
                       : _iForm())),
         ]));
+  }
+
+  Widget _itensTabelaResumo() {
+    if (_itens.isEmpty) {
+      return const Center(
+          child: Text('Nenhum item encontrado',
+              style: TextStyle(color: _grey, fontSize: 12)));
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowHeight: 34,
+          dataRowMinHeight: 32,
+          dataRowMaxHeight: 40,
+          columnSpacing: 28,
+          columns: const [
+            DataColumn(label: Text('Cod produto')),
+            DataColumn(label: Text('Nome do produto')),
+            DataColumn(label: Text('NCM')),
+            DataColumn(label: Text('Quantidade')),
+            DataColumn(label: Text('Vlr Unitario')),
+            DataColumn(label: Text('Valor Total')),
+          ],
+          rows: _itens.map((item) {
+            return DataRow(cells: [
+              DataCell(Text(_itemText(item, 'cProd', 'c_prod'))),
+              DataCell(Text(_itemText(item, 'xProd', 'x_prod'))),
+              DataCell(Text(_itemText(item, 'ncm', 'ncm'))),
+              DataCell(Text(_itemValor(item, 'qCom', 'q_com'))),
+              DataCell(Text(_itemMoeda(item, 'vUnCom', 'v_un_com'))),
+              DataCell(Text(_itemMoeda(item, 'vProd', 'v_prod'))),
+            ]);
+          }).toList(),
+        ),
+      ),
+    );
   }
 
   Widget _iForm() {
@@ -1700,6 +1848,32 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   String _valorMonetario(double value) => value.toStringAsFixed(2);
 
+  double _valorNfe() => _asDouble(widget.item['valorTotal']) ?? 0;
+
+  String _itemText(Map<String, dynamic> item, String camel, String snake) {
+    return item[camel]?.toString() ?? item[snake]?.toString() ?? '';
+  }
+
+  String _itemValor(Map<String, dynamic> item, String camel, String snake) {
+    final valor = _asDouble(item[camel] ?? item[snake]);
+    return valor == null ? '' : _valorDecimal(valor);
+  }
+
+  String _itemMoeda(Map<String, dynamic> item, String camel, String snake) {
+    final valor = _asDouble(item[camel] ?? item[snake]);
+    return valor == null ? '' : _valorMonetario(valor);
+  }
+
+  double _sumItens(String camel, String snake) => _itens.fold<double>(
+      0, (sum, item) => sum + (_asDouble(item[camel] ?? item[snake]) ?? 0));
+
+  String _hojeIso() {
+    final now = DateTime.now();
+    final mes = now.month.toString().padLeft(2, '0');
+    final dia = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$mes-$dia';
+  }
+
   void _recalcularTotalItem(Map<String, dynamic> item) {
     final quantidade = _asDouble(item['q_com'] ?? item['qCom']) ?? 1;
     final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0;
@@ -1825,14 +1999,35 @@ class _State extends State<NfeSankhyaDetailScreen> {
                   Icon(ic, size: 18, color: _dark, semanticLabel: tooltip))));
 
   Widget _totaisTab() {
-    final vt = widget.item['valorTotal']?.toString() ?? '0,00';
+    final valorNota = _valorNfe();
+    final totalProdutos = _sumItens('vProd', 'v_prod');
+    final totais = <MapEntry<String, double>>[
+      MapEntry('Vlr. Nota', valorNota),
+      MapEntry('Total Produtos', totalProdutos > 0 ? totalProdutos : valorNota),
+      const MapEntry('Total Serviços', 0),
+      MapEntry('ICMS', _sumItens('vIcms', 'v_icms')),
+      MapEntry('ICMS-ST', _sumItens('vIcmsSt', 'v_icms_st')),
+      MapEntry('IPI', _sumItens('vIpi', 'v_ipi')),
+      MapEntry('PIS', _sumItens('vPis', 'v_pis')),
+      MapEntry('COFINS', _sumItens('vCofins', 'v_cofins')),
+      MapEntry('Frete', _sumItens('vFrete', 'v_frete')),
+      MapEntry('Seguro', _sumItens('vSeg', 'v_seg')),
+      MapEntry('Desconto', _sumItens('vDesc', 'v_desc')),
+      MapEntry('Outros', _sumItens('vOutro', 'v_outro')),
+    ];
     return Padding(
         padding: const EdgeInsets.all(10),
-        child: Row(children: [
-          _card('Vlr. Nota', vt),
-          _card('Total Produtos', vt),
-          _card('Total Serviços', '0,00'),
-        ]));
+        child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: totais
+                .where((t) =>
+                    t.value != 0 ||
+                    t.key.startsWith('Vlr.') ||
+                    t.key == 'Total Produtos' ||
+                    t.key == 'Total Serviços')
+                .map((t) => _card(t.key, _valorMonetario(t.value)))
+                .toList()));
   }
 
   Widget _impostosTab() => const Padding(
@@ -2017,17 +2212,19 @@ class _State extends State<NfeSankhyaDetailScreen> {
               color: const Color(0xFFF8F8F8),
               border: Border.all(color: _bord),
               borderRadius: BorderRadius.circular(4)),
-          child: Row(children: [
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             SizedBox(
+              height: 48,
               width: 160,
               child: DropdownButtonFormField<String>(
                 value: _novoPagTpag,
-                isDense: true,
+                isExpanded: true,
+                isDense: false,
                 decoration: const InputDecoration(
                     labelText: 'Tipo',
-                    isDense: true,
+                    isDense: false,
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                     border: OutlineInputBorder()),
                 style: const TextStyle(fontSize: 12, color: _dark),
                 items: NfePagamento.todosCodigos
