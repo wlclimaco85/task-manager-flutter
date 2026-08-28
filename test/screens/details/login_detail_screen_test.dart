@@ -14,6 +14,7 @@ import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/role_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
+import 'package:task_manager_flutter/models/setor_model.dart';
 
 // Mock simples do SecurityCheck — permite todas as operações
 bool alwaysAllow(String permission) => true;
@@ -70,7 +71,8 @@ void main() {
 
     /// TEST 3: Seleção de role persiste no modelo após serialize/deserialize
     test('Login com roles selecionadas serializa corretamente', () {
-      final role1 = Role(id: 1, key: 'ROLE_ADMIN', description: 'Administrador');
+      final role1 =
+          Role(id: 1, key: 'ROLE_ADMIN', description: 'Administrador');
       final role2 = Role(id: 2, key: 'ROLE_USER', description: 'Usuário');
 
       final login = Login(
@@ -94,6 +96,31 @@ void main() {
       expect(restored.roles!.length, 2);
       expect(restored.roles![0].key, 'ROLE_ADMIN');
       expect(restored.roles![1].key, 'ROLE_USER');
+    });
+
+    test('Login com setores selecionados serializa corretamente', () {
+      final setor1 = Setor(id: 10, nome: 'Fiscal');
+      final setor2 = Setor(id: 11, nome: 'Departamento Fiscal');
+
+      final login = Login(
+        id: 1,
+        email: 'teste@example.com',
+        nome: 'Teste Login',
+        setores: [setor1, setor2],
+        empresa: Empresa(id: 1, nome: 'Empresa Teste'),
+        parceiro: Parceiro(id: 10, nome: 'Parceiro Teste'),
+      );
+
+      final json = login.toJson();
+      expect(json['setores'], isNotNull);
+      expect(json['setores'], isA<List>());
+      expect(json['setores'].length, 2);
+      expect(json['setores'][0]['id'], 10);
+
+      final restored = Login.fromJson(json);
+      expect(restored.setores, isNotNull);
+      expect(restored.setores!.map((s) => s.id), containsAll([10, 11]));
+      expect(restored.setores!.map((s) => s.nome), contains('Fiscal'));
     });
 
     /// TEST 4: Login novo tem roles vazia
