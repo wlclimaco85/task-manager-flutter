@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/login_session_sync.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show SecurityCheck, FieldType, FieldConfigWindows;
+    show SecurityCheck, FieldType, FieldConfigWindows, FileConfig;
 import '../../../services/network_caller.dart';
 
 class MobileLoginDetailScreen extends StatelessWidget {
@@ -94,6 +95,16 @@ class MobileLoginDetailScreen extends StatelessWidget {
         dropdownDisplayField: 'descricao',
         dropdownFutureBuilder: _loadSetores,
       ),
+      const FieldConfigWindows(
+        fieldName: 'foto',
+        label: 'Foto',
+        icon: Icons.photo_camera,
+        fieldType: FieldType.file,
+        fileConfig: FileConfig(
+          allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+          maxFileSize: 2 * 1024 * 1024,
+        ),
+      ),
     ];
 
     return GenericDetailFormScreen(
@@ -101,6 +112,7 @@ class MobileLoginDetailScreen extends StatelessWidget {
       telaNome: 'login',
       hasPermission: hasPermission,
       fieldOverrides: fieldOverrides,
+      onAfterSave: sincronizarSessaoLoginAtualAposSalvar,
       relatedTabs: [
         RelatedGridTab(
           title: 'Roles',

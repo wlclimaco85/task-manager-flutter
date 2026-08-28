@@ -8,6 +8,9 @@ import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
 
+const _avatarPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
+
 void main() {
   group('AppSidebar', () {
     setUp(() {
@@ -70,10 +73,83 @@ void main() {
       expect(find.text('teste@exemplo.com'), findsOneWidget);
     });
 
+    testWidgets('renderiza email atualizado da sessao do usuario',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(email: 'brasilmodasurfltda@gmail.com'),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(find.text('brasilmodasurfltda@gmail.com'), findsOneWidget);
+      expect(find.text('teste@exemplo.com'), findsNothing);
+    });
+
     testWidgets('renderiza foto do avatar (CircleAvatar)', (tester) async {
       await tester.pumpWidget(buildSidebar());
 
       expect(find.byType(CircleAvatar), findsWidgets);
+    });
+
+    testWidgets('renderiza foto do login quando backend envia campo foto',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        data: Data.fromJson({
+          'id': 1,
+          'email': 'teste@exemplo.com',
+          'photo': '',
+          'foto': 'data:image/png;base64,$_avatarPngBase64',
+        }),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('atualiza avatar quando sessao do login recebe foto',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 967,
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsNothing,
+      );
+
+      await AuthUtility.setUserInfo(LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 967,
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+          foto: 'data:image/png;base64,$_avatarPngBase64',
+        ),
+      ));
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('renderiza icone de notificacao e logout', (tester) async {

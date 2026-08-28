@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/alert_model.dart';
@@ -234,7 +235,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     // FilterActionBar ou customBottom) em vez de reimplementar a conta —
     // evitava desalinhar o dropdown quando customBottom tem altura diferente
     // de 52 (ex.: 44 no Calendário Financeiro).
-    final hasBottomBar = widget.customBottom != null || widget.showFilterButton == true;
+    final hasBottomBar =
+        widget.customBottom != null || widget.showFilterButton == true;
     final topOffset = widget.preferredSize.height + (hasBottomBar ? 16 : 12);
 
     notificationOverlay = OverlayEntry(
@@ -339,15 +341,28 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   Uint8List _getUserAvatar() {
-    final base64String = AuthUtility.userInfo?.login?.foto ??
-        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
-    if (base64String != null && base64String.trim().isNotEmpty) {
-      try {
-        final UriData? data =
-            Uri.parse("data:image/png;base64,$base64String").data;
-        if (data != null) return data.contentAsBytes();
-      } catch (_) {}
+    final candidates = [
+      AuthUtility.userInfo?.login?.foto,
+      AuthUtility.userInfo?.data?.login?.foto,
+      AuthUtility.userInfo?.data?.photo,
+      AuthUtility.userInfo?.data?.codDadosPessoal?.photo,
+    ];
+    for (final raw in candidates) {
+      final avatar = _decodeUserAvatar(raw);
+      if (avatar.isNotEmpty) return avatar;
     }
+    return Uint8List(0);
+  }
+
+  Uint8List _decodeUserAvatar(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return Uint8List(0);
+    try {
+      final base64Only = raw.contains(';base64,')
+          ? raw.substring(raw.indexOf(';base64,') + 8)
+          : raw.trim();
+      final UriData? data = Uri.parse('data:image/*;base64,$base64Only').data;
+      if (data != null) return data.contentAsBytes();
+    } catch (_) {}
     return Uint8List(0);
   }
 
@@ -506,7 +521,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             Text(
                               _getCompanyName(),
                               style: TextStyle(
-                                color: GridColors.textPrimary.withValues(alpha: 0.75),
+                                color: GridColors.textPrimary
+                                    .withValues(alpha: 0.75),
                                 fontSize: 11,
                                 overflow: TextOverflow.ellipsis,
                               ),

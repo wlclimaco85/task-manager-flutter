@@ -66,7 +66,7 @@ class _AppSidebarState extends State<AppSidebar> {
     // Itens exclusivos do dono do sistema (wlclimaco@gmail.com).
     const ownerOnly = {'match', 'timeline', 'instagram_monitor'};
     if (ownerOnly.contains(item.id)) {
-      final email = widget.userEmail.toLowerCase();
+      final email = _getUserEmail().toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
     // Quando o backend enviou permissões RBAC, elas são a fonte de verdade.
@@ -93,6 +93,7 @@ class _AppSidebarState extends State<AppSidebar> {
     _computeAllowed();
     _applyDefaultExpansion();
     _loadFavorites();
+    AuthUtility.sessionVersion.addListener(_onSessionChanged);
     _searchCtrl.addListener(() {
       if (mounted && !_disposed)
         setState(() => _searchQuery = _searchCtrl.text);
@@ -138,8 +139,14 @@ class _AppSidebarState extends State<AppSidebar> {
   @override
   void dispose() {
     _disposed = true;
+    AuthUtility.sessionVersion.removeListener(_onSessionChanged);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (!mounted || _disposed) return;
+    setState(() {});
   }
 
   void _computeAllowed() {
@@ -199,8 +206,20 @@ class _AppSidebarState extends State<AppSidebar> {
   /// Suporta strings que já trazem prefixo "data:image/...;base64," do backend.
   /// Fix WR-04: usa MIME type genérico `image/*` para suportar PNG, JPEG, etc.
   Uint8List _getUserAvatar() {
-    final raw = AuthUtility.userInfo?.login?.foto ??
-        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
+    final candidates = [
+      AuthUtility.userInfo?.login?.foto,
+      AuthUtility.userInfo?.data?.login?.foto,
+      AuthUtility.userInfo?.data?.photo,
+      AuthUtility.userInfo?.data?.codDadosPessoal?.photo,
+    ];
+    for (final raw in candidates) {
+      final avatar = _decodeUserAvatar(raw);
+      if (avatar.isNotEmpty) return avatar;
+    }
+    return Uint8List(0);
+  }
+
+  Uint8List _decodeUserAvatar(String? raw) {
     if (raw == null || raw.trim().isEmpty) return Uint8List(0);
     try {
       final base64Only = raw.contains(';base64,')
@@ -220,13 +239,23 @@ class _AppSidebarState extends State<AppSidebar> {
         '';
   }
 
+  String _getUserEmail() {
+    return AuthUtility.userInfo?.login?.email ??
+        AuthUtility.userInfo?.data?.email ??
+        widget.userEmail;
+  }
+
+  String _getUserName() {
+    return AuthUtility.userInfo?.login?.nome ?? widget.userName;
+  }
+
   /// Inicial para o avatar: usa o email (sempre disponível) em vez do nome.
   /// Strategy email-first: garante consistência visual entre plataformas.
   /// Fix WR-02: evita divergência cliente vs web de avatar initial.
   String _avatarInitial() {
-    final email = widget.userEmail;
+    final email = _getUserEmail();
     if (email.isNotEmpty) return email[0].toUpperCase();
-    final name = widget.userName;
+    final name = _getUserName();
     if (name.isNotEmpty) return name[0].toUpperCase();
     return 'U';
   }
@@ -368,9 +397,9 @@ class _AppSidebarState extends State<AppSidebar> {
                   children: [
                     // Linha 1: email (identificador principal do usuário)
                     Text(
-                      widget.userEmail.isNotEmpty
-                          ? widget.userEmail
-                          : widget.userName,
+                      _getUserEmail().isNotEmpty
+                          ? _getUserEmail()
+                          : _getUserName(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

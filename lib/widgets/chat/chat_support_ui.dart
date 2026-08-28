@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/chat_model.dart';
 import '../../utils/grid_colors.dart';
 
@@ -6,10 +7,13 @@ class ChatSupportPalette {
   ChatSupportPalette._();
 
   static const Color surface = GridColors.card;
-  static const Color page = Color(0xFFEAF5EE); // verde institucional suave (GridColors.secondarySoft)
+  static const Color page =
+      Color(0xFFEAF5EE); // verde institucional suave (GridColors.secondarySoft)
   static const Color subtle = Color(0xFFD4EAD8);
-  static const Color outbound = Color(0xFFCDE8D2); // minha mensagem — verde mais vivo
-  static const Color inbound = Color(0xFFF9FAFB); // mensagem recebida — off-white
+  static const Color outbound =
+      Color(0xFFCDE8D2); // minha mensagem — verde mais vivo
+  static const Color inbound =
+      Color(0xFFF9FAFB); // mensagem recebida — off-white
 }
 
 class ChatStatusPill extends StatelessWidget {
@@ -365,7 +369,7 @@ class ChatConversationHeader extends StatelessWidget {
   }
 }
 
-class ChatComposer extends StatelessWidget {
+class ChatComposer extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onAttach;
   final VoidCallback onTicket;
@@ -384,6 +388,30 @@ class ChatComposer extends StatelessWidget {
   });
 
   @override
+  State<ChatComposer> createState() => _ChatComposerState();
+}
+
+class _ChatComposerState extends State<ChatComposer> {
+  static const _duplicateSubmitWindow = Duration(milliseconds: 120);
+
+  DateTime? _lastShortcutSendAt;
+
+  void _sendFromShortcut() {
+    _lastShortcutSendAt = DateTime.now();
+    widget.onSend();
+  }
+
+  void _sendFromSubmitted() {
+    final lastShortcutSendAt = _lastShortcutSendAt;
+    if (lastShortcutSendAt != null &&
+        DateTime.now().difference(lastShortcutSendAt) <
+            _duplicateSubmitWindow) {
+      return;
+    }
+    widget.onSend();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
@@ -399,44 +427,50 @@ class ChatComposer extends StatelessWidget {
               tooltip: 'Anexar arquivo',
               icon: const Icon(Icons.attach_file),
               color: GridColors.secondary,
-              onPressed: onAttach,
+              onPressed: widget.onAttach,
             ),
             IconButton(
               tooltip: 'Abrir chamado',
               icon: const Icon(Icons.assignment_outlined),
               color: GridColors.primary,
-              onPressed: onTicket,
+              onPressed: widget.onTicket,
             ),
             Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
-                decoration: InputDecoration(
-                  hintText: 'Digite sua mensagem...',
-                  filled: true,
-                  fillColor: ChatSupportPalette.page,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: GridColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: GridColors.divider.withValues(alpha: 0.8),
+              child: CallbackShortcuts(
+                bindings: {
+                  const SingleActivator(LogicalKeyboardKey.enter):
+                      _sendFromShortcut,
+                },
+                child: TextField(
+                  controller: widget.controller,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendFromSubmitted(),
+                  decoration: InputDecoration(
+                    hintText: 'Digite sua mensagem...',
+                    filled: true,
+                    fillColor: ChatSupportPalette.page,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: GridColors.primary,
-                      width: 1.5,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: GridColors.divider.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: GridColors.primary,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -454,7 +488,7 @@ class ChatComposer extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: onSend,
+                onPressed: widget.onSend,
                 child: const Icon(Icons.send_rounded, size: 20),
               ),
             ),
