@@ -4,6 +4,7 @@ import '../../../models/empresa_model.dart';
 import '../../../models/aplicativo_model.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/role_model.dart';
+import '../../../models/setor_model.dart';
 import '../../../utils/utils.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
@@ -16,6 +17,7 @@ class Login {
   String? cpfCnpj;
   String? foto;
   List<Role>? roles;
+  List<Setor>? setores;
   LoginEnum? tipoLogin;
   Empresa? empresa;
   Parceiro? parceiro;
@@ -39,6 +41,7 @@ class Login {
     this.cpfCnpj,
     this.foto,
     this.roles,
+    this.setores,
     this.tipoLogin,
     this.empresa,
     this.parceiro,
@@ -58,6 +61,7 @@ class Login {
       'cpfCnpj': cpfCnpj,
       'foto': foto,
       'roles': roles?.map((role) => role.toJson()).toList(),
+      'setores': setores?.map((setor) => setor.toJson()).toList(),
       'tipoLogin': tipoLogin?.value, // Salve o value em vez do index
       'empresa': empresa?.toJson(),
       'parceiro': parceiro?.toJson(),
@@ -80,6 +84,9 @@ class Login {
 
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()
+          : null;
+      setores = json['setores'] != null
+          ? (json['setores'] as List).map((i) => Setor.fromJson(i)).toList()
           : null;
 
       if (json['tipoLogin'] != null) {

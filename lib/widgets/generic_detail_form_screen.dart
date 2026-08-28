@@ -13,7 +13,12 @@ import '../services/tela_caller.dart';
 import '../customization/dynamic_grid_dynamic_screen.dart' as mobile_dyn;
 import '../customization/dynamic_grid_windows_screen.dart' as dyn;
 import 'generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType, SecurityCheck, FileConfig, platformFileToDataUri;
+    show
+        FieldConfigWindows,
+        FieldType,
+        SecurityCheck,
+        FileConfig,
+        platformFileToDataUri;
 
 /// Avalia a expressão `visibleWhen` (formato "<fieldName>==<valor>") contra o
 /// estado atual do formulário. Sem expressão, o campo é sempre visível.
@@ -286,6 +291,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
   bool _saving = false;
   bool _initialized = false;
+  late Map<String, dynamic> _currentItem;
+  int _relatedTabsReloadVersion = 0;
 
   Map<String, FieldConfigWindows> _overrideMap = {};
   Set<String> _suppressedFkFields = {};
@@ -293,6 +300,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   @override
   void initState() {
     super.initState();
+    _currentItem = Map<String, dynamic>.from(widget.item);
     _buildOverrideMaps();
     _telaFuture = _loadTela();
   }
@@ -328,7 +336,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   void _initControllers(TelaConfig tela) {
-    final item = widget.item;
+    final item = _currentItem;
     for (final f in tela.fields) {
       final fn = f.fieldName;
       final fnL = fn.toLowerCase();
@@ -400,7 +408,54 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   dynamic _valueFromItem(String fieldName) {
-    return resolveGenericDetailFormValue(widget.item, fieldName);
+    return resolveGenericDetailFormValue(_currentItem, fieldName);
+  }
+
+  Map<String, dynamic>? _resolveRelatedExtraParams(
+      Map<String, dynamic>? extraParams) {
+    if (extraParams == null) return null;
+    final resolved = Map<String, dynamic>.from(extraParams);
+    final id = _currentItem['id'];
+    if (id != null) {
+      if (resolved.containsKey('loginId')) resolved['loginId'] = id.toString();
+      if (resolved.containsKey('usuarioAberturaId')) {
+        resolved['usuarioAberturaId'] = id.toString();
+      }
+    }
+    final empresaId = _extractId(_currentItem['empresa']) ??
+        _currentItem['empresaId'] ??
+        _currentItem['empId'];
+    if (empresaId != null && resolved.containsKey('empresaId')) {
+      resolved['empresaId'] = empresaId.toString();
+    }
+    final parceiroId = _extractId(_currentItem['parceiro']) ??
+        _currentItem['parceiroId'] ??
+        _currentItem['parcId'];
+    if (parceiroId != null && resolved.containsKey('parceiroId')) {
+      resolved['parceiroId'] = parceiroId.toString();
+    }
+    return resolved;
+  }
+
+  dynamic _extractId(dynamic value) {
+    if (value is Map) return value['id'];
+    return null;
+  }
+
+  void _resetFormState(Map<String, dynamic> item) {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
+    _dropdownValues.clear();
+    _multiValues.clear();
+    _multiValueLabels.clear();
+    _checkboxValues.clear();
+    _dropdownCache.clear();
+    _dropdownFutures.clear();
+    _currentItem = item;
+    _relatedTabsReloadVersion++;
+    _initialized = false;
   }
 
   /// Mesma logica de _initDropdownValue, para multiselect.
@@ -505,7 +560,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     setState(() => _saving = true);
     try {
       final body = <String, dynamic>{};
-      final id = widget.item['id'];
+      final id = _currentItem['id'];
       if (id != null) body['id'] = id;
 
       for (final entry in _controllers.entries) {
@@ -543,7 +598,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
               backgroundColor: GridColors.success),
         );
         if (widget.onAfterSave != null) {
-          await widget.onAfterSave!(body, widget.item);
+          await widget.onAfterSave!(body, _currentItem);
+        }
+        if (resp.body is Map) {
+          setState(() {
+            _resetFormState(Map<String, dynamic>.from(resp.body as Map));
+          });
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -607,7 +667,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             title: rt.title,
             icon: rt.icon,
             gridTelaNome: rt.telaNome,
-            extraParams: rt.extraParams,
+            extraParams: _resolveRelatedExtraParams(rt.extraParams),
             fieldOverrides: rt.fieldOverrides,
             additionalFormData: rt.additionalFormData,
             transformFormData: rt.transformFormData,
@@ -649,6 +709,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                           _buildFormTab(tela),
                           for (var i = 0; i < allTabs.length; i++)
                             _LazyTab(
+                              key: ValueKey(
+                                  'related-tab-$i-$_relatedTabsReloadVersion'),
                               controller: _tabController!,
                               tabIndex: i + 1,
                               builder: () => _buildAutoTab(allTabs[i]),
@@ -1207,13 +1269,15 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                             base64Decode(valorAtual.split(',').last),
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => const Icon(
-                                Icons.person, color: GridColors.textSecondary),
+                                Icons.person,
+                                color: GridColors.textSecondary),
                           )
                         : Image.network(
                             valorAtual,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => const Icon(
-                                Icons.person, color: GridColors.textSecondary),
+                                Icons.person,
+                                color: GridColors.textSecondary),
                           ))
                     : const Icon(Icons.person,
                         color: GridColors.textSecondary, size: 28),
@@ -1239,8 +1303,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(nomeEscolhido,
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: GridColors.textSecondary)),
+                                fontSize: 12, color: GridColors.textSecondary)),
                       ),
                   ],
                 ),
@@ -1659,6 +1722,7 @@ class _LazyTab extends StatefulWidget {
   final WidgetBuilder0 builder;
 
   const _LazyTab({
+    super.key,
     required this.controller,
     required this.tabIndex,
     required this.builder,

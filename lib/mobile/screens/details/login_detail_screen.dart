@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldType, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show SecurityCheck, FieldType, FieldConfigWindows;
 import '../../../services/network_caller.dart';
 
 class MobileLoginDetailScreen extends StatelessWidget {
@@ -46,6 +47,25 @@ class MobileLoginDetailScreen extends StatelessWidget {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _loadSetores() async {
+    try {
+      final response = await NetworkCaller().getRequest(ApiLinks.allSetores);
+      final body = response.body;
+      if (!response.isSuccess || body == null) return [];
+
+      final data = body['data'];
+      final dynamic raw = data is Map ? (data['dados'] ?? data['items']) : data;
+      if (raw is! List) return [];
+
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
@@ -65,6 +85,15 @@ class MobileLoginDetailScreen extends StatelessWidget {
         dropdownFutureBuilder: () =>
             _loadRolesDisponiveis(parceiroId, empresaId),
       ),
+      FieldConfigWindows(
+        fieldName: 'setores',
+        label: 'Setores',
+        fieldType: FieldType.multiselect,
+        isRequired: false,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'descricao',
+        dropdownFutureBuilder: _loadSetores,
+      ),
     ];
 
     return GenericDetailFormScreen(
@@ -77,7 +106,11 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Roles',
           icon: Icons.security,
           telaNome: 'role',
-          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          extraParams: {
+            'loginId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
           // Endpoint com /boletobancos (extrai base do rolesDisponiveis)
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
@@ -86,7 +119,11 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
-          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          extraParams: {
+            'loginId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
           // Endpoint com /boletobancos
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
@@ -95,7 +132,11 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {'usuarioAberturaId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          extraParams: {
+            'usuarioAberturaId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
         ),
       ],
     );
