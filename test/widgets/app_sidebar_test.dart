@@ -8,6 +8,9 @@ import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
 
+const _avatarPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
+
 void main() {
   group('AppSidebar', () {
     setUp(() {
@@ -74,6 +77,28 @@ void main() {
       await tester.pumpWidget(buildSidebar());
 
       expect(find.byType(CircleAvatar), findsWidgets);
+    });
+
+    testWidgets('renderiza foto do login quando backend envia campo foto',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        data: Data.fromJson({
+          'id': 1,
+          'email': 'teste@exemplo.com',
+          'photo': '',
+          'foto': 'data:image/png;base64,$_avatarPngBase64',
+        }),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('renderiza icone de notificacao e logout', (tester) async {

@@ -199,8 +199,20 @@ class _AppSidebarState extends State<AppSidebar> {
   /// Suporta strings que já trazem prefixo "data:image/...;base64," do backend.
   /// Fix WR-04: usa MIME type genérico `image/*` para suportar PNG, JPEG, etc.
   Uint8List _getUserAvatar() {
-    final raw = AuthUtility.userInfo?.login?.foto ??
-        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
+    final candidates = [
+      AuthUtility.userInfo?.login?.foto,
+      AuthUtility.userInfo?.data?.login?.foto,
+      AuthUtility.userInfo?.data?.photo,
+      AuthUtility.userInfo?.data?.codDadosPessoal?.photo,
+    ];
+    for (final raw in candidates) {
+      final avatar = _decodeUserAvatar(raw);
+      if (avatar.isNotEmpty) return avatar;
+    }
+    return Uint8List(0);
+  }
+
+  Uint8List _decodeUserAvatar(String? raw) {
     if (raw == null || raw.trim().isEmpty) return Uint8List(0);
     try {
       final base64Only = raw.contains(';base64,')
