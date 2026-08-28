@@ -7,12 +7,65 @@ import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
 
-Widget _wrap(Widget w) => MaterialApp(home: Scaffold(appBar: w as PreferredSizeWidget?));
+Widget _wrap(Widget w) =>
+    MaterialApp(home: Scaffold(appBar: w as PreferredSizeWidget?));
+
+const _avatarPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
 
 void main() {
   tearDown(() => AuthUtility.userInfo = null);
 
   group('UserBannerAppBar — avatar initial fallback (bug 6a4567ce)', () {
+    testWidgets('exibe foto do login quando backend envia data URI',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'tok',
+        login: Login(
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+          foto: 'data:image/png;base64,$_avatarPngBase64',
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(appBar: UserBannerAppBar(screenTitle: 'Teste')),
+      ));
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('B'), findsNothing);
+    });
+
+    testWidgets('exibe foto do login quando valor esta em base64 puro',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'tok',
+        login: Login(
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+          foto: _avatarPngBase64,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(appBar: UserBannerAppBar(screenTitle: 'Teste')),
+      ));
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('exibe inicial do email quando foto ausente', (tester) async {
       AuthUtility.userInfo = LoginModel(
         token: 'tok',
@@ -28,7 +81,8 @@ void main() {
       expect(find.text('W'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('nao exibe icone person quando email disponivel', (tester) async {
+    testWidgets('nao exibe icone person quando email disponivel',
+        (tester) async {
       AuthUtility.userInfo = LoginModel(
         token: 'tok',
         login: Login(email: 'admin@abc.com'),
@@ -82,7 +136,8 @@ void main() {
       expect(find.text('Escritório ABC'), findsOneWidget);
     });
 
-    testWidgets('nao exibe texto "Empresa" quando empresa nula', (tester) async {
+    testWidgets('nao exibe texto "Empresa" quando empresa nula',
+        (tester) async {
       AuthUtility.userInfo = LoginModel(
         token: 'tok',
         login: Login(nome: 'Washington', email: 'w@test.com', empresa: null),

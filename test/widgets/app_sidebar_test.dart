@@ -73,6 +73,19 @@ void main() {
       expect(find.text('teste@exemplo.com'), findsOneWidget);
     });
 
+    testWidgets('renderiza email atualizado da sessao do usuario',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(email: 'brasilmodasurfltda@gmail.com'),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(find.text('brasilmodasurfltda@gmail.com'), findsOneWidget);
+      expect(find.text('teste@exemplo.com'), findsNothing);
+    });
+
     testWidgets('renderiza foto do avatar (CircleAvatar)', (tester) async {
       await tester.pumpWidget(buildSidebar());
 
@@ -92,6 +105,44 @@ void main() {
       );
 
       await tester.pumpWidget(buildSidebar());
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('atualiza avatar quando sessao do login recebe foto',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 967,
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsNothing,
+      );
+
+      await AuthUtility.setUserInfo(LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 967,
+          email: 'brasilmodasurfltda@gmail.com',
+          nome: 'BRASIL MODA SURF LTDA',
+          foto: 'data:image/png;base64,$_avatarPngBase64',
+        ),
+      ));
+      await tester.pump();
 
       expect(
         find.byWidgetPredicate(

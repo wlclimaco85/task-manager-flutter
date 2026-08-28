@@ -29,19 +29,56 @@ void main() {
     expect(restored?.login?.empresa?.id, equals(5));
   });
 
-  test('setUserInfo nao persiste imagens base64 grandes', () async {
+  test('setUserInfo persiste foto normal do login para restaurar avatar',
+      () async {
     final model = LoginModel(
       token: 'token-test',
       login: Login(
         id: 1,
         email: 'user@test.com',
-        foto: 'base64-muito-grande',
+        foto: 'data:image/png;base64,AAAA',
       ),
     );
 
     await AuthUtility.setUserInfo(model);
 
-    expect(AuthUtility.userInfo?.login?.foto, equals('base64-muito-grande'));
+    final restored = await AuthUtility.getUserInfo();
+
+    expect(restored?.login?.foto, equals('data:image/png;base64,AAAA'));
+  });
+
+  test('setUserInfo nao duplica foto entre login e data no cache', () async {
+    final foto = 'data:image/png;base64,AAAA';
+    final model = LoginModel(
+      token: 'token-test',
+      data: Data(id: 1, email: 'user@test.com', photo: foto),
+      login: Login(id: 1, email: 'user@test.com', foto: foto),
+    );
+
+    await AuthUtility.setUserInfo(model);
+
+    final prefs = await SharedPreferences.getInstance();
+    final stored =
+        jsonDecode(prefs.getString('user_data')!) as Map<String, dynamic>;
+
+    expect(stored['login']['foto'], equals(foto));
+    expect(stored['data'], isNot(contains('photo')));
+  });
+
+  test('setUserInfo nao persiste imagens base64 grandes', () async {
+    final fotoGigante = 'data:image/png;base64,${'A' * (3 * 1024 * 1024 + 1)}';
+    final model = LoginModel(
+      token: 'token-test',
+      login: Login(
+        id: 1,
+        email: 'user@test.com',
+        foto: fotoGigante,
+      ),
+    );
+
+    await AuthUtility.setUserInfo(model);
+
+    expect(AuthUtility.userInfo?.login?.foto, equals(fotoGigante));
 
     final prefs = await SharedPreferences.getInstance();
     final stored =

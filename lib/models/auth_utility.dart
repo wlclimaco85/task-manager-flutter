@@ -1,6 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
@@ -32,9 +33,24 @@ bool _isJwtExpired(String token) {
 
 class AuthUtility {
   static LoginModel? userInfo;
+  static final ValueNotifier<int> sessionVersion = ValueNotifier<int>(0);
+  static const int _maxPersistedSessionMediaLength = 3 * 1024 * 1024;
 
   static Map<String, dynamic> _persistableSessionJson(LoginModel model) {
     final json = model.toJson();
+
+    final login = json['login'];
+    final data = json['data'];
+    if (login is Map && data is Map) {
+      final loginFoto = login['foto'];
+      if (loginFoto is String && loginFoto.trim().isNotEmpty) {
+        if (data['photo'] == loginFoto) data.remove('photo');
+        final dataLogin = data['login'];
+        if (dataLogin is Map && dataLogin['foto'] == loginFoto) {
+          dataLogin.remove('foto');
+        }
+      }
+    }
 
     void stripLargeMedia(dynamic value) {
       if (value is Map) {
@@ -43,7 +59,11 @@ class AuthUtility {
           if (normalized == 'foto' ||
               normalized == 'photo' ||
               normalized == 'imagembytes') {
-            value.remove(key);
+            final media = value[key];
+            if (media is! String ||
+                media.length > _maxPersistedSessionMediaLength) {
+              value.remove(key);
+            }
           } else {
             stripLargeMedia(value[key]);
           }
@@ -97,6 +117,7 @@ class AuthUtility {
 
   static Future<void> setUserInfo(LoginModel model) async {
     userInfo = model;
+    sessionVersion.value++;
     // Atualizar permissões do usuário no PermissionService (menu dinâmico)
     PermissionService().setPermissoes(model.permissoes);
     SharedPreferences _sharedPreferences =
@@ -141,6 +162,7 @@ class AuthUtility {
         await SharedPreferences.getInstance();
     await _sharedPreferences.remove("user_data");
     userInfo = null;
+    sessionVersion.value++;
     // Limpar permissões ao fazer logout
     PermissionService().clear();
     // Encerra o polling de notificacoes nativas (toast/browser) da sessao
