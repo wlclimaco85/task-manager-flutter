@@ -61,8 +61,8 @@ jobs:
         run: |
           VERSION_NAME="$(grep '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([^+]+).*/\1/')"
           VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
-          echo "FLUTTER_BUILD_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
-          echo "FLUTTER_BUILD_NUMBER=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "APP_BUILD_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "APP_BUILD_NUMBER=$VERSION_CODE" >> "$GITHUB_ENV"
 
       - name: Publish to Google Play internal testing
         env:

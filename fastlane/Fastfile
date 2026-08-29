@@ -14,14 +14,23 @@ def flutter_version
   raise "Versão não encontrada no pubspec.yaml" unless version_line
   parts = version_line[1].strip.split("+")
   {
-    name: ENV["FLUTTER_BUILD_NAME"] || parts[0],
-    build: ENV["FLUTTER_BUILD_NUMBER"] || parts[1] || "1"
+    name: ENV["APP_BUILD_NAME"] || ENV["FLUTTER_BUILD_NAME"] || parts[0],
+    build: ENV["APP_BUILD_NUMBER"] || ENV["FLUTTER_BUILD_NUMBER"] || parts[1] || "1"
   }
 end
 
 def flutter(args)
+  reserved_flutter_env = {
+    "FLUTTER_BUILD_NAME" => ENV.delete("FLUTTER_BUILD_NAME"),
+    "FLUTTER_BUILD_NUMBER" => ENV.delete("FLUTTER_BUILD_NUMBER")
+  }
+
   Dir.chdir(app_root) do
     sh("flutter #{args}")
+  end
+ensure
+  reserved_flutter_env.each do |key, value|
+    ENV[key] = value unless value.nil?
   end
 end
 
