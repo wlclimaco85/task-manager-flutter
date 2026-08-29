@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/web/screens/details/nfe_detail_screen.dart';
 
@@ -14,6 +15,46 @@ void main() {
     test('entrada nao exibe financeiro duplicado no detalhe', () {
       expect(exibeSecaoFinanceiraNoDetalheNfe('ENTRADA'), isFalse);
       expect(exibeSecaoFinanceiraNoDetalheNfe('SAIDA'), isTrue);
+    });
+
+    test('campo tipo de pagamento tem altura segura para label e valor', () {
+      expect(nfeDetailPagamentoTipoCampoAltura, greaterThanOrEqualTo(56));
+    });
+
+    testWidgets('campo tipo de pagamento renderiza sem overflow',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 160,
+              height: nfeDetailPagamentoTipoCampoAltura,
+              child: DropdownButtonFormField<String>(
+                initialValue: '01',
+                isExpanded: true,
+                isDense: true,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo',
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: '01',
+                    child:
+                        Text('01 - Dinheiro', style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
     });
 
     test('totais exibem impostos existentes nos itens da nota', () {

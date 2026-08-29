@@ -24,6 +24,7 @@ const _bord = Color(0xFFDDDDDD);
 const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
 const double _kCampoMinWidth = 260;
+const double nfeDetailPagamentoTipoCampoAltura = 56;
 
 @visibleForTesting
 bool isNfeRascunhoImportacao(Object? status) =>
@@ -2247,17 +2248,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
               borderRadius: BorderRadius.circular(4)),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             SizedBox(
-              height: 48,
+              height: nfeDetailPagamentoTipoCampoAltura,
               width: 160,
               child: DropdownButtonFormField<String>(
                 value: _novoPagTpag,
                 isExpanded: true,
-                isDense: false,
+                isDense: true,
                 decoration: const InputDecoration(
                     labelText: 'Tipo',
-                    isDense: false,
+                    isDense: true,
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     border: OutlineInputBorder()),
                 style: const TextStyle(fontSize: 12, color: _dark),
                 items: NfePagamento.todosCodigos
