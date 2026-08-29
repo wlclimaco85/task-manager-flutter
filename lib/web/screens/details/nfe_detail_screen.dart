@@ -15,7 +15,6 @@ import '../../../utils/nfe_action_feedback.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../../widgets/fiscal/nfe_authorization_status_banner.dart';
 import '../../../widgets/nfe/nfe_chave_qr_card.dart';
-import '../../../widgets/finance/gerar_contas_pagar_dialog.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
 
@@ -34,6 +33,79 @@ bool isNfeRascunhoImportacao(Object? status) =>
 @visibleForTesting
 String nfeEntradaPrimaryActionLabel(Object? status) =>
     isNfeRascunhoImportacao(status) ? 'Confirmar Entrada' : 'Aceitar';
+
+@visibleForTesting
+bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) =>
+    (tipoOperacao?.toString() ?? '').toUpperCase() != 'ENTRADA';
+
+@visibleForTesting
+double? nfeDetailParseDouble(Object? value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  final text = value.toString().trim();
+  if (text.isEmpty) return null;
+  final normalized =
+      text.contains(',') ? text.replaceAll('.', '').replaceAll(',', '.') : text;
+  return double.tryParse(normalized);
+}
+
+double _sumNfeDetailItems(
+        List<Map<String, dynamic>> itens, String camel, String snake) =>
+    itens.fold<double>(
+      0,
+      (sum, item) =>
+          sum + (nfeDetailParseDouble(item[camel] ?? item[snake]) ?? 0),
+    );
+
+@visibleForTesting
+List<MapEntry<String, double>> nfeDetailTotaisParaExibicao({
+  required double valorNota,
+  required List<Map<String, dynamic>> itens,
+  double totalServicos = 0,
+}) {
+  final totalProdutos = _sumNfeDetailItems(itens, 'vProd', 'v_prod');
+  final totais = <MapEntry<String, double>>[
+    MapEntry('Vlr. Nota', valorNota),
+    MapEntry('Total Produtos', totalProdutos > 0 ? totalProdutos : valorNota),
+    MapEntry('Total Serviços', totalServicos),
+    MapEntry('Base ICMS', _sumNfeDetailItems(itens, 'vBcIcms', 'v_bc_icms')),
+    MapEntry('ICMS', _sumNfeDetailItems(itens, 'vIcms', 'v_icms')),
+    MapEntry('Base ICMS-ST', _sumNfeDetailItems(itens, 'vBcSt', 'v_bc_st')),
+    MapEntry('ICMS-ST', _sumNfeDetailItems(itens, 'vIcmsSt', 'v_icms_st')),
+    MapEntry('ICMS-ST Ant.',
+        _sumNfeDetailItems(itens, 'vIcmsStAnt', 'v_icms_st_ant')),
+    MapEntry('Base IPI', _sumNfeDetailItems(itens, 'vBcIpi', 'v_bc_ipi')),
+    MapEntry('IPI', _sumNfeDetailItems(itens, 'vIpi', 'v_ipi')),
+    MapEntry('Base ISS', _sumNfeDetailItems(itens, 'vBcIss', 'v_bc_iss')),
+    MapEntry('ISS', _sumNfeDetailItems(itens, 'vIss', 'v_iss')),
+    MapEntry('Base PIS', _sumNfeDetailItems(itens, 'vBcPis', 'v_bc_pis')),
+    MapEntry('PIS', _sumNfeDetailItems(itens, 'vPis', 'v_pis')),
+    MapEntry('PIS-ST', _sumNfeDetailItems(itens, 'vPisSt', 'v_pis_st')),
+    MapEntry(
+        'Base COFINS', _sumNfeDetailItems(itens, 'vBcCofins', 'v_bc_cofins')),
+    MapEntry('COFINS', _sumNfeDetailItems(itens, 'vCofins', 'v_cofins')),
+    MapEntry(
+        'COFINS-ST', _sumNfeDetailItems(itens, 'vCofinsSt', 'v_cofins_st')),
+    MapEntry(
+        'Base IBS/CBS', _sumNfeDetailItems(itens, 'vBcIbsCbs', 'v_bc_ibs_cbs')),
+    MapEntry('IBS UF', _sumNfeDetailItems(itens, 'vIbsUf', 'v_ibs_uf')),
+    MapEntry('IBS Mun.', _sumNfeDetailItems(itens, 'vIbsMun', 'v_ibs_mun')),
+    MapEntry('IBS', _sumNfeDetailItems(itens, 'vIbs', 'v_ibs')),
+    MapEntry('CBS', _sumNfeDetailItems(itens, 'vCbs', 'v_cbs')),
+    MapEntry('Frete', _sumNfeDetailItems(itens, 'vFrete', 'v_frete')),
+    MapEntry('Seguro', _sumNfeDetailItems(itens, 'vSeg', 'v_seg')),
+    MapEntry('Desconto', _sumNfeDetailItems(itens, 'vDesc', 'v_desc')),
+    MapEntry('Outros', _sumNfeDetailItems(itens, 'vOutro', 'v_outro')),
+  ];
+
+  return totais
+      .where((t) =>
+          t.value != 0 ||
+          t.key.startsWith('Vlr.') ||
+          t.key == 'Total Produtos' ||
+          t.key == 'Total Serviços')
+      .toList();
+}
 
 class NfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -520,37 +592,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
     }
   }
 
-  Future<void> _gerarContasPagar() async {
-    final resultado = await showDialog<GerarContasPagarResultado>(
-      context: context,
-      builder: (_) => GerarContasPagarDialog(
-        nfeId: int.tryParse(_nfeId) ?? 0,
-        quantidadeDuplicatas: _duplicatas.length,
-      ),
-    );
-    if (resultado == null || !mounted) return;
-    try {
-      final r = await TenantContext.post(
-          '${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {
-        if (resultado.categoriaFinanceiraId != null)
-          'categoriaFinanceiraId': resultado.categoriaFinanceiraId,
-        if (resultado.contaBancariaId != null)
-          'contaBancariaId': resultado.contaBancariaId,
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'Contas a Pagar geradas com sucesso!'
-              : 'Erro ${r.statusCode}. Tente novamente.'),
-          backgroundColor: r.statusCode == 200 ? _green : _red));
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ao processar. Tente novamente.'),
-            backgroundColor: _red));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -600,11 +641,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 _secao(titulo: 'Pagamento', child: _pagamentosTab()),
                 const SizedBox(height: 16),
                 _secao(titulo: 'Totais', child: _totaisTab()),
-                const SizedBox(height: 16),
-                _secao(
-                  titulo: _isEntrada ? 'Contas a Pagar' : 'Contas a Receber',
-                  child: SizedBox(height: 400, child: _financeiroTab()),
-                ),
+                if (exibeSecaoFinanceiraNoDetalheNfe(
+                    widget.item['tipoOperacao'])) ...[
+                  const SizedBox(height: 16),
+                  _secao(
+                    titulo: 'Contas a Receber',
+                    child: SizedBox(height: 400, child: _financeiroTab()),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1827,14 +1871,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   double? _asDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    final text = value.toString().trim();
-    if (text.isEmpty) return null;
-    final normalized = text.contains(',')
-        ? text.replaceAll('.', '').replaceAll(',', '.')
-        : text;
-    return double.tryParse(normalized);
+    return nfeDetailParseDouble(value);
   }
 
   String _valorDecimal(dynamic value) {
@@ -1863,9 +1900,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final valor = _asDouble(item[camel] ?? item[snake]);
     return valor == null ? '' : _valorMonetario(valor);
   }
-
-  double _sumItens(String camel, String snake) => _itens.fold<double>(
-      0, (sum, item) => sum + (_asDouble(item[camel] ?? item[snake]) ?? 0));
 
   String _hojeIso() {
     final now = DateTime.now();
@@ -2000,32 +2034,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   Widget _totaisTab() {
     final valorNota = _valorNfe();
-    final totalProdutos = _sumItens('vProd', 'v_prod');
-    final totais = <MapEntry<String, double>>[
-      MapEntry('Vlr. Nota', valorNota),
-      MapEntry('Total Produtos', totalProdutos > 0 ? totalProdutos : valorNota),
-      const MapEntry('Total Serviços', 0),
-      MapEntry('ICMS', _sumItens('vIcms', 'v_icms')),
-      MapEntry('ICMS-ST', _sumItens('vIcmsSt', 'v_icms_st')),
-      MapEntry('IPI', _sumItens('vIpi', 'v_ipi')),
-      MapEntry('PIS', _sumItens('vPis', 'v_pis')),
-      MapEntry('COFINS', _sumItens('vCofins', 'v_cofins')),
-      MapEntry('Frete', _sumItens('vFrete', 'v_frete')),
-      MapEntry('Seguro', _sumItens('vSeg', 'v_seg')),
-      MapEntry('Desconto', _sumItens('vDesc', 'v_desc')),
-      MapEntry('Outros', _sumItens('vOutro', 'v_outro')),
-    ];
+    final totais = nfeDetailTotaisParaExibicao(
+      valorNota: valorNota,
+      itens: _itens,
+      totalServicos: _asDouble(widget.item['totalServicos']) ?? 0,
+    );
     return Padding(
         padding: const EdgeInsets.all(10),
         child: Wrap(
             spacing: 12,
             runSpacing: 12,
             children: totais
-                .where((t) =>
-                    t.value != 0 ||
-                    t.key.startsWith('Vlr.') ||
-                    t.key == 'Total Produtos' ||
-                    t.key == 'Total Serviços')
                 .map((t) => _card(t.key, _valorMonetario(t.value)))
                 .toList()));
   }
@@ -2431,29 +2450,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
             ),
           ]),
         ),
-
-        const SizedBox(height: 16),
-        const Divider(),
-
-        // ── Botão: Gerar Contas a Pagar ───────────────────────────────────
-        SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.receipt_long),
-              label: const Text('Gerar Contas a Pagar',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: _red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12)),
-              onPressed: _duplicatas.isEmpty ? null : _gerarContasPagar,
-            )),
-        if (_duplicatas.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
-            child: Text('Adicione duplicatas antes de gerar as contas.',
-                style: TextStyle(fontSize: 11, color: _grey)),
-          ),
       ]),
     );
   }
