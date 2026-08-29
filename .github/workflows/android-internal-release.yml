@@ -40,10 +40,20 @@ jobs:
         shell: bash
         run: |
           mkdir -p android/app fastlane
-          printf '%s' "$GOOGLE_PLAY_JSON_KEY" > fastlane/google-play-key.json
+          if [ -n "$GOOGLE_PLAY_JSON_KEY_BASE64" ]; then
+            printf '%s' "$GOOGLE_PLAY_JSON_KEY_BASE64" | base64 --decode > fastlane/google-play-key.json
+          elif [ -n "$GOOGLE_PLAY_JSON_KEY" ]; then
+            printf '%s' "$GOOGLE_PLAY_JSON_KEY" > fastlane/google-play-key.json
+          else
+            echo "::error::Configure GOOGLE_PLAY_JSON_KEY_BASE64 ou GOOGLE_PLAY_JSON_KEY nos secrets do GitHub."
+            exit 1
+          fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release-upload.jks
+          test -s fastlane/google-play-key.json
+          test -s android/app/release-upload.jks
         env:
           GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+          GOOGLE_PLAY_JSON_KEY_BASE64: ${{ secrets.GOOGLE_PLAY_JSON_KEY_BASE64 }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Compute build version
