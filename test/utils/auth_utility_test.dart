@@ -105,6 +105,21 @@ void main() {
     expect(restored?.login?.empresa?.id, equals(5));
   });
 
+  test('atualizarEmpresaAtiva troca empresa do login e persiste sessao',
+      () async {
+    final model = LoginModel(
+      token: 'token-test',
+      login: Login(id: 1, email: 'user@test.com', empresa: Empresa(id: 5)),
+    );
+    await AuthUtility.setUserInfo(model);
+
+    await AuthUtility.atualizarEmpresaAtiva(Empresa(id: 9, nome: 'Empresa 9'));
+
+    expect(AuthUtility.userInfo?.login?.empresa?.id, equals(9));
+    final restored = await AuthUtility.getUserInfo();
+    expect(restored?.login?.empresa?.id, equals(9));
+  });
+
   test('clearUserInfo remove SharedPreferences e limpa userInfo', () async {
     final model = LoginModel(token: 'token-test', login: Login(id: 1));
     await AuthUtility.setUserInfo(model);

@@ -3,6 +3,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'empresa_acesso_model.dart';
+import 'empresa_model.dart';
 import '../../../models/login_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/services/alerta_polling_service.dart';
@@ -33,6 +35,7 @@ bool _isJwtExpired(String token) {
 
 class AuthUtility {
   static LoginModel? userInfo;
+  static List<EmpresaAcesso> empresasAcesso = [];
   static final ValueNotifier<int> sessionVersion = ValueNotifier<int>(0);
   static const int _maxPersistedSessionMediaLength = 3 * 1024 * 1024;
 
@@ -139,6 +142,26 @@ class AuthUtility {
         L.w('[AuthUtility] falha ao persistir sessao minima: $fallbackError');
       }
     }
+  }
+
+  static bool get podeTrocarEmpresa {
+    final login = userInfo?.login ?? userInfo?.data?.login;
+    return login?.parceiro?.id == null;
+  }
+
+  static bool get temMultiplasEmpresasAprovadas =>
+      empresasAcesso.where((acesso) => acesso.aprovado).length > 1;
+
+  static Future<void> atualizarEmpresaAtiva(Empresa empresa) async {
+    final model = userInfo;
+    if (model == null) return;
+    if (model.login != null) {
+      model.login!.empresa = empresa;
+    }
+    if (model.data?.login != null) {
+      model.data!.login!.empresa = empresa;
+    }
+    await setUserInfo(model);
   }
 
   static Future<LoginModel?> getUserInfo() async {

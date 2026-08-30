@@ -21,6 +21,7 @@ class AppSidebar extends StatefulWidget {
   final int unreadAlerts;
   final VoidCallback onNotificationTap;
   final VoidCallback onLogout;
+  final VoidCallback? onTrocarEmpresa;
   final String userName;
   final String userEmail;
 
@@ -33,6 +34,7 @@ class AppSidebar extends StatefulWidget {
     required this.unreadAlerts,
     required this.onNotificationTap,
     required this.onLogout,
+    this.onTrocarEmpresa,
     required this.userName,
     required this.userEmail,
   });
@@ -424,9 +426,35 @@ class _AppSidebarState extends State<AppSidebar> {
                   widget.onNotificationTap,
                   badge: widget.unreadAlerts),
               const SizedBox(width: 4),
+              if (widget.onTrocarEmpresa != null &&
+                  AuthUtility.podeTrocarEmpresa) ...[
+                _iconBtn(Icons.swap_horiz, _textMuted, widget.onTrocarEmpresa!),
+                const SizedBox(width: 4),
+              ],
               _iconBtn(Icons.logout, _textMuted, widget.onLogout),
             ],
           ),
+          if (widget.onTrocarEmpresa != null && AuthUtility.podeTrocarEmpresa)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: InkWell(
+                onTap: widget.onTrocarEmpresa,
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.swap_horiz, color: _textMuted, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Trocar Empresa',
+                        style: TextStyle(color: _textMuted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

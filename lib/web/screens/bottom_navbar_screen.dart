@@ -101,7 +101,9 @@ import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/menu_config.dart';
 import '../../widgets/app_sidebar.dart';
+import '../../widgets/empresa_selecao_screen.dart';
 import '../../widgets/internal_tab_strip.dart';
+import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../models/open_tab.dart';
 import './alvara_grid_screen.dart';
 import './fornecedor_grid_screen.dart';
@@ -548,6 +550,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       DynamicGridDynamicScreen(telaNome: 'proposta_comercial', hasPermission: (p) => true), // 182: Propostas Comerciais
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
       const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
+      const LoginEmpresaAcessoAprovacaoScreen(), // 185: PermissoesMultiEmpresa
     ];
   }
 
@@ -590,6 +593,24 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       notificationOverlay?.remove();
     } catch (_) {}
     notificationOverlay = null;
+  }
+
+  Future<void> _handleTrocarEmpresa() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EmpresaSelecaoScreen()),
+    );
+    if (!mounted) return;
+    ModuloAccess.reset();
+    await ModuloAccess.load();
+    if (mounted) {
+      setState(() {
+        _screens = _buildScreensList();
+        _openTabs.clear();
+        _activeTabIndex = 0;
+        _openInitialTab();
+      });
+    }
   }
 
   void showNotificationDropdown(BuildContext context, Offset position) {
@@ -989,6 +1010,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
               showNotificationDropdown(context, box.localToGlobal(Offset.zero));
             },
             onLogout: _handleLogout,
+            onTrocarEmpresa: _handleTrocarEmpresa,
             userName: userName,
             userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                 AuthUtility.userInfo?.login?.email ??

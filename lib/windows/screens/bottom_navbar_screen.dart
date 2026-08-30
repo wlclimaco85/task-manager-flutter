@@ -84,7 +84,9 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/menu_config.dart';
 import '../../../widgets/app_sidebar.dart';
+import '../../../widgets/empresa_selecao_screen.dart';
 import '../../../widgets/internal_tab_strip.dart';
+import '../../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../../models/open_tab.dart';
 // Telas web reutilizadas no Windows
 import '../../windows/screens/nfe_finalidade_grid_screen.dart';
@@ -525,6 +527,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'proposta_comercial', hasPermission: (p) => true), // 182: Propostas Comerciais
         const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
         const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
+        const LoginEmpresaAcessoAprovacaoScreen(), // 185: PermissoesMultiEmpresa
       ];
 
   String get userName {
@@ -575,6 +578,26 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   void closeNotificationDropdown() {
     notificationOverlay?.remove();
     notificationOverlay = null;
+  }
+
+  Future<void> _handleTrocarEmpresa() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EmpresaSelecaoScreen()),
+    );
+    if (!mounted) return;
+    ModuloAccess.reset();
+    await ModuloAccess.load();
+    if (mounted) {
+      setState(() {
+        final userInfo = AuthUtility.userInfo?.data;
+        final loginInfo = AuthUtility.userInfo?.login;
+        _screens = _buildScreens(userInfo ?? loginInfo);
+        _openTabs.clear();
+        _activeTabIndex = 0;
+        _openInitialTab();
+      });
+    }
   }
 
   void showNotificationDropdown(BuildContext context, Offset position) {
@@ -951,6 +974,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
               showNotificationDropdown(context, box.localToGlobal(Offset.zero));
             },
             onLogout: _handleLogout,
+            onTrocarEmpresa: _handleTrocarEmpresa,
             userName: userName,
             userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                 AuthUtility.userInfo?.login?.email ??

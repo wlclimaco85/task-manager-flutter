@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
@@ -27,6 +28,7 @@ void main() {
     Widget buildSidebar({
       bool isCollapsed = false,
       int selectedIndex = 0,
+      VoidCallback? onTrocarEmpresa,
     }) {
       return MaterialApp(
         home: Scaffold(
@@ -38,6 +40,7 @@ void main() {
             unreadAlerts: 0,
             onNotificationTap: () {},
             onLogout: () {},
+            onTrocarEmpresa: onTrocarEmpresa,
             userName: 'Usuario Teste',
             userEmail: 'teste@exemplo.com',
           ),
@@ -222,6 +225,41 @@ void main() {
       expect(find.text('Contas a Pagar'), findsOneWidget);
       expect(find.text('Fiscal / NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
+    });
+
+    testWidgets('exibe Trocar Empresa para login sem parceiro',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, email: 'contador@teste.com'),
+      );
+      var acionou = false;
+
+      await tester.pumpWidget(buildSidebar(
+        onTrocarEmpresa: () => acionou = true,
+      ));
+
+      expect(find.text('Trocar Empresa'), findsOneWidget);
+      await tester.tap(find.text('Trocar Empresa'));
+      expect(acionou, isTrue);
+    });
+
+    testWidgets('nao exibe Trocar Empresa para login com parceiro',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 1,
+          email: 'cliente@teste.com',
+          parceiro: Parceiro(id: 99),
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar(
+        onTrocarEmpresa: () {},
+      ));
+
+      expect(find.text('Trocar Empresa'), findsNothing);
     });
   });
 }

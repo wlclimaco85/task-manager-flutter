@@ -80,6 +80,18 @@ class ApiLinks {
       '$_baseUrlNew/api/solicitacao-acesso/$id/aprovar';
   static String solicitacaoAcessoRejeitar(int id) =>
       '$_baseUrlNew/api/solicitacao-acesso/$id/rejeitar';
+  static String get loginEmpresasAcesso =>
+      '$_baseUrlNew/api/login/me/empresas-acesso';
+  static String get loginEmpresasAcessoSolicitar =>
+      '$_baseUrlNew/api/login/me/empresas-acesso/solicitar';
+  static String get loginEmpresaAtiva =>
+      '$_baseUrlNew/api/login/me/empresa-ativa';
+  static String get loginEmpresaAcessoPendentes =>
+      '$_baseUrlNew/api/login-empresa-acesso/pendentes';
+  static String loginEmpresaAcessoAprovar(int id) =>
+      '$_baseUrlNew/api/login-empresa-acesso/$id/aprovar';
+  static String loginEmpresaAcessoNegar(int id) =>
+      '$_baseUrlNew/api/login-empresa-acesso/$id/negar';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>

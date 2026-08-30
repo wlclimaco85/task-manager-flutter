@@ -15,6 +15,8 @@ import '../../utils/security_matrix.dart';
 import '../services/network_caller.dart';
 import '../services/push_notification_service.dart';
 import '../services/alerta_polling_service.dart';
+import '../services/login_empresa_acesso_service.dart';
+import '../widgets/empresa_selecao_screen.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
 
@@ -54,6 +56,27 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => const BottomNavBarScreen()),
           (_) => false);
     }
+  }
+
+  Future<void> _abrirSelecaoEmpresaOuHome() async {
+    final acessos = await LoginEmpresaAcessoService().listarMeusAcessos();
+    final aprovadas = acessos.where((a) => a.aprovado).toList();
+    if (!mounted) return;
+    if (aprovadas.length > 1) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EmpresaSelecaoScreen(
+            obrigatorio: true,
+            loadAcessos: () async => acessos,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      _goHome();
+      return;
+    }
+    _goHome();
   }
 
   Future<void> _login() async {
@@ -110,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return;
       }
-      _goHome();
+      await _abrirSelecaoEmpresaOuHome();
     } else if (mounted) {
       _passwordController.clear();
       final msg = resp.statusCode == 400 || resp.statusCode == 401
@@ -271,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
     novaCtrl.dispose();
     confirmCtrl.dispose();
 
-    if (mounted) _goHome();
+    if (mounted) await _abrirSelecaoEmpresaOuHome();
   }
 
   @override

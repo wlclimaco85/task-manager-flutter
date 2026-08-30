@@ -80,6 +80,7 @@ class MenuGroup {
 /// 136:InstagramMonitor
 /// 183:AgendamentoNFeRecorrente
 /// 184:CertificadoDigital (empresa logada)
+/// 185:PermissoesMultiEmpresa
 
 class MenuConfig {
   MenuConfig._();
@@ -537,6 +538,11 @@ class MenuConfig {
             label: 'Solicitações de Acesso',
             icon: FontAwesomeIcons.userCheck,
             screenIndex: 149),
+        MenuItem(
+            id: 'permissoes_multi_empresa',
+            label: 'Permissões Multi-Empresa',
+            icon: FontAwesomeIcons.buildingUser,
+            screenIndex: 185),
         MenuItem(
             id: 'obrigacoes_fiscais',
             label: 'Obrigações Fiscais',
