@@ -12,6 +12,9 @@ import '../../utils/assets_utils.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
+import '../../utils/tenant_context.dart';
+import '../../widgets/trocar_empresa_picker.dart';
+import '../services/login_empresa_acesso_caller.dart';
 import '../services/network_caller.dart';
 import '../services/push_notification_service.dart';
 import '../services/alerta_polling_service.dart';
@@ -110,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return;
       }
-      _goHome();
+      await _mostrarPickerEIrParaHome();
     } else if (mounted) {
       _passwordController.clear();
       final msg = resp.statusCode == 400 || resp.statusCode == 401
@@ -123,6 +126,27 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.red.shade700,
       ));
     }
+  }
+
+  /// Pos-login (Task 4, fase 178): se o login logado tem acesso APROVADO a
+  /// mais de 1 empresa, mostra o picker "Trocar Empresa" antes de navegar
+  /// para a home; se tiver <=1 (ou a chamada falhar), segue o fluxo
+  /// existente sem interromper nada (comportamento pre-existente
+  /// preservado). Falha de rede aqui NUNCA deve travar o login.
+  Future<void> _mostrarPickerEIrParaHome() async {
+    try {
+      final empresas = await LoginEmpresaAcessoCaller.listarMinhasEmpresas();
+      if (empresas.length > 1 && mounted) {
+        await TrocarEmpresaPicker.mostrarSeNecessario(
+          context,
+          empresas,
+          empresaAtualId: TenantContext.empresaId,
+        );
+      }
+    } catch (_) {
+      // Nunca bloquear o login por causa desta checagem auxiliar.
+    }
+    if (mounted) _goHome();
   }
 
   Future<void> _showTrocarSenhaDialog(String email) async {
@@ -271,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
     novaCtrl.dispose();
     confirmCtrl.dispose();
 
-    if (mounted) _goHome();
+    if (mounted) await _mostrarPickerEIrParaHome();
   }
 
   @override

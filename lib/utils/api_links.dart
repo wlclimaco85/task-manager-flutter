@@ -80,6 +80,22 @@ class ApiLinks {
       '$_baseUrlNew/api/solicitacao-acesso/$id/aprovar';
   static String solicitacaoAcessoRejeitar(int id) =>
       '$_baseUrlNew/api/solicitacao-acesso/$id/rejeitar';
+
+  // Login Multi-Empresa (fase 178) — mesmo padrao de nomeacao de
+  // solicitacaoAcesso* acima. `empresaAtiva` e `minhasEmpresasAcesso` vivem
+  // dentro de LoginController (/api/login/me/...), os demais vivem no
+  // controller novo /api/login-empresa-acesso.
+  static String get loginEmpresaAcessoSolicitar =>
+      '$_baseUrlNew/api/login-empresa-acesso';
+  static String get loginEmpresaAcessoPendentes =>
+      '$_baseUrlNew/api/login-empresa-acesso/pendentes';
+  static String loginEmpresaAcessoAprovar(int id) =>
+      '$_baseUrlNew/api/login-empresa-acesso/$id/aprovar';
+  static String loginEmpresaAcessoRejeitar(int id) =>
+      '$_baseUrlNew/api/login-empresa-acesso/$id/rejeitar';
+  static String get minhasEmpresasAcesso =>
+      '$_baseUrlNew/api/login/me/empresas-acesso';
+  static String get empresaAtiva => '$_baseUrlNew/api/login/me/empresa-ativa';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>
