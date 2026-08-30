@@ -32,5 +32,22 @@ void main() {
       expect(body, isNot(contains('descricaoServico')));
       expect(body, isNot(contains('codigoTributacao')));
     });
+
+    test('monta payload de cancelamento com nfseId do registro real', () {
+      final body = NfseCaller.buildCancelarBody(
+        numero: '1001',
+        motivo: 'Cancelamento solicitado pelo usuario',
+        empresaId: '1',
+        municipio: 'Uberlandia',
+        nfseId: 501,
+      );
+
+      expect(body['nfseNumber'], '1001');
+      expect(body['motivo'], 'Cancelamento solicitado pelo usuario');
+      expect(body['empresaId'], 1);
+      expect(body['municipio'], 'Uberlandia');
+      expect(body['nfseId'], 501);
+      expect(body, isNot(contains('numero')));
+    });
   });
 }

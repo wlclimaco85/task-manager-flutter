@@ -105,16 +105,13 @@ class NfseCaller {
     int? nfseId,
   }) async {
     final url = ApiLinks.nfseCancelar;
-    final body = {
-      // BUG pré-existente: o backend (NfseCancelarRequest.nfseNumber,
-      // @NotBlank) sempre esperou a chave 'nfseNumber', nunca 'numero' --
-      // toda chamada de cancelamento retornava 400 antes desta correção.
-      'nfseNumber': numero,
-      'motivo': motivo,
-      if (empresaId != null) 'empresaId': int.tryParse(empresaId) ?? empresaId,
-      if (municipio != null) 'municipio': municipio,
-      if (nfseId != null) 'nfseId': nfseId,
-    };
+    final body = buildCancelarBody(
+      numero: numero,
+      motivo: motivo,
+      empresaId: empresaId,
+      municipio: municipio,
+      nfseId: nfseId,
+    );
     final response = await TenantContext.post(url, body);
     if (response.statusCode == 200 || response.statusCode == 204) {
       if (response.body.isEmpty) return {'status': 'cancelado'};
@@ -124,6 +121,25 @@ class NfseCaller {
       _extractError(response, 'Falha ao cancelar NFSe'),
       statusCode: response.statusCode,
     );
+  }
+
+  static Map<String, dynamic> buildCancelarBody({
+    required String numero,
+    required String motivo,
+    String? empresaId,
+    String? municipio,
+    int? nfseId,
+  }) {
+    return {
+      // BUG pré-existente: o backend (NfseCancelarRequest.nfseNumber,
+      // @NotBlank) sempre esperou a chave 'nfseNumber', nunca 'numero' --
+      // toda chamada de cancelamento retornava 400 antes desta correção.
+      'nfseNumber': numero,
+      'motivo': motivo,
+      if (empresaId != null) 'empresaId': int.tryParse(empresaId) ?? empresaId,
+      if (municipio != null) 'municipio': municipio,
+      if (nfseId != null) 'nfseId': nfseId,
+    };
   }
 
   Future<List<Map<String, dynamic>>> auditoria() async {

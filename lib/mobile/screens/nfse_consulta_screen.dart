@@ -4,6 +4,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/nfse_model.dart';
+import 'details/nfse_detail_screen.dart';
 
 class NfseConsultaScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -202,6 +203,7 @@ class _NfseConsultaScreenState extends State<NfseConsultaScreen> {
       toJson: (obj) => obj.toJson(),
       hasPermission: widget.hasPermission,
       fieldConfigs: Nfse.fieldConfigs,
+      detailScreenBuilder: (item) => MobileNfseDetailScreen(item: item.toJson()),
       idFieldName: 'id',
       dateFieldName: 'dataEmissao',
       useUserBannerAppBar: true,
