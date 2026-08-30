@@ -88,5 +88,27 @@ void main() {
       expect(porNome['COFINS'], closeTo(200.22, 0.001));
       expect(porNome['IPI'], closeTo(12.50, 0.001));
     });
+
+    test(
+        'totais usam o grupo fiscal do cabecalho quando os itens nao tem imposto',
+        () {
+      final totais = nfeDetailTotaisParaExibicao(
+        valorNota: 8999.83,
+        itens: [
+          {'vProd': 8999.83},
+        ],
+        cabecalho: {
+          'vBcIcms': 0,
+          'vIcms': 0,
+          'vPis': 0,
+          'vCofins': 0,
+          'vTotTrib': 2830.45,
+        },
+      );
+
+      final porNome = Map.fromEntries(totais);
+      expect(porNome['Vlr. Nota'], closeTo(8999.83, 0.001));
+      expect(porNome['Total Tributos'], closeTo(2830.45, 0.001));
+    });
   });
 }

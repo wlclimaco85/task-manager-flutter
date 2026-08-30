@@ -57,10 +57,24 @@ double _sumNfeDetailItems(
           sum + (nfeDetailParseDouble(item[camel] ?? item[snake]) ?? 0),
     );
 
+double _nfeDetailTotal({
+  required Map<String, dynamic> cabecalho,
+  required List<Map<String, dynamic>> itens,
+  required String cabecalhoCamel,
+  required String cabecalhoSnake,
+  required String itemCamel,
+  required String itemSnake,
+}) {
+  final totalCabecalho = nfeDetailParseDouble(
+      cabecalho[cabecalhoCamel] ?? cabecalho[cabecalhoSnake]);
+  return totalCabecalho ?? _sumNfeDetailItems(itens, itemCamel, itemSnake);
+}
+
 @visibleForTesting
 List<MapEntry<String, double>> nfeDetailTotaisParaExibicao({
   required double valorNota,
   required List<Map<String, dynamic>> itens,
+  Map<String, dynamic> cabecalho = const {},
   double totalServicos = 0,
 }) {
   final totalProdutos = _sumNfeDetailItems(itens, 'vProd', 'v_prod');
@@ -68,34 +82,247 @@ List<MapEntry<String, double>> nfeDetailTotaisParaExibicao({
     MapEntry('Vlr. Nota', valorNota),
     MapEntry('Total Produtos', totalProdutos > 0 ? totalProdutos : valorNota),
     MapEntry('Total Serviços', totalServicos),
-    MapEntry('Base ICMS', _sumNfeDetailItems(itens, 'vBcIcms', 'v_bc_icms')),
-    MapEntry('ICMS', _sumNfeDetailItems(itens, 'vIcms', 'v_icms')),
-    MapEntry('Base ICMS-ST', _sumNfeDetailItems(itens, 'vBcSt', 'v_bc_st')),
-    MapEntry('ICMS-ST', _sumNfeDetailItems(itens, 'vIcmsSt', 'v_icms_st')),
+    MapEntry(
+        'Base ICMS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vBcIcms',
+            cabecalhoSnake: 'v_bc_icms',
+            itemCamel: 'vBcIcms',
+            itemSnake: 'v_bc_icms')),
+    MapEntry(
+        'ICMS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIcms',
+            cabecalhoSnake: 'v_icms',
+            itemCamel: 'vIcms',
+            itemSnake: 'v_icms')),
+    MapEntry(
+        'ICMS Deson.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIcmsDeson',
+            cabecalhoSnake: 'v_icms_deson',
+            itemCamel: 'vIcmsDeson',
+            itemSnake: 'v_icms_deson')),
+    MapEntry(
+        'FCP UF Dest.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vFcpUfDest',
+            cabecalhoSnake: 'v_fcp_uf_dest',
+            itemCamel: 'vFcpUfDest',
+            itemSnake: 'v_fcp_uf_dest')),
+    MapEntry(
+        'ICMS UF Dest.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIcmsUfDest',
+            cabecalhoSnake: 'v_icms_uf_dest',
+            itemCamel: 'vIcmsUfDest',
+            itemSnake: 'v_icms_uf_dest')),
+    MapEntry(
+        'ICMS UF Remet.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIcmsUfRemet',
+            cabecalhoSnake: 'v_icms_uf_remet',
+            itemCamel: 'vIcmsUfRemet',
+            itemSnake: 'v_icms_uf_remet')),
+    MapEntry(
+        'FCP',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vFcp',
+            cabecalhoSnake: 'v_fcp',
+            itemCamel: 'vFcp',
+            itemSnake: 'v_fcp')),
+    MapEntry(
+        'Base ICMS-ST',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vBcIcmsSt',
+            cabecalhoSnake: 'v_bc_icms_st',
+            itemCamel: 'vBcSt',
+            itemSnake: 'v_bc_st')),
+    MapEntry(
+        'ICMS-ST',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIcmsSt',
+            cabecalhoSnake: 'v_icms_st',
+            itemCamel: 'vIcmsSt',
+            itemSnake: 'v_icms_st')),
+    MapEntry(
+        'FCP-ST',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vFcpSt',
+            cabecalhoSnake: 'v_fcp_st',
+            itemCamel: 'vFcpSt',
+            itemSnake: 'v_fcp_st')),
+    MapEntry(
+        'FCP-ST Ret.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vFcpStRet',
+            cabecalhoSnake: 'v_fcp_st_ret',
+            itemCamel: 'vFcpStRet',
+            itemSnake: 'v_fcp_st_ret')),
     MapEntry('ICMS-ST Ant.',
         _sumNfeDetailItems(itens, 'vIcmsStAnt', 'v_icms_st_ant')),
+    MapEntry(
+        'II',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIi',
+            cabecalhoSnake: 'v_ii',
+            itemCamel: 'vIi',
+            itemSnake: 'v_ii')),
     MapEntry('Base IPI', _sumNfeDetailItems(itens, 'vBcIpi', 'v_bc_ipi')),
-    MapEntry('IPI', _sumNfeDetailItems(itens, 'vIpi', 'v_ipi')),
+    MapEntry(
+        'IPI',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIpi',
+            cabecalhoSnake: 'v_ipi',
+            itemCamel: 'vIpi',
+            itemSnake: 'v_ipi')),
+    MapEntry(
+        'IPI Devol.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIpiDevol',
+            cabecalhoSnake: 'v_ipi_devol',
+            itemCamel: 'vIpiDevol',
+            itemSnake: 'v_ipi_devol')),
     MapEntry('Base ISS', _sumNfeDetailItems(itens, 'vBcIss', 'v_bc_iss')),
     MapEntry('ISS', _sumNfeDetailItems(itens, 'vIss', 'v_iss')),
     MapEntry('Base PIS', _sumNfeDetailItems(itens, 'vBcPis', 'v_bc_pis')),
-    MapEntry('PIS', _sumNfeDetailItems(itens, 'vPis', 'v_pis')),
+    MapEntry(
+        'PIS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vPis',
+            cabecalhoSnake: 'v_pis',
+            itemCamel: 'vPis',
+            itemSnake: 'v_pis')),
     MapEntry('PIS-ST', _sumNfeDetailItems(itens, 'vPisSt', 'v_pis_st')),
     MapEntry(
         'Base COFINS', _sumNfeDetailItems(itens, 'vBcCofins', 'v_bc_cofins')),
-    MapEntry('COFINS', _sumNfeDetailItems(itens, 'vCofins', 'v_cofins')),
+    MapEntry(
+        'COFINS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vCofins',
+            cabecalhoSnake: 'v_cofins',
+            itemCamel: 'vCofins',
+            itemSnake: 'v_cofins')),
     MapEntry(
         'COFINS-ST', _sumNfeDetailItems(itens, 'vCofinsSt', 'v_cofins_st')),
     MapEntry(
-        'Base IBS/CBS', _sumNfeDetailItems(itens, 'vBcIbsCbs', 'v_bc_ibs_cbs')),
-    MapEntry('IBS UF', _sumNfeDetailItems(itens, 'vIbsUf', 'v_ibs_uf')),
-    MapEntry('IBS Mun.', _sumNfeDetailItems(itens, 'vIbsMun', 'v_ibs_mun')),
-    MapEntry('IBS', _sumNfeDetailItems(itens, 'vIbs', 'v_ibs')),
-    MapEntry('CBS', _sumNfeDetailItems(itens, 'vCbs', 'v_cbs')),
-    MapEntry('Frete', _sumNfeDetailItems(itens, 'vFrete', 'v_frete')),
-    MapEntry('Seguro', _sumNfeDetailItems(itens, 'vSeg', 'v_seg')),
-    MapEntry('Desconto', _sumNfeDetailItems(itens, 'vDesc', 'v_desc')),
-    MapEntry('Outros', _sumNfeDetailItems(itens, 'vOutro', 'v_outro')),
+        'Base IBS/CBS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vBcIbsCbs',
+            cabecalhoSnake: 'v_bc_ibs_cbs',
+            itemCamel: 'vBcIbsCbs',
+            itemSnake: 'v_bc_ibs_cbs')),
+    MapEntry(
+        'IBS UF',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIbsUf',
+            cabecalhoSnake: 'v_ibs_uf',
+            itemCamel: 'vIbsUf',
+            itemSnake: 'v_ibs_uf')),
+    MapEntry(
+        'IBS Mun.',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIbsMun',
+            cabecalhoSnake: 'v_ibs_mun',
+            itemCamel: 'vIbsMun',
+            itemSnake: 'v_ibs_mun')),
+    MapEntry(
+        'IBS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vIbs',
+            cabecalhoSnake: 'v_ibs',
+            itemCamel: 'vIbs',
+            itemSnake: 'v_ibs')),
+    MapEntry(
+        'CBS',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vCbs',
+            cabecalhoSnake: 'v_cbs',
+            itemCamel: 'vCbs',
+            itemSnake: 'v_cbs')),
+    MapEntry(
+        'Frete',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vFrete',
+            cabecalhoSnake: 'v_frete',
+            itemCamel: 'vFrete',
+            itemSnake: 'v_frete')),
+    MapEntry(
+        'Seguro',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vSeg',
+            cabecalhoSnake: 'v_seg',
+            itemCamel: 'vSeg',
+            itemSnake: 'v_seg')),
+    MapEntry(
+        'Desconto',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vDesc',
+            cabecalhoSnake: 'v_desc',
+            itemCamel: 'vDesc',
+            itemSnake: 'v_desc')),
+    MapEntry(
+        'Outros',
+        _nfeDetailTotal(
+            cabecalho: cabecalho,
+            itens: itens,
+            cabecalhoCamel: 'vOutro',
+            cabecalhoSnake: 'v_outro',
+            itemCamel: 'vOutro',
+            itemSnake: 'v_outro')),
+    MapEntry(
+        'Total Tributos',
+        nfeDetailParseDouble(
+                cabecalho['vTotTrib'] ?? cabecalho['v_tot_trib']) ??
+            0),
   ];
 
   return totais
@@ -2052,6 +2279,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final totais = nfeDetailTotaisParaExibicao(
       valorNota: valorNota,
       itens: _itens,
+      cabecalho: widget.item,
       totalServicos: _asDouble(widget.item['totalServicos']) ?? 0,
     );
     return Padding(

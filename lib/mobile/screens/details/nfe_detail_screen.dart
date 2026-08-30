@@ -19,6 +19,13 @@ const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
 const _bg = Color(0xFFF5F5F5);
 
+double? _mobileNfeTotal(
+    Map<String, dynamic> cabecalho, String camelCase, String snakeCase) {
+  final value = cabecalho[camelCase] ?? cabecalho[snakeCase];
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString().replaceAll(',', '.') ?? '');
+}
+
 class MobileNfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   const MobileNfeSankhyaDetailScreen({super.key, required this.item});
@@ -297,6 +304,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           ]),
           _field('Chave', _chaveCtrl),
           NfeChaveQrCard(chave: _chaveCtrl.text),
+          _buildTotaisFiscais(),
           _row([
             _dropField(
                 'Status',
@@ -326,6 +334,39 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTotaisFiscais() {
+    const campos = <MapEntry<String, List<String>>>[
+      MapEntry('Base ICMS', ['vBcIcms', 'v_bc_icms']),
+      MapEntry('ICMS', ['vIcms', 'v_icms']),
+      MapEntry('ICMS Deson.', ['vIcmsDeson', 'v_icms_deson']),
+      MapEntry('FCP UF Dest.', ['vFcpUfDest', 'v_fcp_uf_dest']),
+      MapEntry('ICMS UF Dest.', ['vIcmsUfDest', 'v_icms_uf_dest']),
+      MapEntry('ICMS UF Remet.', ['vIcmsUfRemet', 'v_icms_uf_remet']),
+      MapEntry('FCP', ['vFcp', 'v_fcp']),
+      MapEntry('Base ICMS-ST', ['vBcIcmsSt', 'v_bc_icms_st']),
+      MapEntry('ICMS-ST', ['vIcmsSt', 'v_icms_st']),
+      MapEntry('FCP-ST', ['vFcpSt', 'v_fcp_st']),
+      MapEntry('FCP-ST Ret.', ['vFcpStRet', 'v_fcp_st_ret']),
+      MapEntry('II', ['vIi', 'v_ii']),
+      MapEntry('IPI', ['vIpi', 'v_ipi']),
+      MapEntry('IPI Devol.', ['vIpiDevol', 'v_ipi_devol']),
+      MapEntry('PIS', ['vPis', 'v_pis']),
+      MapEntry('COFINS', ['vCofins', 'v_cofins']),
+      MapEntry('Total Tributos', ['vTotTrib', 'v_tot_trib']),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _section('Totais fiscais'),
+        ...campos.map((campo) {
+          final value =
+              _mobileNfeTotal(widget.item, campo.value[0], campo.value[1]);
+          return _readField(campo.key, value?.toStringAsFixed(2) ?? '0.00');
+        }),
+      ],
     );
   }
 
