@@ -88,6 +88,22 @@ class MenuConfig {
   // Suporte/Comunicação -> Contábil -> Produtos -> Configurações -> Sistema
   // -> grupos só-escritório (Sistema, App Academia, Bolsa de Valores).
   static const List<MenuGroup> groups = [
+    // Fora do grupo 'sistema' (RESEARCH.md fase 178, A2): "Trocar Empresa"
+    // precisa ficar acessivel a qualquer usuario elegivel (MASTER/
+    // APP_CONTABILIDADE com >1 empresa aprovada), nao escondido atras de um
+    // submenu administrativo que esses tipos de login podem nem ver.
+    MenuGroup(
+      id: 'conta',
+      label: 'Minha Conta',
+      icon: FontAwesomeIcons.userGear,
+      items: [
+        MenuItem(
+            id: 'trocar_empresa',
+            label: 'Trocar Empresa',
+            icon: FontAwesomeIcons.rightLeft,
+            screenIndex: 186),
+      ],
+    ),
     MenuGroup(
       id: 'comercial',
       label: 'Comercial',
@@ -609,6 +625,11 @@ class MenuConfig {
             label: 'Query Builder',
             icon: FontAwesomeIcons.database,
             screenIndex: 150),
+        MenuItem(
+            id: 'multiempresa_aprovacao',
+            label: 'Aprovação Multi-Empresa',
+            icon: FontAwesomeIcons.userCheck,
+            screenIndex: 185),
       ],
     ),
     MenuGroup(

@@ -24,6 +24,8 @@ import '../../../windows/screens/dashboard_financeiro_screen.dart';
 import '../../../windows/screens/dashboard_mensalidade_screen.dart';
 import '../../../widgets/boleto_importacao_lote_screen.dart';
 import '../../../widgets/solicitacao_acesso_aprovacao_screen.dart';
+import '../../../widgets/login_empresa_acesso_aprovacao_screen.dart';
+import '../../../widgets/trocar_empresa_screen.dart';
 import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
 import '../../../windows/screens/dieta_grid_screen.dart';
 import '../../../windows/screens/diretorio_grid_screen.dart';
@@ -525,6 +527,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'proposta_comercial', hasPermission: (p) => true), // 182: Propostas Comerciais
         const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
         const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
+        const LoginEmpresaAcessoAprovacaoScreen(), // 185: Aprovação Multi-Empresa
+        const TrocarEmpresaScreen(), // 186: Trocar Empresa
       ];
 
   String get userName {
