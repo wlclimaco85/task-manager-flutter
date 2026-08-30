@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
+import '../../../services/nfse_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/nfse_ux_helper.dart';
@@ -78,6 +79,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   DateTime? _dataCompetencia;
 
   String? _empresaNome;
+
+  final _nfseCaller = NfseCaller();
+  bool _emitindoNfse = false;
+  bool _cancelandoNfse = false;
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfseId => widget.item['id']?.toString() ?? '';
@@ -370,6 +375,231 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
+  // ── Emitir / Cancelar na prefeitura (card 4phuZyDS) ─────────────────────
+  //
+  // Antes desta mudança, os botões Emitir/Cancelar só existiam no painel
+  // avulso NfseCaller (nfse_screen.dart), desconectado do registro Nfse real
+  // -- o status exibido aqui ficava sempre "PENDENTE". Agora a própria tela
+  // de detalhe chama o endpoint fiscal (POST /api/fiscal/nfse/emitir|cancelar)
+  // com o nfseId do registro real; o backend persiste o status retornado
+  // de volta em Nfse.status (ver NfseFacade.sincronizarStatusNoRegistro) e
+  // esta tela reflete o mesmo valor localmente, sem precisar recarregar.
+
+  /// Achado de code review (card 4phuZyDS): os botões ficavam sempre
+  /// habilitados para qualquer NFSe existente, permitindo reemitir uma nota
+  /// já autorizada ou cancelar uma já cancelada -- risco fiscal (chamada
+  /// real à prefeitura sem necessidade), não só de UX.
+  bool get _statusJaAutorizado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
+          .toUpperCase()
+          .contains('AUTORIZAD');
+  bool get _statusJaCancelado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
+          .toUpperCase()
+          .contains('CANCELAD');
+
+  /// Tomador (parceiro) atualmente selecionado no dropdown, ou `null`.
+  Map<String, dynamic>? get _tomadorSelecionado {
+    if (_tomadorId == null) return null;
+    for (final t in _tomadores) {
+      if (t['id']?.toString() == _tomadorId) return t;
+    }
+    return null;
+  }
+
+  /// Descrição/valor agregados a partir dos itens da nota, exigidos pelo
+  /// endpoint fiscal (NfseEmitirRequest.servicoDescricao/valor) -- a tela
+  /// trabalha com múltiplos itens, então soma o valor total e junta as
+  /// descrições numa única string legível.
+  ({String descricao, double valor, String aliquota, String codTrib})
+      _resumoItensParaEmissao() {
+    if (_itens.isEmpty) {
+      return (descricao: '', valor: 0, aliquota: '', codTrib: '');
+    }
+    final descricoes = _itens
+        .map((i) => i['descricao']?.toString().trim() ?? '')
+        .where((d) => d.isNotEmpty)
+        .join('; ');
+    var total = 0.0;
+    for (final i in _itens) {
+      total += double.tryParse(
+              (i['valorTotal'] ?? i['valor_total'] ?? '').toString()) ??
+          0;
+    }
+    final primeiro = _itens.first;
+    final aliquota = (primeiro['aliquotaIss'] ?? primeiro['aliquota_iss'])
+            ?.toString() ??
+        '';
+    final codTrib = (primeiro['codigoTributacaoMunicipal'] ??
+                primeiro['codigo_tributacao_municipal'])
+            ?.toString() ??
+        '';
+    return (
+      descricao: descricoes,
+      valor: total,
+      aliquota: aliquota,
+      codTrib: codTrib
+    );
+  }
+
+  /// Valida os pré-requisitos para chamar o endpoint fiscal, retornando a
+  /// lista de campos faltantes (vazia quando pronto para enviar).
+  List<String> _validarPreRequisitosFiscais({required bool paraCancelar}) {
+    final erros = <String>[];
+    if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
+    if (paraCancelar) {
+      if (_numeroCtrl.text.trim().isEmpty) erros.add('Número da NFSe');
+      return erros;
+    }
+    if (_municipioCtrl.text.trim().isEmpty) erros.add('Município de Prestação');
+    final tomador = _tomadorSelecionado;
+    if (tomador == null) erros.add('Tomador / Parceiro');
+    final cnpjTomador = tomador?['cpf']?.toString().trim() ?? '';
+    if (cnpjTomador.isEmpty) erros.add('CPF/CNPJ do Tomador');
+    if (_itens.isEmpty) {
+      erros.add('Serviços da nota (adicione ao menos um item)');
+    }
+    return erros;
+  }
+
+  Future<void> _emitirNfse() async {
+    final erros = _validarPreRequisitosFiscais(paraCancelar: false);
+    if (erros.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Preencha antes de emitir: ${erros.join(', ')}.'),
+        backgroundColor: _red,
+      ));
+      return;
+    }
+    final resumo = _resumoItensParaEmissao();
+    final tomador = _tomadorSelecionado!;
+    setState(() => _emitindoNfse = true);
+    try {
+      final result = await _nfseCaller.emitir(
+        municipio: _municipioCtrl.text,
+        cnpjTomador: tomador['cpf']?.toString() ?? '',
+        nomeTomador: tomador['nome']?.toString() ?? '',
+        descricaoServico: resumo.descricao,
+        valor: resumo.valor,
+        aliquotaIss: double.tryParse(resumo.aliquota) ?? 0,
+        cnae: '',
+        codigoTributacao: resumo.codTrib.isNotEmpty
+            ? resumo.codTrib
+            : _codigoServicoCtrl.text,
+        empresaId: _empresaId,
+        nfseId: int.tryParse(_nfseId),
+      );
+      if (!mounted) return;
+      final novoStatus = result['status']?.toString();
+      final novoNumero = result['nfseNumber']?.toString();
+      setState(() {
+        if (novoStatus != null && novoStatus.isNotEmpty) {
+          _statusVal = novoStatus;
+        }
+        if (novoNumero != null &&
+            novoNumero.isNotEmpty &&
+            _numeroCtrl.text.trim().isEmpty) {
+          _numeroCtrl.text = novoNumero;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(NfseUxHelper.retornoPrefeitura(result)),
+        backgroundColor: _green,
+      ));
+    } on NfseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao emitir: $e'), backgroundColor: _red));
+      }
+    } finally {
+      if (mounted) setState(() => _emitindoNfse = false);
+    }
+  }
+
+  Future<void> _cancelarNfse() async {
+    final erros = _validarPreRequisitosFiscais(paraCancelar: true);
+    if (erros.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Preencha antes de cancelar: ${erros.join(', ')}.'),
+        backgroundColor: _red,
+      ));
+      return;
+    }
+    final motivo = await _pedirMotivoCancelamento();
+    if (motivo == null || motivo.trim().isEmpty) return;
+    setState(() => _cancelandoNfse = true);
+    try {
+      final result = await _nfseCaller.cancelar(
+        numero: _numeroCtrl.text,
+        motivo: motivo,
+        empresaId: _empresaId,
+        municipio: _municipioCtrl.text,
+        nfseId: int.tryParse(_nfseId),
+      );
+      if (!mounted) return;
+      final novoStatus = result['status']?.toString();
+      setState(() {
+        if (novoStatus != null && novoStatus.isNotEmpty) {
+          _statusVal = novoStatus;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(NfseUxHelper.retornoPrefeitura(result)),
+        backgroundColor: _green,
+      ));
+    } on NfseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao cancelar: $e'), backgroundColor: _red));
+      }
+    } finally {
+      if (mounted) setState(() => _cancelandoNfse = false);
+    }
+  }
+
+  Future<String?> _pedirMotivoCancelamento() async {
+    final ctrl = TextEditingController();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Cancelar NFSe'),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            decoration:
+                const InputDecoration(labelText: 'Motivo do cancelamento'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Voltar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(ctrl.text),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      // Achado de code review (card 4phuZyDS): ctrl não era liberado --
+      // o dialog é efêmero (fecha antes de qualquer novo build), então é
+      // seguro descartar assim que o showDialog retorna.
+      ctrl.dispose();
+    }
+  }
+
   Future<void> _salvarItem(Map<String, dynamic> item) async {
     final isNew = item['id'] == null;
     final body = <String, dynamic>{
@@ -556,16 +786,54 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return _sectionCard(
       title: 'Dados da nota',
       icon: Icons.receipt_long,
-      action: ElevatedButton.icon(
-        onPressed: _salvarCabecalho,
-        icon: const Icon(Icons.save, size: 14),
-        label: const Text('Salvar'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _green,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      action: Wrap(spacing: 8, children: [
+        if (!_isNovo) ...[
+          OutlinedButton.icon(
+            onPressed: (_emitindoNfse || _statusJaAutorizado)
+                ? null
+                : _emitirNfse,
+            icon: _emitindoNfse
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.send, size: 14),
+            label: Text(_statusJaAutorizado ? 'Já autorizada' : 'Emitir'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _green,
+              side: const BorderSide(color: _green),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: (_cancelandoNfse || _statusJaCancelado)
+                ? null
+                : _cancelarNfse,
+            icon: _cancelandoNfse
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.cancel_outlined, size: 14),
+            label: Text(_statusJaCancelado ? 'Já cancelada' : 'Cancelar'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _red,
+              side: const BorderSide(color: _red),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ],
+        ElevatedButton.icon(
+          onPressed: _salvarCabecalho,
+          icon: const Icon(Icons.save, size: 14),
+          label: const Text('Salvar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
         ),
-      ),
+      ]),
       child: _formGrid([
         _ddSerie(),
         _inp('Número', _numeroCtrl),
@@ -652,7 +920,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// substitui o texto cinza puro anterior para dar clareza visual imediata
   /// (critério de aceite: "retorno prefeitura mapeado e exibido").
   Widget _statusChip(String status) {
-    final upper = status.toUpperCase();
+    // Card 4phuZyDS: os adaptadores de município reais retornam status em
+    // INGLÊS (ISSUED/AUTHORIZED/CANCELLED/CONTINGENCY), que o backend agora
+    // persiste em Nfse.status quando a emissão/cancelamento passa pelo
+    // nfseId real. O "contains" abaixo era só em português e nunca batia
+    // com esses valores -- o chip ficava sempre "Pendente" mesmo já
+    // autorizado/cancelado na prefeitura. NfseUxHelper.statusPrefeituraLabel
+    // já traduz os dois idiomas; usamos o rótulo traduzido (sempre em
+    // português) tanto para exibir quanto para decidir cor/ícone.
+    final label = NfseUxHelper.statusPrefeituraLabel(status);
+    final upper = label.toUpperCase();
     Color cor;
     IconData icone;
     String descricaoAcessivel;
@@ -691,12 +968,20 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
+        child: Row(children: [
           Icon(icone, size: 14, color: cor, semanticLabel: descricaoAcessivel),
           const SizedBox(width: 6),
-          Text(status,
-              style: TextStyle(
-                  fontSize: 12, color: cor, fontWeight: FontWeight.w600)),
+          // Flexible + ellipsis: o rótulo traduzido ("Autorizada pela
+          // prefeitura") é bem mais longo que o valor bruto antigo
+          // ("PENDENTE") e a célula desta grade de 3 colunas tem largura
+          // fixa -- sem isso o texto mais longo estoura o Row (RenderFlex
+          // overflow) em vez de truncar graciosamente.
+          Flexible(
+            child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 12, color: cor, fontWeight: FontWeight.w600)),
+          ),
         ]),
       ),
     );

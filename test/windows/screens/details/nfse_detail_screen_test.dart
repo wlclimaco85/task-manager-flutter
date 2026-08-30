@@ -151,4 +151,85 @@ void main() {
       expect(find.text('Novo'), findsOneWidget);
     });
   });
+
+  // Card 4phuZyDS: mesma wiring de Emitir/Cancelar aplicada à versão web
+  // (ver test/web/screens/details/nfse_detail_screen_test.dart), replicada
+  // aqui para a versão windows.
+  group('Card 4phuZyDS — botões Emitir/Cancelar (windows)', () {
+    testWidgets('NFSe nova (sem id) não mostra botões Emitir/Cancelar',
+        (tester) async {
+      await tester
+          .pumpWidget(MaterialApp(home: const NfseDetailScreen(item: {})));
+      await tester.pump();
+
+      expect(find.widgetWithText(OutlinedButton, 'Emitir'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Cancelar'), findsNothing);
+    });
+
+    testWidgets(
+        'NFSe existente mostra botões Emitir/Cancelar e bloqueia envio sem tomador/itens',
+        (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(item: const {'id': 601, 'status': 'PENDENTE'})));
+      await tester.pump();
+
+      expect(find.widgetWithText(OutlinedButton, 'Emitir'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Cancelar'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Emitir'));
+      await tester.pump();
+
+      expect(find.textContaining('Preencha antes de emitir'), findsOneWidget);
+    });
+
+    testWidgets('Status em inglês (ISSUED) é exibido traduzido no chip',
+        (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(item: const {'id': 602, 'status': 'ISSUED'})));
+      await tester.pump();
+
+      expect(find.text('Autorizada pela prefeitura'), findsOneWidget);
+      expect(find.text('ISSUED'), findsNothing);
+    });
+
+    testWidgets('NFSe já autorizada desabilita o botão Emitir', (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 603, 'status': 'AUTHORIZED'})));
+      await tester.pump();
+
+      final emitirBtn = tester.widget<OutlinedButton>(find.ancestor(
+          of: find.text('Já autorizada'),
+          matching: find.byType(OutlinedButton)));
+      expect(emitirBtn.onPressed, isNull);
+    });
+
+    testWidgets('NFSe já cancelada desabilita o botão Cancelar', (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 604, 'status': 'CANCELLED'})));
+      await tester.pump();
+
+      final cancelarBtn = tester.widget<OutlinedButton>(find.ancestor(
+          of: find.text('Já cancelada'),
+          matching: find.byType(OutlinedButton)));
+      expect(cancelarBtn.onPressed, isNull);
+    });
+  });
 }
