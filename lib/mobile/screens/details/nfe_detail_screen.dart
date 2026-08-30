@@ -26,6 +26,17 @@ double? _mobileNfeTotal(
   return double.tryParse(value?.toString().replaceAll(',', '.') ?? '');
 }
 
+Map<String, dynamic> _mobileNfeCabecalhoAtual(
+  Map<String, dynamic> item,
+  Map<String, dynamic> detalhe,
+) {
+  final cabecalho = Map<String, dynamic>.from(item);
+  detalhe.forEach((key, value) {
+    if (value != null) cabecalho[key] = value;
+  });
+  return cabecalho;
+}
+
 class MobileNfeSankhyaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   const MobileNfeSankhyaDetailScreen({super.key, required this.item});
@@ -40,6 +51,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
+  Map<String, dynamic> _detalheNfe = {};
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
   List<Map<String, dynamic>> _parceiros = [];
@@ -69,6 +81,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   String get _nfeId => widget.item['id']?.toString() ?? '';
   bool get _isEntrada =>
       widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
+  Map<String, dynamic> get _cabecalhoNfe =>
+      _mobileNfeCabecalhoAtual(widget.item, _detalheNfe);
 
   @override
   void initState() {
@@ -76,6 +90,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     _initCabecalho();
     _loadDropdowns();
     if (!_isNovo) {
+      _loadDetalheNfe();
       _loadItens();
       _loadContas();
     }
@@ -182,6 +197,26 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
             .map((e) => Map<String, dynamic>.from(e))
             .toList());
       }
+    } catch (_) {}
+  }
+
+  Future<void> _loadDetalheNfe() async {
+    try {
+      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId');
+      if (r.statusCode != 200) return;
+
+      final b = jsonDecode(r.body);
+      final raw = b is Map && b['data'] is Map ? b['data'] : b;
+      if (raw is! Map) return;
+
+      final detalhe = Map<String, dynamic>.from(raw);
+      if (!mounted) return;
+      setState(() {
+        _detalheNfe = detalhe;
+        if (detalhe['status'] != null) {
+          _statusVal = detalhe['status'].toString();
+        }
+      });
     } catch (_) {}
   }
 
@@ -363,7 +398,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
         _section('Totais fiscais'),
         ...campos.map((campo) {
           final value =
-              _mobileNfeTotal(widget.item, campo.value[0], campo.value[1]);
+              _mobileNfeTotal(_cabecalhoNfe, campo.value[0], campo.value[1]);
           return _readField(campo.key, value?.toStringAsFixed(2) ?? '0.00');
         }),
       ],

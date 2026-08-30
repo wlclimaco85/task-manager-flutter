@@ -40,6 +40,18 @@ bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) =>
     (tipoOperacao?.toString() ?? '').toUpperCase() != 'ENTRADA';
 
 @visibleForTesting
+Map<String, dynamic> nfeDetailCabecalhoAtual(
+  Map<String, dynamic> item,
+  Map<String, dynamic> detalhe,
+) {
+  final cabecalho = Map<String, dynamic>.from(item);
+  detalhe.forEach((key, value) {
+    if (value != null) cabecalho[key] = value;
+  });
+  return cabecalho;
+}
+
+@visibleForTesting
 double? nfeDetailParseDouble(Object? value) {
   if (value == null) return null;
   if (value is num) return value.toDouble();
@@ -351,6 +363,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   List<Map<String, dynamic>> _itens = [];
   List<Map<String, dynamic>> _contas = [];
+  Map<String, dynamic> _detalheNfe = {};
 
   // NF07 — Pagamentos
   List<NfePagamento> _pagamentos = [];
@@ -406,6 +419,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
       widget.item['tipoOperacao']?.toString().toUpperCase() == 'ENTRADA';
   bool get _isRascunhoImportacao =>
       isNfeRascunhoImportacao(_statusVal ?? widget.item['status']);
+  Map<String, dynamic> get _cabecalhoNfe =>
+      nfeDetailCabecalhoAtual(widget.item, _detalheNfe);
 
   @override
   void initState() {
@@ -413,6 +428,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
     _initCabecalho();
     _loadDropdowns();
     if (!_isNovo) {
+      _loadDetalheNfe();
       _loadItens();
       _loadContas();
       _loadPagamentos();
@@ -560,6 +576,29 @@ class _State extends State<NfeSankhyaDetailScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadDetalheNfe() async {
+    try {
+      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId');
+      if (r.statusCode != 200) return;
+
+      final b = jsonDecode(r.body);
+      final raw = b is Map && b['data'] is Map ? b['data'] : b;
+      if (raw is! Map) return;
+
+      final detalhe = Map<String, dynamic>.from(raw);
+      if (!mounted) return;
+      setState(() {
+        _detalheNfe = detalhe;
+        if (detalhe['status'] != null) {
+          _statusVal = detalhe['status'].toString();
+        }
+      });
+      if (_isRascunhoImportacao) {
+        setState(_aplicarDefaultsFinanceirosDaImportacao);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadItens() async {
     try {
       final r = await TenantContext.get(
@@ -598,12 +637,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Future<void> _loadPagamentos() async {
     if (_isNovo) return;
     setState(() => _pagamentosLoading = true);
-    var financeiroCarregado = false;
     try {
       // Pagamentos
       final rp = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/nfe/$_nfeId/pagamentos');
-      final pagamentosOk = rp.statusCode == 200;
       if (rp.statusCode == 200) {
         final b = jsonDecode(rp.body);
         final List raw = b is List
@@ -619,7 +656,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Fatura
       final rf =
           await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$_nfeId/fatura');
-      final faturaOk = rf.statusCode == 200 || rf.statusCode == 404;
       if (rf.statusCode == 200) {
         try {
           final bf = jsonDecode(rf.body);
@@ -638,7 +674,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Duplicatas
       final rd = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/nfe/$_nfeId/duplicatas');
-      final duplicatasOk = rd.statusCode == 200;
       if (rd.statusCode == 200) {
         final bd = jsonDecode(rd.body);
         final List rawd = bd is List
@@ -651,10 +686,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             .map((e) => NfeDuplicata.fromJson(Map<String, dynamic>.from(e)))
             .toList());
       }
-      financeiroCarregado = pagamentosOk && faturaOk && duplicatasOk;
     } catch (_) {}
     if (!mounted) return;
-    if (financeiroCarregado && _isRascunhoImportacao) {
+    if (_isRascunhoImportacao) {
       _aplicarDefaultsFinanceirosDaImportacao();
     }
     setState(() => _pagamentosLoading = false);
@@ -2113,7 +2147,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   String _valorMonetario(double value) => value.toStringAsFixed(2);
 
-  double _valorNfe() => _asDouble(widget.item['valorTotal']) ?? 0;
+  double _valorNfe() => _asDouble(_cabecalhoNfe['valorTotal']) ?? 0;
 
   String _itemText(Map<String, dynamic> item, String camel, String snake) {
     return item[camel]?.toString() ?? item[snake]?.toString() ?? '';
@@ -2265,8 +2299,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final totais = nfeDetailTotaisParaExibicao(
       valorNota: valorNota,
       itens: _itens,
-      cabecalho: widget.item,
-      totalServicos: _asDouble(widget.item['totalServicos']) ?? 0,
+      cabecalho: _cabecalhoNfe,
+      totalServicos: _asDouble(_cabecalhoNfe['totalServicos']) ?? 0,
     );
     return Padding(
         padding: const EdgeInsets.all(10),
@@ -2418,7 +2452,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final valorTotal = (widget.item['valorTotal'] as num?)?.toDouble() ?? 0;
+    final valorTotal = _valorNfe();
     final totalPago = _pagamentos.fold<double>(0, (s, p) => s + p.vPag);
     final diferenca = totalPago - valorTotal;
     final okPago = diferenca.abs() <= 0.01;
