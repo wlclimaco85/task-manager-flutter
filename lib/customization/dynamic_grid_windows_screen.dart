@@ -127,7 +127,47 @@ class _DynamicGridWindowsScreenState<T>
         await Future.delayed(Duration(seconds: i * 2)); // 2s, 4s, 6s, 8s
       }
     }
+    final fallback = _localTelaConfig(widget.telaNome);
+    if (fallback != null) return fallback;
     throw Exception("Tela '${widget.telaNome}' não encontrada.");
+  }
+
+  TelaConfig? _localTelaConfig(String nome) {
+    final key = nome.toLowerCase().trim();
+    if (key != 'nfse') return null;
+    const endpoint = '/api/nfse';
+    return TelaConfig(
+      id: -1099,
+      nome: 'nfse',
+      titulo: 'NFSe',
+      fetchEndpoint: endpoint,
+      createEndpoint: endpoint,
+      updateEndpoint: '$endpoint/:id',
+      deleteEndpoint: '$endpoint/:id',
+      fields: [
+        TelaField(label: 'Id', fieldName: 'id', isInForm: false),
+        TelaField(label: 'Número', fieldName: 'numero', fieldOrder: 1),
+        TelaField(
+          label: 'Tomador',
+          fieldName: 'tomador.nome',
+          isInForm: false,
+          fieldOrder: 2,
+        ),
+        TelaField(label: 'Status', fieldName: 'status', fieldOrder: 3),
+        TelaField(
+          label: 'Valor Total',
+          fieldName: 'valorTotal',
+          fieldType: TelaFieldType.currency,
+          fieldOrder: 4,
+        ),
+        TelaField(
+          label: 'Data de Emissão',
+          fieldName: 'dataEmissao',
+          fieldType: TelaFieldType.date,
+          fieldOrder: 5,
+        ),
+      ],
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
