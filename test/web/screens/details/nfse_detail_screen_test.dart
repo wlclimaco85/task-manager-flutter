@@ -104,5 +104,37 @@ void main() {
       expect(find.text('Autorizada pela prefeitura'), findsOneWidget);
       expect(find.text('ISSUED'), findsNothing);
     });
+
+    testWidgets('NFSe já autorizada desabilita o botão Emitir', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 503, 'status': 'AUTHORIZED'})));
+      await tester.pump();
+
+      final emitirBtn = tester.widget<OutlinedButton>(
+          find.ancestor(
+              of: find.text('Já autorizada'),
+              matching: find.byType(OutlinedButton)));
+      expect(emitirBtn.onPressed, isNull);
+    });
+
+    testWidgets('NFSe já cancelada desabilita o botão Cancelar', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 504, 'status': 'CANCELLED'})));
+      await tester.pump();
+
+      final cancelarBtn = tester.widget<OutlinedButton>(
+          find.ancestor(
+              of: find.text('Já cancelada'),
+              matching: find.byType(OutlinedButton)));
+      expect(cancelarBtn.onPressed, isNull);
+    });
   });
 }

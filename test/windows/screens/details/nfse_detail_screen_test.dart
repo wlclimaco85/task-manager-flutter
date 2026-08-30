@@ -199,5 +199,37 @@ void main() {
       expect(find.text('Autorizada pela prefeitura'), findsOneWidget);
       expect(find.text('ISSUED'), findsNothing);
     });
+
+    testWidgets('NFSe já autorizada desabilita o botão Emitir', (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 603, 'status': 'AUTHORIZED'})));
+      await tester.pump();
+
+      final emitirBtn = tester.widget<OutlinedButton>(find.ancestor(
+          of: find.text('Já autorizada'),
+          matching: find.byType(OutlinedButton)));
+      expect(emitirBtn.onPressed, isNull);
+    });
+
+    testWidgets('NFSe já cancelada desabilita o botão Cancelar', (tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(MaterialApp(
+          home: NfseDetailScreen(
+              item: const {'id': 604, 'status': 'CANCELLED'})));
+      await tester.pump();
+
+      final cancelarBtn = tester.widget<OutlinedButton>(find.ancestor(
+          of: find.text('Já cancelada'),
+          matching: find.byType(OutlinedButton)));
+      expect(cancelarBtn.onPressed, isNull);
+    });
   });
 }

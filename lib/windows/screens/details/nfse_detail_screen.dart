@@ -385,6 +385,19 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   // de volta em Nfse.status (ver NfseFacade.sincronizarStatusNoRegistro) e
   // esta tela reflete o mesmo valor localmente, sem precisar recarregar.
 
+  /// Achado de code review (card 4phuZyDS): os botões ficavam sempre
+  /// habilitados para qualquer NFSe existente, permitindo reemitir uma nota
+  /// já autorizada ou cancelar uma já cancelada -- risco fiscal (chamada
+  /// real à prefeitura sem necessidade), não só de UX.
+  bool get _statusJaAutorizado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
+          .toUpperCase()
+          .contains('AUTORIZAD');
+  bool get _statusJaCancelado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
+          .toUpperCase()
+          .contains('CANCELAD');
+
   /// Tomador (parceiro) atualmente selecionado no dropdown, ou `null`.
   Map<String, dynamic>? get _tomadorSelecionado {
     if (_tomadorId == null) return null;
@@ -554,29 +567,37 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
-  Future<String?> _pedirMotivoCancelamento() {
+  Future<String?> _pedirMotivoCancelamento() async {
     final ctrl = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancelar NFSe'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Motivo do cancelamento'),
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Cancelar NFSe'),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            decoration:
+                const InputDecoration(labelText: 'Motivo do cancelamento'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Voltar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(ctrl.text),
+              child: const Text('Confirmar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Voltar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(ctrl.text),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      // Achado de code review (card 4phuZyDS): ctrl não era liberado --
+      // o dialog é efêmero (fecha antes de qualquer novo build), então é
+      // seguro descartar assim que o showDialog retorna.
+      ctrl.dispose();
+    }
   }
 
   Future<void> _salvarItem(Map<String, dynamic> item) async {
@@ -768,14 +789,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       action: Wrap(spacing: 8, children: [
         if (!_isNovo) ...[
           OutlinedButton.icon(
-            onPressed: _emitindoNfse ? null : _emitirNfse,
+            onPressed: (_emitindoNfse || _statusJaAutorizado)
+                ? null
+                : _emitirNfse,
             icon: _emitindoNfse
                 ? const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.send, size: 14),
-            label: const Text('Emitir'),
+            label: Text(_statusJaAutorizado ? 'Já autorizada' : 'Emitir'),
             style: OutlinedButton.styleFrom(
               foregroundColor: _green,
               side: const BorderSide(color: _green),
@@ -783,14 +806,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             ),
           ),
           OutlinedButton.icon(
-            onPressed: _cancelandoNfse ? null : _cancelarNfse,
+            onPressed: (_cancelandoNfse || _statusJaCancelado)
+                ? null
+                : _cancelarNfse,
             icon: _cancelandoNfse
                 ? const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.cancel_outlined, size: 14),
-            label: const Text('Cancelar'),
+            label: Text(_statusJaCancelado ? 'Já cancelada' : 'Cancelar'),
             style: OutlinedButton.styleFrom(
               foregroundColor: _red,
               side: const BorderSide(color: _red),
