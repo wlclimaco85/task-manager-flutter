@@ -110,5 +110,22 @@ void main() {
       expect(porNome['Vlr. Nota'], closeTo(8999.83, 0.001));
       expect(porNome['Total Tributos'], closeTo(2830.45, 0.001));
     });
+
+    test('totais usam o detalhe fresco quando a grid veio parcial', () {
+      final cabecalho = nfeDetailCabecalhoAtual(
+        {'id': 45, 'valorTotal': 2634.50, 'vIcms': 316.14},
+        {'vIcms': null, 'vPis': 43.47, 'vCofins': 200.22},
+      );
+      final totais = nfeDetailTotaisParaExibicao(
+        valorNota: 2634.50,
+        itens: const [],
+        cabecalho: cabecalho,
+      );
+
+      final porNome = Map.fromEntries(totais);
+      expect(porNome['ICMS'], closeTo(316.14, 0.001));
+      expect(porNome['PIS'], closeTo(43.47, 0.001));
+      expect(porNome['COFINS'], closeTo(200.22, 0.001));
+    });
   });
 }
