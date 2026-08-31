@@ -188,9 +188,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
-    if (content.isEmpty || _channel == null) return;
+    if (content.isEmpty) return;
+    if (_channel == null || !_wsConnected) {
+      _showSnack('Conexao do chat ainda nao esta pronta. Tente novamente.',
+          error: true);
+      return;
+    }
 
-    _channel!.sink.add(json.encode(buildChatOutgoingPayload(
+    final payload = buildChatOutgoingPayload(
       senderName: _loggedUserName,
       senderEmail: _loggedUserEmail,
       content: content,
@@ -201,9 +206,16 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       parceiroId: TenantContext.parceiroId,
       aplicativoId: TenantContext.aplicativoId,
       userId: TenantContext.userId,
-    )));
+    );
 
+    _channel!.sink.add(json.encode(payload));
     _messageController.clear();
+    final localMessage = ChatMessage.fromJson(payload);
+    _adoptRealChatIdIfNeeded(localMessage);
+    if (!_isDuplicate(localMessage)) {
+      setState(() => _messages.add(localMessage));
+    }
+    _scrollToBottom();
   }
 
   Future<void> _uploadAndSendFile() async {

@@ -15,6 +15,12 @@ Map<String, dynamic> buildChatOutgoingPayload({
   String? fileUrl,
   int? ticketId,
 }) {
+  final resolvedChatId = resolveOutgoingChatId(
+    chatId: chatId,
+    empresaId: empresaId,
+    parceiroId: parceiroId,
+  );
+
   return {
     'sender': senderName,
     'senderName': senderName,
@@ -23,7 +29,7 @@ Map<String, dynamic> buildChatOutgoingPayload({
     'sector': sector,
     'type': type,
     'timestamp': (timestamp ?? DateTime.now()).toIso8601String(),
-    'chatId': chatId,
+    'chatId': resolvedChatId,
     if (empresaId != null) 'empId': empresaId,
     if (parceiroId != null) 'parceiroId': parceiroId,
     if (aplicativoId != null) 'codApp': aplicativoId,
@@ -33,4 +39,19 @@ Map<String, dynamic> buildChatOutgoingPayload({
     if (fileUrl != null) 'fileUrl': fileUrl,
     if (ticketId != null) 'ticketId': ticketId,
   };
+}
+
+String resolveOutgoingChatId({
+  required String chatId,
+  int? empresaId,
+  int? parceiroId,
+}) {
+  final normalized = chatId.trim();
+  if (normalized.isNotEmpty && normalized != '0') {
+    return normalized;
+  }
+  if (empresaId != null && parceiroId != null) {
+    return 'empresa-$empresaId-parceiro-$parceiroId';
+  }
+  return normalized.isEmpty ? '0' : normalized;
 }

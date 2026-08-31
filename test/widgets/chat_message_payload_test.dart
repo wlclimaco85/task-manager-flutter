@@ -3,7 +3,8 @@ import 'package:task_manager_flutter/models/chat_model.dart';
 import 'package:task_manager_flutter/widgets/chat/chat_message_payload.dart';
 
 void main() {
-  test('payload da primeira mensagem envia tenant completo sem valor fixo', () {
+  test('payload da primeira mensagem envia tenant completo sem chatId fixo 0',
+      () {
     final timestamp = DateTime.parse('2026-08-28T18:15:40.266');
 
     final payload = buildChatOutgoingPayload(
@@ -20,7 +21,7 @@ void main() {
       userId: 967,
     );
 
-    expect(payload['chatId'], '0');
+    expect(payload['chatId'], 'empresa-9-parceiro-1751');
     expect(payload['empId'], 9);
     expect(payload['parceiroId'], 1751);
     expect(payload['codApp'], 4);
@@ -28,6 +29,37 @@ void main() {
     expect(payload['content'], 'dddddd');
     expect(payload['sector'], 'Departamento Fiscal');
     expect(payload['timestamp'], '2026-08-28T18:15:40.266');
+  });
+
+  test('payload sem empresa e parceiro preserva chatId 0 para backend resolver',
+      () {
+    final payload = buildChatOutgoingPayload(
+      senderName: 'Cliente',
+      senderEmail: 'cliente@appacademia.local',
+      content: 'primeira mensagem',
+      sector: 'Departamento Fiscal',
+      chatId: '0',
+      type: 'text',
+    );
+
+    expect(payload['chatId'], '0');
+    expect(payload.containsKey('empId'), isFalse);
+    expect(payload.containsKey('parceiroId'), isFalse);
+  });
+
+  test('payload de conversa existente preserva chatId recebido', () {
+    final payload = buildChatOutgoingPayload(
+      senderName: 'Cliente',
+      senderEmail: 'cliente@appacademia.local',
+      content: 'continuando',
+      sector: 'Departamento Fiscal',
+      chatId: 'empresa-1-parceiro-1751-chamado-33',
+      type: 'text',
+      empresaId: 1,
+      parceiroId: 1751,
+    );
+
+    expect(payload['chatId'], 'empresa-1-parceiro-1751-chamado-33');
   });
 
   test('ChatMessage le parceiroId devolvido pelo WebSocket', () {

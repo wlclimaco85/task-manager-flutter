@@ -71,5 +71,31 @@ void main() {
 
       expect(envios, 1);
     });
+
+    testWidgets('Botao enviar dispara uma mensagem digitada',
+        (WidgetTester tester) async {
+      var envios = 0;
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatComposer(
+              controller: controller,
+              onAttach: () {},
+              onTicket: () {},
+              onSend: () => envios++,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'dddddd');
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pump();
+
+      expect(envios, 1);
+    });
   });
 }
