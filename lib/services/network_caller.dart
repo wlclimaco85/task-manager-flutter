@@ -279,12 +279,17 @@ class NetworkCaller {
       // sempre. /rest/auth/ ja cobre o endpoint real de autenticacao.
       final uri = Uri.tryParse(url);
       final String uriPath = uri?.path ?? '';
-      final bool isAuthRequest = uriPath.contains('/rest/auth/') ||
-          uriPath.contains('inserirAluno');
+      final bool isAuthRequest =
+          uriPath.contains('/rest/auth/') || uriPath.contains('inserirAluno');
+      final bool preservaEmpresaIdDoBody =
+          uriPath.contains('/empresas-acesso/solicitar');
 
       if (!isAuthRequest && body != null) {
-        // Usa TenantHelper para injetar empresa/parceiro/aplicativo no body
-        final enrichedBody = TenantHelper.applyToBody(body);
+        // Solicitação multiempresa informa a empresa alvo no payload.
+        // Nesse caso nao sobrescreve empresaId com a empresa ativa da sessao.
+        final enrichedBody = preservaEmpresaIdDoBody
+            ? Map<String, dynamic>.from(body)
+            : TenantHelper.applyToBody(body);
         enrichedBody['audit'] ??= {};
         enrichedBody['audit']['empresaId'] = user?.empresa?.id;
         enrichedBody['audit']['appId'] = user?.aplicativo?.id;
@@ -332,7 +337,8 @@ class NetworkCaller {
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
-        if (!isAuthRequest) _handleUnauthorized(response.statusCode, enrichedUrl);
+        if (!isAuthRequest)
+          _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e, stack) {

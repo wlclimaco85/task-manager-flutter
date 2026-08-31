@@ -9,10 +9,15 @@ class EmpresaCaller {
         await NetworkCaller().getRequest(ApiLinks.allEmpresas);
     if (response.isSuccess && response.body != null) {
       final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map((item) =>
-              {'value': item['id'], 'label': item['nomeFantasia']?.toString() ?? ''})
-          .toList();
+      return data.map((item) {
+        final id = item['id'];
+        final label = (item['nomeFantasia'] ??
+                item['nome'] ??
+                item['razaoSocial'] ??
+                'Empresa #$id')
+            .toString();
+        return {'value': id, 'label': label};
+      }).toList();
     }
     return [];
   }

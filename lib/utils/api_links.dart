@@ -84,6 +84,12 @@ class ApiLinks {
       '$_baseUrlNew/api/login/me/empresas-acesso';
   static String get loginEmpresasAcessoSolicitar =>
       '$_baseUrlNew/api/login/me/empresas-acesso/solicitar';
+  static String loginEmpresasAcessoDoLogin(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/empresas-acesso';
+  static String loginEmpresasDisponiveisDoLogin(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/empresas-acesso/empresas-disponiveis';
+  static String loginEmpresasAcessoDoLoginSolicitar(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/empresas-acesso/solicitar';
   static String get loginEmpresaAtiva =>
       '$_baseUrlNew/api/login/me/empresa-ativa';
   static String get loginEmpresaAcessoPendentes =>

@@ -5,7 +5,19 @@ import '../../../utils/login_session_sync.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldType, FieldConfigWindows, FileConfig;
+import '../../../widgets/login_empresas_acesso_detail.dart';
 import '../../../services/network_caller.dart';
+
+int? _loginAcessoAsInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  if (value is Map) return _loginAcessoAsInt(value['id'] ?? value['value']);
+  return null;
+}
+
+bool _loginAcessoHasParceiro(dynamic value) => _loginAcessoAsInt(value) != null;
 
 class MobileLoginDetailScreen extends StatelessWidget {
   final Login item;
@@ -114,6 +126,18 @@ class MobileLoginDetailScreen extends StatelessWidget {
       fieldOverrides: fieldOverrides,
       onAfterSave: sincronizarSessaoLoginAtualAposSalvar,
       relatedTabs: [
+        RelatedGridTab(
+          title: 'Empresas com acesso',
+          icon: Icons.business,
+          customWidgetBuilder: (currentItem) => LoginEmpresasAcessoDetail(
+            loginId: _loginAcessoAsInt(currentItem['id']),
+            loginTemParceiro: _loginAcessoHasParceiro(
+              currentItem['parceiro'] ??
+                  currentItem['parceiroId'] ??
+                  currentItem['parcId'],
+            ),
+          ),
+        ),
         RelatedGridTab(
           title: 'Roles',
           icon: Icons.security,

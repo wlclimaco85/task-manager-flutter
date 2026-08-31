@@ -202,6 +202,7 @@ class RelatedGridTab {
 
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
+  final Widget Function(Map<String, dynamic> item)? customWidgetBuilder;
 
   /// Ver GenericGridScreen.prefetchExtraFields/onAfterSave — repassados como
   /// estão até o grid (Map<String,dynamic> porque RelatedGridTab sempre usa o
@@ -221,10 +222,15 @@ class RelatedGridTab {
     this.transformFormData,
     this.deleteEndpointOverride,
     this.customWidget,
+    this.customWidgetBuilder,
     this.prefetchExtraFields,
     this.onAfterSave,
-  }) : assert(telaNome != null || customWidget != null,
-            'RelatedGridTab requer telaNome ou customWidget');
+  }) : assert(
+          telaNome != null ||
+              customWidget != null ||
+              customWidgetBuilder != null,
+          'RelatedGridTab requer telaNome, customWidget ou customWidgetBuilder',
+        );
 }
 
 class GenericDetailFormScreen extends StatefulWidget {
@@ -673,6 +679,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             transformFormData: rt.transformFormData,
             deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
+            customWidgetBuilder: rt.customWidgetBuilder,
             prefetchExtraFields: rt.prefetchExtraFields,
             onAfterSave: rt.onAfterSave,
           );
@@ -1056,6 +1063,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   Widget _buildAutoTab(_AutoTab tab) {
+    if (tab.customWidgetBuilder != null) {
+      return tab.customWidgetBuilder!(_currentItem);
+    }
     // Widget customizado (ex: CertificadoEmpresaScreen)
     if (tab.customWidget != null) {
       return tab.customWidget!;
@@ -1797,6 +1807,7 @@ class _AutoTab {
       transformFormData;
   final String? deleteEndpointOverride;
   final Widget? customWidget;
+  final Widget Function(Map<String, dynamic> item)? customWidgetBuilder;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic> item)?
       prefetchExtraFields;
   final Future<void> Function(
@@ -1812,6 +1823,7 @@ class _AutoTab {
       this.transformFormData,
       this.deleteEndpointOverride,
       this.customWidget,
+      this.customWidgetBuilder,
       this.prefetchExtraFields,
       this.onAfterSave});
 }
