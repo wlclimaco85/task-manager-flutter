@@ -50,8 +50,5 @@ String resolveOutgoingChatId({
   if (normalized.isNotEmpty && normalized != '0') {
     return normalized;
   }
-  if (empresaId != null && parceiroId != null) {
-    return 'empresa-$empresaId-parceiro-$parceiroId';
-  }
   return normalized.isEmpty ? '0' : normalized;
 }

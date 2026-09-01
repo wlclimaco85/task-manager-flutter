@@ -3,7 +3,7 @@ import 'package:task_manager_flutter/models/chat_model.dart';
 import 'package:task_manager_flutter/widgets/chat/chat_message_payload.dart';
 
 void main() {
-  test('payload da primeira mensagem envia tenant completo sem chatId fixo 0',
+  test('payload da primeira mensagem preserva chatId 0 e envia tenant completo',
       () {
     final timestamp = DateTime.parse('2026-08-28T18:15:40.266');
 
@@ -21,7 +21,7 @@ void main() {
       userId: 967,
     );
 
-    expect(payload['chatId'], 'empresa-9-parceiro-1751');
+    expect(payload['chatId'], '0');
     expect(payload['empId'], 9);
     expect(payload['parceiroId'], 1751);
     expect(payload['codApp'], 4);
