@@ -28,6 +28,7 @@ class WindowsChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
   final String chatId;
+  final ValueChanged<ChatMessage>? onMessagePersisted;
   // Fix card #444: chamado apos finalizar com sucesso, para o container
   // (lista de atendimento) voltar para a lista.
   final VoidCallback? onFinalized;
@@ -37,6 +38,7 @@ class WindowsChatMessageScreen extends StatefulWidget {
     required this.sector,
     required this.userName,
     required this.chatId,
+    this.onMessagePersisted,
     this.onFinalized,
   });
 
@@ -114,6 +116,9 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
             final decoded = json.decode(message) as Map<String, dynamic>;
             final msg = ChatMessage.fromJson(decoded);
             _adoptRealChatIdIfNeeded(msg);
+            if ((msg.chatId ?? '').isNotEmpty && msg.chatId != '0') {
+              widget.onMessagePersisted?.call(_normalizeMessage(msg));
+            }
             if (!_isDuplicate(msg)) {
               setState(() => _messages.add(msg));
             }
@@ -184,6 +189,8 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
       fileId: msg.fileId,
       fileName: msg.fileName,
       fileUrl: msg.fileUrl,
+      status: msg.status,
+      atendenteId: msg.atendenteId,
     );
   }
 
@@ -454,7 +461,10 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
     }
     final transferido = await showDialog<bool>(
       context: context,
-      builder: (_) => ChatTransferDialog(chatId: _effectiveChatId),
+      builder: (_) => ChatTransferDialog(
+        chatId: _effectiveChatId,
+        sector: widget.sector,
+      ),
     );
     if (transferido == true && mounted) {
       widget.onFinalized?.call();

@@ -17,8 +17,6 @@ Map<String, dynamic> buildChatOutgoingPayload({
 }) {
   final resolvedChatId = resolveOutgoingChatId(
     chatId: chatId,
-    empresaId: empresaId,
-    parceiroId: parceiroId,
   );
 
   return {
@@ -43,8 +41,6 @@ Map<String, dynamic> buildChatOutgoingPayload({
 
 String resolveOutgoingChatId({
   required String chatId,
-  int? empresaId,
-  int? parceiroId,
 }) {
   final normalized = chatId.trim();
   if (normalized.isNotEmpty && normalized != '0') {

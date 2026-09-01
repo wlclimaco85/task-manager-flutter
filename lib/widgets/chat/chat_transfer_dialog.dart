@@ -4,8 +4,18 @@ import '../../utils/grid_colors.dart';
 
 class ChatTransferDialog extends StatefulWidget {
   final String chatId;
+  // Bug de producao: o dialogo chamava fetchUsuariosSetor('') (setor vazio)
+  // -- o backend rejeita/devolve lista vazia sem setor, entao a
+  // transferencia nunca tinha nenhum funcionario pra escolher. Setor da
+  // PROPRIA conversa (widget.sector das telas de chat) e' quem deve
+  // aparecer aqui.
+  final String sector;
 
-  const ChatTransferDialog({super.key, required this.chatId});
+  const ChatTransferDialog({
+    super.key,
+    required this.chatId,
+    required this.sector,
+  });
 
   @override
   State<ChatTransferDialog> createState() => _ChatTransferDialogState();
@@ -24,7 +34,7 @@ class _ChatTransferDialogState extends State<ChatTransferDialog> {
   }
 
   Future<void> _carregar() async {
-    final usuarios = await _caller.fetchUsuariosSetor('');
+    final usuarios = await _caller.fetchUsuariosSetor(widget.sector);
     if (mounted) setState(() { _usuarios = usuarios; _loading = false; });
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -67,10 +69,30 @@ class _ChatListScreenState extends State<ChatListScreen> {
     'Fiscal',
   ];
 
+  // Pedido explicito do usuario: a conversa/notificacao tem que "ficar
+  // disponivel" pra todos os usuarios do setor -- o WebSocket so' entrega em
+  // tempo real pra quem esta com uma conversa aberta (ver
+  // ChatWebSocketHandler); quem esta parado na LISTA nao tem nenhum socket
+  // ativo. Poll periodico e' a rede de seguranca pra essa tela sempre
+  // refletir o backend, mesmo sem WS ou push.
+  static const Duration _pollInterval = Duration(seconds: 15);
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
     _bootstrap();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      if (!_isLoading && mounted && ModalRoute.of(context)?.isCurrent == true) {
+        _loadChats();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _bootstrap() async {

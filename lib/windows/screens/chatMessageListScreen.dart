@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -62,10 +64,30 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
     'Fiscal',
   ];
 
+  // Pedido explicito do usuario: a conversa/notificacao tem que "ficar
+  // disponivel" pra todos os usuarios do setor -- o WebSocket so' entrega em
+  // tempo real pra quem esta com uma conversa aberta (ver
+  // ChatWebSocketHandler); quem esta parado na LISTA (sem nenhuma conversa
+  // selecionada) nao tem nenhum socket ativo. Poll periodico e' a rede de
+  // seguranca pra essa tela sempre refletir o backend, mesmo sem WS ou push.
+  static const Duration _pollInterval = Duration(seconds: 15);
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
     _bootstrap();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      if (!_isLoading && _selectedChat == null) {
+        _loadChats();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _bootstrap() async {
@@ -319,6 +341,7 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                     sector: _selectedChat!.sector,
                     userName: widget.userName,
                     chatId: _selectedChat!.chatId,
+                    onMessagePersisted: _upsertChatFromMessage,
                     // Fix card #444: ao finalizar dentro da conversa, volta
                     // para a lista de atendimentos.
                     onFinalized: () {
@@ -447,6 +470,39 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
         ],
       ),
     );
+  }
+
+  void _upsertChatFromMessage(dynamic message) {
+    final chatId = (message.chatId ?? '').toString();
+    if (chatId.isEmpty || chatId == '0') return;
+    final sector =
+        (message.sector ?? _selectedChat?.sector ?? 'Atendimento').toString();
+    final lastMessage = ((message.text ?? '').toString().isNotEmpty
+            ? message.text
+            : message.content)
+        .toString();
+    final timestamp = DateTime.tryParse(
+            (message.uploadDate ?? message.timestamp ?? '').toString()) ??
+        DateTime.now();
+    final status = chatStatusLabel(message.status?.toString());
+    setState(() {
+      final chat = Chat(
+        chatId: chatId,
+        sector: sector,
+        lastMessage: lastMessage,
+        timestamp: timestamp,
+        status: status,
+      );
+      final index = _chats.indexWhere((item) => item.chatId == chatId);
+      if (index >= 0) {
+        _chats[index] = chat;
+      } else {
+        _chats.insert(0, chat);
+      }
+      if (_selectedChat?.chatId == '0' || _selectedChat?.chatId == chatId) {
+        _selectedChat = chat;
+      }
+    });
   }
 }
 

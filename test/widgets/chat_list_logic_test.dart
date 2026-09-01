@@ -68,5 +68,13 @@ void main() {
 
       expect(setores, ['Fiscal', 'Financeiro', 'Departamento Pessoal']);
     });
+
+    test('trata todos os status de encerramento como finalizados', () {
+      expect(chatStatusLabel('FECHADO'), 'Finalizado');
+      expect(chatStatusLabel('FINALIZADO'), 'Finalizado');
+      expect(chatStatusLabel('RESOLVIDO'), 'Finalizado');
+      expect(chatStatusLabel('CANCELADO'), 'Finalizado');
+      expect(chatStatusLabel('ABERTO'), 'Ativo');
+    });
   });
 }

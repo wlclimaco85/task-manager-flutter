@@ -40,7 +40,13 @@ List<ChatListItemData> buildChatListItemsFromMessages(
 }
 
 String chatStatusLabel(String? status) {
-  return (status ?? '').toUpperCase() == 'FECHADO' ? 'Finalizado' : 'Ativo';
+  final normalized = (status ?? '').trim().toUpperCase();
+  return normalized == 'FECHADO' ||
+          normalized == 'FINALIZADO' ||
+          normalized == 'RESOLVIDO' ||
+          normalized == 'CANCELADO'
+      ? 'Finalizado'
+      : 'Ativo';
 }
 
 List<String> sectorLabelsFromCadastro(
