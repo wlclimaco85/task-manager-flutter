@@ -56,6 +56,28 @@ void main() {
     expect(find.text('Nenhum XML importado ainda.'), findsOneWidget);
   });
 
+  testWidgets(
+      'recarregar com resposta vazia remove XML exibido de carga anterior',
+      (tester) async {
+    final respostas = <List<Map<String, dynamic>>>[
+      [itemRascunho],
+      [],
+    ];
+
+    await tester.pumpWidget(wrap(NfeImportacoesGrid(
+      listarOverride: () async => respostas.removeAt(0),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('8130/1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Atualizar'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('8130/1'), findsNothing);
+    expect(find.text('Nenhum XML importado ainda.'), findsOneWidget);
+  });
+
   testWidgets('falha ao carregar (listarOverride retorna null) mostra '
       'mensagem de erro, não a lista vazia', (tester) async {
     await tester.pumpWidget(wrap(NfeImportacoesGrid(
