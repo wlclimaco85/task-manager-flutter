@@ -62,6 +62,55 @@ String mensagemErroSalvar(int statusCode, {required bool isRegraPadrao}) {
   return 'Erro ao salvar ($statusCode)';
 }
 
+// ── Tabelas fiscais fechadas (Receita Federal / SEFAZ) ─────────────────────
+// Bug de producao: campos que sao tabela fechada da Receita (CST/CSOSN, CST
+// IBS/CBS) estavam como texto livre -- usuario podia digitar qualquer coisa,
+// inclusive codigo invalido que a SEFAZ rejeita na emissao. Convertidos pra
+// dropdown com os valores oficiais.
+//
+// CST (Convenio s/no de 1970, Anexo I Tabela B) -- regime normal (CRT=3).
+const List<Map<String, String>> kOpcoesCst = [
+  {'value': '00', 'label': '00 - Tributada integralmente'},
+  {'value': '10', 'label': '10 - Tributada com ST'},
+  {'value': '20', 'label': '20 - Com redução de base de cálculo'},
+  {'value': '30', 'label': '30 - Isenta/não tributada com ST'},
+  {'value': '40', 'label': '40 - Isenta'},
+  {'value': '41', 'label': '41 - Não tributada'},
+  {'value': '50', 'label': '50 - Suspensão'},
+  {'value': '51', 'label': '51 - Diferimento'},
+  {'value': '60', 'label': '60 - ICMS cobrado anteriormente por ST'},
+  {'value': '70', 'label': '70 - Redução de BC com cobrança de ST'},
+  {'value': '90', 'label': '90 - Outras'},
+];
+
+// CSOSN (Anexo III-A) -- Simples Nacional (CRT=1,2,4).
+const List<Map<String, String>> kOpcoesCsosn = [
+  {'value': '101', 'label': '101 - Tributada c/ permissão de crédito'},
+  {'value': '102', 'label': '102 - Tributada s/ permissão de crédito'},
+  {'value': '103', 'label': '103 - Isenção (faixa de receita bruta)'},
+  {'value': '201', 'label': '201 - Tributada c/ crédito e com ST'},
+  {'value': '202', 'label': '202 - Tributada s/ crédito e com ST'},
+  {'value': '203', 'label': '203 - Isenção (faixa de receita) e com ST'},
+  {'value': '300', 'label': '300 - Imune'},
+  {'value': '400', 'label': '400 - Não tributada pelo Simples Nacional'},
+  {'value': '500', 'label': '500 - ICMS cobrado anteriormente por ST'},
+  {'value': '900', 'label': '900 - Outros'},
+];
+
+// CST IBS/CBS (Nota Técnica NF-e 2025.002, Reforma Tributária).
+const List<Map<String, String>> kOpcoesCstIbsCbs = [
+  {'value': '000', 'label': '000 - Tributação integral'},
+  {'value': '200', 'label': '200 - Alíquota reduzida'},
+  {'value': '400', 'label': '400 - Isenção'},
+  {'value': '410', 'label': '410 - Imunidade e não incidência'},
+  {'value': '510', 'label': '510 - Diferimento'},
+  {'value': '550', 'label': '550 - Suspensão'},
+  {'value': '620', 'label': '620 - Tributação monofásica'},
+  {'value': '800', 'label': '800 - Transferência de crédito'},
+  {'value': '810', 'label': '810 - Ajustes'},
+  {'value': '900', 'label': '900 - Outros'},
+];
+
 /// Aba "Impostos" do cadastro de Produto (card
 /// https://trello.com/c/YooO4mOb): configura a regra fiscal padrão do
 /// produto (ICMS, IPI, ISS, PIS/COFINS, IBS/CBS) e exceções por UF de
@@ -385,7 +434,10 @@ class _ProdutoImpostoUfFormDialogState
   bool _salvando = false;
   String? _erroServidor;
 
-  final _cstCsosnCtrl = TextEditingController();
+  // Dropdowns de tabela fechada (Receita/SEFAZ) -- nao usam TextEditingController.
+  String? _cstCsosn;
+  String? _cstIbsCbs;
+
   final _aliquotaIcmsCtrl = TextEditingController();
   final _aliqIcmsRedCtrl = TextEditingController();
   final _pRedBcCtrl = TextEditingController();
@@ -404,7 +456,6 @@ class _ProdutoImpostoUfFormDialogState
   final _cstCofinsCtrl = TextEditingController();
   final _pCofinsCtrl = TextEditingController();
 
-  final _cstIbsCbsCtrl = TextEditingController();
   final _cClassTribCtrl = TextEditingController();
   final _pIbsUfCtrl = TextEditingController();
   final _pIbsMunCtrl = TextEditingController();
@@ -419,7 +470,7 @@ class _ProdutoImpostoUfFormDialogState
     _isRegraPadrao = e != null ? e['estadoId'] == null : !widget.regraPadraoJaExiste;
     _estadoId = e?['estadoId'];
 
-    _cstCsosnCtrl.text = e?['cstCsosn']?.toString() ?? '';
+    _cstCsosn = _blankToNullStatic(e?['cstCsosn']?.toString());
     _aliquotaIcmsCtrl.text = _asText(e?['aliquotaIcms']);
     _aliqIcmsRedCtrl.text = _asText(e?['aliqIcmsRed']);
     _pRedBcCtrl.text = _asText(e?['pRedBc']);
@@ -438,7 +489,7 @@ class _ProdutoImpostoUfFormDialogState
     _cstCofinsCtrl.text = e?['cstCofins']?.toString() ?? '';
     _pCofinsCtrl.text = _asText(e?['pCofins']);
 
-    _cstIbsCbsCtrl.text = e?['cstIbsCbs']?.toString() ?? '';
+    _cstIbsCbs = _blankToNullStatic(e?['cstIbsCbs']?.toString());
     _cClassTribCtrl.text = e?['cClassTrib']?.toString() ?? '';
     _pIbsUfCtrl.text = _asText(e?['pIbsUf']);
     _pIbsMunCtrl.text = _asText(e?['pIbsMun']);
@@ -447,10 +498,12 @@ class _ProdutoImpostoUfFormDialogState
 
   String _asText(dynamic v) => v == null ? '' : v.toString();
 
+  String? _blankToNullStatic(String? texto) =>
+      (texto == null || texto.trim().isEmpty) ? null : texto.trim();
+
   @override
   void dispose() {
     for (final c in [
-      _cstCsosnCtrl,
       _aliquotaIcmsCtrl,
       _aliqIcmsRedCtrl,
       _pRedBcCtrl,
@@ -464,7 +517,6 @@ class _ProdutoImpostoUfFormDialogState
       _pPisCtrl,
       _cstCofinsCtrl,
       _pCofinsCtrl,
-      _cstIbsCbsCtrl,
       _cClassTribCtrl,
       _pIbsUfCtrl,
       _pIbsMunCtrl,
@@ -490,7 +542,7 @@ class _ProdutoImpostoUfFormDialogState
     final body = <String, dynamic>{
       'produtoId': widget.produtoId,
       'estadoId': _isRegraPadrao ? null : _estadoId,
-      'cstCsosn': _blankToNull(_cstCsosnCtrl.text),
+      'cstCsosn': _cstCsosn,
       'aliquotaIcms': _parseNum(_aliquotaIcmsCtrl.text),
       'aliqIcmsRed': _parseNum(_aliqIcmsRedCtrl.text),
       'pRedBc': _parseNum(_pRedBcCtrl.text),
@@ -504,7 +556,7 @@ class _ProdutoImpostoUfFormDialogState
       'pPis': _parseNum(_pPisCtrl.text),
       'cstCofins': _blankToNull(_cstCofinsCtrl.text),
       'pCofins': _parseNum(_pCofinsCtrl.text),
-      'cstIbsCbs': _blankToNull(_cstIbsCbsCtrl.text),
+      'cstIbsCbs': _cstIbsCbs,
       'cClassTrib': _blankToNull(_cClassTribCtrl.text),
       'pIbsUf': _parseNum(_pIbsUfCtrl.text),
       'pIbsMun': _parseNum(_pIbsMunCtrl.text),
@@ -584,7 +636,17 @@ class _ProdutoImpostoUfFormDialogState
                   const SizedBox(height: 8),
                 ],
                 _secaoTitulo('ICMS'),
-                _campoTexto('CST/CSOSN', _cstCsosnCtrl),
+                // Bug de producao: CST/CSOSN e' tabela fechada da Receita
+                // (Convenio s/no de 1970) -- virou dropdown. Junta as duas
+                // tabelas (CST regime normal + CSOSN Simples Nacional) numa
+                // so lista: o backend ja discrimina automaticamente qual
+                // grupo usar no XML (ProdutoImpostoEnrichmentServiceImpl.isCson()).
+                _campoDropdown(
+                  'CST/CSOSN',
+                  _cstCsosn,
+                  [...kOpcoesCst, ...kOpcoesCsosn],
+                  (v) => setState(() => _cstCsosn = v),
+                ),
                 _campoNumero('Alíquota ICMS (%)', _aliquotaIcmsCtrl),
                 _campoNumero('Alíquota ICMS reduzida (%)', _aliqIcmsRedCtrl),
                 _campoNumero('% Redução BC', _pRedBcCtrl),
@@ -603,7 +665,18 @@ class _ProdutoImpostoUfFormDialogState
                 _campoTexto('CST COFINS', _cstCofinsCtrl),
                 _campoNumero('Alíquota COFINS (%)', _pCofinsCtrl),
                 _secaoTitulo('IBS/CBS (Reforma Tributária)'),
-                _campoTexto('CST IBS/CBS', _cstIbsCbsCtrl),
+                // CST IBS/CBS: dropdown fechado (Nota Tecnica NF-e 2025.002).
+                _campoDropdown(
+                  'CST IBS/CBS',
+                  _cstIbsCbs,
+                  kOpcoesCstIbsCbs,
+                  (v) => setState(() => _cstIbsCbs = v),
+                ),
+                // cClassTrib: mantido texto livre -- 6 digitos onde os 3
+                // primeiros repetem o CST IBS/CBS e os 3 finais detalham a
+                // hipotese de enquadramento; tabela completa (Anexo III da
+                // NT 2025.002) ainda em transicao/ajuste ate 2033, nao fixar
+                // enum rigido sem plano de atualizacao.
                 _campoTexto('Código classificação tributária', _cClassTribCtrl),
                 _campoNumero('Alíquota IBS estadual (%)', _pIbsUfCtrl),
                 _campoNumero('Alíquota IBS municipal (%)', _pIbsMunCtrl),
@@ -641,6 +714,29 @@ class _ProdutoImpostoUfFormDialogState
         child: Text(texto,
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: GridColors.primary)),
+      );
+
+  Widget _campoDropdown(
+    String label,
+    String? valor,
+    List<Map<String, String>> opcoes,
+    ValueChanged<String?> onChanged,
+  ) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: DropdownButtonFormField<String>(
+          initialValue: valor,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: label),
+          items: opcoes
+              .map((o) => DropdownMenuItem(
+                    value: o['value'],
+                    child: Text(o['label'] ?? o['value'] ?? '',
+                        overflow: TextOverflow.ellipsis),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+        ),
       );
 
   Widget _campoTexto(String label, TextEditingController controller) => Padding(
