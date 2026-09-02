@@ -26,6 +26,33 @@ const _dark = Color(0xFF212121);
 
 const double _kCampoMinWidth = 260;
 const double nfeDetailPagamentoTipoCampoAltura = 56;
+const double nfeDetailItensResumoAltura = 260;
+const double nfeDetailItensFormularioAltura = 480;
+
+@visibleForTesting
+double nfeDetailAlturaItens(bool modoGrade) =>
+    modoGrade ? nfeDetailItensResumoAltura : nfeDetailItensFormularioAltura;
+
+@visibleForTesting
+String? nfeDetailIdRef(Object? value) {
+  if (value is Map) return value['id']?.toString();
+  return value?.toString();
+}
+
+@visibleForTesting
+Map<String, dynamic> nfeDetailCadastroPayloadIds({
+  String? formaPagamentoId,
+  String? nfeFinalidadeId,
+  String? centroCustoId,
+}) =>
+    <String, dynamic>{
+      if (formaPagamentoId != null)
+        'formaPagamentoId': int.tryParse(formaPagamentoId) ?? formaPagamentoId,
+      if (nfeFinalidadeId != null)
+        'nfeFinalidadeId': int.tryParse(nfeFinalidadeId) ?? nfeFinalidadeId,
+      if (centroCustoId != null)
+        'centroCustoId': int.tryParse(centroCustoId) ?? centroCustoId,
+    };
 
 @visibleForTesting
 bool isNfeRascunhoImportacao(Object? status) =>
@@ -389,6 +416,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       []; // parceiros do parceiro logado
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
+  List<Map<String, dynamic>> _centrosCusto = [];
   List<Map<String, dynamic>> _produtos = [];
   List<Map<String, dynamic>> _series = [];
   List<Map<String, dynamic>> _unidades = [];
@@ -407,6 +435,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   String? _destinatarioId;
   String? _formaPagId;
   String? _finalidadeId;
+  String? _centroCustoId;
   String? _serieId; // ID da série selecionada (separado do texto _serieCtrl)
 
   // Dados do usuário logado (para campos disabled)
@@ -479,9 +508,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
     // NfeServiceImpl.buscar -> dto.parceiro -- confirmado via
     // GET /api/nfe/{id}, so' a tela ignorava esse dado pra Entrada).
     if (_isEntrada) {
-      _parceiroId =
-          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-              ?.toString();
+      _parceiroId = (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+          ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
     } else {
@@ -496,12 +524,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
     _destinatarioId =
         (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
             ?.toString();
-    _formaPagId =
-        (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)
-            ?.toString();
-    _finalidadeId =
-        (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)
-            ?.toString();
+    _formaPagId = nfeDetailIdRef(i['formaPagamento']);
+    _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
+    _centroCustoId = nfeDetailIdRef(i['centroCusto']);
 
     final topData = i['nfeTipoOperacao'];
     _tipoOperacaoId = (topData is Map ? topData['id'] : topData)?.toString();
@@ -517,6 +542,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
           (d) => setState(() => _formasPagamento = d)),
       _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50',
           (d) => setState(() => _finalidades = d)),
+      _loadList(
+          '${ApiLinks.allCentrosCusto}?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() => _centrosCusto = d)),
       _loadList(
           '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
           (d) => setState(() => _produtos = d)),
@@ -608,6 +636,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
         if (detalhe['status'] != null) {
           _statusVal = detalhe['status'].toString();
         }
+        _formaPagId = nfeDetailIdRef(detalhe['formaPagamento']) ?? _formaPagId;
+        _finalidadeId =
+            nfeDetailIdRef(detalhe['nfeFinalidade']) ?? _finalidadeId;
+        _centroCustoId =
+            nfeDetailIdRef(detalhe['centroCusto']) ?? _centroCustoId;
       });
       if (_isRascunhoImportacao) {
         setState(_aplicarDefaultsFinanceirosDaImportacao);
@@ -911,7 +944,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 480, child: _itensPanel()),
+                        SizedBox(
+                            height: nfeDetailAlturaItens(_itensGrid),
+                            child: _itensPanel()),
                         _impostosTab(),
                       ]),
                 ),
@@ -1493,6 +1528,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
           (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
           (v) => setState(() => _finalidadeId = v)),
+      _ddObj('Centro de Custo', _centroCustoId, _centrosCusto, 'nome',
+          (v) => setState(() => _centroCustoId = v)),
     ]);
   }
 
@@ -1724,14 +1761,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
               'destinatario': {
                 'id': int.tryParse(_destinatarioId!) ?? _destinatarioId
               },
-            if (_formaPagId != null)
-              'formaPagamento': {
-                'id': int.tryParse(_formaPagId!) ?? _formaPagId
-              },
-            if (_finalidadeId != null)
-              'nfeFinalidade': {
-                'id': int.tryParse(_finalidadeId!) ?? _finalidadeId
-              },
+            ...nfeDetailCadastroPayloadIds(
+              formaPagamentoId: _formaPagId,
+              nfeFinalidadeId: _finalidadeId,
+              centroCustoId: _centroCustoId,
+            ),
             if (_tipoOperacaoId != null)
               'nfeTipoOperacao': {
                 'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
@@ -1741,6 +1775,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
             if (_tipoOperacaoId != null)
               'nfeTipoOperacaoId':
                   int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
+            ...nfeDetailCadastroPayloadIds(
+              formaPagamentoId: _formaPagId,
+              nfeFinalidadeId: _finalidadeId,
+              centroCustoId: _centroCustoId,
+            ),
             if (widget.item['natOp'] != null) 'natOp': widget.item['natOp'],
             if (widget.item['indFinal'] != null)
               'indFinal': widget.item['indFinal'],

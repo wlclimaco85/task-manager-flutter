@@ -21,6 +21,35 @@ void main() {
       expect(nfeDetailPagamentoTipoCampoAltura, greaterThanOrEqualTo(56));
     });
 
+    test('area de itens usa altura menor na grade e mantem formulario maior',
+        () {
+      expect(nfeDetailAlturaItens(true), nfeDetailItensResumoAltura);
+      expect(nfeDetailAlturaItens(false), nfeDetailItensFormularioAltura);
+      expect(nfeDetailAlturaItens(true), lessThan(nfeDetailAlturaItens(false)));
+      expect(nfeDetailAlturaItens(true), lessThanOrEqualTo(280));
+    });
+
+    test('referencias de cadastros aceitam objeto ou id direto', () {
+      expect(nfeDetailIdRef({'id': 7, 'descricao': 'PIX'}), '7');
+      expect(nfeDetailIdRef(8), '8');
+      expect(nfeDetailIdRef(null), isNull);
+    });
+
+    test('cabecalho envia ids financeiros esperados pela API', () {
+      expect(
+        nfeDetailCadastroPayloadIds(
+          formaPagamentoId: '10',
+          nfeFinalidadeId: '2',
+          centroCustoId: '33',
+        ),
+        {
+          'formaPagamentoId': 10,
+          'nfeFinalidadeId': 2,
+          'centroCustoId': 33,
+        },
+      );
+    });
+
     testWidgets('campo tipo de pagamento renderiza sem overflow',
         (tester) async {
       await tester.pumpWidget(

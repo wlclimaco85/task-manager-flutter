@@ -54,6 +54,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   Map<String, dynamic> _detalheNfe = {};
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
+  List<Map<String, dynamic>> _centrosCusto = [];
   List<Map<String, dynamic>> _parceiros = [];
   final List<Map<String, dynamic>> _destinatarios = [];
   List<Map<String, dynamic>> _series = [];
@@ -71,6 +72,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   String? _destinatarioId;
   String? _formaPagId;
   String? _finalidadeId;
+  String? _centroCustoId;
   String? _serieId;
   String? _tipoOperacaoId;
 
@@ -131,9 +133,8 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     // NfeServiceImpl.buscar -> dto.parceiro -- confirmado via
     // GET /api/nfe/{id}, so' a tela ignorava esse dado pra Entrada).
     if (_isEntrada) {
-      _parceiroId =
-          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-              ?.toString();
+      _parceiroId = (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+          ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
     } else {
@@ -148,12 +149,9 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     _destinatarioId =
         (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
             ?.toString();
-    _formaPagId =
-        (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)
-            ?.toString();
-    _finalidadeId =
-        (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)
-            ?.toString();
+    _formaPagId = _idRef(i['formaPagamento']);
+    _finalidadeId = _idRef(i['nfeFinalidade']);
+    _centroCustoId = _idRef(i['centroCusto']);
 
     final topData = i['nfeTipoOperacao'];
     _tipoOperacaoId = (topData is Map ? topData['id'] : topData)?.toString();
@@ -169,6 +167,9 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           (d) => setState(() => _formasPagamento = d)),
       _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50',
           (d) => setState(() => _finalidades = d)),
+      _loadList(
+          '${ApiLinks.allCentrosCusto}?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() => _centrosCusto = d)),
       _loadList(
           '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
           (d) {
@@ -233,9 +234,33 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
         if (detalhe['status'] != null) {
           _statusVal = detalhe['status'].toString();
         }
+        _formaPagId = _idRef(detalhe['formaPagamento']) ?? _formaPagId;
+        _finalidadeId = _idRef(detalhe['nfeFinalidade']) ?? _finalidadeId;
+        _centroCustoId = _idRef(detalhe['centroCusto']) ?? _centroCustoId;
       });
     } catch (_) {}
   }
+
+  String? _idRef(Object? value) {
+    if (value is Map) return value['id']?.toString();
+    return value?.toString();
+  }
+
+  @visibleForTesting
+  Map<String, dynamic> nfeDetailCadastroPayloadIds({
+    String? formaPagamentoId,
+    String? nfeFinalidadeId,
+    String? centroCustoId,
+  }) =>
+      <String, dynamic>{
+        if (formaPagamentoId != null)
+          'formaPagamentoId':
+              int.tryParse(formaPagamentoId) ?? formaPagamentoId,
+        if (nfeFinalidadeId != null)
+          'nfeFinalidadeId': int.tryParse(nfeFinalidadeId) ?? nfeFinalidadeId,
+        if (centroCustoId != null)
+          'centroCustoId': int.tryParse(centroCustoId) ?? centroCustoId,
+      };
 
   Future<void> _loadItens() async {
     try {
@@ -373,13 +398,19 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           _section('Dados'),
           _readField('Empresa', _empresaNome ?? ''),
           _readField('Parceiro', _parceiroNome ?? ''),
+          _dropObjField('Forma de Pagamento', _formaPagId, _formasPagamento,
+              'descricao', (v) => setState(() => _formaPagId = v)),
+          _dropObjField('Finalidade', _finalidadeId, _finalidades, 'descricao',
+              (v) => setState(() => _finalidadeId = v)),
+          _dropObjField('Centro de Custo', _centroCustoId, _centrosCusto,
+              'nome', (v) => setState(() => _centroCustoId = v)),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: AccessibleButton(
               label: 'Salvar NF-e',
               hint: 'Salva as alterações da NF-e',
-              onPressed: () {},
+              onPressed: _salvarCabecalho,
               isEnabled: !_isNovo,
               backgroundColor: _green,
             ),
@@ -1003,6 +1034,63 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           onChanged: cb,
         ),
       );
+
+  Widget _dropObjField(
+      String label,
+      String? val,
+      List<Map<String, dynamic>> opts,
+      String displayField,
+      void Function(String?) cb) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SearchableDropdownField(
+        label: label,
+        value: opts.any((o) => o['id']?.toString() == val) ? val : null,
+        items: opts
+            .map((o) => <String, dynamic>{
+                  'id': o['id']?.toString() ?? '',
+                  'nome': o[displayField]?.toString() ?? '',
+                })
+            .toList(),
+        valueField: 'id',
+        displayField: 'nome',
+        nullable: true,
+        nullLabel: '— Selecione —',
+        onChanged: cb,
+      ),
+    );
+  }
+
+  Future<void> _salvarCabecalho() async {
+    if (_isNovo) return;
+    final body = <String, dynamic>{
+      ...nfeDetailCadastroPayloadIds(
+        formaPagamentoId: _formaPagId,
+        nfeFinalidadeId: _finalidadeId,
+        centroCustoId: _centroCustoId,
+      ),
+    };
+    try {
+      final r = await TenantContext.put(
+          '${ApiLinks.baseUrl}/api/nfe/${widget.item['id']}', body);
+      if (!mounted) return;
+      showAccessibleSnackBar(
+        context: context,
+        message: r.statusCode == 200 ? 'Salvo!' : 'Erro ${r.statusCode}',
+        type: r.statusCode == 200
+            ? AccessibleSnackBarType.success
+            : AccessibleSnackBarType.error,
+      );
+    } catch (_) {
+      if (mounted) {
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
+      }
+    }
+  }
 
   Widget _readField(String label, String val) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
