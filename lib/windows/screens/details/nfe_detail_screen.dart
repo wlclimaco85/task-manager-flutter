@@ -2588,18 +2588,23 @@ class _State extends State<NfeSankhyaDetailScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            // Bug de producao (print: "Tipo" e "Valor (R$)" desalinhados):
+            // ver comentario equivalente em web/screens/details/nfe_detail_screen.dart.
             Expanded(
-                child: TextFormField(
-              controller: _novoPagVpag,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(
-                  labelText: 'Valor (R\$)',
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  border: OutlineInputBorder()),
+                child: SizedBox(
+              height: nfeDetailPagamentoTipoCampoAltura,
+              child: TextFormField(
+                controller: _novoPagVpag,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(fontSize: 12),
+                decoration: const InputDecoration(
+                    labelText: 'Valor (R\$)',
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    border: OutlineInputBorder()),
+              ),
             )),
             const SizedBox(width: 8),
             ElevatedButton.icon(

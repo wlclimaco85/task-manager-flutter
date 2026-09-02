@@ -2574,18 +2574,27 @@ class _State extends State<NfeSankhyaDetailScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            // Bug de producao (print: "Tipo" e "Valor (R$)" desalinhados):
+            // o dropdown "Tipo" tinha altura fixa (nfeDetailPagamentoTipoCampoAltura)
+            // mas o campo "Valor" ficava sem altura fixa, com padding vertical
+            // diferente (6 vs 8) -- a altura intrinseca do TextFormField nao
+            // batia com a do dropdown, e o Row com CrossAxisAlignment.center
+            // deslocava um em relacao ao outro. Mesma altura fixa nos dois.
             Expanded(
-                child: TextFormField(
-              controller: _novoPagVpag,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(
-                  labelText: 'Valor (R\$)',
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  border: OutlineInputBorder()),
+                child: SizedBox(
+              height: nfeDetailPagamentoTipoCampoAltura,
+              child: TextFormField(
+                controller: _novoPagVpag,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(fontSize: 12),
+                decoration: const InputDecoration(
+                    labelText: 'Valor (R\$)',
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    border: OutlineInputBorder()),
+              ),
             )),
             const SizedBox(width: 8),
             ElevatedButton.icon(
