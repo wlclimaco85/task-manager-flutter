@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
 import '../../../widgets/produto_notas_tab.dart';
+import '../../../widgets/produto_impostos_tab.dart';
 
 class WebProdutoDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -22,6 +23,13 @@ class WebProdutoDetailScreen extends StatelessWidget {
       telaNome: 'produto',
       hasPermission: hasPermission,
       relatedTabs: [
+        RelatedGridTab(
+          title: 'Impostos',
+          icon: Icons.receipt_long,
+          customWidget: produtoId > 0
+              ? ProdutoImpostosTab(produtoId: produtoId)
+              : const Center(child: Text('ID do produto nao disponivel')),
+        ),
         RelatedGridTab(
           title: 'Estoque',
           icon: Icons.inventory_2,
