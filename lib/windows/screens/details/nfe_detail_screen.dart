@@ -468,13 +468,29 @@ class _State extends State<NfeSankhyaDetailScreen> {
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
-    // Parceiro: prioriza localstore, fallback para o item
-    final sessParcId = login?.parceiro?.id?.toString();
-    _parceiroId = sessParcId ??
-        (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-            ?.toString();
-    _parceiroNome = login?.parceiro?.nome ??
-        (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+    // Parceiro: em NF-e de SAIDA, "Parceiro" e' sempre o proprio tenant
+    // logado (quem emite) -- prioriza a sessao. Bug de producao (reportado
+    // com print, teste ao vivo confirmou): em NF-e de ENTRADA (importada de
+    // XML), o parceiro da nota e' o FORNECEDOR/emitente do XML -- VARIA por
+    // nota, nunca e' o proprio parceiro logado. Forcar a sessao aqui fazia
+    // TODA NF-e Entrada mostrar o proprio cliente logado como "Parceiro" em
+    // vez do fornecedor real (o backend ja manda certo em
+    // NfeServiceImpl.buscar -> dto.parceiro -- confirmado via
+    // GET /api/nfe/{id}, so' a tela ignorava esse dado pra Entrada).
+    if (_isEntrada) {
+      _parceiroId =
+          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+              ?.toString();
+      _parceiroNome =
+          (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+    } else {
+      final sessParcId = login?.parceiro?.id?.toString();
+      _parceiroId = sessParcId ??
+          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
+              ?.toString();
+      _parceiroNome = login?.parceiro?.nome ??
+          (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+    }
 
     _destinatarioId =
         (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
