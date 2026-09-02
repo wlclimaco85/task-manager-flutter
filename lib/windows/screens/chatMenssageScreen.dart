@@ -226,6 +226,14 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
     _scrollToBottom();
   }
 
+  // Bug de producao: ver comentario equivalente em web/screens/chatMenssageScreen.dart.
+  int? get _parceiroDoChatUpload {
+    for (final m in _messages) {
+      if (m.parceiroId != null) return m.parceiroId;
+    }
+    return TenantContext.parceiroId;
+  }
+
   Future<void> _uploadAndSendFile() async {
     try {
       final result = await FilePicker.pickFiles(
@@ -245,9 +253,10 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
         return;
       }
 
+      // Bug de producao: ver comentario equivalente em web/screens/chatMenssageScreen.dart.
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadFile)),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.chatUpload(_effectiveChatId))),
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
@@ -258,21 +267,10 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
-        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null)
           'empId': TenantContext.empresaId.toString(),
-        if (TenantContext.parceiroId != null)
-          'parceiroId': TenantContext.parceiroId.toString(),
-        // Fix card #429: FileController.uploadFile exige estes 5 campos
-        // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
-        // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
-        // GED (ged_arquivos_screen.dart) quando nenhum diretorio e escolhido.
-        'fileName': file.name,
-        'fileType': (file.extension ?? '').toLowerCase(),
-        'diretorio': '{"id":0}',
-        'empresa': '{"id":${TenantContext.empresaId ?? 0}}',
-        'parceiro': '{"id":${TenantContext.parceiroId ?? 0}}',
-        'modulo': 'chat',
+        if (_parceiroDoChatUpload != null)
+          'parceiroId': _parceiroDoChatUpload.toString(),
       });
 
       final response = await request.send();

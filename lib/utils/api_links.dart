@@ -560,6 +560,15 @@ class ApiLinks {
   // Card #448 Fase 1: funcionario "pega" atendimento aguardando no setor.
   static String chatPickup(String chatId, int usuarioId) =>
       '$_baseUrlNew/api/chat/$chatId/pickup?usuarioId=$usuarioId';
+  // Bug de producao: upload de anexo no Chat usava o endpoint generico
+  // /api/files/upload, que exige @PreAuthorize("hasAnyRole('ROLE_EDITOR',
+  // 'ROLE_CONTABILIDADE')") -- authorities dadas so' pra MASTER/Contabilidade
+  // (LoginServiceImpl.loadUserByUsername), NUNCA pra Cliente. Cliente
+  // anexando arquivo na PROPRIA conversa de chat sempre levava 403. O
+  // backend ja tinha um endpoint dedicado sem essa restricao (card #429,
+  // ChatController.uploadFileToChat) -- so nunca foi usado pelo app.
+  static String chatUpload(String chatId) =>
+      '$_baseUrlNew/api/chat/$chatId/upload';
 
   static String getAllTelas(String nome, {int? empId, int? clienteId}) {
     final params = <String, String>{};

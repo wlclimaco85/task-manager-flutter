@@ -226,6 +226,22 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     _scrollToBottom();
   }
 
+  // Bug de producao: upload de anexo dava 403 quando um ATENDENTE de setor
+  // (parceiro fixo proprio, diferente do cliente da conversa) anexava
+  // arquivo numa conversa de OUTRO cliente -- o campo 'parceiroId' enviado
+  // no upload sempre usava TenantContext.parceiroId (o parceiro do proprio
+  // atendente), nunca o parceiro DONO da conversa. Corrigido: usa o
+  // parceiroId de uma mensagem ja persistida deste chat (autoritativo, vem
+  // do banco) quando existir; so cai pro parceiro da propria sessao se o
+  // chat ainda nao tem nenhuma mensagem carregada (ex.: cliente enviando a
+  // primeira mensagem de uma conversa nova, onde ele mesmo e' o parceiro).
+  int? get _parceiroDoChatUpload {
+    for (final m in _messages) {
+      if (m.parceiroId != null) return m.parceiroId;
+    }
+    return TenantContext.parceiroId;
+  }
+
   Future<void> _uploadAndSendFile() async {
     try {
       final result = await FilePicker.pickFiles(
@@ -242,9 +258,16 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         return;
       }
 
+      // Bug de producao: usava o endpoint generico /api/files/upload, que
+      // exige ROLE_EDITOR/ROLE_CONTABILIDADE -- authorities que so' MASTER e
+      // Contabilidade recebem (LoginServiceImpl.loadUserByUsername), NUNCA
+      // Cliente. Cliente anexando arquivo na PROPRIA conversa sempre levava
+      // 403. Trocado pro endpoint dedicado de chat (card #429,
+      // ChatController.uploadFileToChat), sem essa restricao de role --
+      // mesmo formato de resposta (fileId/fileUrl), so' os campos mudam.
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadFile)),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.chatUpload(_effectiveChatId))),
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
@@ -255,21 +278,10 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
-        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null)
           'empId': TenantContext.empresaId.toString(),
-        if (TenantContext.parceiroId != null)
-          'parceiroId': TenantContext.parceiroId.toString(),
-        // Fix card #429: FileController.uploadFile exige estes 5 campos
-        // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
-        // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
-        // GED (ged_arquivos_screen.dart) quando nenhum diretorio e escolhido.
-        'fileName': file.name,
-        'fileType': (file.extension ?? '').toLowerCase(),
-        'diretorio': '{"id":0}',
-        'empresa': '{"id":${TenantContext.empresaId ?? 0}}',
-        'parceiro': '{"id":${TenantContext.parceiroId ?? 0}}',
-        'modulo': 'chat',
+        if (_parceiroDoChatUpload != null)
+          'parceiroId': _parceiroDoChatUpload.toString(),
       });
 
       final response = await request.send();
