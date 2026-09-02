@@ -44,4 +44,23 @@ class _NotificadorWeb implements NotificadorPlataforma {
       L.w('[NotificadorLocal] falha ao exibir notificacao do navegador: $e');
     }
   }
+
+  @override
+  Future<String> statusPermissao() async {
+    if (!html.Notification.supported) return 'unsupported';
+    return html.Notification.permission ?? 'default';
+  }
+
+  @override
+  Future<String> solicitarPermissao() async {
+    if (!html.Notification.supported) return 'unsupported';
+    try {
+      final permissao = await html.Notification.requestPermission();
+      _permitido = permissao == 'granted';
+      return permissao;
+    } catch (e) {
+      L.w('[NotificadorLocal] falha ao solicitar permissao de notificacao: $e');
+      return html.Notification.permission ?? 'default';
+    }
+  }
 }

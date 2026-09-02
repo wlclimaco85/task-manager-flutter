@@ -19,6 +19,21 @@ abstract class NotificadorPlataforma {
   /// Exibe uma notificacao. Se [inicializar] falhou ou ainda nao rodou,
   /// e um no-op silencioso.
   Future<void> notificar({required String titulo, required String corpo});
+
+  /// Estado atual da permissao: 'granted', 'denied', 'default' (ainda nao
+  /// perguntado) ou 'unsupported' (plataforma sem suporte). Usado pela UI
+  /// pra mostrar um botao de reativar quando a notificacao nunca aparece --
+  /// sem isso o usuario nao tem como saber que o navegador bloqueou o
+  /// pedido silenciosamente (ex.: prompt automatico no boot/login sem gesto
+  /// direto do usuario e ignorado por politica do Chrome).
+  Future<String> statusPermissao();
+
+  /// Pede a permissao de novo, chamado DIRETAMENTE de um clique do usuario
+  /// (nunca do boot/login automatico) -- e o unico jeito confiavel do
+  /// navegador mostrar o popup nativo. Se ja estiver 'denied', o navegador
+  /// nao reexibe o popup (limitacao da propria Notification API); a UI deve
+  /// orientar o usuario a liberar manualmente nas configuracoes do site.
+  Future<String> solicitarPermissao();
 }
 
 NotificadorPlataforma criarNotificadorPlataforma() =>

@@ -2,6 +2,7 @@
 // NUNCA importado num build Web (selecionado via import condicional em
 // notificador_plataforma.dart) -- por isso pode depender livremente do
 // plugin nativo flutter_local_notifications.
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'notificador_plataforma.dart';
@@ -39,8 +40,36 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
       );
       await _plugin.initialize(settings);
       _pronto = true;
+      // Bug de producao: inicializar() sozinho NUNCA pede a permissao de
+      // notificacao em runtime do Android 13+ (API 33+, POST_NOTIFICATIONS)
+      // nem do iOS -- sem essa chamada explicita, TODA notificacao nativa
+      // fica muda e sem erro nenhum visivel (plugin.show() nao lanca
+      // excecao, so nao aparece nada na tela). E' a causa mais provavel de
+      // "nao tem notificacao no celular mesmo": o app roda em Android
+      // 13/14/15 (maioria dos aparelhos hoje) sem nunca ter pedido a
+      // permissao runtime.
+      await _pedirPermissaoRuntime();
     } catch (e) {
       L.w('[NotificadorLocal] falha ao inicializar plugin nativo: $e');
+    }
+  }
+
+  Future<void> _pedirPermissaoRuntime() async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await _plugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        await _plugin
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>()
+            ?.requestPermissions(alert: true, badge: true, sound: true);
+      }
+    } catch (e) {
+      L.w('[NotificadorLocal] falha ao pedir permissao runtime de notificacao: $e');
     }
   }
 
@@ -64,5 +93,30 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
     } catch (e) {
       L.w('[NotificadorLocal] falha ao exibir notificacao nativa: $e');
     }
+  }
+
+  @override
+  Future<String> statusPermissao() async {
+    if (!_pronto) return 'default';
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final habilitado = await _plugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.areNotificationsEnabled();
+        return habilitado == true ? 'granted' : 'denied';
+      }
+    } catch (e) {
+      L.w('[NotificadorLocal] falha ao consultar status de permissao: $e');
+    }
+    // iOS/macOS/Windows/Linux: plugin nao expoe consulta de status
+    // confiavel -- se inicializou sem erro, trata como concedido.
+    return 'granted';
+  }
+
+  @override
+  Future<String> solicitarPermissao() async {
+    await inicializar();
+    return statusPermissao();
   }
 }

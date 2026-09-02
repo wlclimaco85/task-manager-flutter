@@ -40,6 +40,21 @@ class AlertaPollingService {
     await _executarCiclo();
   }
 
+  /// Status atual da permissao ('granted'/'denied'/'default'/'unsupported').
+  /// Usado pela UI pra decidir se mostra o botao de reativar notificacoes.
+  Future<String> statusPermissaoNotificacao() async {
+    _notificador ??= criarNotificadorPlataforma();
+    return _notificador!.statusPermissao();
+  }
+
+  /// Pede a permissao de novo -- so deve ser chamado a partir de um clique
+  /// direto do usuario (ex.: botao "Ativar notificações"), nunca do boot ou
+  /// login automatico. Ver `NotificadorPlataforma.solicitarPermissao`.
+  Future<String> solicitarPermissaoNotificacao() async {
+    _notificador ??= criarNotificadorPlataforma();
+    return _notificador!.solicitarPermissao();
+  }
+
   /// Chamado no logout -- sem isso, o timer continuaria rodando e
   /// notificando com o TenantContext de uma sessao ja encerrada.
   void parar() {

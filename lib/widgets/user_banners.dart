@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../services/alert_caller.dart';
+import '../../services/alerta_polling_service.dart';
 import '../../../auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/mobile/screens/meu_perfil_screen.dart';
 import 'meu_perfil_dialog.dart';
@@ -943,6 +944,15 @@ class _AppBarActionsState extends State<AppBarActions> {
   Timer? _timer;
   bool _disposed = false;
 
+  // Bug de producao: notificacao nativa (toast do navegador/SO) nunca
+  // aparecia e o usuario nao tinha nenhum jeito de saber o motivo nem de
+  // tentar de novo -- o pedido de permissao so acontecia uma vez, no login,
+  // sem gesto direto do usuario (o que a maioria dos navegadores ignora
+  // silenciosamente). Este icone so aparece quando a permissao NAO esta
+  // concedida e, ao ser clicado, pede a permissao de novo a partir de um
+  // clique real (unico jeito confiavel do navegador mostrar o popup).
+  String? _statusNotificacaoNativa;
+
   @override
   void initState() {
     super.initState();
@@ -950,6 +960,34 @@ class _AppBarActionsState extends State<AppBarActions> {
     _timer = Timer.periodic(const Duration(minutes: 2), (_) {
       if (mounted) _fetchAlerts();
     });
+    _checarStatusNotificacaoNativa();
+  }
+
+  Future<void> _checarStatusNotificacaoNativa() async {
+    try {
+      final status =
+          await AlertaPollingService.instance.statusPermissaoNotificacao();
+      if (mounted && !_disposed) {
+        setState(() => _statusNotificacaoNativa = status);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _ativarNotificacaoNativa(BuildContext context) async {
+    final status =
+        await AlertaPollingService.instance.solicitarPermissaoNotificacao();
+    if (!mounted || _disposed) return;
+    setState(() => _statusNotificacaoNativa = status);
+    if (status == 'granted') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Notificações ativadas.')));
+    } else if (status == 'denied') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Bloqueado pelo navegador/sistema. Libere manualmente nas '
+              'configurações de notificação deste site/app e recarregue.'),
+          duration: Duration(seconds: 6)));
+    }
   }
 
   Future<void> _fetchAlerts() async {
@@ -1105,6 +1143,18 @@ class _AppBarActionsState extends State<AppBarActions> {
               ),
           ],
         ),
+        if (_statusNotificacaoNativa != null &&
+            _statusNotificacaoNativa != 'granted' &&
+            _statusNotificacaoNativa != 'unsupported')
+          IconButton(
+            iconSize: 22,
+            icon: const Icon(Icons.notifications_off_outlined,
+                color: GridColors.error),
+            onPressed: () => _ativarNotificacaoNativa(context),
+            tooltip: _statusNotificacaoNativa == 'denied'
+                ? 'Notificações bloqueadas — toque para instruções'
+                : 'Ativar notificações do navegador/sistema',
+          ),
         IconButton(
           iconSize: 22,
           icon: const Icon(Icons.logout, color: GridColors.textPrimary),
