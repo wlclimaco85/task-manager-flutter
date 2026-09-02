@@ -418,6 +418,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.newspaper,
             screenIndex: 0),
         MenuItem(
+            id: 'alertas',
+            label: 'Alertas',
+            icon: FontAwesomeIcons.bell,
+            screenIndex: 41),
+        MenuItem(
             id: 'chamados',
             label: 'Chamados',
             icon: FontAwesomeIcons.ticketSimple,

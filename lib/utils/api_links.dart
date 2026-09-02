@@ -143,6 +143,9 @@ class ApiLinks {
   static String insertCotacaoFrete = '$_baseUrlNew/api/cotacaofrete';
   static String allAlerts = '$_baseUrlNew/api/alert';
   static String alertFindByUser = '$_baseUrlNew/api/alert/byUser/';
+  static String get alertasManuais => '$_baseUrlNew/api/alert/manual';
+  static String get alertasManuaisDisparar =>
+      '$_baseUrlNew/api/alert/manual/disparar';
   static String deviceToken = '$_baseUrlNew/api/device-token';
   static String compradorFindByUser = '$_baseUrlNew/api/produtos/comprador/';
   static String vendedorFindByUser = '$_baseUrlNew/api/produtos/vendedor/';

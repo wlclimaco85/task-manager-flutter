@@ -58,7 +58,6 @@ import './dividendo_grid_screen.dart';
 import './order_grid_screen.dart';
 import './pedido_grid_screen.dart';
 import './ticket_grid_screen.dart';
-import './alerta_aluno_grid_screen.dart';
 import './avaliacao_fisica_grid_screen.dart';
 import './academia_grid_screen.dart';
 import './conta_bancaria_grid_screen.dart';
@@ -101,6 +100,7 @@ import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/menu_config.dart';
 import '../../widgets/app_sidebar.dart';
+import '../../widgets/alertas/alertas_manuais_screen.dart';
 import '../../widgets/empresa_selecao_screen.dart';
 import '../../widgets/internal_tab_strip.dart';
 import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
@@ -383,7 +383,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebPedidoGridScreen(hasPermission: (p) => true), // 39: Pedidos
       WebConfiguracoesAdminScreen(
           hasPermission: (p) => true), // 40: ConfigAdmin
-      WebAlertaAlunoGridScreen(hasPermission: (p) => true), // 41: AlertaAluno
+      const AlertasManuaisScreen(), // 41: Alertas
       WebAvaliacaoFisicaGridScreen(
           hasPermission: (p) => true), // 42: AvaliacaoFisica
       WebContaBancariaGridScreen(

@@ -48,6 +48,7 @@ import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
+import '../../widgets/alertas/alertas_manuais_screen.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
 
@@ -996,6 +997,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const MobileMensalidadeScreen()),
         );
         break;
+      case "Alertas":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AlertasManuaisScreen()),
+        );
+        break;
       case "Alvarás":
         nav = Navigator.push(
           context,
@@ -1360,6 +1367,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
           if (sec.canView(AppScreen.logins))
             _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
+          if (sec.canView(AppScreen.comunicados))
+            _MoreMenuAction(Icons.notifications_active, 'Alertas'),
           _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))

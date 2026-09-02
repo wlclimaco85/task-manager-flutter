@@ -145,6 +145,7 @@ class PermissionService {
     // Suporte / Comunicação
     'chat': 'Chat',
     'comunicados': 'Comunicado',
+    'alertas': 'Comunicado',
     'chamados': 'Chamados',
     'diretorios': 'Diretorios',
     'ged': 'Arquivos',

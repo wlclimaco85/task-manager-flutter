@@ -57,7 +57,6 @@ import '../../../windows/screens/dividendo_grid_screen.dart';
 import '../../../windows/screens/order_grid_screen.dart';
 import '../../../windows/screens/pedido_grid_screen.dart';
 import '../../../windows/screens/ticket_grid_screen.dart';
-import '../../../windows/screens/alerta_aluno_grid_screen.dart';
 import '../../../windows/screens/avaliacao_fisica_grid_screen.dart';
 import '../../../windows/screens/academia_grid_screen.dart';
 import '../../../windows/screens/conta_bancaria_grid_screen.dart';
@@ -84,6 +83,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/menu_config.dart';
 import '../../../widgets/app_sidebar.dart';
+import '../../../widgets/alertas/alertas_manuais_screen.dart';
 import '../../../widgets/empresa_selecao_screen.dart';
 import '../../../widgets/internal_tab_strip.dart';
 import '../../../widgets/login_empresa_acesso_aprovacao_screen.dart';
@@ -361,7 +361,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsOrderGridScreen(hasPermission: (perm) => true),
         WindowsPedidoGridScreen(hasPermission: (perm) => true),
         WindowsConfiguracoesAdminScreen(hasPermission: (perm) => true),
-        WindowsAlertaAlunoGridScreen(hasPermission: (perm) => true),
+        const AlertasManuaisScreen(),
         WindowsAvaliacaoFisicaGridScreen(hasPermission: (perm) => true),
         WindowsContaBancariaGridScreen(hasPermission: (perm) => true),
         WindowsClassificacaoGridScreen(hasPermission: (perm) => true),
