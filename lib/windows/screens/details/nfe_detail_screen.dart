@@ -440,6 +440,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   // Dados do usuário logado (para campos disabled)
   String? _empresaNome;
   String? _parceiroNome;
+  String? _destinatarioNome;
   bool get _isNovo => widget.item['id'] == null;
 
   String get _nfeId => widget.item['id']?.toString() ?? '';
@@ -511,6 +512,13 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+          
+      final sessParcId = login?.parceiro?.id?.toString();
+      _destinatarioId = sessParcId ??
+          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+              ?.toString();
+      _destinatarioNome = login?.parceiro?.nome ??
+          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
     } else {
       final sessParcId = login?.parceiro?.id?.toString();
       _parceiroId = sessParcId ??
@@ -518,11 +526,13 @@ class _State extends State<NfeSankhyaDetailScreen> {
               ?.toString();
       _parceiroNome = login?.parceiro?.nome ??
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+          
+      _destinatarioId =
+          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+              ?.toString();
+      _destinatarioNome =
+          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
     }
-
-    _destinatarioId =
-        (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
-            ?.toString();
     _formaPagId = nfeDetailIdRef(i['formaPagamento']);
     _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
     _centroCustoId = nfeDetailIdRef(i['centroCusto']);
@@ -1537,9 +1547,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ? _inpDisabledText('Parceiro', _parceiroNome!)
           : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome',
               (v) => setState(() => _parceiroId = v)),
-      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
-      _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
-          (v) => setState(() => _destinatarioId = v)),
+      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado, ou disabled se for entrada
+      hasSession && _isEntrada && _destinatarioNome != null
+          ? _inpDisabledText('Destinatário', _destinatarioNome!)
+          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
+              (v) => setState(() => _destinatarioId = v)),
       _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
           (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
