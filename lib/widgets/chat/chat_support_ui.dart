@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/chat_model.dart';
@@ -534,7 +536,7 @@ class ChatMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            _Avatar(name: displayName, mine: false),
+            _Avatar(name: displayName, mine: false, foto: message.senderFoto),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -590,7 +592,7 @@ class ChatMessageBubble extends StatelessWidget {
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            _Avatar(name: displayName, mine: true),
+            _Avatar(name: displayName, mine: true, foto: message.senderFoto),
           ],
         ],
       ),
@@ -667,25 +669,90 @@ class _MessageContent extends StatelessWidget {
 class _Avatar extends StatelessWidget {
   final String name;
   final bool mine;
+  // foto pode ser: data URI base64 (data:image/...) ou URL HTTP.
+  final String? foto;
 
-  const _Avatar({required this.name, required this.mine});
+  const _Avatar({required this.name, required this.mine, this.foto});
 
   @override
   Widget build(BuildContext context) {
     final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+    final bgColor = mine
+        ? GridColors.secondary
+        : GridColors.primary.withValues(alpha: 0.12);
+    final fgColor = mine ? Colors.white : GridColors.primary;
+
+    // Exibe foto do Login quando disponível; fallback na inicial do nome.
+    if (foto != null && foto!.isNotEmpty) {
+      return _FotoAvatar(
+          foto: foto!, initial: initial, bgColor: bgColor, fgColor: fgColor);
+    }
+
     return CircleAvatar(
       radius: 16,
-      backgroundColor: mine
-          ? GridColors.secondary
-          : GridColors.primary.withValues(alpha: 0.12),
+      backgroundColor: bgColor,
       child: Text(
         initial,
         style: TextStyle(
-          color: mine ? Colors.white : GridColors.primary,
+          color: fgColor,
           fontSize: 12,
           fontWeight: FontWeight.w800,
         ),
       ),
+    );
+  }
+}
+
+class _FotoAvatar extends StatelessWidget {
+  final String foto;
+  final String initial;
+  final Color bgColor;
+  final Color fgColor;
+
+  const _FotoAvatar({
+    required this.foto,
+    required this.initial,
+    required this.bgColor,
+    required this.fgColor,
+  });
+
+  ImageProvider? _buildProvider() {
+    if (foto.startsWith('data:image')) {
+      // base64 data URI: "data:image/jpeg;base64,/9j/..."
+      try {
+        final comma = foto.indexOf(',');
+        if (comma != -1) {
+          final bytes = base64Decode(foto.substring(comma + 1));
+          return MemoryImage(bytes);
+        }
+      } catch (_) {}
+      return null;
+    }
+    // URL HTTP/HTTPS
+    if (foto.startsWith('http')) {
+      return NetworkImage(foto);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = _buildProvider();
+    if (provider == null) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor: bgColor,
+        child: Text(initial,
+            style: TextStyle(
+                color: fgColor, fontSize: 12, fontWeight: FontWeight.w800)),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: bgColor,
+      backgroundImage: provider,
+      onBackgroundImageError: (_, __) {},
+      child: null,
     );
   }
 }

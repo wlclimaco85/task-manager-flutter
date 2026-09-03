@@ -172,26 +172,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
   }
 
   ChatMessage _normalizeMessage(ChatMessage msg) {
-    return ChatMessage(
-      sender: msg.sender,
-      content: msg.content.isNotEmpty ? msg.content : (msg.text ?? ''),
-      type: msg.type.isNotEmpty ? msg.type : 'text',
-      timestamp: msg.timestamp ?? msg.uploadDate,
-      empId: msg.empId,
-      parceiroId: msg.parceiroId,
-      codApp: msg.codApp,
-      codUsuOrig: msg.codUsuOrig,
-      codUsuDest: msg.codUsuDest,
-      sector: msg.sector,
-      chatId: msg.chatId,
-      uploadDate: msg.uploadDate,
-      text: msg.text,
-      fileId: msg.fileId,
-      fileName: msg.fileName,
-      fileUrl: msg.fileUrl,
-      status: msg.status,
-      atendenteId: msg.atendenteId,
-    );
+    return normalizeChatMessageForDisplay(msg);
   }
 
   Future<void> _sendMessage() async {
@@ -428,8 +409,12 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
   }
 
   String _displayName(ChatMessage message) {
-    if (message.sender.trim().isNotEmpty) return message.sender.trim();
-    return _isMine(message) ? _loggedUserName : widget.sector;
+    return chatMessageDisplayName(
+      message,
+      isMine: _isMine(message),
+      loggedUserName: _loggedUserName,
+      sector: widget.sector,
+    );
   }
 
   String _formatTime(String? timestamp) {
