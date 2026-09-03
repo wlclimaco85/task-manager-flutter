@@ -145,6 +145,37 @@ void main() {
           findsOneWidget);
     });
 
+    testWidgets(
+        'default salvo com id que nao esta mais na lista mostra o nome salvo e aviso de orfao',
+        (tester) async {
+      final service = _FakeDefaultsImportacaoService(empresasFake: [
+        {'id': '1', 'nome': 'Empresa A'},
+      ], defaultsPorEmpresa: {
+        1: const DefaultsImportacaoEmpresa(
+          empresaId: 1,
+          contaBancariaId: 999,
+          contaBancariaNome: 'Conta Antiga Inativada',
+        ),
+      });
+
+      await tester.pumpWidget(_wrap(service));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('defaults_importacao_empresa')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Empresa A').last);
+      await tester.pumpAndSettle();
+
+      // Id 999 nao esta na lista fake (so id 10 existe) -- tela deve exibir
+      // o nome salvo como fallback e um aviso, em vez de "— Selecione —"
+      // silencioso.
+      expect(find.text('Conta Antiga Inativada'), findsOneWidget);
+      expect(
+          find.textContaining(
+              'Default configurado (Conta Antiga Inativada) não encontrado'),
+          findsOneWidget);
+    });
+
     testWidgets('erro ao carregar empresas mostra mensagem de erro',
         (tester) async {
       final service = _ServicoQueFalhaAoListarEmpresas();

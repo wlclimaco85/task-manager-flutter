@@ -220,13 +220,64 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
     );
   }
 
+  /// Aviso de "default órfão": o id salvo não está mais na lista carregada
+  /// pelo dropdown (ex: cadastro inativado ou que mudou de tipo/filtro).
+  Widget _avisoOrfao(String mensagem) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Row(children: [
+        const Icon(Icons.warning_amber_rounded,
+            color: Colors.orange, size: 16),
+        const SizedBox(width: 6),
+        Expanded(
+            child: Text(mensagem,
+                style: const TextStyle(color: Colors.orange, fontSize: 11))),
+      ]),
+    );
+  }
+
+  /// Injeta, quando necessário, um item sintético representando o default
+  /// salvo (id + nome vindos do próprio DTO) na lista carregada pelo
+  /// dropdown — evita o "default órfão" silencioso: um id salvo que não
+  /// está mais na lista atual (ex: conta/centro de custo inativado ou que
+  /// mudou de tipo/filtro) faria o [SearchableDropdownField] cair em
+  /// "— Selecione —" mesmo havendo um default configurado. Retorna a lista
+  /// original quando o id já está presente ou quando não há id/nome salvos.
+  List<Map<String, dynamic>> _comFallbackOrfao(
+    List<Map<String, dynamic>> itens,
+    int? idSalvo,
+    String? nomeSalvo,
+  ) {
+    if (idSalvo == null) return itens;
+    final jaPresente = itens.any((i) => i['id']?.toString() == idSalvo.toString());
+    if (jaPresente) return itens;
+    return [
+      ...itens,
+      {'id': idSalvo.toString(), 'nome': nomeSalvo ?? '(id $idSalvo)'},
+    ];
+  }
+
+  /// `true` quando o id salvo não está na lista carregada pelo dropdown —
+  /// usado para exibir o aviso de "default órfão" abaixo do campo.
+  bool _ehOrfao(List<Map<String, dynamic>> itens, int? idSalvo) {
+    if (idSalvo == null) return false;
+    return !itens.any((i) => i['id']?.toString() == idSalvo.toString());
+  }
+
   Widget _formulario() {
+    final orfaoContaBancaria =
+        _ehOrfao(_contasBancarias, _defaults.contaBancariaId);
+    final orfaoContaCaixa = _ehOrfao(_contasCaixa, _defaults.contaCaixaId);
+    final orfaoCentroCusto =
+        _ehOrfao(_centrosCusto, _defaults.centroCustoId);
+
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SearchableDropdownField(
         key: const Key('defaults_importacao_conta_bancaria'),
         label: 'Conta bancária padrão',
         value: _defaults.contaBancariaId?.toString(),
-        items: _contasBancarias,
+        items: _comFallbackOrfao(_contasBancarias, _defaults.contaBancariaId,
+            _defaults.contaBancariaNome),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -237,12 +288,17 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
           );
         }),
       ),
+      if (orfaoContaBancaria)
+        _avisoOrfao(
+            'Default configurado (${_defaults.contaBancariaNome ?? 'id ${_defaults.contaBancariaId}'}) '
+            'não encontrado na lista atual de contas bancárias.'),
       const SizedBox(height: 12),
       SearchableDropdownField(
         key: const Key('defaults_importacao_conta_caixa'),
         label: 'Conta/caixa padrão',
         value: _defaults.contaCaixaId?.toString(),
-        items: _contasCaixa,
+        items: _comFallbackOrfao(
+            _contasCaixa, _defaults.contaCaixaId, _defaults.contaCaixaNome),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -253,12 +309,17 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
           );
         }),
       ),
+      if (orfaoContaCaixa)
+        _avisoOrfao(
+            'Default configurado (${_defaults.contaCaixaNome ?? 'id ${_defaults.contaCaixaId}'}) '
+            'não encontrado na lista atual de contas/caixa.'),
       const SizedBox(height: 12),
       SearchableDropdownField(
         key: const Key('defaults_importacao_centro_custo'),
         label: 'Centro de custo padrão',
         value: _defaults.centroCustoId?.toString(),
-        items: _centrosCusto,
+        items: _comFallbackOrfao(_centrosCusto, _defaults.centroCustoId,
+            _defaults.centroCustoNome),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -269,6 +330,10 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
           );
         }),
       ),
+      if (orfaoCentroCusto)
+        _avisoOrfao(
+            'Default configurado (${_defaults.centroCustoNome ?? 'id ${_defaults.centroCustoId}'}) '
+            'não encontrado na lista atual de centros de custo.'),
       const SizedBox(height: 8),
       SwitchListTile(
         key: const Key('defaults_importacao_baixar_automatico'),
