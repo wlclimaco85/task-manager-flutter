@@ -10,6 +10,7 @@ import '../../../services/tela_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../web/screens/defaults_importacao_screen.dart';
 
 const _primary = GridColors.primary;
 const _green = GridColors.secondary;
@@ -130,6 +131,21 @@ class _ConfiguracoesSistemaScreenState
           _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
           _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
+          const SizedBox(height: 20),
+          _section('Defaults Financeiros de Importação',
+              Icons.account_balance_wallet_outlined, [
+            _actionCard(
+                id: 'defaults_importacao',
+                title: 'Defaults de Importação (SINTEGRA/SPED)',
+                subtitle:
+                    'Conta bancária, conta/caixa e centro de custo padrão por '
+                    'empresa, usados quando o arquivo importado vier '
+                    'incompleto.',
+                icon: Icons.account_balance_wallet_outlined,
+                color: _primary,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const DefaultsImportacaoScreen()))),
+          ]),
           const SizedBox(height: 20),
           if (_resultados.isNotEmpty) _buildResultados(),
         ]),

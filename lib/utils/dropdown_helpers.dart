@@ -207,23 +207,65 @@ class DropdownHelpers {
       '${ApiLinks.baseUrl}/api/contas-bancaria',
       displayField: 'nome',
     );
-    return lista.map((item) {
-      final descricao = item['descricao']?.toString().trim() ?? '';
-      final banco = item['banco']?.toString().trim() ?? '';
-      final numero = item['numero']?.toString().trim() ?? '';
-      final bancoNumero = [
-        if (banco.isNotEmpty) banco,
-        if (numero.isNotEmpty) numero,
-      ].join(' - ');
-      final nome = [
-        if (descricao.isNotEmpty) descricao,
-        if (bancoNumero.isNotEmpty) bancoNumero,
-      ].join(' • ');
-      if (nome.isNotEmpty) {
-        item['nome'] = nome;
-      }
-      return item;
+    return lista.map(_comNomeFormatadoDeContaBancaria).toList();
+  }
+
+  /// Monta o rótulo de exibição "Descrição • Banco - Número" de uma conta
+  /// bancária/caixa — extraído para ser reaproveitado por [contasBancarias]
+  /// e [contasBancariasPorEmpresa].
+  static Map<String, dynamic> _comNomeFormatadoDeContaBancaria(
+      Map<String, dynamic> item) {
+    final descricao = item['descricao']?.toString().trim() ?? '';
+    final banco = item['banco']?.toString().trim() ?? '';
+    final numero = item['numero']?.toString().trim() ?? '';
+    final bancoNumero = [
+      if (banco.isNotEmpty) banco,
+      if (numero.isNotEmpty) numero,
+    ].join(' - ');
+    final nome = [
+      if (descricao.isNotEmpty) descricao,
+      if (bancoNumero.isNotEmpty) bancoNumero,
+    ].join(' • ');
+    if (nome.isNotEmpty) {
+      item['nome'] = nome;
+    }
+    return item;
+  }
+
+  /// Carrega contas bancárias/caixa filtradas pela empresa informada (ao
+  /// invés da empresa do login) — usado por telas de administração/config
+  /// que operam fora do tenant do usuário logado (ex.: Defaults de
+  /// Importação em Sistema > Config de Sistemas, onde a empresa é escolhida
+  /// na própria tela). Sem [empresaId], traz todas as contas visíveis.
+  /// [apenasCaixa] filtra pelo campo `tipo == 'CAIXA'`; por padrão traz as
+  /// contas que NÃO são caixa (conta corrente, poupança etc.).
+  static Future<List<Map<String, dynamic>>> contasBancariasPorEmpresa(
+    String? empresaId, {
+    bool apenasCaixa = false,
+  }) async {
+    final query = StringBuffer('?tamanho=200');
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empresa=$empresaId');
+    }
+    final lista = await load(
+      '${ApiLinks.baseUrl}/api/contas-bancaria$query',
+      displayField: 'nome',
+    );
+    return lista.map(_comNomeFormatadoDeContaBancaria).where((item) {
+      final tipo = item['tipo']?.toString().toUpperCase() ?? '';
+      return apenasCaixa ? tipo == 'CAIXA' : tipo != 'CAIXA';
     }).toList();
+  }
+
+  /// Carrega centros de custo filtrados pela empresa informada — mesmo
+  /// motivo de [contasBancariasPorEmpresa]. Sem [empresaId], traz todos.
+  static Future<List<Map<String, dynamic>>> centrosCustoPorEmpresa(
+      String? empresaId) {
+    final query = StringBuffer('?tamanho=200');
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empId=$empresaId');
+    }
+    return load('${ApiLinks.allCentrosCusto}$query', displayField: 'nome');
   }
 
   static Future<List<Map<String, dynamic>>> gruposMusculares() =>
