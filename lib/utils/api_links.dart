@@ -1062,6 +1062,8 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe-import/importacao-xml/confirmar';
   static String get nfeImportacaoListar =>
       '$_baseUrlNew/api/nfe-import/importacao-xml';
+  static String get nfeImportacaoSintegra =>
+      '$_baseUrlNew/api/nfe-import/importacao-sintegra';
   // Pedido explicito do usuario: confirmar a NF-e Entrada e um passo
   // separado da importacao (RASCUNHO_IMPORTACAO -> AUTORIZADA). Enquanto
   // nao confirmado, o registro pode ser excluido via deleteNfe/nfeById
