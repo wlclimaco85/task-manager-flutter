@@ -32,7 +32,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: stable
           cache: true
 
@@ -41,21 +40,18 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: task_manager_flutter
 
       - name: Flutter pub get
         run: flutter pub get
-        working-directory: task_manager_flutter
 
       - name: Decode Keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > task_manager_flutter/android/app/keystore.jks
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
 
       - name: Decode Google Play Key
-        run: echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_BASE64 }}" | base64 --decode > task_manager_flutter/fastlane/google-play-key.json
+        run: echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_BASE64 }}" | base64 --decode > fastlane/google-play-key.json
 
       - name: Run Fastlane Android
         run: bundle exec fastlane android ${{ github.event.inputs.lane || 'beta' }}
-        working-directory: task_manager_flutter
         env:
           ANDROID_KEYSTORE_PATH: android/app/keystore.jks
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -74,7 +70,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: stable
           cache: true
 
@@ -83,18 +78,15 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: task_manager_flutter
 
       - name: Flutter pub get
         run: flutter pub get
-        working-directory: task_manager_flutter
 
       - name: Decode App Store Connect API Key
-        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}" | base64 --decode > task_manager_flutter/fastlane/AuthKey.p8
+        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}" | base64 --decode > fastlane/AuthKey.p8
 
       - name: Run Fastlane iOS
         run: bundle exec fastlane ios ${{ github.event.inputs.lane || 'beta' }}
-        working-directory: task_manager_flutter
         env:
           APP_STORE_CONNECT_API_KEY_KEY_ID:       ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID:    ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
