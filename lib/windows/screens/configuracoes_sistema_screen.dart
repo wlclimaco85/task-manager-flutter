@@ -9,6 +9,7 @@ import '../../../models/auth_utility.dart';
 import '../../../services/tela_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/importacao_sintegra_card.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../web/screens/defaults_importacao_screen.dart';
 
@@ -129,6 +130,10 @@ class _ConfiguracoesSistemaScreenState
           ]),
           const SizedBox(height: 20),
           _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
+          const SizedBox(height: 20),
+          _section('Importacao Fiscal', Icons.receipt_long_outlined, [
+            ImportacaoSintegraCard(baseUrl: ApiLinks.baseUrl),
+          ]),
           const SizedBox(height: 20),
           _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
