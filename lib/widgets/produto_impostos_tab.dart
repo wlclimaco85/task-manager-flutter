@@ -97,6 +97,62 @@ const List<Map<String, String>> kOpcoesCsosn = [
   {'value': '900', 'label': '900 - Outros'},
 ];
 
+// CST IPI (Tabela do IPI -- Anexo do leiaute NF-e/Convenio ICMS 07/2000).
+const List<Map<String, String>> kOpcoesCstIpi = [
+  {'value': '00', 'label': '00 - Entrada com recuperação de crédito'},
+  {'value': '01', 'label': '01 - Entrada tributada com alíquota zero'},
+  {'value': '02', 'label': '02 - Entrada isenta'},
+  {'value': '03', 'label': '03 - Entrada não-tributada'},
+  {'value': '04', 'label': '04 - Entrada imune'},
+  {'value': '05', 'label': '05 - Entrada com suspensão'},
+  {'value': '49', 'label': '49 - Outras entradas'},
+  {'value': '50', 'label': '50 - Saída tributada'},
+  {'value': '51', 'label': '51 - Saída tributada com alíquota zero'},
+  {'value': '52', 'label': '52 - Saída isenta'},
+  {'value': '53', 'label': '53 - Saída não-tributada'},
+  {'value': '54', 'label': '54 - Saída imune'},
+  {'value': '55', 'label': '55 - Saída com suspensão'},
+  {'value': '99', 'label': '99 - Outras saídas'},
+];
+
+// CST PIS e CST COFINS (Tabelas 4.3.4/4.3.5 do MOC NF-e, Nota Tecnica
+// 2016.002) -- mesma tabela de codigos pras duas contribuicoes.
+const List<Map<String, String>> kOpcoesCstPisCofins = [
+  {'value': '01', 'label': '01 - Tributável (alíquota normal)'},
+  {'value': '02', 'label': '02 - Tributável (alíquota diferenciada)'},
+  {'value': '03', 'label': '03 - Tributável (qtd vendida x alíquota unidade)'},
+  {'value': '04', 'label': '04 - Tributável (monofásica - alíquota zero)'},
+  {'value': '05', 'label': '05 - Tributável (Substituição Tributária)'},
+  {'value': '06', 'label': '06 - Tributável (alíquota zero)'},
+  {'value': '07', 'label': '07 - Isenta da contribuição'},
+  {'value': '08', 'label': '08 - Sem incidência da contribuição'},
+  {'value': '09', 'label': '09 - Com suspensão da contribuição'},
+  {'value': '49', 'label': '49 - Outras operações de saída'},
+  {'value': '50', 'label': '50 - Direito a crédito - receita trib. interno'},
+  {'value': '51', 'label': '51 - Direito a crédito - receita não trib. interno'},
+  {'value': '52', 'label': '52 - Direito a crédito - receita de exportação'},
+  {'value': '53', 'label': '53 - Direito a crédito - trib. e não trib. interno'},
+  {'value': '54', 'label': '54 - Direito a crédito - trib. interno e exportação'},
+  {'value': '55', 'label': '55 - Direito a crédito - não trib. interno e exportação'},
+  {'value': '56', 'label': '56 - Direito a crédito - trib./não trib. interno e exportação'},
+  {'value': '60', 'label': '60 - Crédito presumido - receita trib. interno'},
+  {'value': '61', 'label': '61 - Crédito presumido - receita não trib. interno'},
+  {'value': '62', 'label': '62 - Crédito presumido - receita de exportação'},
+  {'value': '63', 'label': '63 - Crédito presumido - trib. e não trib. interno'},
+  {'value': '64', 'label': '64 - Crédito presumido - trib. interno e exportação'},
+  {'value': '65', 'label': '65 - Crédito presumido - não trib. interno e exportação'},
+  {'value': '66', 'label': '66 - Crédito presumido - trib./não trib. interno e exportação'},
+  {'value': '67', 'label': '67 - Crédito presumido - outras operações'},
+  {'value': '70', 'label': '70 - Aquisição sem direito a crédito'},
+  {'value': '71', 'label': '71 - Aquisição com isenção'},
+  {'value': '72', 'label': '72 - Aquisição com suspensão'},
+  {'value': '73', 'label': '73 - Aquisição a alíquota zero'},
+  {'value': '74', 'label': '74 - Aquisição sem incidência da contribuição'},
+  {'value': '75', 'label': '75 - Aquisição por Substituição Tributária'},
+  {'value': '98', 'label': '98 - Outras operações de entrada'},
+  {'value': '99', 'label': '99 - Outras operações'},
+];
+
 // CST IBS/CBS (Nota Técnica NF-e 2025.002, Reforma Tributária).
 const List<Map<String, String>> kOpcoesCstIbsCbs = [
   {'value': '000', 'label': '000 - Tributação integral'},
@@ -437,23 +493,23 @@ class _ProdutoImpostoUfFormDialogState
   // Dropdowns de tabela fechada (Receita/SEFAZ) -- nao usam TextEditingController.
   String? _cstCsosn;
   String? _cstIbsCbs;
+  String? _cstIpi;
+  String? _cstPis;
+  String? _cstCofins;
 
   final _aliquotaIcmsCtrl = TextEditingController();
   final _aliqIcmsRedCtrl = TextEditingController();
   final _pRedBcCtrl = TextEditingController();
   final _aliqStCtrl = TextEditingController();
 
-  final _cstIpiCtrl = TextEditingController();
   final _aliqIpiCtrl = TextEditingController();
   final _codEnqIpiCtrl = TextEditingController();
 
   final _codTribIssCtrl = TextEditingController();
   final _aliqIssCtrl = TextEditingController();
 
-  final _cstPisCtrl = TextEditingController();
   final _pPisCtrl = TextEditingController();
 
-  final _cstCofinsCtrl = TextEditingController();
   final _pCofinsCtrl = TextEditingController();
 
   final _cClassTribCtrl = TextEditingController();
@@ -476,17 +532,17 @@ class _ProdutoImpostoUfFormDialogState
     _pRedBcCtrl.text = _asText(e?['pRedBc']);
     _aliqStCtrl.text = _asText(e?['aliqSt']);
 
-    _cstIpiCtrl.text = e?['cstIpi']?.toString() ?? '';
+    _cstIpi = _blankToNullStatic(e?['cstIpi']?.toString());
     _aliqIpiCtrl.text = _asText(e?['aliqIpi']);
     _codEnqIpiCtrl.text = e?['codEnqIpi']?.toString() ?? '';
 
     _codTribIssCtrl.text = e?['codTribIss']?.toString() ?? '';
     _aliqIssCtrl.text = _asText(e?['aliqIss']);
 
-    _cstPisCtrl.text = e?['cstPis']?.toString() ?? '';
+    _cstPis = _blankToNullStatic(e?['cstPis']?.toString());
     _pPisCtrl.text = _asText(e?['pPis']);
 
-    _cstCofinsCtrl.text = e?['cstCofins']?.toString() ?? '';
+    _cstCofins = _blankToNullStatic(e?['cstCofins']?.toString());
     _pCofinsCtrl.text = _asText(e?['pCofins']);
 
     _cstIbsCbs = _blankToNullStatic(e?['cstIbsCbs']?.toString());
@@ -508,14 +564,11 @@ class _ProdutoImpostoUfFormDialogState
       _aliqIcmsRedCtrl,
       _pRedBcCtrl,
       _aliqStCtrl,
-      _cstIpiCtrl,
       _aliqIpiCtrl,
       _codEnqIpiCtrl,
       _codTribIssCtrl,
       _aliqIssCtrl,
-      _cstPisCtrl,
       _pPisCtrl,
-      _cstCofinsCtrl,
       _pCofinsCtrl,
       _cClassTribCtrl,
       _pIbsUfCtrl,
@@ -547,14 +600,14 @@ class _ProdutoImpostoUfFormDialogState
       'aliqIcmsRed': _parseNum(_aliqIcmsRedCtrl.text),
       'pRedBc': _parseNum(_pRedBcCtrl.text),
       'aliqSt': _parseNum(_aliqStCtrl.text),
-      'cstIpi': _blankToNull(_cstIpiCtrl.text),
+      'cstIpi': _cstIpi,
       'aliqIpi': _parseNum(_aliqIpiCtrl.text),
       'codEnqIpi': _blankToNull(_codEnqIpiCtrl.text),
       'codTribIss': _blankToNull(_codTribIssCtrl.text),
       'aliqIss': _parseNum(_aliqIssCtrl.text),
-      'cstPis': _blankToNull(_cstPisCtrl.text),
+      'cstPis': _cstPis,
       'pPis': _parseNum(_pPisCtrl.text),
-      'cstCofins': _blankToNull(_cstCofinsCtrl.text),
+      'cstCofins': _cstCofins,
       'pCofins': _parseNum(_pCofinsCtrl.text),
       'cstIbsCbs': _cstIbsCbs,
       'cClassTrib': _blankToNull(_cClassTribCtrl.text),
@@ -652,17 +705,40 @@ class _ProdutoImpostoUfFormDialogState
                 _campoNumero('% Redução BC', _pRedBcCtrl),
                 _campoNumero('Alíquota ST / MVA (%)', _aliqStCtrl),
                 _secaoTitulo('IPI'),
-                _campoTexto('CST IPI', _cstIpiCtrl),
+                // CST IPI: dropdown fechado (Anexo do leiaute NF-e).
+                _campoDropdown(
+                  'CST IPI',
+                  _cstIpi,
+                  kOpcoesCstIpi,
+                  (v) => setState(() => _cstIpi = v),
+                ),
                 _campoNumero('Alíquota IPI (%)', _aliqIpiCtrl),
+                // Codigo de enquadramento legal do IPI: tabela oficial com
+                // centenas de entradas (TIPI/RFB), grande demais pra embutir
+                // aqui sem fonte oficial baixada -- mantido texto livre.
                 _campoTexto('Código enquadramento IPI', _codEnqIpiCtrl),
                 _secaoTitulo('ISS'),
+                // Codigo de tributacao do ISS varia por MUNICIPIO (nao ha
+                // tabela nacional unica) -- mantido texto livre.
                 _campoTexto('Código tributação ISS', _codTribIssCtrl),
                 _campoNumero('Alíquota ISS (%)', _aliqIssCtrl),
                 _secaoTitulo('PIS'),
-                _campoTexto('CST PIS', _cstPisCtrl),
+                // CST PIS: dropdown fechado (Tabela 4.3.4 do MOC NF-e).
+                _campoDropdown(
+                  'CST PIS',
+                  _cstPis,
+                  kOpcoesCstPisCofins,
+                  (v) => setState(() => _cstPis = v),
+                ),
                 _campoNumero('Alíquota PIS (%)', _pPisCtrl),
                 _secaoTitulo('COFINS'),
-                _campoTexto('CST COFINS', _cstCofinsCtrl),
+                // CST COFINS: mesma tabela oficial do PIS (Tabela 4.3.5).
+                _campoDropdown(
+                  'CST COFINS',
+                  _cstCofins,
+                  kOpcoesCstPisCofins,
+                  (v) => setState(() => _cstCofins = v),
+                ),
                 _campoNumero('Alíquota COFINS (%)', _pCofinsCtrl),
                 _secaoTitulo('IBS/CBS (Reforma Tributária)'),
                 // CST IBS/CBS: dropdown fechado (Nota Tecnica NF-e 2025.002).
