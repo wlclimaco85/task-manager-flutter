@@ -195,6 +195,29 @@ bool isParceiroFieldDisabledByStorage(
 ) =>
     _isParceiroLockField(config) && hasParceiroIdOrParcId;
 
+/// Decide se um campo dropdown de "Parceiro" (ou variantes: fieldName
+/// contendo "parceiro", ou "cliente") deve ser pré-preenchido com
+/// [TenantContext.parceiroId] no INSERT — usado no bloco "TAREFA 1" de
+/// [_GenericGridWindowsScreenState._openForm].
+///
+/// Bug de producao (card WdlEAxFK): antes usava `TenantContext.hasParceiro`
+/// bruto (so o login), nao o contexto EFETIVO ja calculado por
+/// [effectiveHasParceiroContext] -- um Cliente abrindo uma tela em
+/// drill-down de Empresa (extraParams so com empresa, regra 2 de
+/// [effectiveHasParceiroContext]) ainda tinha o campo Parceiro
+/// pre-preenchido com o proprio parceiro, mesmo o campo devendo ficar sem
+/// contexto de parceiro nenhum ali.
+@visibleForTesting
+bool shouldPrefillParceiroField(
+  FieldConfigWindows config,
+  bool hasParceiroContext,
+) {
+  final fn = config.fieldName.toLowerCase();
+  final isParceiroField =
+      fn == 'parceiro' || fn.contains('parceiro') || fn == 'cliente';
+  return isParceiroField && hasParceiroContext;
+}
+
 // Fix (pedido explicito do usuario): o campo Fornecedor tinha uma trava
 // hardcoded por nome de campo/label ("fornecedor") aqui no widget generico,
 // que ignorava por completo o FieldConfigWindows.enabled passado pelas telas
@@ -2477,10 +2500,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               TenantContext.hasEmpresa) {
             initialValue = TenantContext.empresaId.toString();
             preFilledFields.add(config.fieldName);
-          } else if ((fn == 'parceiro' ||
-                  fn.contains('parceiro') ||
-                  fn == 'cliente') &&
-              TenantContext.hasParceiro) {
+          } else if (shouldPrefillParceiroField(config, hasParceiroContext)) {
             initialValue = TenantContext.parceiroId.toString();
             if (isParceiroFieldDisabledByStorage(
               config,

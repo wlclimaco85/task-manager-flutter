@@ -170,4 +170,74 @@ void main() {
       );
     });
   });
+
+  // Bug de producao (card WdlEAxFK, achado em code review do card 579,
+  // task_6e15201d): o VALOR INICIAL do campo Parceiro (bloco "TAREFA 1" de
+  // _openForm) usava TenantContext.hasParceiro bruto em vez do contexto
+  // EFETIVO ja calculado por effectiveHasParceiroContext -- um Cliente
+  // abrindo uma tela em drill-down de Empresa ainda tinha o campo Parceiro
+  // pre-preenchido com o proprio parceiro do login, mesmo o campo devendo
+  // ficar sem contexto de parceiro nenhum ali. Fix: shouldPrefillParceiroField
+  // reaproveita o contexto efetivo (extraido do bloco TAREFA 1 pra ser
+  // testavel sem montar o widget inteiro).
+  group('shouldPrefillParceiroField (pre-fill do valor inicial no INSERT)',
+      () {
+    const parceiroField = FieldConfigWindows(
+      fieldName: 'parceiro',
+      label: 'Parceiro',
+    );
+    const clienteField = FieldConfigWindows(
+      fieldName: 'cliente',
+      label: 'Cliente',
+    );
+    const fornecedorField = FieldConfigWindows(
+      fieldName: 'parceiroFornecedor',
+      label: 'Fornecedor',
+    );
+    const empresaField = FieldConfigWindows(
+      fieldName: 'empresa',
+      label: 'Empresa',
+    );
+
+    test(
+        'NAO pre-preenche em drill-down de Empresa mesmo com login de '
+        'parceiro (regressao do bug corrigido)', () {
+      final hasContext = effectiveHasParceiroContext({'empresa': 5}, true);
+      expect(hasContext, isFalse);
+      expect(
+        shouldPrefillParceiroField(parceiroField, hasContext),
+        isFalse,
+        reason: 'Contexto empresa-only nao deve pre-preencher Parceiro',
+      );
+    });
+
+    test('pre-preenche em drill-down de Parceiro (comportamento existente)',
+        () {
+      final hasContext =
+          effectiveHasParceiroContext({'parceiro': 99}, false);
+      expect(hasContext, isTrue);
+      expect(shouldPrefillParceiroField(parceiroField, hasContext), isTrue);
+    });
+
+    test(
+        'pre-preenche sem extraParams quando o login tem parceiro '
+        '(acesso direto pelo menu, comportamento existente)', () {
+      final hasContext = effectiveHasParceiroContext(null, true);
+      expect(hasContext, isTrue);
+      expect(shouldPrefillParceiroField(parceiroField, hasContext), isTrue);
+      expect(shouldPrefillParceiroField(clienteField, hasContext), isTrue);
+      expect(shouldPrefillParceiroField(fornecedorField, hasContext), isTrue);
+    });
+
+    test('NAO pre-preenche sem extraParams quando o login nao tem parceiro',
+        () {
+      final hasContext = effectiveHasParceiroContext(null, false);
+      expect(hasContext, isFalse);
+      expect(shouldPrefillParceiroField(parceiroField, hasContext), isFalse);
+    });
+
+    test('campo Empresa nunca e afetado (so campos de Parceiro)', () {
+      expect(shouldPrefillParceiroField(empresaField, true), isFalse);
+    });
+  });
 }
