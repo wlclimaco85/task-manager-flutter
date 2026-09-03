@@ -170,4 +170,76 @@ void main() {
       expect(DropdownHelpers.parseParceiroLabel({'data': null}), isNull);
     });
   });
+
+  // Bug de producao (mesma classe do card 580): dropdown "Empresa" so
+  // filtrava client-side sobre o 1o lote de 25 registros (DropdownHelpers.
+  // empresas() sem paginacao/busca). Fix: DropdownHelpers.empresasBusca()
+  // reconsulta o backend a cada termo digitado (GET /api/empresa?nome=...&
+  // pagina=...&tamanho=...) -- EmpresaController usa o parametro `nome`
+  // (nao `busca`, diferente de Parceiro), ja com ILIKE server-side.
+  group('DropdownHelpers.buildEmpresasBuscaQuery', () {
+    test('inclui pagina e tamanho sempre, sem nome quando termo vazio', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
+      expect(query, '?pagina=0&tamanho=25');
+    });
+
+    test('inclui nome quando ha termo digitado — nao fica so em memoria', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: 'abraco', pagina: 0);
+      expect(query, '?pagina=0&tamanho=25&nome=abraco');
+    });
+
+    test('ignora termo so com espacos (trim)', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: '   ', pagina: 0);
+      expect(query, '?pagina=0&tamanho=25');
+    });
+
+    test('escapa caracteres especiais do termo de busca na URL', () {
+      final query = DropdownHelpers.buildEmpresasBuscaQuery(
+          busca: 'a&b c', pagina: 0);
+      expect(query, isNot(contains('nome=a&b c')));
+      expect(query, contains('nome=a%26b+c'));
+    });
+
+    test('avanca a pagina ao rolar a lista (scroll pagination)', () {
+      final pagina0 =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
+      final pagina1 =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 1);
+      expect(pagina0, contains('pagina=0'));
+      expect(pagina1, contains('pagina=1'));
+    });
+
+    test('respeita tamanho customizado', () {
+      final query = DropdownHelpers.buildEmpresasBuscaQuery(
+          busca: null, pagina: 0, tamanho: 50);
+      expect(query, '?pagina=0&tamanho=50');
+    });
+  });
+
+  group('DropdownHelpers.parseEmpresaLabel', () {
+    test('usa nome quando presente', () {
+      final label = DropdownHelpers.parseEmpresaLabel({'nome': 'Empresa X'});
+      expect(label, 'Empresa X');
+    });
+
+    test('cai para razaoSocial quando nome vazio', () {
+      final label = DropdownHelpers.parseEmpresaLabel(
+          {'nome': '', 'razaoSocial': 'Razao Social Ltda'});
+      expect(label, 'Razao Social Ltda');
+    });
+
+    test('cai para email quando nome e razaoSocial vazios', () {
+      final label = DropdownHelpers.parseEmpresaLabel(
+          {'nome': '', 'razaoSocial': '', 'email': 'contato@teste.com'});
+      expect(label, 'contato@teste.com');
+    });
+
+    test('corpo malformado retorna null sem lancar excecao', () {
+      expect(DropdownHelpers.parseEmpresaLabel(null), isNull);
+      expect(DropdownHelpers.parseEmpresaLabel('texto'), isNull);
+    });
+  });
 }

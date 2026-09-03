@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/defaults_importacao_empresa_model.dart';
 import '../../services/defaults_importacao_service.dart';
+import '../../utils/dropdown_helpers.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/searchable_dropdown.dart';
@@ -183,6 +184,11 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
                         displayField: 'nome',
                         isRequired: true,
                         onChanged: (v) => _selecionarEmpresa(v),
+                        onSearch: (q) async {
+                          final pagina = await DropdownHelpers.empresasBusca(
+                              busca: q, pagina: 0, tamanho: 50);
+                          return pagina.items;
+                        },
                       ),
                       const SizedBox(height: 16),
                       if (_empresaId == null)

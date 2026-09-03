@@ -129,6 +129,48 @@ class DropdownHelpers {
     return query.toString();
   }
 
+  /// Busca paginada + server-side (nome, via GET /api/empresa?nome=...) do
+  /// dropdown de Empresa — mesma classe de bug do card 580 (Parceiro): o
+  /// dropdown carregava só o 1º lote de 25 registros (sem parâmetro nenhum)
+  /// e filtrava só client-side sobre esse lote fixo, escondendo empresas
+  /// fora da 1ª página. `nome` (não `busca`) é o filtro real aceito por
+  /// EmpresaController — já faz ILIKE server-side, sem precisar de mudança
+  /// de backend.
+  static Future<PaginaDropdown> empresasBusca({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) async {
+    final url =
+        '${ApiLinks.allEmpresas}${buildEmpresasBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho)}';
+    try {
+      final resp = await NetworkCaller().getRequest(url);
+      if (!resp.isSuccess || resp.body == null) {
+        return PaginaDropdown([], 0,
+            erro: 'Erro ao buscar (status ${resp.statusCode}).');
+      }
+      return parsePaginaDropdown(resp.body);
+    } catch (e) {
+      return PaginaDropdown([], 0, erro: 'Erro ao buscar: $e');
+    }
+  }
+
+  /// Monta a query string (`?pagina=...&tamanho=...[&nome=...]`) de
+  /// [empresasBusca] — extraído em função pura para poder ser testado sem
+  /// rede (ver dropdown_helpers_busca_test.dart).
+  static String buildEmpresasBuscaQuery({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) {
+    final termo = busca?.trim();
+    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
+    if (termo != null && termo.isNotEmpty) {
+      query.write('&nome=${Uri.encodeQueryComponent(termo)}');
+    }
+    return query.toString();
+  }
+
   /// Converte o corpo `{data: {dados: [...], totalElements: N}}` retornado
   /// pelo backend em [PaginaDropdown] — extraído em função pura para poder
   /// ser testado sem rede (ver dropdown_helpers_busca_test.dart).
@@ -178,6 +220,33 @@ class DropdownHelpers {
     final razaoSocial = data['razaoSocial']?.toString();
     if (razaoSocial != null && razaoSocial.isNotEmpty) return razaoSocial;
     return data['email']?.toString();
+  }
+
+  /// Resolve o rótulo de exibição de uma empresa pelo id — usado para
+  /// mostrar o valor pré-selecionado do dropdown de busca remota
+  /// ([empresasBusca]) quando o registro não está na página carregada.
+  static Future<String?> empresaLabelPorId(String id) async {
+    try {
+      final resp =
+          await NetworkCaller().getRequest('${ApiLinks.allEmpresas}/$id');
+      if (!resp.isSuccess || resp.body == null) return null;
+      return parseEmpresaLabel(resp.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrai o rótulo de exibição (nome, com fallback para razão social e
+  /// email) do corpo de `GET /api/empresa/{id}` — diferente do formato de
+  /// `GET /api/parceiro/{id}`, EmpresaController devolve a entidade direto,
+  /// sem envelope `{data: {...}}` (ver EmpresaController.getEmpresaById).
+  static String? parseEmpresaLabel(dynamic raw) {
+    if (raw is! Map) return null;
+    final nome = raw['nome']?.toString();
+    if (nome != null && nome.isNotEmpty) return nome;
+    final razaoSocial = raw['razaoSocial']?.toString();
+    if (razaoSocial != null && razaoSocial.isNotEmpty) return razaoSocial;
+    return raw['email']?.toString();
   }
 
   static Future<List<Map<String, dynamic>>> aplicativos() =>
