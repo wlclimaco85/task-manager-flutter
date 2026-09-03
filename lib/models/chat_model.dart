@@ -22,6 +22,12 @@ class ChatMessage {
   final String? status;
   final int? atendenteId;
 
+  // Nome e foto reais do remetente, enriquecidos pelo backend a partir de
+  // Login.nome e Login.foto (codUsuOrig). Permitem substituir o texto do
+  // setor pela identidade real de quem respondeu.
+  final String? senderName;
+  final String? senderFoto;
+
   ChatMessage({
     required this.sender,
     required this.content,
@@ -41,6 +47,8 @@ class ChatMessage {
     this.fileUrl,
     this.status,
     this.atendenteId,
+    this.senderName,
+    this.senderFoto,
   });
 
   // Construtor a partir de JSON
@@ -65,6 +73,8 @@ class ChatMessage {
       text: json['text'],
       status: json['status'],
       atendenteId: _intFromJson(json['atendenteId']),
+      senderName: json['senderName'],
+      senderFoto: json['senderFoto'],
     );
   }
 
@@ -91,6 +101,8 @@ class ChatMessage {
     data['text'] = text;
     data['status'] = status;
     data['atendenteId'] = atendenteId;
+    if (senderName != null) data['senderName'] = senderName;
+    if (senderFoto != null) data['senderFoto'] = senderFoto;
 
     return data;
   }
@@ -107,6 +119,44 @@ class ChatMessage {
     if (value is int) return value;
     return int.tryParse(value.toString());
   }
+}
+
+ChatMessage normalizeChatMessageForDisplay(ChatMessage msg) {
+  return ChatMessage(
+    sender: msg.sender,
+    content: msg.content.isNotEmpty ? msg.content : (msg.text ?? ''),
+    type: msg.type.isNotEmpty ? msg.type : 'text',
+    timestamp: msg.timestamp ?? msg.uploadDate,
+    empId: msg.empId,
+    parceiroId: msg.parceiroId,
+    codApp: msg.codApp,
+    codUsuOrig: msg.codUsuOrig,
+    codUsuDest: msg.codUsuDest,
+    sector: msg.sector,
+    chatId: msg.chatId,
+    uploadDate: msg.uploadDate,
+    text: msg.text,
+    fileId: msg.fileId,
+    fileName: msg.fileName,
+    fileUrl: msg.fileUrl,
+    status: msg.status,
+    atendenteId: msg.atendenteId,
+    senderName: msg.senderName,
+    senderFoto: msg.senderFoto,
+  );
+}
+
+String chatMessageDisplayName(
+  ChatMessage message, {
+  required bool isMine,
+  required String loggedUserName,
+  required String sector,
+}) {
+  final senderName = message.senderName?.trim() ?? '';
+  if (senderName.isNotEmpty) return senderName;
+  final sender = message.sender.trim();
+  if (sender.isNotEmpty) return sender;
+  return isMine ? loggedUserName : sector;
 }
 
 /// Modelo para item do kanban de chat.

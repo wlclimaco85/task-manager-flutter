@@ -80,4 +80,34 @@ void main() {
     expect(message.codUsuOrig, 967);
     expect(message.codApp, 1);
   });
+
+  test('normalizacao preserva nome e foto reais do remetente', () {
+    final message = ChatMessage.fromJson({
+      'sender': 'Departamento Pessoal',
+      'senderName': 'Maria Fiscal',
+      'senderFoto': 'data:image/png;base64,Zm90bw==',
+      'content': 'resposta da empresa',
+      'type': 'text',
+      'chatId': 'empresa-1-parceiro-1757-chat-abc',
+      'uploadDate': '2026-09-03T02:31:23',
+      'codUsuOrig': 970,
+    });
+
+    final normalized = normalizeChatMessageForDisplay(message);
+
+    expect(normalized.sender, 'Departamento Pessoal');
+    expect(normalized.senderName, 'Maria Fiscal');
+    expect(normalized.senderFoto, 'data:image/png;base64,Zm90bw==');
+    expect(normalized.content, 'resposta da empresa');
+    expect(normalized.timestamp, '2026-09-03T02:31:23');
+    expect(
+      chatMessageDisplayName(
+        normalized,
+        isMine: false,
+        loggedUserName: 'Atendente logado',
+        sector: 'Departamento Pessoal',
+      ),
+      'Maria Fiscal',
+    );
+  });
 }
