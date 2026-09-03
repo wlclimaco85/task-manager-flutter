@@ -275,6 +275,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _formKey = GlobalKey<FormState>();
   final _controllers = <String, TextEditingController>{};
   final _dropdownValues = <String, dynamic>{};
+  // Bug de producao: _save() sempre serializava todo campo dropdown como
+  // {"id": valor} -- correto pra dropdown de RELACAO JPA (empresa, parceiro,
+  // unidadeMedida: o backend espera um objeto com o id da entidade), mas
+  // errado pra dropdown de valor ESCALAR usando uma lista de opcoes so pra
+  // UI (ex.: "origem" Integer com lista fixa da SEFAZ, "unidadeComercial"
+  // String com opcoes vindas de /api/unidade_medida mas persistida como
+  // texto puro) -- backend rejeitava com 500 "Cannot deserialize... START_OBJECT".
+  // Sinal usado pra distinguir os dois casos: dropdownValueField != 'id'
+  // (explicitamente outro campo, ex. 'nome'/'value') indica valor escalar,
+  // enviado cru; dropdownValueField == 'id' (ou omitido) mantem o
+  // comportamento antigo de relacao JPA.
+  final _dropdownValueFieldByName = <String, String>{};
   final _multiValues = <String, List<dynamic>>{};
   // Bug de producao: multiselect (ex.: Roles) abria "Selecione..." mesmo com
   // o registro tendo valores reais salvos, sempre que a lista de OPCOES
@@ -371,6 +383,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         // enviado como vazio, simplesmente ausente), dando a impressao de
         // que "nao salvou"/"o valor sumiu".
         _initDropdownValue(fn, val, f.dropdownValueField);
+        _dropdownValueFieldByName[fn] =
+            f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id';
       } else if (f.fieldType == TelaFieldType.multiselect) {
         // Mesmo bug do dropdown, para multiselect (ex.: Modulo Servicos,
         // Tipo Parceiros): chips sempre voltavam a "Selecione..." ao editar.
@@ -387,6 +401,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final val = _valueFromItem(fn);
       if (o.fieldType == FieldType.dropdown) {
         _initDropdownValue(fn, val, o.dropdownValueField);
+        _dropdownValueFieldByName[fn] =
+            o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id';
       } else if (o.fieldType == FieldType.multiselect) {
         _initMultiValue(fn, val, o.dropdownValueField, o.dropdownDisplayField);
       } else {
@@ -576,7 +592,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         body[entry.key] = entry.value;
       }
       for (final entry in _dropdownValues.entries) {
-        if (entry.value != null) body[entry.key] = {'id': entry.value};
+        if (entry.value == null) continue;
+        final vf = _dropdownValueFieldByName[entry.key] ?? 'id';
+        body[entry.key] = vf == 'id' ? {'id': entry.value} : entry.value;
       }
       for (final entry in _multiValues.entries) {
         body[entry.key] = entry.value.map((v) => {'id': v}).toList();
