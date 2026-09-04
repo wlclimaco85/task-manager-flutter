@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:http/http.dart' as http;
 
 import '../utils/api_links.dart';
@@ -43,6 +44,10 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
   PlatformFile? _arquivo;
   Map<String, dynamic>? _resultado;
   String? _erro;
+  // Pedido explicito do usuario: erro inesperado deve trazer o stack trace
+  // completo (campo "trace" da resposta) com opcao de copiar, pra facilitar
+  // o diagnostico sem precisar olhar log de servidor.
+  String? _trace;
   bool _loadingEmpresas = false;
   bool _importando = false;
 
@@ -111,6 +116,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
     setState(() {
       _arquivo = result.files.first;
       _erro = null;
+      _trace = null;
       _resultado = null;
     });
   }
@@ -130,6 +136,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
     setState(() {
       _importando = true;
       _erro = null;
+      _trace = null;
       _resultado = null;
     });
     try {
@@ -141,6 +148,11 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Arquivo SINTEGRA importado.')),
       );
+    } on ErroImportacaoComTrace catch (e) {
+      if (mounted) setState(() {
+        _erro = e.message;
+        _trace = e.trace;
+      });
     } catch (e) {
       if (mounted)
         setState(() => _erro = e.toString().replaceFirst('Exception: ', ''));
@@ -186,6 +198,10 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
     final body = await response.stream.bytesToString();
     final decoded = body.isEmpty ? <String, dynamic>{} : jsonDecode(body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final trace = decoded is Map ? decoded['trace']?.toString() : null;
+      if (trace != null && trace.isNotEmpty) {
+        throw ErroImportacaoComTrace(_mensagemErro(decoded), trace);
+      }
       throw Exception(_mensagemErro(decoded));
     }
     return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
@@ -306,6 +322,10 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
             if (_erro != null) ...[
               const SizedBox(height: 10),
               _feedback(_erro!, GridColors.error, Icons.error_outline),
+            ],
+            if (_trace != null) ...[
+              const SizedBox(height: 8),
+              _blocoTrace(_trace!),
             ],
             if (_resultado != null) ...[
               const SizedBox(height: 10),
@@ -451,6 +471,74 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
     );
   }
 
+  // Pedido explicito do usuario: erro inesperado na importacao mostra o
+  // stack trace completo (rolavel) com botao pra copiar, sem precisar
+  // acessar log de servidor.
+  Widget _blocoTrace(String trace) {
+    return Container(
+      key: const Key('importacao-sintegra-trace'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Detalhes do erro',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade300,
+                ),
+              ),
+              TextButton.icon(
+                key: const Key('importacao-sintegra-copiar-erro'),
+                onPressed: () => _copiarErro(trace),
+                icon: const Icon(Icons.copy, size: 13, color: Colors.white70),
+                label: const Text(
+                  'Copiar erro',
+                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 220),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                trace,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copiarErro(String trace) {
+    Clipboard.setData(ClipboardData(text: '${_erro ?? ''}\n\n$trace'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Erro copiado.')),
+    );
+  }
+
   List<Widget> _listaMensagens(dynamic valores, IconData icon, Color color) {
     final lista = valores is List ? valores : const [];
     return [
@@ -505,6 +593,19 @@ class _ResumoItem {
   final dynamic valor;
 
   _ResumoItem(this.label, this.valor);
+}
+
+// Pedido explicito do usuario: erro inesperado na importacao carrega o
+// stack trace completo (campo "trace" da resposta) pra exibir na tela com
+// opcao de copiar, alem da mensagem resumida.
+class ErroImportacaoComTrace implements Exception {
+  final String message;
+  final String trace;
+
+  ErroImportacaoComTrace(this.message, this.trace);
+
+  @override
+  String toString() => message;
 }
 
 extension on String {
