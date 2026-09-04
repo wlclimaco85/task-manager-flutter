@@ -91,4 +91,44 @@ void main() {
       findsOneWidget,
     );
   });
+
+  // Pedido explicito do usuario: erro inesperado na importacao mostra o
+  // stack trace completo, com botao pra copiar.
+  testWidgets('exibe trace completo e botao de copiar quando erro traz trace', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ImportacaoSintegraCard(
+            baseUrl: 'http://localhost',
+            empresaIdInicial: '1',
+            carregarEmpresas: () async => [
+              {'id': '1', 'nome': 'Empresa Smoke Test'},
+            ],
+            arquivoInicial: PlatformFile(
+              name: 'sintegra.txt',
+              size: 3,
+              bytes: Uint8List.fromList([49, 48, 32]),
+            ),
+            importar: (empresaId, arquivo) async {
+              throw ErroImportacaoComTrace(
+                'falha simulada de parsing',
+                'java.lang.RuntimeException: falha simulada de parsing\n\tat Foo.bar(Foo.java:1)',
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('importacao-sintegra-importar')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('falha simulada de parsing'), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sintegra-trace')), findsOneWidget);
+    expect(find.textContaining('RuntimeException'), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sintegra-copiar-erro')), findsOneWidget);
+  });
 }

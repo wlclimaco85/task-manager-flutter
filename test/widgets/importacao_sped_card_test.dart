@@ -92,4 +92,44 @@ void main() {
       findsOneWidget,
     );
   });
+
+  // Pedido explicito do usuario: erro inesperado na importacao mostra o
+  // stack trace completo, com botao pra copiar.
+  testWidgets('exibe trace completo e botao de copiar quando erro traz trace', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ImportacaoSpedCard(
+            baseUrl: 'http://localhost',
+            empresaIdInicial: '1',
+            carregarEmpresas: () async => [
+              {'id': '1', 'nome': 'Empresa Smoke Test'},
+            ],
+            arquivoInicial: PlatformFile(
+              name: 'sped.txt',
+              size: 3,
+              bytes: Uint8List.fromList([49, 48, 32]),
+            ),
+            importar: (empresaId, arquivo) async {
+              throw ErroImportacaoComTrace(
+                'Data invalida no arquivo SPED: ',
+                'java.lang.IllegalArgumentException: Data invalida\n\tat Foo.bar(Foo.java:1)',
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('importacao-sped-importar')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Data invalida no arquivo SPED: '), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sped-trace')), findsOneWidget);
+    expect(find.textContaining('IllegalArgumentException'), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sped-copiar-erro')), findsOneWidget);
+  });
 }
