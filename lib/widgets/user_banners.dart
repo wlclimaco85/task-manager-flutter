@@ -14,6 +14,7 @@ import 'package:task_manager_flutter/mobile/screens/meu_perfil_screen.dart';
 import 'meu_perfil_dialog.dart';
 import '../../../utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
 import '../../../utils/asset_loader.dart';
+import '../../../utils/security_matrix.dart';
 
 // AppBar customizado (apenas cabeçalho)
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -334,6 +335,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   void _handleLogout() {
+    // Bug de producao (card eNt571Po): mesmo gap de _AppBarActionsState.
+    // _logout() -- ModuloAccess (cache estatico guardado por _loaded) nao
+    // era resetado neste segundo handler de logout, deixando o mesmo risco
+    // de vazamento de modulos contratados entre usuarios na mesma sessao.
+    ModuloAccess.reset();
     AuthUtility.clearUserInfo();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -1087,6 +1093,15 @@ class _AppBarActionsState extends State<AppBarActions> {
   }
 
   void _logout(BuildContext context) {
+    // Bug de producao (card eNt571Po): ModuloAccess e um cache estatico em
+    // memoria guardado por _loaded -- so recarrega se reset() for chamado
+    // antes do proximo load(). Login/bottom_navbar ja chamavam reset(), mas
+    // este e o handler CENTRAL de logout (botao "Sair"); sem o reset aqui,
+    // se outro usuario logar na mesma sessao do app sem reiniciar o
+    // processo, ModuloAccess.load() retorna cedo e o novo usuario herda os
+    // modulos contratados do usuario anterior ate algo mais tarde forcar
+    // reset() (normalmente so no PROXIMO login, deixando uma janela aberta).
+    ModuloAccess.reset();
     AuthUtility.clearUserInfo();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
