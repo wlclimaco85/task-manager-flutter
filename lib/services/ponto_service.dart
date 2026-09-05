@@ -160,4 +160,19 @@ class PontoService {
     final fim = DateTime(ano, mes + 1, 0);
     return _caller.gerarPdf(inicio: inicio, fim: fim);
   }
+
+  static Future<List<Map<String, dynamic>>> relatorioAbsenteismo(int mes, int ano) async {
+    final inicio = DateTime(ano, mes, 1);
+    final fim = DateTime(ano, mes + 1, 0);
+    final i = inicio.toIso8601String().split("T")[0];
+    final f = fim.toIso8601String().split("T")[0];
+    try {
+      final response = await NetworkCaller().getRequest("${ApiLinks.baseUrl}/api/ponto/absenteismo?dataInicio=$i&dataFim=$f");
+      if (response.statusCode == 200 && response.body != null) {
+        final List lista = (response.body! as List<dynamic>).toList();
+        return lista.map((e) => e as Map<String, dynamic>).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 }

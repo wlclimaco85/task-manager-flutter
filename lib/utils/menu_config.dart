@@ -400,6 +400,11 @@ class MenuConfig {
             label: 'Dashboard DP',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 143),
+        MenuItem(
+            id: 'relatorio_dp_rh',
+            label: 'Relatórios DP/RH',
+            icon: FontAwesomeIcons.filePdf,
+            screenIndex: 144),
       ],
     ),
     MenuGroup(
