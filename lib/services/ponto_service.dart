@@ -12,7 +12,7 @@ class PontoCaller {
   Future<PontoModel?> registrarPonto(
     BuildContext context, {
     required TipoRegistro tipo,
-    String? observacao,
+    String? observacao, double? latitude, double? longitude,
   }) async {
     try {
       final login = AuthUtility.userInfo?.login;
@@ -24,7 +24,7 @@ class PontoCaller {
           "parceiro": {"id": login?.parceiro?.id},
         "tipo": tipo.apiValue,
         if (observacao != null && observacao.isNotEmpty)
-          "observacao": observacao,
+          "observacao": observacao, if (latitude != null) "latitude": latitude, if (longitude != null) "longitude": longitude,
       };
 
       final NetworkResponse response = await NetworkCaller().postRequest(
@@ -119,7 +119,7 @@ class PontoService {
   static final _caller = PontoCaller();
 
   /// Registra ponto automático (alterna entrada/saída)
-  static Future<bool> registrarPonto(int loginId) async {
+  static Future<bool> registrarPonto(int loginId, {double? latitude, double? longitude}) async {
     // Usa BuildContext fake — registra como ENTRADA por padrão
     // A lógica de alternância fica no backend
     try {
@@ -128,7 +128,7 @@ class PontoService {
         "login": {"id": login?.id},
         "empresa": {"id": login?.empresa?.id},
         if (login?.parceiro != null) "parceiro": {"id": login?.parceiro?.id},
-        "tipo": "ENTRADA",
+        "tipo": "ENTRADA", if (latitude != null) "latitude": latitude, if (longitude != null) "longitude": longitude,
       };
       final response = await NetworkCaller().postRequest(ApiLinks.pontoRegistrar, body);
       return response.isSuccess;

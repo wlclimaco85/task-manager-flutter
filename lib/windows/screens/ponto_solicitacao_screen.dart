@@ -12,13 +12,13 @@ const _green   = GridColors.secondary;
 const _bg      = Color(0xFFF5F5F5);
 const _white   = Colors.white;
 
-class WindowsPontoSolicitacaoScreen extends StatefulWidget {
-  const WindowsPontoSolicitacaoScreen({super.key});
+class WebPontoSolicitacaoScreen extends StatefulWidget {
+  const WebPontoSolicitacaoScreen({super.key});
   @override
-  State<WindowsPontoSolicitacaoScreen> createState() => _WebPontoSolicitacaoScreenState();
+  State<WebPontoSolicitacaoScreen> createState() => _WebPontoSolicitacaoScreenState();
 }
 
-class _WebPontoSolicitacaoScreenState extends State<WindowsPontoSolicitacaoScreen> {
+class _WebPontoSolicitacaoScreenState extends State<WebPontoSolicitacaoScreen> {
   List<dynamic> _solicitacoes = [];
   bool _loading = true;
 
@@ -29,13 +29,76 @@ class _WebPontoSolicitacaoScreenState extends State<WindowsPontoSolicitacaoScree
     setState(() => _loading = true);
     try {
       final id = AuthUtility.userInfo?.login?.id;
-      final url = '${ApiLinks.baseUrl}/api/ponto-ajuste/solicitacoes?funcionarioId=$id';
+      final empresaId = TenantContext.empresaId;
+      final role = AuthUtility.userInfo?.roles ?? [];
+      final isMaster = role.contains('MASTER') || role.contains('GESTOR');
+      
+      String url = '${ApiLinks.baseUrl}/api/ponto-ajuste/solicitacoes';
+      if (isMaster && empresaId != null) {
+        url += '?empresaId=$empresaId';
+      } else {
+        url += '?funcionarioId=$id';
+      }
+      
       final resp = await TenantContext.get(url);
       if (resp.statusCode == 200) {
         setState(() => _solicitacoes = jsonDecode(resp.body) as List);
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _avaliarSolicitacao(Map<String, dynamic> solicitacao) async {
+    final role = AuthUtility.userInfo?.roles ?? [];
+    final isMaster = role.contains('MASTER') || role.contains('GESTOR');
+    if (!isMaster || solicitacao['status'] != 'PENDENTE') return;
+
+    final obsCtrl = TextEditingController();
+
+    await showDialog(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('Avaliar Solicitação', style: TextStyle(color: _primary)),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Funcionário ID: ${solicitacao['funcionario']?['id']}'),
+        Text('Data: ${solicitacao['dataPonto']}'),
+        Text('Motivo: ${solicitacao['motivo']}'),
+        const SizedBox(height: 12),
+        TextField(
+          controller: obsCtrl, maxLines: 2,
+          decoration: const InputDecoration(
+            labelText: 'Observação do Gestor', border: OutlineInputBorder(), isDense: true),
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(GridTexts.cancel)),
+        ElevatedButton(
+          onPressed: () async {
+            await _enviarAvaliacao(ctx, solicitacao['id'], 'REJEITADO', obsCtrl.text);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _white),
+          child: const Text('Rejeitar'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            await _enviarAvaliacao(ctx, solicitacao['id'], 'APROVADO', obsCtrl.text);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: _white),
+          child: const Text('Aprovar'),
+        ),
+      ],
+    ));
+  }
+
+  Future<void> _enviarAvaliacao(BuildContext ctx, int id, String status, String obs) async {
+    final body = {'status': status, 'observacao': obs};
+    final resp = await TenantContext.put('${ApiLinks.baseUrl}/api/ponto-ajuste/solicitacoes/$id/status', body);
+    if (!ctx.mounted) return;
+    Navigator.pop(ctx);
+    if (resp.statusCode == 200) {
+      _snack('Solicitação avaliada com sucesso!');
+      _carregar();
+    } else {
+      _snack('Erro ao avaliar solicitação.');
+    }
   }
 
   Future<void> _novaSolicitacao() async {
@@ -145,6 +208,7 @@ class _WebPontoSolicitacaoScreenState extends State<WindowsPontoSolicitacaoScree
                       margin: const EdgeInsets.only(bottom: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       child: ListTile(
+                        onTap: () => _avaliarSolicitacao(s),
                         leading: CircleAvatar(
                           backgroundColor: _statusColor(status).withValues(alpha: 0.15),
                           child: Icon(Icons.calendar_today, color: _statusColor(status), size: 18),
