@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:http/http.dart' as http;
 
 import '../utils/api_links.dart';
+import '../utils/dropdown_helpers.dart';
 import '../utils/grid_colors.dart';
 import '../utils/tenant_context.dart';
 import 'searchable_dropdown.dart';
@@ -51,12 +52,45 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
   bool _loadingEmpresas = false;
   bool _importando = false;
 
+  // Pedido explicito do usuario: trazer os campos de conta bancaria/caixa e
+  // centro de custo na propria tela de import, ANTES de mandar processar --
+  // usados na geracao do financeiro quando a empresa nao tiver defaults
+  // financeiros configurados (Sistema > Config de Sistemas > Defaults de
+  // Importacao). Ambos opcionais: se a empresa ja tem default configurado,
+  // nao precisa escolher nada aqui.
+  List<Map<String, dynamic>> _contasBancarias = [];
+  List<Map<String, dynamic>> _centrosCusto = [];
+  String? _contaBancariaId;
+  String? _centroCustoId;
+  bool _loadingFinanceiro = false;
+
   @override
   void initState() {
     super.initState();
     _arquivo = widget.arquivoInicial;
     _empresaId = widget.empresaIdInicial;
     _carregarEmpresas();
+    _carregarOpcoesFinanceiro();
+  }
+
+  Future<void> _carregarOpcoesFinanceiro() async {
+    setState(() => _loadingFinanceiro = true);
+    try {
+      final resultados = await Future.wait([
+        DropdownHelpers.contasBancariasPorEmpresa(_empresaId),
+        DropdownHelpers.centrosCustoPorEmpresa(_empresaId),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _contasBancarias = resultados[0];
+        _centrosCusto = resultados[1];
+      });
+    } catch (_) {
+      // Campos opcionais -- falha ao carregar nao bloqueia a importacao,
+      // so' fica sem opcao de escolher aqui (usa o default da empresa).
+    } finally {
+      if (mounted) setState(() => _loadingFinanceiro = false);
+    }
   }
 
   Future<void> _carregarEmpresas() async {
@@ -174,6 +208,12 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       (key, _) => key.toLowerCase() == 'content-type',
     );
     request.fields['empId'] = empresaId;
+    if (_contaBancariaId != null && _contaBancariaId!.isNotEmpty) {
+      request.fields['contaBancariaId'] = _contaBancariaId!;
+    }
+    if (_centroCustoId != null && _centroCustoId!.isNotEmpty) {
+      request.fields['centroCustoId'] = _centroCustoId!;
+    }
     if (arquivo.bytes != null) {
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -293,7 +333,10 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
                       : 'Selecione a empresa',
                   enabled: !_loadingEmpresas && !_importando,
                   isRequired: true,
-                  onChanged: (value) => setState(() => _empresaId = value),
+                  onChanged: (value) {
+                    setState(() => _empresaId = value);
+                    _carregarOpcoesFinanceiro();
+                  },
                 );
                 final arquivo = _arquivoResumo();
                 final importar = _botaoImportar();
@@ -319,6 +362,8 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
                 );
               },
             ),
+            const SizedBox(height: 8),
+            _camposFinanceiro(),
             if (_erro != null) ...[
               const SizedBox(height: 10),
               _feedback(_erro!, GridColors.error, Icons.error_outline),
@@ -371,6 +416,59 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
     );
   }
 
+  // Pedido explicito do usuario: combo de conta bancaria/caixa e centro de
+  // custo na propria tela de import, antes de mandar processar -- usados na
+  // geracao do financeiro (ContaPagar/ContaReceber) quando a empresa nao
+  // tiver defaults configurados.
+  Widget _camposFinanceiro() {
+    final contaDropdown = SearchableDropdownField(
+      key: const Key('importacao-sintegra-conta-bancaria'),
+      label: 'Conta bancaria/caixa (opcional)',
+      value: _contaBancariaId,
+      items: _contasBancarias,
+      valueField: 'id',
+      displayField: 'nome',
+      hintText: _loadingFinanceiro
+          ? 'Carregando contas...'
+          : 'Usar default da empresa',
+      enabled: !_loadingFinanceiro && !_importando,
+      onChanged: (value) => setState(() => _contaBancariaId = value),
+    );
+    final centroCustoDropdown = SearchableDropdownField(
+      key: const Key('importacao-sintegra-centro-custo'),
+      label: 'Centro de custo (opcional)',
+      value: _centroCustoId,
+      items: _centrosCusto,
+      valueField: 'id',
+      displayField: 'nome',
+      hintText: _loadingFinanceiro
+          ? 'Carregando centros de custo...'
+          : 'Usar default da empresa',
+      enabled: !_loadingFinanceiro && !_importando,
+      onChanged: (value) => setState(() => _centroCustoId = value),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 760) {
+          return Column(
+            children: [
+              contaDropdown,
+              const SizedBox(height: 8),
+              centroCustoDropdown,
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: contaDropdown),
+            const SizedBox(width: 12),
+            Expanded(child: centroCustoDropdown),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _botaoImportar() {
     return ElevatedButton.icon(
       key: const Key('importacao-sintegra-importar'),
@@ -407,6 +505,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       _ResumoItem('Parceiros novos', resultado['parceirosCriados']),
       _ResumoItem('Parceiros atualizados', resultado['parceirosAtualizados']),
       _ResumoItem('Tributacoes', resultado['tributacoes']),
+      _ResumoItem('Financeiro gerado', resultado['financeirosGerados']),
       _ResumoItem('Financeiro pendente', resultado['financeirosPendentes']),
     ];
     return Container(

@@ -131,4 +131,35 @@ void main() {
     expect(find.textContaining('RuntimeException'), findsOneWidget);
     expect(find.byKey(const Key('importacao-sintegra-copiar-erro')), findsOneWidget);
   });
+
+  // Pedido explicito do usuario: combo de conta bancaria/caixa e centro de
+  // custo na propria tela de import, opcionais (usados so quando a empresa
+  // nao tem defaults financeiros configurados).
+  testWidgets('exibe campos opcionais de conta bancaria e centro de custo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ImportacaoSintegraCard(
+            baseUrl: 'http://localhost',
+            empresaIdInicial: '1',
+            carregarEmpresas: () async => [
+              {'id': '1', 'nome': 'Empresa Smoke Test'},
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('importacao-sintegra-conta-bancaria')), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sintegra-centro-custo')), findsOneWidget);
+
+    // Sao opcionais -- importar sem escolher nenhum dos dois nao deve
+    // travar por causa desses campos (bloqueio de arquivo ausente e' outro).
+    await tester.tap(find.byKey(const Key('importacao-sintegra-importar')));
+    await tester.pump();
+    expect(find.text('Selecione um arquivo SINTEGRA.'), findsOneWidget);
+  });
 }

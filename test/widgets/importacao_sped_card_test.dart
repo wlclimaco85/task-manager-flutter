@@ -132,4 +132,32 @@ void main() {
     expect(find.textContaining('IllegalArgumentException'), findsOneWidget);
     expect(find.byKey(const Key('importacao-sped-copiar-erro')), findsOneWidget);
   });
+
+  // Pedido explicito do usuario: combo de conta bancaria/caixa e centro de
+  // custo na propria tela de import, opcionais.
+  testWidgets('exibe campos opcionais de conta bancaria e centro de custo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ImportacaoSpedCard(
+            baseUrl: 'http://localhost',
+            empresaIdInicial: '1',
+            carregarEmpresas: () async => [
+              {'id': '1', 'nome': 'Empresa Smoke Test'},
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('importacao-sped-conta-bancaria')), findsOneWidget);
+    expect(find.byKey(const Key('importacao-sped-centro-custo')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('importacao-sped-importar')));
+    await tester.pump();
+    expect(find.text('Selecione um arquivo SPED.'), findsOneWidget);
+  });
 }
