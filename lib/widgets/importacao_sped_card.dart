@@ -22,11 +22,18 @@ typedef ImportacaoSpedSubmit = Future<Map<String, dynamic>> Function(
   String empresaId,
   PlatformFile arquivo,
 );
+// Pedido explicito do usuario: combos de conta bancaria/centro de custo
+// escopados pela empresa selecionada -- injetavel pra permitir teste de
+// regressao sem depender do TenantContext/DropdownHelpers reais.
+typedef ImportacaoFinanceiroLoader = Future<List<Map<String, dynamic>>>
+    Function(String? empresaId);
 
 class ImportacaoSpedCard extends StatefulWidget {
   final String baseUrl;
   final ImportacaoSpedLoader? carregarEmpresas;
   final ImportacaoSpedSubmit? importar;
+  final ImportacaoFinanceiroLoader? carregarContasBancarias;
+  final ImportacaoFinanceiroLoader? carregarCentrosCusto;
   final PlatformFile? arquivoInicial;
   final String? empresaIdInicial;
 
@@ -35,6 +42,8 @@ class ImportacaoSpedCard extends StatefulWidget {
     required this.baseUrl,
     this.carregarEmpresas,
     this.importar,
+    this.carregarContasBancarias,
+    this.carregarCentrosCusto,
     this.arquivoInicial,
     this.empresaIdInicial,
   });
@@ -73,15 +82,25 @@ class _ImportacaoSpedCardState extends State<ImportacaoSpedCard> {
     _arquivo = widget.arquivoInicial;
     _empresaId = widget.empresaIdInicial;
     _carregarEmpresas();
-    _carregarOpcoesFinanceiro();
+    // Ver comentario completo em ImportacaoSintegraCard: so' carrega aqui se
+    // a empresa ja veio definida (empresaIdInicial); senao _carregarEmpresas
+    // dispara depois de resolver via TenantContext, evitando a corrida que
+    // trazia conta/centro de custo de TODAS as empresas.
+    if (_empresaId != null && _empresaId!.isNotEmpty) {
+      _carregarOpcoesFinanceiro();
+    }
   }
 
   Future<void> _carregarOpcoesFinanceiro() async {
     setState(() => _loadingFinanceiro = true);
     try {
       final resultados = await Future.wait([
-        DropdownHelpers.contasBancariasPorEmpresa(_empresaId),
-        DropdownHelpers.centrosCustoPorEmpresa(_empresaId),
+        widget.carregarContasBancarias != null
+            ? widget.carregarContasBancarias!(_empresaId)
+            : DropdownHelpers.contasBancariasPorEmpresa(_empresaId),
+        widget.carregarCentrosCusto != null
+            ? widget.carregarCentrosCusto!(_empresaId)
+            : DropdownHelpers.centrosCustoPorEmpresa(_empresaId),
       ]);
       if (!mounted) return;
       setState(() {
@@ -102,6 +121,7 @@ class _ImportacaoSpedCardState extends State<ImportacaoSpedCard> {
           ? await widget.carregarEmpresas!()
           : await _carregarEmpresasApi();
       if (!mounted) return;
+      final empresaJaEscolhida = _empresaId != null && _empresaId!.isNotEmpty;
       setState(() {
         _empresas = empresas;
         final contexto = TenantContext.empresaId?.toString();
@@ -111,6 +131,9 @@ class _ImportacaoSpedCardState extends State<ImportacaoSpedCard> {
           _empresaId = contexto;
         }
       });
+      if (!empresaJaEscolhida && _empresaId != null && _empresaId!.isNotEmpty) {
+        _carregarOpcoesFinanceiro();
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _erro = 'Nao foi possivel carregar as empresas.');

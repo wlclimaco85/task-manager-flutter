@@ -3,9 +3,17 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/widgets/importacao_sintegra_card.dart';
 
 void main() {
+  tearDown(() {
+    AuthUtility.userInfo = null;
+  });
+
+
   testWidgets('exige empresa antes de importar SINTEGRA', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -162,4 +170,56 @@ void main() {
     await tester.pump();
     expect(find.text('Selecione um arquivo SINTEGRA.'), findsOneWidget);
   });
+
+  // Bug real reportado pelo usuario: os combos de conta bancaria/centro de
+  // custo traziam TODAS as empresas, nao so as da empresa selecionada.
+  // Causa raiz: quando a empresa e' resolvida via TenantContext (sem
+  // empresaIdInicial explicito), o carregamento dos combos disparava em
+  // paralelo com _carregarEmpresas() no initState -- rodava ANTES do id
+  // ser resolvido, entao ia sem filtro nenhum de empresa.
+  testWidgets(
+    'combos de financeiro so carregam depois da empresa ser resolvida via TenantContext',
+    (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-test',
+        login: Login(id: 1, empresa: Empresa(id: 7)),
+      );
+      final idsRecebidosConta = <String?>[];
+      final idsRecebidosCentro = <String?>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ImportacaoSintegraCard(
+              baseUrl: 'http://localhost',
+              // Sem empresaIdInicial -- forca a resolucao via TenantContext.
+              carregarEmpresas: () async => [
+                {'id': '7', 'nome': 'Empresa do Tenant'},
+              ],
+              carregarContasBancarias: (empresaId) async {
+                idsRecebidosConta.add(empresaId);
+                return [
+                  {'id': '10', 'nome': 'Conta da empresa 7'},
+                ];
+              },
+              carregarCentrosCusto: (empresaId) async {
+                idsRecebidosCentro.add(empresaId);
+                return [
+                  {'id': '20', 'nome': 'Centro da empresa 7'},
+                ];
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Nunca deve ter carregado com empresaId nulo/vazio -- so' depois que
+      // o TenantContext resolveu a empresa '7'.
+      expect(idsRecebidosConta, isNot(contains(null)));
+      expect(idsRecebidosCentro, isNot(contains(null)));
+      expect(idsRecebidosConta, contains('7'));
+      expect(idsRecebidosCentro, contains('7'));
+    },
+  );
 }

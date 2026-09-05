@@ -3,10 +3,18 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/widgets/importacao_sped_card.dart';
 
 // Card cUlANCTt - mesmo padrao de teste do importacao_sintegra_card_test.dart.
 void main() {
+  tearDown(() {
+    AuthUtility.userInfo = null;
+  });
+
+
   testWidgets('exige empresa antes de importar SPED', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -160,4 +168,49 @@ void main() {
     await tester.pump();
     expect(find.text('Selecione um arquivo SPED.'), findsOneWidget);
   });
+
+  // Bug real reportado pelo usuario -- ver comentario completo no teste
+  // equivalente de importacao_sintegra_card_test.dart.
+  testWidgets(
+    'combos de financeiro so carregam depois da empresa ser resolvida via TenantContext',
+    (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-test',
+        login: Login(id: 1, empresa: Empresa(id: 7)),
+      );
+      final idsRecebidosConta = <String?>[];
+      final idsRecebidosCentro = <String?>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ImportacaoSpedCard(
+              baseUrl: 'http://localhost',
+              carregarEmpresas: () async => [
+                {'id': '7', 'nome': 'Empresa do Tenant'},
+              ],
+              carregarContasBancarias: (empresaId) async {
+                idsRecebidosConta.add(empresaId);
+                return [
+                  {'id': '10', 'nome': 'Conta da empresa 7'},
+                ];
+              },
+              carregarCentrosCusto: (empresaId) async {
+                idsRecebidosCentro.add(empresaId);
+                return [
+                  {'id': '20', 'nome': 'Centro da empresa 7'},
+                ];
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(idsRecebidosConta, isNot(contains(null)));
+      expect(idsRecebidosCentro, isNot(contains(null)));
+      expect(idsRecebidosConta, contains('7'));
+      expect(idsRecebidosCentro, contains('7'));
+    },
+  );
 }
