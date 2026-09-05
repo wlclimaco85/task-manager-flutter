@@ -1,0 +1,10 @@
+
+:START_APP_ADMIN
+call :CHECK_PATHS
+if errorlevel 1 exit /b 1
+call :START_BACKEND_ONLY
+if errorlevel 1 exit /b 1
+call :START_FLUTTER_WEB "Painel-Admin" "%FLUTTER_ADMIN_DIR%" "8085"
+echo.
+echo Painel do Dono aberto no Chrome!
+exit /b 0

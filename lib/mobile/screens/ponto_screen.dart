@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'relatorio_ponto_screen.dart';
+import 'ponto_solicitacao_screen.dart';
 
 import 'package:task_manager_flutter/constants/custom_colors.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
@@ -13,7 +15,6 @@ import 'package:task_manager_flutter/services/ponto_service.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
 
-import 'pdf_preview_dialog.dart';
 
 class PontoScreen extends StatefulWidget {
   const PontoScreen({super.key});
@@ -309,28 +310,40 @@ class _PontoScreenState extends State<PontoScreen> {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        ElevatedButton.icon(
-          onPressed: () async {
-            final loginId = AuthUtility.userInfo?.login?.id;
-            if (loginId == null) return;
-            final bytes = await PontoService.gerarPdf(loginId);
-            if (bytes == null) {
-              _mostrarSnack('Não foi possível gerar o PDF');
-              return;
-            }
-            if (!mounted) return;
-            showDialog(
-              context: context,
-              builder: (_) => PdfPreviewDialog(bytes: bytes),
-            );
-          },
-          icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-          label: const Text('Gerar PDF', style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: GridColors.buttonBackground,
-            minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RelatorioPontoScreen()));
+                },
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.white, size: 20),
+                label: const Text('Espelho', style: TextStyle(color: Colors.white, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.buttonBackground,
+                  minimumSize: const Size(0, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PontoSolicitacaoScreen()));
+                },
+                icon: const Icon(Icons.edit_calendar, color: Colors.white, size: 20),
+                label: const Text('Ajustes', style: TextStyle(color: Colors.white, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.secondary,
+                  minimumSize: const Size(0, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(

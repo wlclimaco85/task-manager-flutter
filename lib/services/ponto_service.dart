@@ -154,4 +154,10 @@ class PontoService {
   static Future<double?> bancoHoras(int loginId) async {
     return _caller.calcularBancoHoras(mes: DateTime.now());
   }
+
+  static Future<Uint8List?> gerarEspelhoPdf(int loginId, int mes, int ano) async {
+    final inicio = DateTime(ano, mes, 1);
+    final fim = DateTime(ano, mes + 1, 0);
+    return _caller.gerarPdf(inicio: inicio, fim: fim);
+  }
 }
