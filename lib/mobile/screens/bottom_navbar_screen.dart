@@ -1134,6 +1134,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     foregroundColor: Colors.white),
                 onPressed: () async {
                   Navigator.pop(context);
+                  ModuloAccess.reset();
                   await AuthUtility.clearUserInfo();
                   if (context.mounted) {
                     Navigator.pushAndRemoveUntil(

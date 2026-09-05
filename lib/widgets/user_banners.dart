@@ -334,13 +334,14 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     );
   }
 
-  void _handleLogout() {
+  void _handleLogout() async {
     // Bug de producao (card eNt571Po): mesmo gap de _AppBarActionsState.
     // _logout() -- ModuloAccess (cache estatico guardado por _loaded) nao
     // era resetado neste segundo handler de logout, deixando o mesmo risco
     // de vazamento de modulos contratados entre usuarios na mesma sessao.
     ModuloAccess.reset();
-    AuthUtility.clearUserInfo();
+    await AuthUtility.clearUserInfo();
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (Route<dynamic> route) => false,
@@ -1092,7 +1093,7 @@ class _AppBarActionsState extends State<AppBarActions> {
     );
   }
 
-  void _logout(BuildContext context) {
+  void _logout(BuildContext context) async {
     // Bug de producao (card eNt571Po): ModuloAccess e um cache estatico em
     // memoria guardado por _loaded -- so recarrega se reset() for chamado
     // antes do proximo load(). Login/bottom_navbar ja chamavam reset(), mas
@@ -1102,7 +1103,8 @@ class _AppBarActionsState extends State<AppBarActions> {
     // modulos contratados do usuario anterior ate algo mais tarde forcar
     // reset() (normalmente so no PROXIMO login, deixando uma janela aberta).
     ModuloAccess.reset();
-    AuthUtility.clearUserInfo();
+    await AuthUtility.clearUserInfo();
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
