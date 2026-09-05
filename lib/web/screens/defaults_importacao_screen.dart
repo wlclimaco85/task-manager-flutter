@@ -55,25 +55,29 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
       _carregandoEmpresas = true;
       _erro = null;
     });
-    try {
-      final empresas = await _service.empresas();
-      if (!mounted) return;
-      setState(() {
-        _empresas = empresas;
-        _carregandoEmpresas = false;
-      });
-      final empresaLogada = TenantContext.empresaId?.toString();
-      if (empresaLogada != null &&
-          empresas.any((e) => e['id'].toString() == empresaLogada)) {
-        await _selecionarEmpresa(empresaLogada);
+      try {
+        final empresaLogada = TenantContext.empresaId?.toString();
+        if (empresaLogada != null) {
+          final label = await DropdownHelpers.empresaLabelPorId(empresaLogada);
+          if (label != null) {
+            if (!mounted) return;
+            setState(() {
+              _empresas = [{'id': int.parse(empresaLogada), 'nome': label}];
+            });
+            await _selecionarEmpresa(empresaLogada);
+          }
+        }
+        if (!mounted) return;
+        setState(() {
+          _carregandoEmpresas = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _carregandoEmpresas = false;
+          _erro = 'Falha ao carregar empresas: $e';
+        });
       }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _carregandoEmpresas = false;
-        _erro = 'Falha ao carregar empresas: $e';
-      });
-    }
   }
 
   Future<void> _selecionarEmpresa(String? empresaId) async {

@@ -242,4 +242,33 @@ void main() {
       expect(DropdownHelpers.parseEmpresaLabel('texto'), isNull);
     });
   });
+
+  group('DropdownHelpers.buildEmpresasBuscaQuery', () {
+    test('inclui pagina e tamanho sempre, sem busca quando termo vazio', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
+      expect(query, '?pagina=0&tamanho=25');
+    });
+
+    test('inclui busca quando ha termo digitado', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: 'empresa x', pagina: 0);
+      expect(query, contains('busca=empresa+x'));
+    });
+
+    test('ignora termo so com espacos (trim)', () {
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: '   ', pagina: 0);
+      expect(query, isNot(contains('busca=')));
+    });
+
+    test('avanca a pagina ao rolar a lista (scroll pagination)', () {
+      final pagina0 =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
+      final pagina1 =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 1);
+      expect(pagina0, '?pagina=0&tamanho=25');
+      expect(pagina1, '?pagina=1&tamanho=25');
+    });
+  });
 }
