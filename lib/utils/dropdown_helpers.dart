@@ -311,10 +311,20 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> contasBancariasPorEmpresa(
     String? empresaId, {
     bool apenasCaixa = false,
+    // Pedido explicito do usuario: conta bancaria e' cadastrada por
+    // PARCEIRO (ContaBancaria.parceiro_id), nao so por empresa -- ao
+    // importar SINTEGRA/SPED, o combo deve trazer so as contas do parceiro
+    // identificado pelo CNPJ do arquivo, nao de todos os parceiros da
+    // empresa. Sem parceiroId (uso normal fora do fluxo de import), filtra
+    // so por empresa como antes.
+    String? parceiroId,
   }) async {
     final query = StringBuffer('?tamanho=200');
     if (empresaId != null && empresaId.isNotEmpty) {
       query.write('&empresa=$empresaId');
+    }
+    if (parceiroId != null && parceiroId.isNotEmpty) {
+      query.write('&parceiro=$parceiroId');
     }
     final lista = await load(
       '${ApiLinks.baseUrl}/api/contas-bancaria$query',

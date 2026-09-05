@@ -1067,6 +1067,13 @@ class ApiLinks {
   // Card cUlANCTt - importacao de arquivo SPED (EFD ICMS/IPI).
   static String get nfeImportacaoSped =>
       '$_baseUrlNew/api/nfe-import/importacao-sped';
+  // Pedido explicito do usuario: identificar o parceiro do arquivo (pelo
+  // CNPJ) ANTES de processar, pra filtrar os combos de conta bancaria pelo
+  // parceiro certo (nao todos da empresa).
+  static String get nfeImportacaoSintegraIdentificarParceiro =>
+      '$_baseUrlNew/api/nfe-import/importacao-sintegra/identificar-parceiro';
+  static String get nfeImportacaoSpedIdentificarParceiro =>
+      '$_baseUrlNew/api/nfe-import/importacao-sped/identificar-parceiro';
   // Pedido explicito do usuario: confirmar a NF-e Entrada e um passo
   // separado da importacao (RASCUNHO_IMPORTACAO -> AUTORIZADA). Enquanto
   // nao confirmado, o registro pode ser excluido via deleteNfe/nfeById
