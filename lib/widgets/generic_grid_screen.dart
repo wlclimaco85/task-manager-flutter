@@ -1508,6 +1508,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
+    if (item != null) {
+      formData[widget.idFieldName] = item[widget.idFieldName];
+    }
 
     for (final config in widget.fieldConfigs.where(
       (c) => c.fieldType == FieldType.file,
@@ -1757,7 +1760,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
     final adjustedFormData = normalizeFormData(formData);
 
-    final response = await NetworkCaller().postRequest(
+    final response = await NetworkCaller().putRequest(
       widget.updateEndpoint.replaceAll(
         ':id',
         adjustedFormData[widget.idFieldName].toString(),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
-import '../../../widgets/generic_grid_screen.dart';
+import '../../../widgets/generic_tree_screen.dart';
 import '../../../models/centro_custo_model.dart';
 
 class WebCentroCustoGridScreen extends StatelessWidget {
@@ -9,7 +9,7 @@ class WebCentroCustoGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GenericGridScreen<CentroCusto>(
+    return GenericTreeScreen<CentroCusto>(
       title: "Centros de Custo",
       fetchEndpoint: ApiLinks.allCentrosCusto,
       createEndpoint: ApiLinks.createCentroCusto,
@@ -20,10 +20,7 @@ class WebCentroCustoGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: CentroCusto.fieldConfigs,
       idFieldName: 'id',
-      exportConfig: const ExportConfig(enableCsvExport: true, filenamePrefix: 'centros_custo'),
-      paginationConfig: const PaginationConfig(defaultRowsPerPage: 10, availableRowsPerPage: [10, 25, 50]),
-      enableSearch: true,
-      enableColumnReorder: true,
+      parentIdFieldName: 'parentId',
     );
   }
 }
