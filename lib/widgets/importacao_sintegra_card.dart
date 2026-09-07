@@ -599,7 +599,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
   Widget _camposFinanceiro() {
     final contaDropdown = SearchableDropdownField(
       key: const Key('importacao-sintegra-conta-bancaria'),
-      label: 'Conta bancaria/caixa (opcional)',
+      label: 'Conta bancária/caixa (opcional)',
       value: _contaBancariaId,
       items: _contasBancarias,
       valueField: 'id',
@@ -653,7 +653,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Conta bancaria filtrada pelo parceiro do arquivo: $_parceiroIdentificadoNome',
+                    'Conta bancária filtrada pelo parceiro do arquivo: $_parceiroIdentificadoNome',
                     key: const Key('importacao-sintegra-parceiro-identificado'),
                     style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                   ),
