@@ -248,7 +248,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _erro = 'Nao foi possivel carregar as empresas.');
+        setState(() => _erro = 'Não foi possível carregar as empresas.');
       }
     } finally {
       if (mounted) setState(() => _loadingEmpresas = false);
@@ -331,7 +331,7 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       });
     } catch (e) {
       if (mounted)
-        setState(() => _erro = e.toString().replaceFirst('Exception: ', ''));
+        setState(() => _erro = _formatarErroImportacao(e));
     } finally {
       if (mounted) setState(() => _importando = false);
     }
@@ -373,12 +373,19 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
         ),
       );
     } else {
-      throw Exception('Arquivo selecionado sem conteudo.');
+      throw Exception('Arquivo selecionado sem conteúdo.');
     }
 
     final response = await request.send();
     final body = await response.stream.bytesToString();
-    final decoded = body.isEmpty ? <String, dynamic>{} : jsonDecode(body);
+    dynamic decoded = <String, dynamic>{};
+    if (body.trim().isNotEmpty) {
+      try {
+        decoded = jsonDecode(body);
+      } catch (_) {
+        decoded = body;
+      }
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final trace = decoded is Map ? decoded['trace']?.toString() : null;
       if (trace != null && trace.isNotEmpty) {
@@ -404,47 +411,51 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: GridColors.info.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long_outlined,
-                    color: GridColors.info,
-                    size: 19,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Importar SINTEGRA',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compacto = constraints.maxWidth < 620;
+                final info = Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: GridColors.info.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Importa notas de entrada/saida, itens, produtos, parceiros e tributacao fiscal disponivel no arquivo.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade700,
-                        ),
+                      child: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: GridColors.info,
+                        size: 19,
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Importar SINTEGRA',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Importa notas de entrada/saída, itens, produtos, parceiros e tributação fiscal disponível no arquivo.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+                final selecionar = OutlinedButton.icon(
                   key: const Key('importacao-sintegra-selecionar'),
                   onPressed: _importando ? null : _selecionarArquivo,
                   icon: const Icon(Icons.folder_open, size: 15),
@@ -456,8 +467,26 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
                     foregroundColor: GridColors.info,
                     side: const BorderSide(color: GridColors.info),
                   ),
-                ),
-              ],
+                );
+                if (compacto) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      info,
+                      const SizedBox(height: 8),
+                      Align(alignment: Alignment.centerLeft, child: selecionar),
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: info),
+                    const SizedBox(width: 8),
+                    selecionar,
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -666,13 +695,13 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
   Widget _resumo(Map<String, dynamic> resultado) {
     final itens = <_ResumoItem>[
       _ResumoItem('Entradas', resultado['notasEntrada']),
-      _ResumoItem('Saidas', resultado['notasSaida']),
+      _ResumoItem('Saídas', resultado['notasSaida']),
       _ResumoItem('Itens', resultado['itens']),
       _ResumoItem('Produtos novos', resultado['produtosCriados']),
       _ResumoItem('Produtos atualizados', resultado['produtosAtualizados']),
       _ResumoItem('Parceiros novos', resultado['parceirosCriados']),
       _ResumoItem('Parceiros atualizados', resultado['parceirosAtualizados']),
-      _ResumoItem('Tributacoes', resultado['tributacoes']),
+      _ResumoItem('Tributações', resultado['tributacoes']),
       _ResumoItem('Financeiro gerado', resultado['financeirosGerados']),
       _ResumoItem('Financeiro pendente', resultado['financeirosPendentes']),
     ];
@@ -851,7 +880,15 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
         return decoded['response']['message'].toString();
       }
     }
-    return 'Nao foi possivel importar o arquivo SINTEGRA.';
+    return 'Não foi possível importar o arquivo SINTEGRA.';
+  }
+
+  static String _formatarErroImportacao(Object erro) {
+    final mensagem = erro.toString().replaceFirst('Exception: ', '');
+    if (mensagem.startsWith('FormatException')) {
+      return 'Não foi possível importar o arquivo SINTEGRA.';
+    }
+    return mensagem;
   }
 }
 

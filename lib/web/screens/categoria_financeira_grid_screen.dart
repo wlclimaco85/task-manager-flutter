@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/categoria_financeira_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../widgets/generic_grid_screen.dart' show SecurityCheck;
 import '../../../widgets/generic_tree_screen.dart';
 
 class WebCategoriaFinanceiraGridScreen extends StatelessWidget {

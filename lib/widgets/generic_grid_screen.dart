@@ -1509,7 +1509,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     final formData = <String, dynamic>{};
     if (item != null) {
-      formData[widget.idFieldName] = item[widget.idFieldName];
+      formData[widget.idFieldName] = (item as dynamic)[widget.idFieldName];
     }
 
     for (final config in widget.fieldConfigs.where(
