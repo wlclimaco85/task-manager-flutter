@@ -521,18 +521,28 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _destinatarioNome = login?.parceiro?.nome ??
           (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
     } else {
-      final sessParcId = login?.parceiro?.id?.toString();
-      _parceiroId = sessParcId ??
-          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-              ?.toString();
-      _parceiroNome = login?.parceiro?.nome ??
-          (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
+        // Saída: the backend uses 'destinatario' for the Tenant (for RLS grid filters) 
+        // and 'parceiro' for the actual Buyer. We swap them here so the UI fields make sense.
+        final sessParcId = login?.parceiro?.id?.toString();
+        
+        var parceiroMap = i['parceiro'];
+        var destMap = i['destinatario'];
+        
+        if (parceiroMap != null) {
+          // Imported Saída: Buyer is parceiro, Tenant is destinatario
+          _destinatarioId = (parceiroMap is Map ? parceiroMap['id'] : parceiroMap)?.toString();
+          _destinatarioNome = (parceiroMap is Map ? parceiroMap['nome'] : null)?.toString();
           
-      _destinatarioId =
-          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
-              ?.toString();
-      _destinatarioNome =
-          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
+          _parceiroId = sessParcId ?? (destMap is Map ? destMap['id'] : destMap)?.toString();
+          _parceiroNome = login?.parceiro?.nome ?? (destMap is Map ? destMap['nome'] : null)?.toString();
+        } else {
+          // Manually created: Buyer is destinatario, parceiro is null (Tenant is sessParcId)
+          _destinatarioId = (destMap is Map ? destMap['id'] : destMap)?.toString();
+          _destinatarioNome = (destMap is Map ? destMap['nome'] : null)?.toString();
+          
+          _parceiroId = sessParcId;
+          _parceiroNome = login?.parceiro?.nome;
+        }
     }
     _formaPagId = nfeDetailIdRef(i['formaPagamento']);
     _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
