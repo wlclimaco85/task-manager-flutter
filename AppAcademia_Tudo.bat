@@ -1417,3 +1417,18 @@ start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR%
 echo Instagram API iniciado em http://localhost:8500
 echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
 exit /b 0
+
+:START_ADMIN_PANEL_WEB
+  echo.
+  echo ============================================
+  echo  Iniciando Admin Panel no Chrome
+  echo ============================================
+  echo.
+  set "ADMIN_DIR=C:\App_Academia\task_manager_admin_panel"
+  if not exist "%ADMIN_DIR%" (
+      echo [ERRO] Pasta do Admin Panel nao encontrada: %ADMIN_DIR%
+      exit /b 1
+  )
+  start "AppAcademia-Admin-Web" cmd /k "cd /d %ADMIN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8082"
+  echo Admin Panel iniciando no Chrome em http://localhost:8082
+  exit /b 0
