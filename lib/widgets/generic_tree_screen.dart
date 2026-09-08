@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
 import '../models/network_response.dart';
 import '../services/network_caller.dart';
-import 'generic_grid_screen.dart' show FieldConfig, FieldType, PaginationConfig, ExportConfig, SecurityCheck;
+import 'generic_grid_screen.dart'
+    show FieldConfig, FieldType, PaginationConfig, ExportConfig, SecurityCheck;
 import 'dart:convert';
 import 'package:flutter/services.dart';
 
@@ -46,7 +47,7 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _allItems = [];
   Set<int> _expandedNodes = {};
-  
+
   @override
   void initState() {
     super.initState();
@@ -57,11 +58,14 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
     setState(() => _isLoading = true);
     try {
       // Fetch sem paginaÃ§Ã£o forte para pegar arvore inteira
-      final response = await NetworkCaller().getRequest('${widget.fetchEndpoint}?tamanho=1000');
+      final response = await NetworkCaller()
+          .getRequest('${widget.fetchEndpoint}?tamanho=1000');
       if (response.isSuccess && response.body != null) {
         final responseData = response.body!['data'];
-        final List<dynamic> data = responseData is Map ? responseData['dados'] ?? [] : responseData ?? [];
-        
+        final List<dynamic> data = responseData is Map
+            ? responseData['dados'] ?? []
+            : responseData ?? [];
+
         setState(() {
           _allItems = List<Map<String, dynamic>>.from(data);
         });
@@ -77,12 +81,14 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: GridColors.error));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: GridColors.error));
   }
 
   void _showSuccess(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: GridColors.success));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: GridColors.success));
   }
 
   // MÃ©todo de delete
@@ -93,7 +99,9 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
         title: const Text('Excluir item?'),
         content: const Text('Tem certeza que deseja excluir este item?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: GridColors.error),
@@ -119,50 +127,52 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
   }
 
   // --- Form Dialog simplificado (mesma base do Grid mas adaptado) ---
-  void _openForm({Map<String, dynamic>? item, Map<String, dynamic>? parentItem}) {
+  void _openForm(
+      {Map<String, dynamic>? item, Map<String, dynamic>? parentItem}) {
     showDialog(
-      context: context,
-      builder: (ctx) {
-        return _TreeFormDialog(
-          item: item,
-          parentItem: parentItem,
-          fieldConfigs: widget.fieldConfigs,
-          idFieldName: widget.idFieldName,
-          parentIdFieldName: widget.parentIdFieldName,
-          onSave: (formData) async {
-            Navigator.pop(ctx);
-            setState(() => _isLoading = true);
-            
-            // Corrige relacionamentos
-            final Map<String, dynamic> payload = Map.from(formData);
-            if (payload['parent'] != null && payload['parent'] is int) {
-              payload['parent'] = {'id': payload['parent']};
-            }
-            
-            if (item == null) {
-              final response = await NetworkCaller().postRequest(widget.createEndpoint, payload);
-              if (response.isSuccess) {
-                _showSuccess('Criado com sucesso');
-              } else {
-                _showError('Erro ao criar');
+        context: context,
+        builder: (ctx) {
+          return _TreeFormDialog(
+            item: item,
+            parentItem: parentItem,
+            fieldConfigs: widget.fieldConfigs,
+            idFieldName: widget.idFieldName,
+            parentIdFieldName: widget.parentIdFieldName,
+            onSave: (formData) async {
+              Navigator.pop(ctx);
+              setState(() => _isLoading = true);
+
+              // Corrige relacionamentos
+              final Map<String, dynamic> payload = Map.from(formData);
+              if (payload['parent'] != null && payload['parent'] is int) {
+                payload['parent'] = {'id': payload['parent']};
               }
-            } else {
-              payload[widget.idFieldName] = item[widget.idFieldName];
-              final response = await NetworkCaller().putRequest(
-                widget.updateEndpoint.replaceAll(':id', item[widget.idFieldName].toString()),
-                payload,
-              );
-              if (response.isSuccess) {
-                _showSuccess('Salvo com sucesso');
+
+              if (item == null) {
+                final response = await NetworkCaller()
+                    .postRequest(widget.createEndpoint, payload);
+                if (response.isSuccess) {
+                  _showSuccess('Criado com sucesso');
+                } else {
+                  _showError('Erro ao criar');
+                }
               } else {
-                _showError('Erro ao salvar');
+                payload[widget.idFieldName] = item[widget.idFieldName];
+                final response = await NetworkCaller().putRequest(
+                  widget.updateEndpoint
+                      .replaceAll(':id', item[widget.idFieldName].toString()),
+                  payload,
+                );
+                if (response.isSuccess) {
+                  _showSuccess('Salvo com sucesso');
+                } else {
+                  _showError('Erro ao salvar');
+                }
               }
-            }
-            _loadData();
-          },
-        );
-      }
-    );
+              _loadData();
+            },
+          );
+        });
   }
 
   List<Map<String, dynamic>> _getChildren(int? parentId) {
@@ -192,14 +202,19 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InkWell(
-          onTap: hasChildren ? () {
-            setState(() {
-              if (isExpanded) _expandedNodes.remove(itemId);
-              else _expandedNodes.add(itemId);
-            });
-          } : null,
+          onTap: hasChildren
+              ? () {
+                  setState(() {
+                    if (isExpanded)
+                      _expandedNodes.remove(itemId);
+                    else
+                      _expandedNodes.add(itemId);
+                  });
+                }
+              : null,
           child: Container(
-            padding: EdgeInsets.only(left: 16.0 + (depth * 24.0), top: 8, bottom: 8, right: 16),
+            padding: EdgeInsets.only(
+                left: 16.0 + (depth * 24.0), top: 8, bottom: 8, right: 16),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
             ),
@@ -207,14 +222,22 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
               children: [
                 SizedBox(
                   width: 24,
-                  child: hasChildren 
-                    ? Icon(isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, size: 20, color: GridColors.primary)
-                    : const SizedBox(),
+                  child: hasChildren
+                      ? Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_down
+                              : Icons.keyboard_arrow_right,
+                          size: 20,
+                          color: GridColors.primary)
+                      : const SizedBox(),
                 ),
-                Icon(hasChildren ? Icons.folder : Icons.insert_drive_file, size: 18, color: Colors.grey.shade600),
+                Icon(hasChildren ? Icons.folder : Icons.insert_drive_file,
+                    size: 18, color: Colors.grey.shade600),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  child: Text(title,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w500)),
                 ),
                 // Actions
                 if (widget.hasPermission('create'))
@@ -226,14 +249,16 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
                   ),
                 if (widget.hasPermission('edit'))
                   IconButton(
-                    icon: const Icon(Icons.edit, size: 18, color: GridColors.primary),
+                    icon: const Icon(Icons.edit,
+                        size: 18, color: GridColors.primary),
                     tooltip: 'Editar',
                     onPressed: () => _openForm(item: item),
                     splashRadius: 20,
                   ),
                 if (widget.hasPermission('delete'))
                   IconButton(
-                    icon: const Icon(Icons.delete, size: 18, color: GridColors.error),
+                    icon: const Icon(Icons.delete,
+                        size: 18, color: GridColors.error),
                     tooltip: 'Excluir',
                     onPressed: () => _deleteItem(itemId.toString()),
                     splashRadius: 20,
@@ -262,7 +287,9 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Adicionar Raiz'),
-                style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white),
                 onPressed: () => _openForm(),
               ),
             ),
@@ -272,13 +299,13 @@ class _GenericTreeScreenState<T> extends State<GenericTreeScreen<T>> {
           )
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : rootNodes.isEmpty 
-          ? const Center(child: Text('Nenhum registro encontrado.'))
-          : ListView(
-              children: rootNodes.map((c) => _buildNode(c, 0)).toList(),
-            ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : rootNodes.isEmpty
+              ? const Center(child: Text('Nenhum registro encontrado.'))
+              : ListView(
+                  children: rootNodes.map((c) => _buildNode(c, 0)).toList(),
+                ),
     );
   }
 }
@@ -314,14 +341,16 @@ class _TreeFormDialogState extends State<_TreeFormDialog> {
     super.initState();
     for (var config in widget.fieldConfigs.where((c) => c.isInForm)) {
       if (config.fieldType == FieldType.boolean) {
-        _boolValues[config.fieldName] = widget.item?[config.fieldName] == true || widget.item?[config.fieldName] == 'true';
+        _boolValues[config.fieldName] =
+            widget.item?[config.fieldName] == true ||
+                widget.item?[config.fieldName] == 'true';
       } else {
         _controllers[config.fieldName] = TextEditingController(
           text: widget.item?[config.fieldName]?.toString() ?? '',
         );
       }
     }
-    
+
     // Auto-preencher parent_id se estamos criando sub-item
     if (widget.item == null && widget.parentItem != null) {
       // Inserimos silenciosamente no payload depois, nÃ£o precisa de field visÃ­vel pra ele
@@ -337,12 +366,14 @@ class _TreeFormDialogState extends State<_TreeFormDialog> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: widget.fieldConfigs.where((c) => c.isInForm).map((config) {
+            children:
+                widget.fieldConfigs.where((c) => c.isInForm).map((config) {
               if (config.fieldType == FieldType.boolean) {
                 return SwitchListTile(
                   title: Text(config.label),
                   value: _boolValues[config.fieldName] ?? false,
-                  onChanged: (val) => setState(() => _boolValues[config.fieldName] = val),
+                  onChanged: (val) =>
+                      setState(() => _boolValues[config.fieldName] = val),
                 );
               }
               return Padding(
@@ -353,7 +384,10 @@ class _TreeFormDialogState extends State<_TreeFormDialog> {
                     labelText: config.label,
                     border: const OutlineInputBorder(),
                   ),
-                  validator: config.isRequired ? (val) => (val == null || val.isEmpty) ? 'ObrigatÃ³rio' : null : null,
+                  validator: config.isRequired
+                      ? (val) =>
+                          (val == null || val.isEmpty) ? 'ObrigatÃ³rio' : null
+                      : null,
                 ),
               );
             }).toList(),
@@ -361,21 +395,26 @@ class _TreeFormDialogState extends State<_TreeFormDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.primary,
+              foregroundColor: Colors.white),
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final formData = <String, dynamic>{};
               _controllers.forEach((k, v) => formData[k] = v.text);
               _boolValues.forEach((k, v) => formData[k] = v);
-              
+
               if (widget.item == null && widget.parentItem != null) {
                 formData['parent'] = widget.parentItem![widget.idFieldName];
-              } else if (widget.item != null && widget.item!['parent'] != null) {
+              } else if (widget.item != null &&
+                  widget.item!['parent'] != null) {
                 formData['parent'] = widget.item!['parent']['id'];
               }
-              
+
               widget.onSave(formData);
             }
           },
