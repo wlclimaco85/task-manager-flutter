@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../mobile/screens/bottom_navbar_screen.dart';
 import '../../windows/screens/bottom_navbar_screen.dart';
@@ -19,6 +20,63 @@ import '../services/login_empresa_acesso_service.dart';
 import '../widgets/empresa_selecao_screen.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
+
+const String _playStoreUrl =
+    'https://play.google.com/store/apps/details?id=com.washingtonclimaco.task_manager_flutter';
+
+const List<_LoginModule> _includedModules = [
+  _LoginModule(
+    title: 'Fiscal e NF-e',
+    description: 'Entradas, saidas, XML, SPED, SINTEGRA e tributacao.',
+    icon: Icons.receipt_long_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'Financeiro',
+    description: 'Contas a pagar, receber, caixa, boletos e baixas.',
+    icon: Icons.account_balance_wallet_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'Atendimento',
+    description: 'Chat por setor, alertas e acompanhamento dos clientes.',
+    icon: Icons.support_agent_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'GED',
+    description: 'Documentos, arquivos, diretorios e evidencias fiscais.',
+    icon: Icons.folder_copy_outlined,
+    badge: 'Incluso',
+  ),
+];
+
+const List<_LoginModule> _optionalModules = [
+  _LoginModule(
+    title: 'NFS-e e NFC-e',
+    description: 'Emissao municipal, PDV e configuracoes fiscais avancadas.',
+    icon: Icons.point_of_sale_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'DP e Ponto',
+    description: 'Solicitacoes, ajustes, relatorios e rotinas do pessoal.',
+    icon: Icons.badge_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'Contratos e CRM',
+    description: 'Funil, contratos recorrentes e faturamento assistido.',
+    icon: Icons.handshake_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'BI e Automacoes',
+    description: 'Dashboards, cobrancas, regras fiscais e alertas.',
+    icon: Icons.insights_outlined,
+    badge: 'Opcional',
+  ),
+];
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -336,6 +394,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+class _LoginModule {
+  final String title;
+  final String description;
+  final IconData icon;
+  final String badge;
+
+  const _LoginModule({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.badge,
+  });
+}
+
 // -- Login Banner --
 class _LoginBanner extends StatelessWidget {
   final TextEditingController emailCtrl, passCtrl;
@@ -357,6 +429,9 @@ class _LoginBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final minHeight = MediaQuery.sizeOf(context).height -
         MediaQuery.paddingOf(context).vertical;
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width >= 1060;
+    final isMobile = width < 720;
 
     return SizedBox.expand(
       child: SingleChildScrollView(
@@ -364,188 +439,201 @@ class _LoginBanner extends StatelessWidget {
           constraints: BoxConstraints(minHeight: minHeight),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 18 : 36,
+                vertical: isMobile ? 24 : 40,
+              ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Logo centralizado
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: _SafeLogoWidget(size: 100),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Nome da empresa
-                      const Text(
-                        GridTexts.appTitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Tagline
-                      Text(
-                        GridTexts.companyTagline,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Campo email
-                      _field(
-                        ctrl: emailCtrl,
-                        hint: GridTexts.loginUserHint,
-                        icon: Icons.person_outline,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.username],
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            FocusScope.of(context).nextFocus(),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? GridTexts.loginUserRequired
-                            : null,
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Campo senha
-                      _field(
-                        ctrl: passCtrl,
-                        hint: GridTexts.loginPasswordHint,
-                        icon: Icons.lock_outline,
-                        obscure: obscure,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) {
-                          if (!loading) onLogin();
-                        },
-                        suffix: IconButton(
-                          onPressed: onToggleObscure,
-                          icon: Icon(
-                            obscure ? Icons.visibility_off : Icons.visibility,
-                            color: GridColors.textMuted,
-                            size: 20,
-                          ),
-                        ),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? GridTexts.loginPasswordRequired
-                            : null,
-                      ),
-                      const SizedBox(height: 22),
-
-                      // Botao Acessar
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GridColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor:
-                                GridColors.primary.withValues(alpha: 0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: loading ? null : onLogin,
-                          child: loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  GridTexts.loginAction,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Links secundarios
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 6,
-                        runSpacing: 0,
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: isWide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          TextButton(
-                            onPressed: onForgot,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                            ),
-                            child: Text(
-                              GridTexts.forgotPassword,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                decoration: TextDecoration.underline,
-                                decorationColor:
-                                    Colors.white.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: onRequestAccess,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                            ),
-                            child: Text(
-                              GridTexts.requestAccess,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor:
-                                    Colors.white.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
+                          const Expanded(child: _ProductShowcase()),
+                          const SizedBox(width: 34),
+                          SizedBox(width: 410, child: _buildLoginCard(context)),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const _CompactProductHeader(),
+                          const SizedBox(height: 22),
+                          _buildLoginCard(context),
+                          const SizedBox(height: 22),
+                          const _ProductShowcase(compact: true),
                         ],
                       ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginCard(BuildContext context) {
+    return Form(
+      key: formKey,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.62)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 28,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: GridColors.divider),
+                  boxShadow: [
+                    BoxShadow(
+                      color: GridColors.secondary.withValues(alpha: 0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(10),
+                child: _SafeLogoWidget(size: 82),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              GridTexts.appTitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: GridColors.secondaryDark,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              GridTexts.companyTagline,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: GridColors.textMuted,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _field(
+              ctrl: emailCtrl,
+              hint: GridTexts.loginUserHint,
+              icon: Icons.person_outline,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.username],
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? GridTexts.loginUserRequired : null,
+            ),
+            const SizedBox(height: 14),
+            _field(
+              ctrl: passCtrl,
+              hint: GridTexts.loginPasswordHint,
+              icon: Icons.lock_outline,
+              obscure: obscure,
+              autofillHints: const [AutofillHints.password],
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) {
+                if (!loading) onLogin();
+              },
+              suffix: IconButton(
+                tooltip: obscure ? 'Mostrar senha' : 'Ocultar senha',
+                onPressed: onToggleObscure,
+                icon: Icon(
+                  obscure ? Icons.visibility_off : Icons.visibility,
+                  color: GridColors.textMuted,
+                  size: 20,
+                ),
+              ),
+              validator: (v) => (v == null || v.isEmpty)
+                  ? GridTexts.loginPasswordRequired
+                  : null,
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: loading ? null : onLogin,
+                child: loading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Text(
+                        GridTexts.loginAction,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 0,
+              children: [
+                TextButton(
+                  onPressed: onForgot,
+                  style: TextButton.styleFrom(
+                    foregroundColor: GridColors.primary,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  ),
+                  child: const Text(
+                    GridTexts.forgotPassword,
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+                TextButton(
+                  onPressed: onRequestAccess,
+                  style: TextButton.styleFrom(
+                    foregroundColor: GridColors.secondary,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  ),
+                  child: const Text(
+                    GridTexts.requestAccess,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const _PlayStoreButton(),
+          ],
         ),
       ),
     );
@@ -600,6 +688,382 @@ class _LoginBanner extends StatelessWidget {
 }
 
 /// Logo institucional com fallback gracioso para ícone
+class _CompactProductHeader extends StatelessWidget {
+  const _CompactProductHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'ERP completo para escritorios contabeis',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            height: 1.08,
+          ),
+        ),
+        SizedBox(height: 10),
+        Text(
+          'Fiscal, financeiro, atendimento e documentos no mesmo lugar.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.35),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProductShowcase extends StatelessWidget {
+  final bool compact;
+
+  const _ProductShowcase({this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+          compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!compact) ...[
+          const Text(
+            'ERP completo para escritorios contabeis',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 44,
+              fontWeight: FontWeight.w900,
+              height: 1.02,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Controle fiscal, financeiro, atendimento, documentos e rotinas do cliente com a identidade do seu escritorio.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 17,
+              height: 1.42,
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+        const _ProductPreview(),
+        const SizedBox(height: 22),
+        _ModuleSection(
+          title: 'Ja vem no sistema',
+          modules: _includedModules,
+          compact: compact,
+        ),
+        const SizedBox(height: 14),
+        _ModuleSection(
+          title: 'Modulos que podem ser contratados',
+          modules: _optionalModules,
+          compact: compact,
+        ),
+      ],
+    );
+  }
+}
+
+class _ProductPreview extends StatelessWidget {
+  const _ProductPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 26,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            color: GridColors.primary,
+            child: const Row(
+              children: [
+                Icon(Icons.dashboard_customize_outlined,
+                    color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Painel operacional Abraco',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Icon(Icons.verified_outlined, color: Colors.white, size: 18),
+              ],
+            ),
+          ),
+          AspectRatio(
+            aspectRatio: 16 / 7,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/Screenshot_1.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: GridColors.secondarySoft,
+                    child: const Center(
+                      child: Icon(Icons.monitor_heart_outlined,
+                          color: GridColors.secondary, size: 48),
+                    ),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        GridColors.secondaryDark.withValues(alpha: 0.80),
+                        GridColors.secondary.withValues(alpha: 0.16),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
+                const Positioned(
+                  left: 18,
+                  top: 18,
+                  bottom: 18,
+                  child: _PreviewSummary(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewSummary extends StatelessWidget {
+  const _PreviewSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tight = constraints.maxHeight < 130;
+        return SizedBox(
+          width: 245,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: tight ? 4 : 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Web, Windows e Android',
+                  style: TextStyle(
+                    color: GridColors.primary,
+                    fontSize: tight ? 11 : 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              SizedBox(height: tight ? 8 : 12),
+              Text(
+                'Tudo que o cliente e o escritorio precisam acompanhar.',
+                maxLines: tight ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: tight ? 18 : 22,
+                  fontWeight: FontWeight.w900,
+                  height: 1.06,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ModuleSection extends StatelessWidget {
+  final String title;
+  final List<_LoginModule> modules;
+  final bool compact;
+
+  const _ModuleSection({
+    required this.title,
+    required this.modules,
+    required this.compact,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardWidth = compact ? 268.0 : 230.0;
+    return Column(
+      crossAxisAlignment:
+          compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          alignment: compact ? WrapAlignment.center : WrapAlignment.start,
+          spacing: 10,
+          runSpacing: 10,
+          children: modules
+              .map<Widget>((module) => SizedBox(
+                    width: cardWidth,
+                    child: _ModuleCard(module: module),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModuleCard extends StatelessWidget {
+  final _LoginModule module;
+
+  const _ModuleCard({required this.module});
+
+  @override
+  Widget build(BuildContext context) {
+    final isIncluded = module.badge == 'Incluso';
+    final badgeColor = isIncluded ? GridColors.secondary : GridColors.primary;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 116),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isIncluded
+              ? GridColors.secondaryLight.withValues(alpha: 0.35)
+              : GridColors.primaryLight.withValues(alpha: 0.38),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(module.icon, color: badgeColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      module.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: GridColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        height: 1.16,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      module.badge,
+                      style: TextStyle(
+                        color: badgeColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            module.description,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: GridColors.textMuted,
+              fontSize: 12,
+              height: 1.28,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayStoreButton extends StatelessWidget {
+  const _PlayStoreButton();
+
+  Future<void> _open(BuildContext context) async {
+    final uri = Uri.parse(_playStoreUrl);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nao foi possivel abrir a Play Store.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: () => _open(context),
+      icon: const Icon(Icons.android_outlined, size: 18),
+      label: const Text('Baixar na Play Store'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: GridColors.secondary,
+        side: const BorderSide(color: GridColors.secondary),
+        minimumSize: const Size.fromHeight(44),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
 class _SafeLogoWidget extends StatelessWidget {
   final double size;
   const _SafeLogoWidget({required this.size});
