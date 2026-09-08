@@ -18,6 +18,9 @@ void main() {
     expect(find.text('GED e documentos'), findsWidgets);
     expect(find.text('Financeiro essencial'), findsWidgets);
     expect(find.text('Fiscal e NF-e'), findsWidgets);
+    expect(find.text('GME'), findsWidgets);
+    expect(find.text('NFS-e'), findsWidgets);
+    expect(find.text('NFC-e'), findsWidgets);
     expect(find.text('Abertura de chamados'), findsWidgets);
     expect(find.text('Upload de extratos'), findsWidgets);
     expect(find.text('R\$ 99,90'), findsOneWidget);
@@ -47,6 +50,8 @@ void main() {
     expect(find.text('GED e documentos'), findsWidgets);
     expect(find.text('Abertura de chamados'), findsWidgets);
     expect(find.text('Financeiro avancado'), findsWidgets);
+    expect(find.text('NFS-e'), findsWidgets);
+    expect(find.text('NFC-e'), findsWidgets);
     expect(find.text('R\$ 99,90'), findsOneWidget);
     expect(find.text('R\$ 199,90'), findsOneWidget);
     expect(

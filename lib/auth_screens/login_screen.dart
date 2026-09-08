@@ -79,8 +79,21 @@ const List<_LoginModule> _optionalModules = [
   ),
   _LoginModule(
     title: 'GME',
-    description: 'Gestao avancada de documentos e entregas fiscais.',
-    icon: Icons.folder_copy_outlined,
+    description:
+        'Gestor Micro Empreendedor para vendas, compras, producao e rotina operacional.',
+    icon: Icons.storefront_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'NFS-e',
+    description: 'Nota fiscal de servico, prefeitura, tomador e servicos.',
+    icon: Icons.description_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'NFC-e',
+    description: 'Cupons fiscais, PDV, pagamentos e emissao para varejo.',
+    icon: Icons.point_of_sale_outlined,
     badge: 'Opcional',
   ),
   _LoginModule(
@@ -487,7 +500,8 @@ class _LoginBanner extends StatelessWidget {
       child: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: minHeight),
-          child: Center(
+          child: Align(
+            alignment: isWide ? Alignment.topCenter : Alignment.center,
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 18 : 36,
@@ -497,7 +511,7 @@ class _LoginBanner extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 1180),
                 child: isWide
                     ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Expanded(child: _ProductShowcase()),
                           const SizedBox(width: 34),
