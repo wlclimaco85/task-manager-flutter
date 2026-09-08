@@ -52,7 +52,9 @@ enum FieldType {
 // chega pronto como objeto).
 const entityRelationshipFields = [
   'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
-  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+  'parceiroDev', 'parceiroRec', 'clienteDev',
+  'contaBancaria', 'contaBaixa', 'nfe',
+  'setor', 'centroCusto', 'formaPagamento',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(

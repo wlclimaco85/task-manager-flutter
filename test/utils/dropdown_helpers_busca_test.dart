@@ -151,6 +151,14 @@ void main() {
       expect(label, 'ANAP SERVICOS MEDICOS LTDA');
     });
 
+    test('aceita parceiro direto quando backend nao usa envelope data', () {
+      final label = DropdownHelpers.parseParceiroLabel({
+        'nome': 'CDA ALIMENTOS S.A. EM RECUPERACAO JUDICIAL',
+        'razaoSocial': 'CDA ALIMENTOS S.A.',
+      });
+      expect(label, 'CDA ALIMENTOS S.A. EM RECUPERACAO JUDICIAL');
+    });
+
     test('cai para razaoSocial quando nome vazio', () {
       final label = DropdownHelpers.parseParceiroLabel({
         'data': {'nome': '', 'razaoSocial': 'Razao Social Ltda'},
@@ -253,7 +261,7 @@ void main() {
     test('inclui busca quando ha termo digitado', () {
       final query =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: 'empresa x', pagina: 0);
-      expect(query, contains('busca=empresa+x'));
+      expect(query, contains('nome=empresa+x'));
     });
 
     test('ignora termo so com espacos (trim)', () {

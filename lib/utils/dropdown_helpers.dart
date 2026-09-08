@@ -176,7 +176,7 @@ class DropdownHelpers {
   /// ser testado sem rede (ver dropdown_helpers_busca_test.dart).
   static PaginaDropdown parsePaginaDropdown(dynamic raw) {
     if (raw is! Map) return const PaginaDropdown([], 0);
-    final data = raw['data'];
+    final data = raw['data'] is Map ? raw['data'] : raw;
     if (data is! Map) return const PaginaDropdown([], 0);
     final lista = (data['dados'] as List?) ?? const [];
     final total = (data['totalElements'] as num?)?.toInt() ?? lista.length;
@@ -213,7 +213,7 @@ class DropdownHelpers {
   /// dropdown_helpers_busca_test.dart).
   static String? parseParceiroLabel(dynamic raw) {
     if (raw is! Map) return null;
-    final data = raw['data'];
+    final data = raw['data'] is Map ? raw['data'] : raw;
     if (data is! Map) return null;
     final nome = data['nome']?.toString();
     if (nome != null && nome.isNotEmpty) return nome;
