@@ -19,11 +19,33 @@ import 'notificador_plataforma.dart';
 /// NotificacoesDrawer -- este servico cobre o que faltava: toast nativo
 /// desktop/mobile e popup nativo do navegador.
 class AlertaPollingService {
-  AlertaPollingService._();
+  AlertaPollingService._({
+    AlertaNovoDetector detector = const AlertaNovoDetector(),
+    NotificadorPlataforma? notificador,
+    Future<List<Map<String, dynamic>>?> Function()? buscarNotificacoes,
+    Duration intervalo = const Duration(seconds: 60),
+  })  : _detector = detector,
+        _notificador = notificador,
+        _buscarNotificacoesParaTeste = buscarNotificacoes,
+        _intervalo = intervalo;
+
+  AlertaPollingService.paraTeste({
+    AlertaNovoDetector detector = const AlertaNovoDetector(),
+    required NotificadorPlataforma notificador,
+    required Future<List<Map<String, dynamic>>?> Function() buscarNotificacoes,
+  }) : this._(
+          detector: detector,
+          notificador: notificador,
+          buscarNotificacoes: buscarNotificacoes,
+          intervalo: const Duration(days: 1),
+        );
+
   static final AlertaPollingService instance = AlertaPollingService._();
 
-  static const _intervalo = Duration(seconds: 60);
-  final AlertaNovoDetector _detector = const AlertaNovoDetector();
+  final Duration _intervalo;
+  final AlertaNovoDetector _detector;
+  final Future<List<Map<String, dynamic>>?> Function()?
+      _buscarNotificacoesParaTeste;
   NotificadorPlataforma? _notificador;
 
   Timer? _timer;
@@ -34,7 +56,7 @@ class AlertaPollingService {
 
   Future<void> iniciar() async {
     if (_timer != null) return; // ja iniciado (ex.: hot restart de sessao)
-    _notificador = criarNotificadorPlataforma();
+    _notificador ??= criarNotificadorPlataforma();
     await _notificador!.inicializar();
     _timer = Timer.periodic(_intervalo, (_) => _executarCiclo());
     await _executarCiclo();
@@ -63,6 +85,8 @@ class AlertaPollingService {
     _idsConhecidos = null;
   }
 
+  Future<void> executarCicloParaTeste() => _executarCiclo();
+
   Future<void> _executarCiclo() async {
     if (_executando) return; // evita sobreposicao se um ciclo demorar
     _executando = true;
@@ -71,6 +95,7 @@ class AlertaPollingService {
       if (atuais == null) return; // falha de rede: mantem baseline anterior
 
       if (_idsConhecidos == null) {
+        await _notificarPendenciasIniciais(atuais);
         _idsConhecidos = _detector.extrairIds(atuais);
         return;
       }
@@ -79,10 +104,7 @@ class AlertaPollingService {
         idsConhecidos: _idsConhecidos!,
         alertasAtuais: atuais,
       );
-      for (final alerta in novos) {
-        final texto = alerta['mensagem']?.toString() ?? 'Nova notificação';
-        await _notificador?.notificar(titulo: 'Abraço Contabilidade', corpo: texto);
-      }
+      await _notificarAlertas(novos);
       _idsConhecidos = _detector.extrairIds(atuais);
     } catch (e) {
       L.w('[AlertaPolling] falha no ciclo de polling: $e');
@@ -91,7 +113,31 @@ class AlertaPollingService {
     }
   }
 
+  Future<void> _notificarPendenciasIniciais(
+      List<Map<String, dynamic>> alertas) async {
+    if (alertas.isEmpty) return;
+    if (alertas.length == 1) {
+      await _notificarAlertas(alertas);
+      return;
+    }
+    await _notificador?.notificar(
+      titulo: 'Abraço Contabilidade',
+      corpo: 'Você tem ${alertas.length} notificações pendentes.',
+    );
+  }
+
+  Future<void> _notificarAlertas(List<Map<String, dynamic>> alertas) async {
+    for (final alerta in alertas) {
+      final texto = alerta['mensagem']?.toString() ?? 'Nova notificação';
+      await _notificador?.notificar(
+          titulo: 'Abraço Contabilidade', corpo: texto);
+    }
+  }
+
   Future<List<Map<String, dynamic>>?> _buscarNotificacoes() async {
+    final buscarParaTeste = _buscarNotificacoesParaTeste;
+    if (buscarParaTeste != null) return buscarParaTeste();
+
     try {
       final empresaId = TenantContext.empresaId;
       final param = empresaId != null ? '?empresaId=$empresaId' : '';
@@ -108,7 +154,10 @@ class AlertaPollingService {
             ? body['data']
             : body['dados'] ?? body['content'] ?? body['items'] ?? [];
       }
-      return raw.whereType<Map>().map((n) => Map<String, dynamic>.from(n)).toList();
+      return raw
+          .whereType<Map>()
+          .map((n) => Map<String, dynamic>.from(n))
+          .toList();
     } catch (e) {
       L.w('[AlertaPolling] falha ao buscar /api/notificacoes: $e');
       return null;
