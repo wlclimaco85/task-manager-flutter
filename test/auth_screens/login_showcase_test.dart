@@ -13,10 +13,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
     await tester.pump();
 
-    expect(
-        find.text('ERP completo para escritorios contabeis'), findsOneWidget);
-    expect(find.text('Financeiro'), findsWidgets);
+    expect(find.text('Portal do escritorio para clientes'), findsOneWidget);
+    expect(find.text('Financeiro essencial'), findsWidgets);
     expect(find.text('Fiscal e NF-e'), findsWidgets);
+    expect(find.text('Abertura de chamados'), findsWidgets);
+    expect(find.text('Upload de extratos'), findsWidgets);
     expect(find.text('Incluso'), findsWidgets);
     expect(find.text('Opcional'), findsWidgets);
     expect(find.text('Baixar na Play Store'), findsOneWidget);
@@ -34,7 +35,8 @@ void main() {
     await tester.pump();
 
     expect(find.byType(SingleChildScrollView), findsOneWidget);
-    expect(find.text('Fiscal e NF-e'), findsWidgets);
+    expect(find.text('Abertura de chamados'), findsWidgets);
+    expect(find.text('Financeiro avancado'), findsWidgets);
     expect(find.text('Baixar na Play Store'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });

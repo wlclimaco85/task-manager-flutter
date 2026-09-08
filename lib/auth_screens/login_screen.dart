@@ -26,54 +26,92 @@ const String _playStoreUrl =
 
 const List<_LoginModule> _includedModules = [
   _LoginModule(
-    title: 'Fiscal e NF-e',
-    description: 'Entradas, saidas, XML, SPED, SINTEGRA e tributacao.',
-    icon: Icons.receipt_long_outlined,
-    badge: 'Incluso',
-  ),
-  _LoginModule(
-    title: 'Financeiro',
-    description: 'Contas a pagar, receber, caixa, boletos e baixas.',
-    icon: Icons.account_balance_wallet_outlined,
-    badge: 'Incluso',
-  ),
-  _LoginModule(
-    title: 'Atendimento',
-    description: 'Chat por setor, alertas e acompanhamento dos clientes.',
+    title: 'Abertura de chamados',
+    description: 'Solicitacoes do cliente por setor e acompanhamento interno.',
     icon: Icons.support_agent_outlined,
     badge: 'Incluso',
   ),
   _LoginModule(
-    title: 'GED',
-    description: 'Documentos, arquivos, diretorios e evidencias fiscais.',
-    icon: Icons.folder_copy_outlined,
+    title: 'Informativos',
+    description: 'Avisos, cobrancas e comunicados enviados para clientes.',
+    icon: Icons.campaign_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'Upload de extratos',
+    description: 'Cliente envia extrato bancario direto pelo portal/app.',
+    icon: Icons.upload_file_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'Calendario financeiro',
+    description: 'Agenda de vencimentos, guias, tarefas e compromissos.',
+    icon: Icons.calendar_month_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'Financeiro essencial',
+    description:
+        'Contas a pagar/receber, bancos, movimentacao e centro de custo.',
+    icon: Icons.account_balance_wallet_outlined,
     badge: 'Incluso',
   ),
 ];
 
 const List<_LoginModule> _optionalModules = [
   _LoginModule(
-    title: 'NFS-e e NFC-e',
-    description: 'Emissao municipal, PDV e configuracoes fiscais avancadas.',
-    icon: Icons.point_of_sale_outlined,
+    title: 'Fiscal e NF-e',
+    description: 'XML, SPED, SINTEGRA, entradas, saidas e tributacao.',
+    icon: Icons.receipt_long_outlined,
     badge: 'Opcional',
   ),
   _LoginModule(
-    title: 'DP e Ponto',
-    description: 'Solicitacoes, ajustes, relatorios e rotinas do pessoal.',
-    icon: Icons.badge_outlined,
+    title: 'GME',
+    description: 'Gestao avancada de documentos e entregas fiscais.',
+    icon: Icons.folder_copy_outlined,
     badge: 'Opcional',
   ),
   _LoginModule(
-    title: 'Contratos e CRM',
-    description: 'Funil, contratos recorrentes e faturamento assistido.',
+    title: 'Precificacao de contratos',
+    description: 'Regras, reajustes e margens para contratos recorrentes.',
     icon: Icons.handshake_outlined,
     badge: 'Opcional',
   ),
   _LoginModule(
-    title: 'BI e Automacoes',
-    description: 'Dashboards, cobrancas, regras fiscais e alertas.',
+    title: 'Service Desk',
+    description: 'SLA, filas, transferencia e operacao de suporte.',
+    icon: Icons.headset_mic_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'Projetos',
+    description: 'Organizacao de entregas, etapas, responsaveis e status.',
+    icon: Icons.account_tree_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'Precificacao',
+    description: 'Calculo comercial para servicos, pacotes e propostas.',
+    icon: Icons.sell_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'Financeiro avancado',
+    description:
+        'Regua de cobranca, kanban de pagamentos e conciliacao bancaria.',
     icon: Icons.insights_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'DRE gerencial',
+    description: 'Indicadores de resultado, margem e analise de performance.',
+    icon: Icons.stacked_line_chart_outlined,
+    badge: 'Opcional',
+  ),
+  _LoginModule(
+    title: 'Estoque e giro',
+    description: 'Controle de estoque, giro de produto e alertas de reposicao.',
+    icon: Icons.inventory_2_outlined,
     badge: 'Opcional',
   ),
 ];
@@ -697,7 +735,7 @@ class _CompactProductHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'ERP completo para escritorios contabeis',
+          'Portal do escritorio para clientes',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
@@ -708,7 +746,7 @@ class _CompactProductHeader extends StatelessWidget {
         ),
         SizedBox(height: 10),
         Text(
-          'Fiscal, financeiro, atendimento e documentos no mesmo lugar.',
+          'Chamados, comunicados, extratos e financeiro em um lugar so.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.35),
         ),
@@ -731,7 +769,7 @@ class _ProductShowcase extends StatelessWidget {
       children: [
         if (!compact) ...[
           const Text(
-            'ERP completo para escritorios contabeis',
+            'Portal do escritorio para clientes',
             style: TextStyle(
               color: Colors.white,
               fontSize: 44,
@@ -741,7 +779,7 @@ class _ProductShowcase extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Controle fiscal, financeiro, atendimento, documentos e rotinas do cliente com a identidade do seu escritorio.',
+            'Entrada do cliente com chamados, informativos, extratos, calendario e financeiro. Os modulos avancados entram por contratacao.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
               fontSize: 17,
@@ -813,40 +851,173 @@ class _ProductPreview extends StatelessWidget {
               ],
             ),
           ),
-          AspectRatio(
+          const AspectRatio(
             aspectRatio: 16 / 7,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  'assets/images/Screenshot_1.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: GridColors.secondarySoft,
-                    child: const Center(
-                      child: Icon(Icons.monitor_heart_outlined,
-                          color: GridColors.secondary, size: 48),
-                    ),
-                  ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        GridColors.secondaryDark.withValues(alpha: 0.80),
-                        GridColors.secondary.withValues(alpha: 0.16),
+            child: _ErpPreviewCanvas(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErpPreviewCanvas extends StatelessWidget {
+  const _ErpPreviewCanvas();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 560 || constraints.maxHeight < 155;
+        if (compact) return const _CompactErpPreviewCanvas();
+
+        return Container(
+          color: const Color(0xFFF2F7F3),
+          padding: EdgeInsets.all(compact ? 10 : 16),
+          child: Row(
+            children: [
+              if (!compact) ...[
+                const _PreviewSidebar(),
+                const SizedBox(width: 14),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _PreviewPill(
+                          icon: Icons.chat_bubble_outline,
+                          label: '3 chamados',
+                          color: GridColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        _PreviewPill(
+                          icon: Icons.account_balance_wallet_outlined,
+                          label: 'R\$ 24,8 mil',
+                          color: GridColors.secondary,
+                        ),
                       ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
                     ),
-                  ),
+                    SizedBox(height: compact ? 8 : 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: _PreviewPanel(
+                              title: 'Operacao do cliente',
+                              children: [
+                                _PreviewMetric(
+                                  icon: Icons.support_agent_outlined,
+                                  title: 'Chamados abertos',
+                                  value: 'Fiscal, DP e financeiro',
+                                  color: GridColors.primary,
+                                ),
+                                _PreviewMetric(
+                                  icon: Icons.upload_file_outlined,
+                                  title: 'Extratos enviados',
+                                  value: 'Banco, caixa e conciliacao',
+                                  color: GridColors.secondary,
+                                ),
+                                if (!compact)
+                                  _PreviewMetric(
+                                    icon: Icons.calendar_month_outlined,
+                                    title: 'Calendario financeiro',
+                                    value: 'Guias e vencimentos',
+                                    color: GridColors.secondaryDark,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: compact ? 4 : 5,
+                            child: _PreviewPanel(
+                              title: 'Financeiro',
+                              children: [
+                                _PreviewAmountLine(
+                                  label: 'A pagar',
+                                  value: '12',
+                                  color: GridColors.primary,
+                                ),
+                                _PreviewAmountLine(
+                                  label: 'A receber',
+                                  value: '18',
+                                  color: GridColors.secondary,
+                                ),
+                                _PreviewAmountLine(
+                                  label: 'Bancos',
+                                  value: '4',
+                                  color: GridColors.secondaryDark,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const Positioned(
-                  left: 18,
-                  top: 18,
-                  bottom: 18,
-                  child: _PreviewSummary(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CompactErpPreviewCanvas extends StatelessWidget {
+  const _CompactErpPreviewCanvas();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF2F7F3),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Central do cliente',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: GridColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 3.2,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              children: const [
+                _CompactPreviewTile(
+                  icon: Icons.support_agent_outlined,
+                  label: 'Chamados',
+                  color: GridColors.primary,
+                ),
+                _CompactPreviewTile(
+                  icon: Icons.upload_file_outlined,
+                  label: 'Extratos',
+                  color: GridColors.secondary,
+                ),
+                _CompactPreviewTile(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Calendario',
+                  color: GridColors.secondaryDark,
+                ),
+                _CompactPreviewTile(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Financeiro',
+                  color: GridColors.primary,
                 ),
               ],
             ),
@@ -857,54 +1028,285 @@ class _ProductPreview extends StatelessWidget {
   }
 }
 
-class _PreviewSummary extends StatelessWidget {
-  const _PreviewSummary();
+class _CompactPreviewTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _CompactPreviewTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final tight = constraints.maxHeight < 130;
-        return SizedBox(
-          width: 245,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: tight ? 4 : 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'Web, Windows e Android',
-                  style: TextStyle(
-                    color: GridColors.primary,
-                    fontSize: tight ? 11 : 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.20)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: GridColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
               ),
-              SizedBox(height: tight ? 8 : 12),
-              Text(
-                'Tudo que o cliente e o escritorio precisam acompanhar.',
-                maxLines: tight ? 2 : 3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewSidebar extends StatelessWidget {
+  const _PreviewSidebar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 74,
+      decoration: BoxDecoration(
+        color: GridColors.secondaryDark,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      child: const Column(
+        children: [
+          _PreviewSidebarDot(icon: Icons.home_outlined, selected: true),
+          SizedBox(height: 10),
+          _PreviewSidebarDot(icon: Icons.support_agent_outlined),
+          SizedBox(height: 10),
+          _PreviewSidebarDot(icon: Icons.campaign_outlined),
+          SizedBox(height: 10),
+          _PreviewSidebarDot(icon: Icons.account_balance_wallet_outlined),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewSidebarDot extends StatelessWidget {
+  final IconData icon;
+  final bool selected;
+
+  const _PreviewSidebarDot({required this.icon, this.selected = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: selected
+            ? GridColors.primary
+            : Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, color: Colors.white, size: 17),
+    );
+  }
+}
+
+class _PreviewPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _PreviewPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 15),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: tight ? 18 : 22,
+                  color: color,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  height: 1.06,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewPanel extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _PreviewPanel({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: GridColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: GridColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewMetric extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+
+  const _PreviewMetric({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: GridColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: GridColors.textMuted,
+                  fontSize: 10,
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+}
+
+class _PreviewAmountLine extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _PreviewAmountLine({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: GridColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Container(
+          width: 34,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
