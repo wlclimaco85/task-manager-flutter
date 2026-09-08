@@ -54,6 +54,49 @@ Map<String, dynamic> nfeDetailCadastroPayloadIds({
     };
 
 @visibleForTesting
+class NfeDetailParceiroCampos {
+  const NfeDetailParceiroCampos({
+    required this.parceiroId,
+    required this.parceiroNome,
+    required this.destinatarioId,
+    required this.destinatarioNome,
+  });
+
+  final String? parceiroId;
+  final String? parceiroNome;
+  final String? destinatarioId;
+  final String? destinatarioNome;
+}
+
+@visibleForTesting
+NfeDetailParceiroCampos nfeDetailParceirosSaida({
+  required Map<String, dynamic> item,
+  String? sessParcId,
+  String? sessParcNome,
+}) {
+  final parceiroMap = item['parceiro'];
+  final destMap = item['destinatario'];
+
+  if (parceiroMap != null) {
+    return NfeDetailParceiroCampos(
+      parceiroId: sessParcId ?? nfeDetailIdRef(destMap),
+      parceiroNome:
+          sessParcNome ?? (destMap is Map ? destMap['nome'] : null)?.toString(),
+      destinatarioId: nfeDetailIdRef(parceiroMap),
+      destinatarioNome:
+          (parceiroMap is Map ? parceiroMap['nome'] : null)?.toString(),
+    );
+  }
+
+  return NfeDetailParceiroCampos(
+    parceiroId: sessParcId,
+    parceiroNome: sessParcNome,
+    destinatarioId: nfeDetailIdRef(destMap),
+    destinatarioNome: (destMap is Map ? destMap['nome'] : null)?.toString(),
+  );
+}
+
+@visibleForTesting
 bool isNfeRascunhoImportacao(Object? status) =>
     (status?.toString() ?? '').toUpperCase() == 'RASCUNHO_IMPORTACAO';
 
@@ -62,8 +105,7 @@ String nfeEntradaPrimaryActionLabel(Object? status) =>
     isNfeRascunhoImportacao(status) ? 'Confirmar Entrada' : 'Aceitar';
 
 @visibleForTesting
-bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) =>
-    (tipoOperacao?.toString() ?? '').toUpperCase() != 'ENTRADA';
+bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) => false;
 
 @visibleForTesting
 Map<String, dynamic> nfeDetailCabecalhoAtual(
@@ -512,26 +554,26 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
-          
+
       final sessParcId = login?.parceiro?.id?.toString();
       _destinatarioId = sessParcId ??
-          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+          (i['destinatario'] is Map
+                  ? i['destinatario']['id']
+                  : i['destinatario'])
               ?.toString();
       _destinatarioNome = login?.parceiro?.nome ??
-          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
+          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)
+              ?.toString();
     } else {
-      final sessParcId = login?.parceiro?.id?.toString();
-      _parceiroId = sessParcId ??
-          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-              ?.toString();
-      _parceiroNome = login?.parceiro?.nome ??
-          (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
-          
-      _destinatarioId =
-          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
-              ?.toString();
-      _destinatarioNome =
-          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
+      final campos = nfeDetailParceirosSaida(
+        item: i,
+        sessParcId: login?.parceiro?.id?.toString(),
+        sessParcNome: login?.parceiro?.nome,
+      );
+      _parceiroId = campos.parceiroId;
+      _parceiroNome = campos.parceiroNome;
+      _destinatarioId = campos.destinatarioId;
+      _destinatarioNome = campos.destinatarioNome;
     }
     _formaPagId = nfeDetailIdRef(i['formaPagamento']);
     _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
@@ -1550,8 +1592,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Destinatário: dropdown filtrado pelos parceiros do parceiro logado, ou disabled se for entrada
       hasSession && _isEntrada && _destinatarioNome != null
           ? _inpDisabledText('Destinatário', _destinatarioNome!)
-          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
-              (v) => setState(() => _destinatarioId = v)),
+          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios,
+              'nome', (v) => setState(() => _destinatarioId = v)),
       _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
           (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',

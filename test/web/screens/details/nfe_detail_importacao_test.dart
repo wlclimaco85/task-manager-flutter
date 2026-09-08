@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/web/screens/details/nfe_detail_screen.dart';
+import 'package:task_manager_flutter/windows/screens/details/nfe_detail_screen.dart'
+    as windows_nfe;
 
 void main() {
   group('NfeSankhyaDetailScreen importacao XML', () {
@@ -12,9 +14,11 @@ void main() {
       expect(nfeEntradaPrimaryActionLabel('AUTORIZADA'), 'Aceitar');
     });
 
-    test('entrada nao exibe financeiro duplicado no detalhe', () {
+    test('detalhe nao exibe financeiro duplicado para entrada nem saida', () {
       expect(exibeSecaoFinanceiraNoDetalheNfe('ENTRADA'), isFalse);
-      expect(exibeSecaoFinanceiraNoDetalheNfe('SAIDA'), isTrue);
+      expect(exibeSecaoFinanceiraNoDetalheNfe('SAIDA'), isFalse);
+      expect(windows_nfe.exibeSecaoFinanceiraNoDetalheNfe('ENTRADA'), isFalse);
+      expect(windows_nfe.exibeSecaoFinanceiraNoDetalheNfe('SAIDA'), isFalse);
     });
 
     test('campo tipo de pagamento tem altura segura para label e valor', () {
@@ -48,6 +52,23 @@ void main() {
           'centroCustoId': 33,
         },
       );
+    });
+
+    test('windows mapeia saida importada com comprador como destinatario real',
+        () {
+      final campos = windows_nfe.nfeDetailParceirosSaida(
+        item: {
+          'parceiro': {'id': 20, 'nome': 'Comprador Real'},
+          'destinatario': {'id': 99, 'nome': 'Tenant Livro'},
+        },
+        sessParcId: '99',
+        sessParcNome: 'Tenant Livro',
+      );
+
+      expect(campos.parceiroId, '99');
+      expect(campos.parceiroNome, 'Tenant Livro');
+      expect(campos.destinatarioId, '20');
+      expect(campos.destinatarioNome, 'Comprador Real');
     });
 
     testWidgets('campo tipo de pagamento renderiza sem overflow',

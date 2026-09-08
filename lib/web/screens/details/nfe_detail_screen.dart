@@ -63,8 +63,7 @@ String nfeEntradaPrimaryActionLabel(Object? status) =>
     isNfeRascunhoImportacao(status) ? 'Confirmar Entrada' : 'Aceitar';
 
 @visibleForTesting
-bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) =>
-    (tipoOperacao?.toString() ?? '').toUpperCase() != 'ENTRADA';
+bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) => false;
 
 @visibleForTesting
 Map<String, dynamic> nfeDetailCabecalhoAtual(
@@ -513,36 +512,45 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
-      
+
       final sessParcId = login?.parceiro?.id?.toString();
       _destinatarioId = sessParcId ??
-          (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
+          (i['destinatario'] is Map
+                  ? i['destinatario']['id']
+                  : i['destinatario'])
               ?.toString();
       _destinatarioNome = login?.parceiro?.nome ??
-          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)?.toString();
+          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)
+              ?.toString();
     } else {
-        // Saída: the backend uses 'destinatario' for the Tenant (for RLS grid filters) 
-        // and 'parceiro' for the actual Buyer. We swap them here so the UI fields make sense.
-        final sessParcId = login?.parceiro?.id?.toString();
-        
-        var parceiroMap = i['parceiro'];
-        var destMap = i['destinatario'];
-        
-        if (parceiroMap != null) {
-          // Imported Saída: Buyer is parceiro, Tenant is destinatario
-          _destinatarioId = (parceiroMap is Map ? parceiroMap['id'] : parceiroMap)?.toString();
-          _destinatarioNome = (parceiroMap is Map ? parceiroMap['nome'] : null)?.toString();
-          
-          _parceiroId = sessParcId ?? (destMap is Map ? destMap['id'] : destMap)?.toString();
-          _parceiroNome = login?.parceiro?.nome ?? (destMap is Map ? destMap['nome'] : null)?.toString();
-        } else {
-          // Manually created: Buyer is destinatario, parceiro is null (Tenant is sessParcId)
-          _destinatarioId = (destMap is Map ? destMap['id'] : destMap)?.toString();
-          _destinatarioNome = (destMap is Map ? destMap['nome'] : null)?.toString();
-          
-          _parceiroId = sessParcId;
-          _parceiroNome = login?.parceiro?.nome;
-        }
+      // Saída: the backend uses 'destinatario' for the Tenant (for RLS grid filters)
+      // and 'parceiro' for the actual Buyer. We swap them here so the UI fields make sense.
+      final sessParcId = login?.parceiro?.id?.toString();
+
+      var parceiroMap = i['parceiro'];
+      var destMap = i['destinatario'];
+
+      if (parceiroMap != null) {
+        // Imported Saída: Buyer is parceiro, Tenant is destinatario
+        _destinatarioId =
+            (parceiroMap is Map ? parceiroMap['id'] : parceiroMap)?.toString();
+        _destinatarioNome =
+            (parceiroMap is Map ? parceiroMap['nome'] : null)?.toString();
+
+        _parceiroId = sessParcId ??
+            (destMap is Map ? destMap['id'] : destMap)?.toString();
+        _parceiroNome = login?.parceiro?.nome ??
+            (destMap is Map ? destMap['nome'] : null)?.toString();
+      } else {
+        // Manually created: Buyer is destinatario, parceiro is null (Tenant is sessParcId)
+        _destinatarioId =
+            (destMap is Map ? destMap['id'] : destMap)?.toString();
+        _destinatarioNome =
+            (destMap is Map ? destMap['nome'] : null)?.toString();
+
+        _parceiroId = sessParcId;
+        _parceiroNome = login?.parceiro?.nome;
+      }
     }
     _formaPagId = nfeDetailIdRef(i['formaPagamento']);
     _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
@@ -1544,8 +1552,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
       // Destinatário: dropdown filtrado pelos parceiros do parceiro logado, ou disabled se for entrada
       hasSession && _isEntrada && _destinatarioNome != null
           ? _inpDisabledText('Destinatário', _destinatarioNome!)
-          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
-              (v) => setState(() => _destinatarioId = v)),
+          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios,
+              'nome', (v) => setState(() => _destinatarioId = v)),
       _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
           (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',
