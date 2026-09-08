@@ -19,9 +19,29 @@ const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
 const _bg = Color(0xFFF5F5F5);
 
+Set<String> _mobileNfeKeyVariants(String key, String snakeCase) {
+  final variants = <String>{key, snakeCase};
+  if (key.isNotEmpty) {
+    variants.add(key[0].toLowerCase() + key.substring(1));
+    variants.add(key[0].toUpperCase() + key.substring(1));
+  }
+  if (key.length > 1) {
+    variants.add(key[0] + key[1].toLowerCase() + key.substring(2));
+  }
+  return variants;
+}
+
+Object? _mobileNfeValue(
+    Map<String, dynamic> cabecalho, String camelCase, String snakeCase) {
+  for (final key in _mobileNfeKeyVariants(camelCase, snakeCase)) {
+    if (cabecalho.containsKey(key)) return cabecalho[key];
+  }
+  return null;
+}
+
 double? _mobileNfeTotal(
     Map<String, dynamic> cabecalho, String camelCase, String snakeCase) {
-  final value = cabecalho[camelCase] ?? cabecalho[snakeCase];
+  final value = _mobileNfeValue(cabecalho, camelCase, snakeCase);
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString().replaceAll(',', '.') ?? '');
 }

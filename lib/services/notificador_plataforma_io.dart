@@ -15,10 +15,10 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
   bool _pronto = false;
   int _proximoId = 0;
 
-  static const _canalId = 'solicitacao_acesso';
-  static const _canalNome = 'Solicitacoes de acesso';
+  static const _canalId = 'app_academia_alertas';
+  static const _canalNome = 'Alertas AppAcademia';
   static const _canalDescricao =
-      'Avisos de novas solicitacoes de acesso aguardando aprovacao';
+      'Alertas e avisos do AppAcademia';
 
   @override
   Future<void> inicializar() async {

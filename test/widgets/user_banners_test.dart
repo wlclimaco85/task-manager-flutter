@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
+import 'package:task_manager_flutter/utils/security_matrix.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _wrap(Widget w) => MaterialApp(home: Scaffold(body: w));
 
@@ -77,6 +79,16 @@ void main() {
       await tester.pumpWidget(_wrap(const AppBarActions()));
       expect(find.byIcon(Icons.notifications), findsOneWidget);
       expect(find.byIcon(Icons.logout), findsOneWidget);
+    });
+
+    testWidgets('ao clicar em Sair, reseta ModuloAccess e limpa userInfo', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      AuthUtility.userInfo = LoginModel(token: 'fake');
+      addTearDown(() => AuthUtility.userInfo = null);
+      await tester.pumpWidget(_wrap(const AppBarActions()));
+      await tester.tap(find.byIcon(Icons.logout));
+      await tester.pumpAndSettle();
+      expect(AuthUtility.userInfo, isNull);
     });
   });
 }

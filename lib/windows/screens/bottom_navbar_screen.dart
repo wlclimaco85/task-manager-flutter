@@ -101,6 +101,7 @@ import '../../windows/screens/modulo_servico_grid_screen.dart';
 import '../../windows/screens/ponto_web_screen.dart';
 import '../../windows/screens/ponto_solicitacao_screen.dart';
 import '../../windows/screens/ponto_ajuste_screen.dart';
+import '../../windows/screens/relatorio_ponto_screen.dart';
 import '../../windows/screens/configuracoes_sistema_screen.dart';
 import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
@@ -482,7 +483,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         ), // 141: Historico de Treinos
         const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
         const DpDashboardScreen(), // 143: Dashboard DP
-        const SizedBox.shrink(), // 144: reservado
+        const RelatorioPontoScreen(), // 144: Relatórios DP/RH
         const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
         const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
         const SizedBox.shrink(), // 147: reservado

@@ -109,4 +109,37 @@ void main() {
       expect(msg, contains('500'));
     });
   });
+
+  group('copiar impostos para outro produto', () {
+    test('monta URL da rota de copia com origem e destino', () {
+      final url = montarUrlCopiarImpostos(
+        origemProdutoId: 10,
+        destinoProdutoId: 20,
+      );
+
+      expect(url, contains('/api/produto-imposto-uf/copiar'));
+      expect(url, contains('origemProdutoId=10'));
+      expect(url, contains('destinoProdutoId=20'));
+    });
+
+    test('remove produto origem da lista de destinos', () {
+      final produtos = [
+        {'id': 10, 'nome': 'Arroz'},
+        {'id': '20', 'nome': 'Milho'},
+      ];
+
+      final destinos = filtrarProdutosDestinoImpostos(produtos, 10);
+
+      expect(destinos.map((e) => e['id'].toString()), ['20']);
+    });
+
+    test('rotulo do produto usa codigo e nome quando disponiveis', () {
+      final label = labelProdutoParaCopiarImpostos({
+        'codigo': 'P001',
+        'nome': 'Arroz em casca',
+      });
+
+      expect(label, 'P001 - Arroz em casca');
+    });
+  });
 }

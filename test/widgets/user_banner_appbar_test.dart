@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
+import 'package:task_manager_flutter/utils/security_matrix.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
 
 Widget _wrap(Widget w) =>
@@ -171,6 +172,45 @@ void main() {
       ));
       await tester.pump();
       expect(find.text('w@test.com'), findsOneWidget);
+    });
+  });
+
+  // Bug de producao (card eNt571Po): ModuloAccess e um cache estatico
+  // guardado por _loaded -- login_screen.dart e bottom_navbar_screen.dart
+  // (web/windows) ja chamavam ModuloAccess.reset(), mas o handler CENTRAL
+  // de logout (botao "Sair", AppBarActions._logout) nao chamava. Se outro
+  // usuario logasse na mesma sessao do app sem reiniciar o processo,
+  // ModuloAccess.load() retornava cedo e o novo usuario herdava os modulos
+  // contratados do usuario anterior.
+  group('AppBarActions — logout limpa ModuloAccess (card eNt571Po)', () {
+    tearDown(() {
+      AuthUtility.userInfo = null;
+      ModuloAccess.reset();
+    });
+
+    testWidgets(
+        'tocar em "Sair" chama ModuloAccess.reset() (modulos do usuario '
+        'anterior nao vazam pro proximo login)', (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'tok',
+        login: Login(email: 'user@test.com', nome: 'Usuario Teste'),
+      );
+      ModuloAccess.setContratadosParaTeste(['NFE', 'FINANCEIRO']);
+      expect(ModuloAccess.modulosContratados, isNotEmpty);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(appBar: UserBannerAppBar(screenTitle: 'Teste')),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Sair'));
+      await tester.pump();
+
+      expect(
+        ModuloAccess.modulosContratados,
+        isEmpty,
+        reason: 'Logout deve limpar o cache de modulos contratados',
+      );
     });
   });
 }

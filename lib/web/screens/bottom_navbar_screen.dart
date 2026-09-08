@@ -85,7 +85,8 @@ import './consulta_dfe_screen.dart';
 import './manifestacao_destinatario_screen.dart';
 import './ponto_web_screen.dart';
 import './ponto_solicitacao_screen.dart';
-import './ponto_ajuste_screen.dart';
+import 'ponto_ajuste_screen.dart';
+import 'relatorio_ponto_screen.dart';
 import './configuracoes_sistema_screen.dart';
 import './chatMessageListScreen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
@@ -506,7 +507,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       ), // 141: Historico de Treinos
       const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
       const DpDashboardScreen(), // 143: Dashboard DP
-      const SizedBox.shrink(), // 144: reservado
+      const RelatorioPontoScreen(), // 144: Relatórios DP/RH
       const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
       const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
       const SizedBox.shrink(), // 147: reservado

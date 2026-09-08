@@ -69,6 +69,7 @@ echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
+    echo  [M] Subir o App do Dono (Admin Panel no Chrome)
 echo  [0] Sair
 echo.
 set "OP="
@@ -161,6 +162,10 @@ if /i "%OP%"=="K" (
 )
 if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
+    goto END_MENU
+)
+if /i "%OP%"=="M" (
+    call :START_ADMIN_PANEL_WEB
     goto END_MENU
 )
 goto MENU
@@ -506,8 +511,9 @@ echo  [1] task_manager_appAcademiaV003
 echo  [2] task_manager_app_daniel
 echo  [3] task_manager_flutter
 echo  [4] task_manager_flutter_merged_final
+    echo  [5] task_manager_admin_panel
 echo  [0] Voltar
-choice /c 12340 /n /m "Projeto: "
+choice /c 123450 /n /m "Projeto: "
 if "%ERRORLEVEL%"=="5" exit /b 1
 call :SET_FLUTTER_PROJECT %ERRORLEVEL%
 exit /b %ERRORLEVEL%
@@ -571,8 +577,9 @@ echo  [1] Abraco Contabilidade (task_manager_flutter)
 echo  [2] Portal Contabilidade (task_manager_flutter_merged_final)
 echo  [3] Meu Treino (task_manager_AppAcademiaV003)
 echo  [4] Safra Direto (task_manager_appDaniel)
+    echo  [5] App do Dono (task_manager_admin_panel)
 echo  [0] Voltar
-choice /c 12340 /n /m "Projeto: "
+choice /c 123450 /n /m "Projeto: "
 if "%ERRORLEVEL%"=="5" exit /b 1
 call :SET_FLUTTER_PROJECT_FULL %ERRORLEVEL%
 exit /b %ERRORLEVEL%
@@ -1290,7 +1297,7 @@ set "MSG=%DEFAULT_MSG%"
 set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
 if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\task_manager_admin_panel"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1331,7 +1338,7 @@ echo ============================================
 echo  Atualizando todos os repositorios
 echo ============================================
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\task_manager_admin_panel"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------

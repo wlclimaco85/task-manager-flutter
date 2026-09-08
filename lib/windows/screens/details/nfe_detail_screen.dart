@@ -54,6 +54,49 @@ Map<String, dynamic> nfeDetailCadastroPayloadIds({
     };
 
 @visibleForTesting
+class NfeDetailParceiroCampos {
+  const NfeDetailParceiroCampos({
+    required this.parceiroId,
+    required this.parceiroNome,
+    required this.destinatarioId,
+    required this.destinatarioNome,
+  });
+
+  final String? parceiroId;
+  final String? parceiroNome;
+  final String? destinatarioId;
+  final String? destinatarioNome;
+}
+
+@visibleForTesting
+NfeDetailParceiroCampos nfeDetailParceirosSaida({
+  required Map<String, dynamic> item,
+  String? sessParcId,
+  String? sessParcNome,
+}) {
+  final parceiroMap = item['parceiro'];
+  final destMap = item['destinatario'];
+
+  if (parceiroMap != null) {
+    return NfeDetailParceiroCampos(
+      parceiroId: sessParcId ?? nfeDetailIdRef(destMap),
+      parceiroNome:
+          sessParcNome ?? (destMap is Map ? destMap['nome'] : null)?.toString(),
+      destinatarioId: nfeDetailIdRef(parceiroMap),
+      destinatarioNome:
+          (parceiroMap is Map ? parceiroMap['nome'] : null)?.toString(),
+    );
+  }
+
+  return NfeDetailParceiroCampos(
+    parceiroId: sessParcId,
+    parceiroNome: sessParcNome,
+    destinatarioId: nfeDetailIdRef(destMap),
+    destinatarioNome: (destMap is Map ? destMap['nome'] : null)?.toString(),
+  );
+}
+
+@visibleForTesting
 bool isNfeRascunhoImportacao(Object? status) =>
     (status?.toString() ?? '').toUpperCase() == 'RASCUNHO_IMPORTACAO';
 
@@ -62,8 +105,7 @@ String nfeEntradaPrimaryActionLabel(Object? status) =>
     isNfeRascunhoImportacao(status) ? 'Confirmar Entrada' : 'Aceitar';
 
 @visibleForTesting
-bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) =>
-    (tipoOperacao?.toString() ?? '').toUpperCase() != 'ENTRADA';
+bool exibeSecaoFinanceiraNoDetalheNfe(Object? tipoOperacao) => false;
 
 @visibleForTesting
 Map<String, dynamic> nfeDetailCabecalhoAtual(
@@ -88,12 +130,33 @@ double? nfeDetailParseDouble(Object? value) {
   return double.tryParse(normalized);
 }
 
+Set<String> _nfeDetailKeyVariants(String key, String snakeCase) {
+  final variants = <String>{key, snakeCase};
+  if (key.isNotEmpty) {
+    variants.add(key[0].toLowerCase() + key.substring(1));
+    variants.add(key[0].toUpperCase() + key.substring(1));
+  }
+  if (key.length > 1) {
+    variants.add(key[0] + key[1].toLowerCase() + key.substring(2));
+  }
+  return variants;
+}
+
+Object? _nfeDetailValue(
+    Map<String, dynamic> data, String camelCase, String snakeCase) {
+  for (final key in _nfeDetailKeyVariants(camelCase, snakeCase)) {
+    if (data.containsKey(key)) return data[key];
+  }
+  return null;
+}
+
 double _sumNfeDetailItems(
         List<Map<String, dynamic>> itens, String camel, String snake) =>
     itens.fold<double>(
       0,
       (sum, item) =>
-          sum + (nfeDetailParseDouble(item[camel] ?? item[snake]) ?? 0),
+          sum +
+          (nfeDetailParseDouble(_nfeDetailValue(item, camel, snake)) ?? 0),
     );
 
 double _nfeDetailTotal({
@@ -105,7 +168,7 @@ double _nfeDetailTotal({
   required String itemSnake,
 }) {
   final totalCabecalho = nfeDetailParseDouble(
-      cabecalho[cabecalhoCamel] ?? cabecalho[cabecalhoSnake]);
+      _nfeDetailValue(cabecalho, cabecalhoCamel, cabecalhoSnake));
   return totalCabecalho ?? _sumNfeDetailItems(itens, itemCamel, itemSnake);
 }
 
@@ -360,7 +423,7 @@ List<MapEntry<String, double>> nfeDetailTotaisParaExibicao({
     MapEntry(
         'Total Tributos',
         nfeDetailParseDouble(
-                cabecalho['vTotTrib'] ?? cabecalho['v_tot_trib']) ??
+                _nfeDetailValue(cabecalho, 'vTotTrib', 'v_tot_trib')) ??
             0),
   ];
 
@@ -440,6 +503,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   // Dados do usuário logado (para campos disabled)
   String? _empresaNome;
   String? _parceiroNome;
+  String? _destinatarioNome;
   bool get _isNovo => widget.item['id'] == null;
 
   String get _nfeId => widget.item['id']?.toString() ?? '';
@@ -511,18 +575,27 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ?.toString();
       _parceiroNome =
           (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
-    } else {
-      final sessParcId = login?.parceiro?.id?.toString();
-      _parceiroId = sessParcId ??
-          (i['parceiro'] is Map ? i['parceiro']['id'] : i['parceiro'])
-              ?.toString();
-      _parceiroNome = login?.parceiro?.nome ??
-          (i['parceiro'] is Map ? i['parceiro']['nome'] : null)?.toString();
-    }
 
-    _destinatarioId =
-        (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])
-            ?.toString();
+      final sessParcId = login?.parceiro?.id?.toString();
+      _destinatarioId = sessParcId ??
+          (i['destinatario'] is Map
+                  ? i['destinatario']['id']
+                  : i['destinatario'])
+              ?.toString();
+      _destinatarioNome = login?.parceiro?.nome ??
+          (i['destinatario'] is Map ? i['destinatario']['nome'] : null)
+              ?.toString();
+    } else {
+      final campos = nfeDetailParceirosSaida(
+        item: i,
+        sessParcId: login?.parceiro?.id?.toString(),
+        sessParcNome: login?.parceiro?.nome,
+      );
+      _parceiroId = campos.parceiroId;
+      _parceiroNome = campos.parceiroNome;
+      _destinatarioId = campos.destinatarioId;
+      _destinatarioNome = campos.destinatarioNome;
+    }
     _formaPagId = nfeDetailIdRef(i['formaPagamento']);
     _finalidadeId = nfeDetailIdRef(i['nfeFinalidade']);
     _centroCustoId = nfeDetailIdRef(i['centroCusto']);
@@ -1537,9 +1610,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
           ? _inpDisabledText('Parceiro', _parceiroNome!)
           : _ddObj('Parceiro', _parceiroId, _parceiros, 'nome',
               (v) => setState(() => _parceiroId = v)),
-      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado
-      _ddObjSearch('Destinatário', _destinatarioId, _destinatarios, 'nome',
-          (v) => setState(() => _destinatarioId = v)),
+      // Destinatário: dropdown filtrado pelos parceiros do parceiro logado, ou disabled se for entrada
+      hasSession && _isEntrada && _destinatarioNome != null
+          ? _inpDisabledText('Destinatário', _destinatarioNome!)
+          : _ddObjSearch('Destinatário', _destinatarioId, _destinatarios,
+              'nome', (v) => setState(() => _destinatarioId = v)),
       _ddObj('Forma de Pagamento', _formaPagId, _formasPagamento, 'descricao',
           (v) => setState(() => _formaPagId = v)),
       _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao',

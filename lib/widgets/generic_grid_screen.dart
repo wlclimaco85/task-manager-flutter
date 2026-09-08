@@ -52,7 +52,9 @@ enum FieldType {
 // chega pronto como objeto).
 const entityRelationshipFields = [
   'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
-  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+  'parceiroDev', 'parceiroRec', 'clienteDev',
+  'contaBancaria', 'contaBaixa', 'nfe',
+  'setor', 'centroCusto', 'formaPagamento',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(
@@ -1508,6 +1510,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
+    if (item != null) {
+      formData[widget.idFieldName] = (item as dynamic)[widget.idFieldName];
+    }
 
     for (final config in widget.fieldConfigs.where(
       (c) => c.fieldType == FieldType.file,
@@ -1757,7 +1762,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
     final adjustedFormData = normalizeFormData(formData);
 
-    final response = await NetworkCaller().postRequest(
+    final response = await NetworkCaller().putRequest(
       widget.updateEndpoint.replaceAll(
         ':id',
         adjustedFormData[widget.idFieldName].toString(),

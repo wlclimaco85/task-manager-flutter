@@ -10,7 +10,7 @@ class ExtratoOperacionalDialog extends StatefulWidget {
     super.key,
     required this.contaId,
     required this.contaNome,
-    this.initialDays = 30,
+    this.initialDays = 90,
   });
 
   final int contaId;
@@ -21,7 +21,7 @@ class ExtratoOperacionalDialog extends StatefulWidget {
     BuildContext context, {
     required int contaId,
     required String contaNome,
-    int initialDays = 30,
+    int initialDays = 90,
   }) {
     return showDialog<void>(
       context: context,
@@ -381,11 +381,13 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(12)),
                   ),
                   child: Row(
                     children: [
                       const _HeaderCell(flex: 2, label: 'Data'),
+                      const _HeaderCell(flex: 2, label: 'Nro. Nota'),
                       const _HeaderCell(flex: 4, label: 'Histórico'),
                       const _HeaderCell(flex: 2, label: 'Entradas'),
                       const _HeaderCell(flex: 2, label: 'Saídas'),
@@ -407,8 +409,8 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                         )
                       : ListView.separated(
                           itemCount: extrato.itens.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                          separatorBuilder: (_, __) => const Divider(
+                              height: 1, color: Color(0xFFE2E8F0)),
                           itemBuilder: (context, index) {
                             final item = extrato.itens[index];
                             return Padding(
@@ -421,6 +423,15 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                                   _DataCell(
                                     flex: 2,
                                     child: Text(_dateFormat.format(item.data)),
+                                  ),
+                                  _DataCell(
+                                    flex: 2,
+                                    child: Text(
+                                      item.numeroNota.trim().isEmpty
+                                          ? '-'
+                                          : item.numeroNota,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                   _DataCell(
                                     flex: 4,

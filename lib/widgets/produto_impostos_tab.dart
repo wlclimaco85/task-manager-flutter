@@ -62,6 +62,34 @@ String mensagemErroSalvar(int statusCode, {required bool isRegraPadrao}) {
   return 'Erro ao salvar ($statusCode)';
 }
 
+String montarUrlCopiarImpostos({
+  required int origemProdutoId,
+  required int destinoProdutoId,
+}) {
+  return '${ApiLinks.baseUrl}/api/produto-imposto-uf/copiar'
+      '?origemProdutoId=$origemProdutoId&destinoProdutoId=$destinoProdutoId';
+}
+
+List<Map<String, dynamic>> filtrarProdutosDestinoImpostos(
+  List<Map<String, dynamic>> produtos,
+  int origemProdutoId,
+) {
+  return produtos
+      .where((p) => p['id']?.toString() != origemProdutoId.toString())
+      .toList();
+}
+
+String labelProdutoParaCopiarImpostos(Map<String, dynamic> produto) {
+  final codigo = produto['codigo']?.toString().trim() ?? '';
+  final nome = (produto['nome'] ?? produto['descricao'] ?? produto['id'])
+          ?.toString()
+          .trim() ??
+      '';
+  if (codigo.isNotEmpty && nome.isNotEmpty) return '$codigo - $nome';
+  if (nome.isNotEmpty) return nome;
+  return codigo.isNotEmpty ? codigo : 'Produto sem nome';
+}
+
 // ── Tabelas fiscais fechadas (Receita Federal / SEFAZ) ─────────────────────
 // Bug de producao: campos que sao tabela fechada da Receita (CST/CSOSN, CST
 // IBS/CBS) estavam como texto livre -- usuario podia digitar qualquer coisa,
@@ -182,6 +210,7 @@ class ProdutoImpostosTab extends StatefulWidget {
 
 class _ProdutoImpostosTabState extends State<ProdutoImpostosTab> {
   bool _carregando = true;
+  bool _copiando = false;
   String? _erro;
   List<Map<String, dynamic>> _configs = [];
   List<Map<String, dynamic>> _estados = [];
@@ -275,6 +304,55 @@ class _ProdutoImpostosTabState extends State<ProdutoImpostosTab> {
     }
   }
 
+  Future<void> _abrirCopiarImpostos() async {
+    if (_configs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Este produto ainda não tem configuração fiscal para copiar.'),
+        backgroundColor: GridColors.warning,
+      ));
+      return;
+    }
+
+    setState(() => _copiando = true);
+    final produtos = filtrarProdutosDestinoImpostos(
+      await DropdownHelpers.load(
+        '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500&isServico=false',
+        displayField: 'nome',
+      ),
+      widget.produtoId,
+    );
+    if (!mounted) return;
+    setState(() => _copiando = false);
+
+    final destinoProdutoId = await showDialog<int>(
+      context: context,
+      builder: (_) => _CopiarProdutoImpostosDialog(produtos: produtos),
+    );
+    if (destinoProdutoId == null) return;
+
+    await _copiarImpostosParaProduto(destinoProdutoId);
+  }
+
+  Future<void> _copiarImpostosParaProduto(int destinoProdutoId) async {
+    setState(() => _copiando = true);
+    final resp = await NetworkCaller().postRequest(
+      montarUrlCopiarImpostos(
+        origemProdutoId: widget.produtoId,
+        destinoProdutoId: destinoProdutoId,
+      ),
+      {},
+    );
+    if (!mounted) return;
+    setState(() => _copiando = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(resp.isSuccess
+          ? 'Configuração fiscal copiada para o produto selecionado.'
+          : 'Erro ao copiar configuração fiscal (${resp.statusCode}).'),
+      backgroundColor: resp.isSuccess ? GridColors.success : GridColors.error,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.produtoId <= 0) {
@@ -326,6 +404,12 @@ class _ProdutoImpostosTabState extends State<ProdutoImpostosTab> {
                 onPressed: () => _abrirFormulario(existente: regra),
                 icon: Icon(regra == null ? Icons.add : Icons.edit),
                 label: Text(regra == null ? 'Configurar' : 'Editar'),
+              ),
+              TextButton.icon(
+                onPressed:
+                    _configs.isEmpty || _copiando ? null : _abrirCopiarImpostos,
+                icon: const Icon(Icons.copy_all_outlined),
+                label: Text(_copiando ? 'Copiando...' : 'Copiar'),
               ),
               if (regra != null)
                 IconButton(
@@ -458,6 +542,65 @@ class _ProdutoImpostosTabState extends State<ProdutoImpostosTab> {
     if (v == null) return '0';
     final n = double.tryParse(v.toString()) ?? 0.0;
     return n.toStringAsFixed(2);
+  }
+}
+
+class _CopiarProdutoImpostosDialog extends StatefulWidget {
+  final List<Map<String, dynamic>> produtos;
+
+  const _CopiarProdutoImpostosDialog({required this.produtos});
+
+  @override
+  State<_CopiarProdutoImpostosDialog> createState() =>
+      _CopiarProdutoImpostosDialogState();
+}
+
+class _CopiarProdutoImpostosDialogState
+    extends State<_CopiarProdutoImpostosDialog> {
+  int? _produtoDestinoId;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Copiar configuração fiscal'),
+      content: SizedBox(
+        width: 520,
+        child: widget.produtos.isEmpty
+            ? const Text('Nenhum outro produto disponível para receber a configuração fiscal.')
+            : DropdownButtonFormField<int>(
+                initialValue: _produtoDestinoId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Produto destino',
+                  prefixIcon: Icon(Icons.inventory_2_outlined),
+                ),
+                items: widget.produtos
+                    .map((produto) => DropdownMenuItem<int>(
+                          value: int.tryParse(produto['id']?.toString() ?? ''),
+                          child: Text(
+                            labelProdutoParaCopiarImpostos(produto),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .where((item) => item.value != null)
+                    .toList(),
+                onChanged: (value) => setState(() => _produtoDestinoId = value),
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _produtoDestinoId == null
+              ? null
+              : () => Navigator.of(context).pop(_produtoDestinoId),
+          icon: const Icon(Icons.copy_all_outlined),
+          label: const Text('Copiar'),
+        ),
+      ],
+    );
   }
 }
 
