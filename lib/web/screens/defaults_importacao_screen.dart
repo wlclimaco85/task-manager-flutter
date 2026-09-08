@@ -55,29 +55,38 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
       _carregandoEmpresas = true;
       _erro = null;
     });
-      try {
-        final empresaLogada = TenantContext.empresaId?.toString();
-        if (empresaLogada != null) {
-          final label = await DropdownHelpers.empresaLabelPorId(empresaLogada);
-          if (label != null) {
-            if (!mounted) return;
-            setState(() {
-              _empresas = [{'id': int.parse(empresaLogada), 'nome': label}];
-            });
-            await _selecionarEmpresa(empresaLogada);
-          }
+    try {
+      final empresaLogada = TenantContext.empresaId?.toString();
+      if (empresaLogada != null) {
+        final label = await DropdownHelpers.empresaLabelPorId(empresaLogada);
+        if (label != null) {
+          if (!mounted) return;
+          setState(() {
+            _empresas = [
+              {'id': int.parse(empresaLogada), 'nome': label}
+            ];
+          });
+          await _selecionarEmpresa(empresaLogada);
+          if (!mounted) return;
+          setState(() {
+            _carregandoEmpresas = false;
+          });
+          return;
         }
-        if (!mounted) return;
-        setState(() {
-          _carregandoEmpresas = false;
-        });
-      } catch (e) {
-        if (!mounted) return;
-        setState(() {
-          _carregandoEmpresas = false;
-          _erro = 'Falha ao carregar empresas: $e';
-        });
       }
+      final empresas = await _service.empresas();
+      if (!mounted) return;
+      setState(() {
+        _empresas = empresas;
+        _carregandoEmpresas = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _carregandoEmpresas = false;
+        _erro = 'Falha ao carregar empresas: $e';
+      });
+    }
   }
 
   Future<void> _selecionarEmpresa(String? empresaId) async {
@@ -196,15 +205,16 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (_empresaId == null)
-                        const Text('Selecione uma empresa para configurar os '
+                        const Text(
+                            'Selecione uma empresa para configurar os '
                             'defaults de importação.',
                             style: TextStyle(color: Colors.grey))
                       else if (_carregandoDefaults)
                         const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
                             child: Center(
-                                child: CircularProgressIndicator(
-                                    color: _primary)))
+                                child:
+                                    CircularProgressIndicator(color: _primary)))
                       else
                         _formulario(),
                     ]),
@@ -236,8 +246,7 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: Row(children: [
-        const Icon(Icons.warning_amber_rounded,
-            color: Colors.orange, size: 16),
+        const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
         const SizedBox(width: 6),
         Expanded(
             child: Text(mensagem,
@@ -259,7 +268,8 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
     String? nomeSalvo,
   ) {
     if (idSalvo == null) return itens;
-    final jaPresente = itens.any((i) => i['id']?.toString() == idSalvo.toString());
+    final jaPresente =
+        itens.any((i) => i['id']?.toString() == idSalvo.toString());
     if (jaPresente) return itens;
     return [
       ...itens,
@@ -278,8 +288,7 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
     final orfaoContaBancaria =
         _ehOrfao(_contasBancarias, _defaults.contaBancariaId);
     final orfaoContaCaixa = _ehOrfao(_contasCaixa, _defaults.contaCaixaId);
-    final orfaoCentroCusto =
-        _ehOrfao(_centrosCusto, _defaults.centroCustoId);
+    final orfaoCentroCusto = _ehOrfao(_centrosCusto, _defaults.centroCustoId);
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SearchableDropdownField(
@@ -328,8 +337,8 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
         key: const Key('defaults_importacao_centro_custo'),
         label: 'Centro de custo padrão',
         value: _defaults.centroCustoId?.toString(),
-        items: _comFallbackOrfao(_centrosCusto, _defaults.centroCustoId,
-            _defaults.centroCustoNome),
+        items: _comFallbackOrfao(
+            _centrosCusto, _defaults.centroCustoId, _defaults.centroCustoNome),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
@@ -356,8 +365,8 @@ class _DefaultsImportacaoScreenState extends State<DefaultsImportacaoScreen> {
             'faltar dado financeiro de baixa no arquivo importado.',
             style: TextStyle(fontSize: 11, color: Colors.grey)),
         value: _defaults.baixarAutomaticoNoVencimento,
-        onChanged: (v) => setState(
-            () => _defaults = _defaults.copyWith(baixarAutomaticoNoVencimento: v)),
+        onChanged: (v) => setState(() =>
+            _defaults = _defaults.copyWith(baixarAutomaticoNoVencimento: v)),
       ),
       const SizedBox(height: 16),
       Align(
