@@ -88,12 +88,33 @@ double? nfeDetailParseDouble(Object? value) {
   return double.tryParse(normalized);
 }
 
+Set<String> _nfeDetailKeyVariants(String key, String snakeCase) {
+  final variants = <String>{key, snakeCase};
+  if (key.isNotEmpty) {
+    variants.add(key[0].toLowerCase() + key.substring(1));
+    variants.add(key[0].toUpperCase() + key.substring(1));
+  }
+  if (key.length > 1) {
+    variants.add(key[0] + key[1].toLowerCase() + key.substring(2));
+  }
+  return variants;
+}
+
+Object? _nfeDetailValue(
+    Map<String, dynamic> data, String camelCase, String snakeCase) {
+  for (final key in _nfeDetailKeyVariants(camelCase, snakeCase)) {
+    if (data.containsKey(key)) return data[key];
+  }
+  return null;
+}
+
 double _sumNfeDetailItems(
         List<Map<String, dynamic>> itens, String camel, String snake) =>
     itens.fold<double>(
       0,
       (sum, item) =>
-          sum + (nfeDetailParseDouble(item[camel] ?? item[snake]) ?? 0),
+          sum +
+          (nfeDetailParseDouble(_nfeDetailValue(item, camel, snake)) ?? 0),
     );
 
 double _nfeDetailTotal({
@@ -105,7 +126,7 @@ double _nfeDetailTotal({
   required String itemSnake,
 }) {
   final totalCabecalho = nfeDetailParseDouble(
-      cabecalho[cabecalhoCamel] ?? cabecalho[cabecalhoSnake]);
+      _nfeDetailValue(cabecalho, cabecalhoCamel, cabecalhoSnake));
   return totalCabecalho ?? _sumNfeDetailItems(itens, itemCamel, itemSnake);
 }
 
@@ -360,7 +381,7 @@ List<MapEntry<String, double>> nfeDetailTotaisParaExibicao({
     MapEntry(
         'Total Tributos',
         nfeDetailParseDouble(
-                cabecalho['vTotTrib'] ?? cabecalho['v_tot_trib']) ??
+                _nfeDetailValue(cabecalho, 'vTotTrib', 'v_tot_trib')) ??
             0),
   ];
 

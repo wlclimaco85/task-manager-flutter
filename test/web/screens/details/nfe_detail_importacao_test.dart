@@ -177,5 +177,28 @@ void main() {
       expect(porNome['PIS'], closeTo(43.47, 0.001));
       expect(porNome['COFINS'], closeTo(200.22, 0.001));
     });
+
+    test('totais aceitam chaves com acronimo serializadas pelo Jackson', () {
+      final totais = nfeDetailTotaisParaExibicao(
+        valorNota: 2701.02,
+        itens: const [],
+        cabecalho: const {
+          'VBcIcms': 2701.02,
+          'vicms': 324.12,
+          'VPis': 44.57,
+          'VCofins': 205.28,
+          'vipi': 12.30,
+          'VTotTrib': 586.27,
+        },
+      );
+
+      final porNome = Map.fromEntries(totais);
+      expect(porNome['Base ICMS'], closeTo(2701.02, 0.001));
+      expect(porNome['ICMS'], closeTo(324.12, 0.001));
+      expect(porNome['PIS'], closeTo(44.57, 0.001));
+      expect(porNome['COFINS'], closeTo(205.28, 0.001));
+      expect(porNome['IPI'], closeTo(12.30, 0.001));
+      expect(porNome['Total Tributos'], closeTo(586.27, 0.001));
+    });
   });
 }
