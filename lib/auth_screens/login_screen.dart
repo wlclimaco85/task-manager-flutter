@@ -1404,7 +1404,28 @@ class _PricingStrip extends StatelessWidget {
             value: 'R\$ 199,90',
             detail: 'quantos modulos quiser usar',
           ),
+          _CustomDemandNote(),
         ],
+      ),
+    );
+  }
+}
+
+class _CustomDemandNote extends StatelessWidget {
+  const _CustomDemandNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 660,
+      child: Text(
+        'Se nenhuma opcao atender sua demanda, fazemos um orcamento para criar a solucao aqui mesmo dentro do nosso ambiente.',
+        style: TextStyle(
+          color: GridColors.textSecondary,
+          fontSize: 12,
+          height: 1.28,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
