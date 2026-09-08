@@ -14,10 +14,14 @@ void main() {
     await tester.pump();
 
     expect(find.text('Portal do escritorio para clientes'), findsOneWidget);
+    expect(find.text('Chat com o escritorio'), findsWidgets);
+    expect(find.text('GED e documentos'), findsWidgets);
     expect(find.text('Financeiro essencial'), findsWidgets);
     expect(find.text('Fiscal e NF-e'), findsWidgets);
     expect(find.text('Abertura de chamados'), findsWidgets);
     expect(find.text('Upload de extratos'), findsWidgets);
+    expect(find.text('R\$ 99,90'), findsOneWidget);
+    expect(find.text('R\$ 199,90'), findsOneWidget);
     expect(find.text('Incluso'), findsWidgets);
     expect(find.text('Opcional'), findsWidgets);
     expect(find.text('Baixar na Play Store'), findsOneWidget);
@@ -35,8 +39,12 @@ void main() {
     await tester.pump();
 
     expect(find.byType(SingleChildScrollView), findsOneWidget);
+    expect(find.text('Chat com o escritorio'), findsWidgets);
+    expect(find.text('GED e documentos'), findsWidgets);
     expect(find.text('Abertura de chamados'), findsWidgets);
     expect(find.text('Financeiro avancado'), findsWidgets);
+    expect(find.text('R\$ 99,90'), findsOneWidget);
+    expect(find.text('R\$ 199,90'), findsOneWidget);
     expect(find.text('Baixar na Play Store'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });

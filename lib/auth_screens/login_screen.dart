@@ -26,6 +26,12 @@ const String _playStoreUrl =
 
 const List<_LoginModule> _includedModules = [
   _LoginModule(
+    title: 'Chat com o escritorio',
+    description: 'Conversas por setor com historico para cliente e equipe.',
+    icon: Icons.chat_bubble_outline,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
     title: 'Abertura de chamados',
     description: 'Solicitacoes do cliente por setor e acompanhamento interno.',
     icon: Icons.support_agent_outlined,
@@ -41,6 +47,12 @@ const List<_LoginModule> _includedModules = [
     title: 'Upload de extratos',
     description: 'Cliente envia extrato bancario direto pelo portal/app.',
     icon: Icons.upload_file_outlined,
+    badge: 'Incluso',
+  ),
+  _LoginModule(
+    title: 'GED e documentos',
+    description: 'Organizacao de arquivos, anexos e documentos do cliente.',
+    icon: Icons.snippet_folder_outlined,
     badge: 'Incluso',
   ),
   _LoginModule(
@@ -779,7 +791,7 @@ class _ProductShowcase extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Entrada do cliente com chamados, informativos, extratos, calendario e financeiro. Os modulos avancados entram por contratacao.',
+            'Entrada do cliente com chat, chamados, GED, informativos, extratos, calendario e financeiro. Os modulos avancados entram por contratacao.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
               fontSize: 17,
@@ -795,6 +807,8 @@ class _ProductShowcase extends StatelessWidget {
           modules: _includedModules,
           compact: compact,
         ),
+        const SizedBox(height: 14),
+        _PricingStrip(compact: compact),
         const SizedBox(height: 14),
         _ModuleSection(
           title: 'Modulos que podem ser contratados',
@@ -1350,6 +1364,126 @@ class _ModuleSection extends StatelessWidget {
               .toList(),
         ),
       ],
+    );
+  }
+}
+
+class _PricingStrip extends StatelessWidget {
+  final bool compact;
+
+  const _PricingStrip({required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: compact ? 268 : double.infinity,
+      constraints: const BoxConstraints(maxWidth: 720),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: GridColors.primaryLight.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        alignment: compact ? WrapAlignment.center : WrapAlignment.start,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: const [
+          _PriceOption(
+            icon: Icons.add_business_outlined,
+            title: 'Modulo contratado',
+            value: 'R\$ 99,90',
+            detail: 'por modulo',
+          ),
+          _PriceOption(
+            icon: Icons.all_inclusive_outlined,
+            title: 'Pacote completo',
+            value: 'R\$ 199,90',
+            detail: 'quantos modulos quiser usar',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriceOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final String detail;
+
+  const _PriceOption({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 320,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: GridColors.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: GridColors.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: GridColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: GridColors.primary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: GridColors.textMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
