@@ -164,6 +164,10 @@ if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
     goto END_MENU
 )
+if /i "%OP%"=="M" (
+    call :START_ADMIN_PANEL_WEB
+    goto END_MENU
+)
 goto MENU
 
 :END_MENU
