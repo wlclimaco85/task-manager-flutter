@@ -697,12 +697,14 @@ class _ImportacaoSintegraCardState extends State<ImportacaoSintegraCard> {
       _ResumoItem('Entradas', resultado['notasEntrada']),
       _ResumoItem('Saídas', resultado['notasSaida']),
       _ResumoItem('Itens', resultado['itens']),
+      _ResumoItem('Itens existentes', resultado['itensExistentes']),
       _ResumoItem('Produtos novos', resultado['produtosCriados']),
       _ResumoItem('Produtos atualizados', resultado['produtosAtualizados']),
       _ResumoItem('Parceiros novos', resultado['parceirosCriados']),
       _ResumoItem('Parceiros atualizados', resultado['parceirosAtualizados']),
       _ResumoItem('Tributações', resultado['tributacoes']),
       _ResumoItem('Financeiro gerado', resultado['financeirosGerados']),
+      _ResumoItem('Financeiro existente', resultado['financeirosExistentes']),
       _ResumoItem('Financeiro pendente', resultado['financeirosPendentes']),
     ];
     return Container(

@@ -638,12 +638,14 @@ class _ImportacaoSpedCardState extends State<ImportacaoSpedCard> {
       _ResumoItem('Entradas', resultado['notasEntrada']),
       _ResumoItem('Saidas', resultado['notasSaida']),
       _ResumoItem('Itens', resultado['itens']),
+      _ResumoItem('Itens existentes', resultado['itensExistentes']),
       _ResumoItem('Produtos novos', resultado['produtosCriados']),
       _ResumoItem('Produtos atualizados', resultado['produtosAtualizados']),
       _ResumoItem('Parceiros novos', resultado['parceirosCriados']),
       _ResumoItem('Parceiros atualizados', resultado['parceirosAtualizados']),
       _ResumoItem('Tributacoes', resultado['tributacoes']),
       _ResumoItem('Financeiro gerado', resultado['financeirosGerados']),
+      _ResumoItem('Financeiro existente', resultado['financeirosExistentes']),
       _ResumoItem('Financeiro pendente', resultado['financeirosPendentes']),
     ];
     return Container(

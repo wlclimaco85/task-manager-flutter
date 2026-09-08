@@ -67,11 +67,14 @@ void main() {
                 'notasEntrada': 1,
                 'notasSaida': 0,
                 'itens': 2,
+                'itensExistentes': 3,
                 'produtosCriados': 1,
                 'produtosAtualizados': 0,
                 'parceirosCriados': 1,
                 'parceirosAtualizados': 0,
                 'tributacoes': 1,
+                'financeirosGerados': 4,
+                'financeirosExistentes': 5,
                 'financeirosPendentes': 1,
                 'avisos': [
                   'Financeiro ficou pendente por falta de vencimento.',
@@ -93,6 +96,9 @@ void main() {
     expect(find.byKey(const Key('importacao-sintegra-resumo')), findsOneWidget);
     expect(find.text('Entradas: 1'), findsOneWidget);
     expect(find.text('Itens: 2'), findsOneWidget);
+    expect(find.text('Itens existentes: 3'), findsOneWidget);
+    expect(find.text('Financeiro gerado: 4'), findsOneWidget);
+    expect(find.text('Financeiro existente: 5'), findsOneWidget);
     expect(find.text('Financeiro pendente: 1'), findsOneWidget);
     expect(
       find.text('Registro 60: 1 linha sem destino seguro.'),
