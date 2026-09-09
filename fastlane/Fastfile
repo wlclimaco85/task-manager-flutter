@@ -42,6 +42,19 @@ def railway_ws_url
   ENV["WS_BACKEND_URL"] || "wss://appacademia-production-be7e.up.railway.app/boletobancos"
 end
 
+# Bug de producao: builds Android sempre usavam o default de
+# BACKEND_CONTEXT_PATH em api_links.dart ('/boletobancos'), porque nenhum
+# --dart-define era passado aqui. Isso batia certo enquanto
+# application-prod.properties tinha server.servlet.context-path=/boletobancos,
+# mas producao voltou a rodar na raiz (context-path vazio) -- toda chamada
+# do app (login incluido) passou a cair no LegacyBoletobancosPathFilter, que
+# devolve 308, e o app mostrava "Erro 308" em vez de logar. Ver o mesmo bug
+# corrigido no bundle Flutter Web (AppAcademia/src/main/resources/static,
+# commit 663824ea) -- faltava replicar pro build mobile.
+def railway_backend_context_path
+  ENV["BACKEND_CONTEXT_PATH"] || ""
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PLATAFORMA: iOS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -171,7 +184,7 @@ platform :android do
   desc "Build e upload para Google Play (internal track)"
   lane :beta do
     ver = flutter_version
-    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
+    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url} --dart-define=BACKEND_CONTEXT_PATH=#{railway_backend_context_path}")
     upload_to_play_store(
       track:                "internal",
       aab:                  app_path("build/app/outputs/bundle/release/app-release.aab"),
@@ -185,7 +198,7 @@ platform :android do
   desc "Build e publicação no Google Play (production)"
   lane :release do
     ver = flutter_version
-    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
+    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url} --dart-define=BACKEND_CONTEXT_PATH=#{railway_backend_context_path}")
     upload_to_play_store(
       track:                   "production",
       aab:                     app_path("build/app/outputs/bundle/release/app-release.aab"),
