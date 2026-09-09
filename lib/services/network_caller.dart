@@ -220,8 +220,9 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error in PUT request: $e');
+      AppLogger.i.error('[PUT] erro: $e', stack);
       return NetworkResponse(false, 500, {'error': 'Network error: $e'});
     }
   }
@@ -253,8 +254,9 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error in PATCH request: $e');
+      AppLogger.i.error('[PATCH] erro: $e', stack);
       return NetworkResponse(false, 500, {'error': 'Network error: $e'});
     }
   }
@@ -343,6 +345,7 @@ class NetworkCaller {
       }
     } catch (e, stack) {
       log('💥 [POST] Erro: $e\n$stack');
+      AppLogger.i.error('[POST] erro: $e', stack);
     }
     return NetworkResponse(false, -1, null);
   }
@@ -385,8 +388,9 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e) {
+    } catch (e, stack) {
       log(e.toString());
+      AppLogger.i.error('[DELETE] erro: $e', stack);
       return NetworkResponse(false, -1, null);
     }
   }
