@@ -1404,14 +1404,38 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))
             _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
-          _MoreMenuAction(Icons.settings, 'Config Fiscal'),
+          if (sec.canView(AppScreen.configFiscal))
+            _MoreMenuAction(Icons.settings, 'Config Fiscal'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
       ),
     ];
 
-    // Filtra apenas grupos com itens visíveis
-    final gruposVisiveis = modulos.where((g) => g.items.isNotEmpty).toList();
+    // Bug de producao (video do usuario): os grupos GME, Service Desk,
+    // Projetos e Precificacao apareciam pra TODO mundo, mesmo sem o modulo
+    // contratado e sem nenhuma permissao de tela -- os itens desses 4
+    // grupos ainda nao tem AppScreen/RBAC modelado (feature nova, sem
+    // integracao de tela/permissao ainda), entao nunca passavam por
+    // sec.canView() como os outros grupos. Ate esses modulos ganharem
+    // permissao granular de tela, a unica garantia possivel e' pelo modulo
+    // contratado da empresa (ModuloAccess.modulosContratados) -- os mesmos
+    // 4 nomes usados aqui tem que bater com o que a tela de Modulos
+    // Contratados grava no backend.
+    const gruposSemPermissaoGranular = {
+      'GME',
+      'Service Desk',
+      'Projetos',
+      'Precificação',
+    };
+
+    // Filtra grupos sem itens visiveis, e os 4 grupos acima sem modulo
+    // contratado (deny-by-default: sem contrato, sem exibir).
+    final gruposVisiveis = modulos
+        .where((g) => g.items.isNotEmpty)
+        .where((g) =>
+            !gruposSemPermissaoGranular.contains(g.nome) ||
+            contratados.contains(g.nome))
+        .toList();
 
     showModalBottomSheet(
       context: context,
