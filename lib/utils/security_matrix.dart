@@ -717,7 +717,15 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.dashChatsLinha,
     AppScreen.dashChatsDiario
   },
-  'GED': {AppScreen.ged, AppScreen.diretorios, AppScreen.arquivos},
+  // Bug de producao: GED e' modulo gratuito (nao precisa ser contratado pra
+  // empresa) -- confirmado pelo usuario. Antes, AppScreen.ged/diretorios/
+  // arquivos estavam aqui mapeados pro modulo 'GED', entao isScreenAllowed()
+  // so liberava a tela se 'GED' estivesse na lista de modulos contratados
+  // da empresa (GET /api/empresa-modulo) -- bloqueando GED mesmo com a
+  // permissao de role/papel do login 100% liberada (efeito "tela em branco"
+  // ao abrir a aba GED, sem nenhum erro visivel). Removido do mapa: GED
+  // passa a ser tratado como tela livre (mesma categoria de Perfil/Logins),
+  // continuando sujeito soh a permissao de role normal (_backendPerms).
   'Dashboard': {
     AppScreen.dashboard,
     AppScreen.dashKpis,

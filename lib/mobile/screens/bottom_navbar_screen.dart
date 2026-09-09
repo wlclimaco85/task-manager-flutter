@@ -238,9 +238,39 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return items;
   }
 
-  /// Placeholder para slots sem permissão (evita IndexedStack quebrar).
+  // Bug de producao: este placeholder existe pra manter o IndexedStack com
+  // o mesmo numero de filhos da barra de abas quando o usuario nao tem
+  // permissao pra uma aba (Calendario/Chat/Comunicados/Chamados/GED) -- mas
+  // retornava SizedBox.shrink() ignorando a mensagem 'msg' recebida, entao
+  // a aba ficava com a tela em branco (sem erro, sem texto, sem indicacao
+  // nenhuma), parecendo quebrada em vez de "sem permissao". Mostra a
+  // mensagem de verdade, com o mesmo padrao visual ja usado em
+  // SemAcessoScreen (ver import 'sem_acesso_screen.dart') pra tela inteira,
+  // mas mais leve/inline pra caber dentro de uma unica aba.
   Widget _buildGatedPlaceholder(String msg) {
-    return const SizedBox.shrink();
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 56, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Entre em contato com o responsavel pelo seu cadastro para solicitar acesso.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
