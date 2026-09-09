@@ -102,6 +102,13 @@ void main() {
 
       expect(find.text('GED indisponível'), findsNothing);
 
+      // A grid do GED tenta buscar config real da tela via rede (sem backend
+      // no teste, falha e cai no AppLogger.warn -> SistemaErrorReporter, que
+      // agenda um timer de 1.5s). Sem deixar esse timer disparar, o teste
+      // termina com "Timer is still pending" -- nao e' bug deste teste, e'
+      // o comportamento normal de retry/log de erro de rede.
+      await tester.pump(const Duration(seconds: 2));
+
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
     },
