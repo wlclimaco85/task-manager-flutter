@@ -330,23 +330,48 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   /// Baixa o arquivo do GED (mobile) — mesma acao ja existente no Web.
+  ///
+  /// Bug de producao: quando `item['id']` nao dava pra converter pra int,
+  /// a funcao retornava na hora (`if (id == null) return;`) SEM nenhum
+  /// feedback -- nem SnackBar, nem log -- exatamente o "clica e nao
+  /// acontece nada" reportado. E mesmo os catches existentes so mostravam
+  /// SnackBar, sem chamar AppLogger -- entao um erro real de rede/download
+  /// tambem nunca aparecia no Console de Logs local nem no monitoramento
+  /// de producao (AppLogger.error/warn e' o que alimenta o
+  /// SistemaErrorReporter, ver app_logger.dart). Agora todo caminho de
+  /// falha loga E mostra feedback.
   Future<void> _baixarArquivo(
       BuildContext ctx, Map<String, dynamic> item) async {
     final id = int.tryParse('${item['id']}');
-    if (id == null) return;
+    if (id == null) {
+      AppLogger.i.warn(
+        'Download de GED cancelado: item sem id valido (${item['id']}). item=$item',
+      );
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível identificar o arquivo para baixar.'),
+          ),
+        );
+      }
+      return;
+    }
     final nome = (item['fileName'] ?? item['nome'] ?? 'arquivo_$id').toString();
     try {
-      await GedDownloadService().download(id, nome);
+      final caminho = await GedDownloadService().download(id, nome);
+      AppLogger.i.info('GED: arquivo $id ($nome) baixado e compartilhado -> $caminho');
       if (!ctx.mounted) return;
       ScaffoldMessenger.of(ctx).showSnackBar(
         const SnackBar(content: Text('Arquivo baixado com sucesso.')),
       );
-    } on GedDownloadException catch (e) {
+    } on GedDownloadException catch (e, st) {
+      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
       if (!ctx.mounted) return;
       ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(content: Text('Erro ao baixar arquivo: ${e.statusCode}')),
       );
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
       if (!ctx.mounted) return;
       ScaffoldMessenger.of(ctx).showSnackBar(
         const SnackBar(content: Text('Erro ao baixar arquivo.')),
