@@ -833,12 +833,16 @@ class ModuloAccess {
     }
 
     if (empresaModulos.isNotEmpty && parceiroModulos.isNotEmpty) {
+      // Uniao dos modulos contratados da empresa e do parceiro:
+      // se um modulo foi liberado para o parceiro especifico OU para a empresa,
+      // ele deve ficar disponivel ao usuario do parceiro (evita conjunto vazio
+      // quando empresa e parceiro possuem modulos complementares).
       _modulosContratados =
-          empresaModulos.intersection(parceiroModulos).toList();
-    } else if (empresaModulos.isNotEmpty) {
-      _modulosContratados = empresaModulos.toList();
+          empresaModulos.union(parceiroModulos).toList();
     } else if (parceiroModulos.isNotEmpty) {
       _modulosContratados = parceiroModulos.toList();
+    } else if (empresaModulos.isNotEmpty) {
+      _modulosContratados = empresaModulos.toList();
     } else {
       // Deny-by-default: sem modulos contratados = sem acesso a telas de modulo.
       // Antes era permissivo (_moduloToScreens.keys.toList() = acesso total).
