@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/mobile/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
 // Bug real reportado pelo usuario (video): ao tocar na aba GED sem ter
@@ -17,6 +18,7 @@ void main() {
   tearDown(() {
     AuthUtility.userInfo = null;
     ModuloAccess.reset();
+    PermissionService().clear();
   });
 
   testWidgets(
@@ -33,6 +35,7 @@ void main() {
         login: Login(id: 1, tipoLogin: LoginEnum.APP_ABRACO, roles: const []),
         permissoes: const [],
       );
+      PermissionService().setPermissoes(const []);
 
       await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
       await tester.pump();
@@ -54,6 +57,51 @@ void main() {
       // pre-existente do app, nao relacionado a este bug. O framework de
       // teste verifica essas variaveis globais antes de rodar o tearDown,
       // entao a restauracao tem que acontecer aqui dentro do proprio teste.
+      debugPrint = originalDebugPrint;
+      FlutterError.onError = originalOnError;
+    },
+  );
+
+  // Bug real reportado pelo usuario (produção, 3 dias): com a MESMA conta e
+  // a MESMA permissao liberada no admin (tela "Arquivos"), o GED aparecia
+  // certinho no web e continuava "indisponivel" no mobile, mesmo apos
+  // reinstalar o app e relogar. Causa raiz: mobile checava
+  // SecurityMatrix.canView(AppScreen.ged) (chave 'ged'), enquanto o web
+  // (app_sidebar.dart) checa PermissionService.canViewScreen('ged'), que
+  // traduz pra tela_nome real 'Arquivos' via _menuIdToTelaNome -- a
+  // permissao gravada no banco usa 'Arquivos', entao so' o caminho do web
+  // encontrava. Este teste prova que o mobile agora usa o mesmo mecanismo.
+  testWidgets(
+    'aba GED aparece quando a permissao "Arquivos" (telaNome real do backend) esta liberada',
+    (tester) async {
+      final originalDebugPrint = debugPrint;
+      final originalOnError = FlutterError.onError;
+
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, tipoLogin: LoginEnum.APP_ABRACO, roles: const []),
+        permissoes: const [],
+      );
+      // Igual a producao: permissao gravada com telaNome 'Arquivos' (nao
+      // 'ged') -- e o que o cadastro em Sistema > Perfis realmente grava.
+      PermissionService().setPermissoes(const [
+        RolePermissaoItem(
+          telaNome: 'Arquivos',
+          podeVer: true,
+          podeInserir: false,
+          podeEditar: false,
+          podeDeletar: true,
+        ),
+      ]);
+
+      await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
+      await tester.pump();
+
+      await tester.tap(find.text('GED'));
+      await tester.pump();
+
+      expect(find.text('GED indisponível'), findsNothing);
+
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
     },

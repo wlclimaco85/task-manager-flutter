@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
+import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
@@ -226,8 +227,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
 
     // 5. GED (gateado)
+    // Bug de producao (3 dias, so' mobile -- web funcionava com o mesmo
+    // login): mobile checava sec.canView(AppScreen.ged), que normaliza a
+    // chave de permissao pelo NOME DO ENUM DART ('ged'). O web (app_sidebar
+    // .dart) checa PermissionService.canViewScreen('ged'), que traduz o id
+    // do menu pra tela_nome REAL via _menuIdToTelaNome['ged'] = 'Arquivos'
+    // (normaliza pra 'arquivos'). Sao DUAS chaves diferentes ('ged' vs
+    // 'arquivos') pra checar a MESMA permissao real gravada no banco --
+    // como o cadastro em produção usa 'Arquivos' (que e' o que aparece na
+    // tela de Perfis), canView(AppScreen.ged) nunca encontrava a permissao,
+    // mesmo com o cadastro correto e mesmo apos reinstalar/relogar. Trocado
+    // pra usar o mesmo PermissionService do web, eliminando a duplicidade.
     items.add(
-      sec.canView(AppScreen.ged)
+      PermissionService().canViewScreen('ged')
           ? _gedDynamicGrid(sec)
           : _buildGatedPlaceholder('GED indisponível'),
     );
