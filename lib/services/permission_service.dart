@@ -138,6 +138,7 @@ class PermissionService {
     'feriados': 'Feriados',
     'funcionario': 'Funcionarios',
     'ponto': 'Ponto',
+    'relatorio_dp_rh': 'RelatorioDpRh',
     'setores': 'Setores',
     'solicitar_ajuste': 'SolicitarAjuste',
     'dashboard_dp': 'DashboardDP',
@@ -172,6 +173,7 @@ class PermissionService {
     // Configurações
     'logins': 'Logins',
     'solicitacoes_acesso': 'SolicitacoesAcesso',
+    'permissoes_multi_empresa': 'PermissoesMultiEmpresa',
     'obrigacoes_fiscais': 'ObrigacoesFiscais',
     'regime_tributario': 'Regime',
     'roles': 'Permissoes', // Backend pode usar 'Permissoes' ou 'Roles'

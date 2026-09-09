@@ -1498,4 +1498,8 @@ class ApiLinks {
       '$_baseUrlNew/api/dashboard/dp-area/kpis';
   static String get dashboardFiscalKpis =>
       '$_baseUrlNew/api/dashboard/fiscal/kpis';
+
+  // ── Sistema Logs e Monitoramento ──
+  static String get sistemaLogs => '$_baseUrlNew/api/sistema-logs';
 }
+

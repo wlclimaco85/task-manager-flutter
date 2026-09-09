@@ -58,4 +58,28 @@ void main() {
     expect(telas, contains('Dashboard Fiscal'));
     expect(telas, contains('Agendar NFe Recorrente'));
   });
+
+  test('catalogo de permissoes mostra telas de aprovacao de acesso', () {
+    final porAcesso = RolePermissionCatalog.groups(query: 'acesso')
+        .expand((grupo) => grupo.entries)
+        .toList();
+    final porPermissao = RolePermissionCatalog.groups(query: 'permi')
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    expect(
+      porAcesso.map((tela) => tela.label),
+      contains('Solicitações de Acesso'),
+    );
+    expect(
+      porPermissao.map((tela) => tela.label),
+      contains('Permissões Multi-Empresa'),
+    );
+    expect(
+      porPermissao
+          .firstWhere((tela) => tela.menuItemId == 'permissoes_multi_empresa')
+          .telaNome,
+      'PermissoesMultiEmpresa',
+    );
+  });
 }

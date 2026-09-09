@@ -18,6 +18,7 @@ import 'auth_screens/login_screen.dart';
 import 'services/session_expired_handler.dart';
 import 'services/push_notification_service.dart';
 import 'services/alerta_polling_service.dart';
+import 'services/sistema_error_reporter.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'utils/app_logger.dart';
@@ -63,6 +64,11 @@ void main() {
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
       print('[APP-ERROR] PlatformDispatcher (engine/gestures): $error');
       print('[APP-ERROR] stack:\n$stack');
+      SistemaErrorReporter.instance.reportarErro(
+        mensagem: error.toString(),
+        detalhes: stack.toString(),
+        classeOuRota: 'PlatformDispatcher',
+      );
       return true;
     };
 
@@ -73,6 +79,11 @@ void main() {
           '[APP-ERROR] biblioteca: ${details.library} | contexto: ${details.context}');
       print('[APP-ERROR] stack:\n${details.stack}');
       FlutterError.presentError(details);
+      SistemaErrorReporter.instance.reportarErro(
+        mensagem: details.exceptionAsString(),
+        detalhes: details.stack?.toString(),
+        classeOuRota: details.library ?? 'FlutterFramework',
+      );
     };
     try {
       AppLogger.i.initCapture();
@@ -164,6 +175,11 @@ void main() {
   }, (error, stack) {
     print('[APP-ERROR] erro não tratado: $error');
     print('[APP-ERROR] stack:\n$stack');
+    SistemaErrorReporter.instance.reportarErro(
+      mensagem: error.toString(),
+      detalhes: stack.toString(),
+      classeOuRota: 'runZonedGuarded',
+    );
   });
 }
 
