@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
@@ -1548,6 +1549,29 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   );
                 }),
                 const SizedBox(height: 8),
+                // Pedido do usuario: mostrar a versao instalada (mesma que
+                // sobe pro Google Play via fastlane -- versionName+versionCode
+                // do AndroidManifest, lidos em runtime via package_info_plus)
+                // pra facilitar confirmar se o app ja atualizou depois de um
+                // fix, sem precisar ir em Configuracoes do Android.
+                FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    final info = snapshot.data;
+                    if (info == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Versão ${info.version} (build ${info.buildNumber})',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
