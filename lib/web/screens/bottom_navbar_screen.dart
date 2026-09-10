@@ -1,3 +1,4 @@
+import '../../widgets/app_loading_overlay.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -1083,7 +1084,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const AppLoadingOverlay(
+        isFullScreen: true,
+        title: 'Carregando Sistema',
+        message: 'Preparando Calendário e abas...',
+      );
     }
     return Scaffold(
       body: Row(

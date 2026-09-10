@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,6 +19,7 @@ import '../services/push_notification_service.dart';
 import '../services/alerta_polling_service.dart';
 import '../services/login_empresa_acesso_service.dart';
 import '../widgets/empresa_selecao_screen.dart';
+import '../widgets/app_loading_overlay.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
 
@@ -153,6 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _loginInProgress = false;
+  String _loginStepMessage = 'Autenticando credenciais...';
   bool _obscurePassword = true;
 
   @override
@@ -201,13 +204,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (_formKey.currentState == null || !_formKey.currentState!.validate())
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
       return;
-    setState(() => _loginInProgress = true);
-    // Bug de producao: uma excecao nao tratada aqui (ex.: erro de
-    // configuracao em ApiLinks.login) travava o botao com o spinner ativo
-    // pra sempre, sem chamar o backend e sem nenhum erro visivel — o
-    // catch garante que _loginInProgress sempre volta a false.
+    }
+    setState(() {
+      _loginInProgress = true;
+      _loginStepMessage = 'Autenticando credenciais...';
+    });
+
     NetworkResponse resp;
     try {
       resp = await NetworkCaller().postRequest(ApiLinks.login, {
@@ -225,47 +229,65 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       return;
     }
-    setState(() => _loginInProgress = false);
+
     if (resp.isSuccess && resp.body != null) {
       final model = LoginModel.fromJson(resp.body!);
       if ((model.token ?? "").isEmpty) {
+        setState(() => _loginInProgress = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text(GridTexts.loginTokenMissing)));
         }
         return;
       }
+
+      if (mounted) {
+        setState(() => _loginStepMessage = 'Carregando módulos e permissões...');
+      }
       await AuthUtility.setUserInfo(model);
-      // reset() força releitura de empresa-modulo/parceiro-modulo para o
-      // usuário recém-logado — load() agora tem cache de sessão (guarda
-      // _loaded) para evitar chamadas de rede redundantes, então sem o
-      // reset aqui um segundo login (outro usuário/empresa) na mesma
-      // sessão web reaproveitaria indevidamente os módulos do login
-      // anterior.
       ModuloAccess.reset();
       await ModuloAccess.load();
-      await PushNotificationService.registrarDispositivoLogado();
-      await AlertaPollingService.instance.iniciar();
+
+      if (mounted) {
+        setState(() => _loginStepMessage = 'Conectando serviços e notificações...');
+      }
+
+      // Executa registro de push e polling em background de forma segura
+      unawaited(PushNotificationService.registrarDispositivoLogado().catchError((e) {
+        debugPrint('[Push] Falha ao registrar dispositivo: $e');
+      }));
+      unawaited(AlertaPollingService.instance.iniciar().catchError((e) {
+        debugPrint('[AlertaPolling] Falha ao iniciar: $e');
+      }));
+
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
+        setState(() => _loginInProgress = false);
         final email = model.login?.email ?? '';
         if (email.isNotEmpty) {
           await _showTrocarSenhaDialog(email);
         }
         return;
       }
+
+      if (mounted) {
+        setState(() => _loginStepMessage = 'Abrindo Calendário Financeiro...');
+      }
       await _abrirSelecaoEmpresaOuHome();
-    } else if (mounted) {
-      _passwordController.clear();
-      final msg = resp.statusCode == 400 || resp.statusCode == 401
-          ? GridTexts.loginInvalidCredentials
-          : resp.statusCode == -1
-              ? GridTexts.loginNoConnection
-              : 'Erro ${resp.statusCode}';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(msg, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
-      ));
+    } else {
+      setState(() => _loginInProgress = false);
+      if (mounted) {
+        _passwordController.clear();
+        final msg = resp.statusCode == 400 || resp.statusCode == 401
+            ? GridTexts.loginInvalidCredentials
+            : resp.statusCode == -1
+                ? GridTexts.loginNoConnection
+                : 'Erro ${resp.statusCode}';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red.shade700,
+        ));
+      }
     }
   }
 
@@ -443,15 +465,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [GridColors.secondary, GridColors.secondaryDark],
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [GridColors.secondary, GridColors.secondaryDark],
+              ),
+            ),
+            child: SafeArea(child: loginBanner),
           ),
-        ),
-        child: SafeArea(child: loginBanner),
+          if (_loginInProgress)
+            Positioned.fill(
+              child: AppLoadingOverlay(
+                title: 'Acessando o Sistema',
+                message: _loginStepMessage,
+              ),
+            ),
+        ],
       ),
     );
   }
