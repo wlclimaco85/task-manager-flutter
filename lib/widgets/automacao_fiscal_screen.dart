@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../services/network_caller.dart';
 import '../utils/api_links.dart';
+import '../utils/app_logger.dart';
 import '../utils/grid_colors.dart';
 import 'nfce/nfce_notice_banner.dart';
 
@@ -55,7 +56,12 @@ String tipoDocumentoLabel(String? tipo) {
 /// Compartilhada entre Web, Windows e Mobile (layout responsivo via
 /// LayoutBuilder, mesmo padrao de outras telas em lib/widgets/).
 class AutomacaoFiscalScreen extends StatefulWidget {
-  const AutomacaoFiscalScreen({super.key});
+  /// false quando embutida como aba dentro de outra tela (ex.: Config.
+  /// Sistema do admin_panel, que ja tem seu proprio AppBar/TabBar) -- evita
+  /// Scaffold/AppBar duplicado.
+  final bool showAppBar;
+
+  const AutomacaoFiscalScreen({super.key, this.showAppBar = true});
 
   @override
   State<AutomacaoFiscalScreen> createState() => _AutomacaoFiscalScreenState();
@@ -63,7 +69,6 @@ class AutomacaoFiscalScreen extends StatefulWidget {
 
 class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   static const _kCompactoBreakpoint = 760.0;
-  static const _unidades = ['HORAS', 'DIAS', 'MESES'];
 
   final _formKey = GlobalKey<FormState>();
   final _pastaRaizCtrl = TextEditingController();
@@ -119,9 +124,12 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         _ultimoResultado = body['ultimoResultado']?.toString();
       } else if (!resp.isSuccess && resp.statusCode != 200) {
         _erroCarregamento = 'Erro ao carregar configuração (status ${resp.statusCode}).';
+        AppLogger.i.warn(
+            '[AutomacaoFiscal] Erro ao carregar config (status ${resp.statusCode})');
       }
-    } catch (e) {
+    } catch (e, st) {
       _erroCarregamento = 'Erro ao carregar configuração: $e';
+      AppLogger.i.error('[AutomacaoFiscal] Erro ao carregar config: $e', st);
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
@@ -137,8 +145,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         _logs = List<Map<String, dynamic>>.from(
             (resp.body as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
       }
-    } catch (_) {
-      // Historico e' informativo -- nao trava o resto da tela se falhar.
+    } catch (e, st) {
+      // Historico e' informativo -- nao trava o resto da tela se falhar,
+      // mas precisa registrar pro Console de Logs (regra de monitoramento).
+      AppLogger.i.error('[AutomacaoFiscal] Erro ao carregar histórico: $e', st);
     } finally {
       if (mounted) setState(() => _carregandoLogs = false);
     }
@@ -164,9 +174,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         await _carregar();
       } else {
         _snack('Erro ao salvar (status ${resp.statusCode}).', error: true);
+        AppLogger.i.warn('[AutomacaoFiscal] Erro ao salvar config (status ${resp.statusCode})');
       }
-    } catch (e) {
+    } catch (e, st) {
       if (mounted) _snack('Erro ao salvar: $e', error: true);
+      AppLogger.i.error('[AutomacaoFiscal] Erro ao salvar config: $e', st);
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
@@ -184,9 +196,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       } else {
         _snack('Erro ao executar (status ${resp.statusCode}). Salve a configuração primeiro.',
             error: true);
+        AppLogger.i.warn('[AutomacaoFiscal] Erro ao executar agora (status ${resp.statusCode})');
       }
-    } catch (e) {
+    } catch (e, st) {
       if (mounted) _snack('Erro ao executar: $e', error: true);
+      AppLogger.i.error('[AutomacaoFiscal] Erro ao executar agora: $e', st);
     } finally {
       if (mounted) setState(() => _executando = false);
     }
@@ -201,6 +215,32 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final corpo = _carregando
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_erroCarregamento != null) _erroBanner(),
+                    _configCard(),
+                    const SizedBox(height: 16),
+                    _statusBanner(),
+                    const SizedBox(height: 16),
+                    _historicoCard(),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+    if (!widget.showAppBar) {
+      return Container(color: GridColors.pageBackground, child: corpo);
+    }
+
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
       appBar: AppBar(
@@ -215,27 +255,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           ),
         ],
       ),
-      body: _carregando
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 900),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_erroCarregamento != null) _erroBanner(),
-                      _configCard(),
-                      const SizedBox(height: 16),
-                      _statusBanner(),
-                      const SizedBox(height: 16),
-                      _historicoCard(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      body: corpo,
     );
   }
 
