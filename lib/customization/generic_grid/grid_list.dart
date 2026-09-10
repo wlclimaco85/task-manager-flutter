@@ -330,8 +330,12 @@ class _GridListScreenState extends State<GridListScreen> {
 
     try {
       final resp = await NetworkCaller().getRequest(url);
-      if (resp.statusCode == 200 && resp.body != null) {
-        final body = resp.body;
+      final body = resp.body;
+      // `resp.body` e' um getter -- o null-check precisa acontecer sobre a
+      // variavel local `body` (nao sobre `resp.body` de novo) pra o Dart
+      // conseguir promover o tipo de Map<String, dynamic>? pra
+      // Map<String, dynamic> no resto do bloco.
+      if (resp.statusCode == 200 && body != null) {
         final list = extractAnyList(body is Map ? (body['data'] ?? body['dados'] ?? body) : body);
         final total = (body is Map
                 ? ((body['totalElements'] ??

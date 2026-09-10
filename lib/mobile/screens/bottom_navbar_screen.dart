@@ -509,8 +509,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     required List<String> labelKeys,
   }) async {
     final response = await NetworkCaller().getRequest(endpoint);
-    if (!response.isSuccess || response.body == null) return [];
     final body = response.body;
+    // `response.body` e' um getter -- o null-check precisa acontecer sobre
+    // a variavel local `body` (nao sobre `response.body` de novo) pra o
+    // Dart conseguir promover o tipo de Map<String, dynamic>? pra
+    // Map<String, dynamic> no resto da funcao.
+    if (!response.isSuccess || body == null) return [];
     final dynamic dataNode = (body is Map) ? body['data'] : body;
     final raw = (dataNode is Map)
         ? (dataNode['dados'] ?? dataNode['content'] ?? dataNode['items'] ?? dataNode)
