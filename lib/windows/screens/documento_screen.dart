@@ -807,10 +807,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: const SimpleAppBar(
-        title: 'Calendário Financeiro',
-        icon: Icons.calendar_month_rounded,
-      ),
       body: Column(
         children: [
           _buildToolbar(),
