@@ -106,6 +106,9 @@ const entityRelationshipFields = [
   'setor',
   'centroCusto',
   'formaPagamento',
+  'regime',
+  'regimeTributario',
+  'regime_tributario',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(

@@ -33,4 +33,9 @@ const Map<String, List<FieldConfigWindows>> kScreenFieldOverrides = {
     // parceiroDev: override já definido inline na tela (dropdown enum); não duplicar aqui
     // parceiroRec: requer TenantContext em runtime, não pode ser const; definido na tela
   ],
+
+  'parceiro': [
+    FieldConfigWindows(fieldName: 'modulo_servicos', label: '', isInForm: false, isInGrid: false, isVisibleByDefault: false),
+    FieldConfigWindows(fieldName: 'modulosServico', label: '', isInForm: false, isInGrid: false, isVisibleByDefault: false),
+  ],
 };

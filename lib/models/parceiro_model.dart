@@ -114,6 +114,7 @@ class Parceiro {
   int? diaVencimentoMensalidade;
 
   String? observacao;
+  String? ambiente;
 
   Parceiro({
     this.id,
@@ -133,6 +134,7 @@ class Parceiro {
     this.valorMensal,
     this.diaVencimentoMensalidade,
     this.observacao,
+    this.ambiente,
   });
 
   Parceiro.fromJson(Map<String, dynamic> json) {
@@ -154,10 +156,13 @@ class Parceiro {
     regime = json['regime'] != null
         ? RegimeTributario.fromJson(json['regime'])
         : null;
-    valorMensal = json['valorMensal']?.toDouble();
+    valorMensal = json['valorMensal']?.toDouble() ??
+        (json['valor_mensal'] as num?)?.toDouble();
     diaVencimentoMensalidade =
-        (json['diaVencimentoMensalidade'] as num?)?.toInt();
+        (json['diaVencimentoMensalidade'] as num?)?.toInt() ??
+            (json['dia_vencimento_mensalidade'] as num?)?.toInt();
     observacao = json['observacao'];
+    ambiente = json['ambiente']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -179,6 +184,7 @@ class Parceiro {
     data['valorMensal'] = valorMensal;
     data['diaVencimentoMensalidade'] = diaVencimentoMensalidade;
     data['observacao'] = observacao;
+    if (ambiente != null) data['ambiente'] = ambiente;
     return data;
   }
 
@@ -346,6 +352,21 @@ class Parceiro {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: diaVencimentoOptions,
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+    ),
+    const FieldConfigWindows(
+      label: "Ambiente SEFAZ",
+      fieldName: "ambiente",
+      icon: Icons.cloud,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: [
+        {'value': 'PRODUCAO', 'label': 'Produção'},
+        {'value': 'HOMOLOGACAO', 'label': 'Homologação'},
+      ],
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
