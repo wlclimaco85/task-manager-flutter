@@ -15,7 +15,6 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/boleto_viewer_widget.dart';
-import '../../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
 import './baixa_dialog.dart';
 import './baixa_dialog_receber.dart';
@@ -414,8 +413,7 @@ Future<dynamic> _fetchFinancialJson(String url) async {
 }
 
 class WindowsCalendarScreen extends StatefulWidget {
-  final bool showAppBar;
-  const WindowsCalendarScreen({super.key, this.showAppBar = false});
+  const WindowsCalendarScreen({super.key});
 
   @override
   State<WindowsCalendarScreen> createState() => _WindowsCalendarScreenState();
@@ -648,26 +646,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     }
   }
 
-  // Baixa o boleto realmente postado/importado (BoletoImportServiceImpl),
-  // persistido em ContaPagar/ContaReceber.file (FileAttachment). Distinto do
-  // _abrirBoletoViewer acima, que le do sistema separado de AnexoFinanceiro.
-  Future<void> _baixarBoletoPostado(int fileId, String fileName) async {
-    try {
-      final status = await UploadFileCaller().downloadFile(fileId, fileName);
-      if (status != 200 && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar boleto (status $status).')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar boleto: $e')),
-        );
-      }
-    }
-  }
-
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
     final first = DateTime(month.year, month.month, 1);
@@ -753,30 +731,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
-    for (final item in items.unknown) {
-      final dateStr = _dateKey(item);
-      if (dateStr.isEmpty) continue;
-      final date = DateTime.tryParse(dateStr);
-      if (date == null) continue;
-      final isBaixa = _isBaixada(item);
-      final tributo = _hasDocumentoFiscal(item);
-      if (_isTipo(item, 'RECEBER')) {
-        addMarker(
-          dateStr,
-          receber: !isBaixa,
-          recebido: isBaixa,
-          tributo: tributo,
-        );
-      } else {
-        addMarker(
-          dateStr,
-          pagar: !isBaixa,
-          pago: isBaixa,
-          tributo: tributo,
-        );
-      }
-    }
-
     if (!mounted) return;
     setState(() {
       // Merge: preserva marcadores de outros meses já carregados
@@ -853,20 +807,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: widget.showAppBar
-          ? const SimpleAppBar(
-              title: 'Calendário Financeiro',
-              icon: Icons.calendar_month_rounded,
-            )
-          : null,
+      appBar: const SimpleAppBar(
+        title: 'Calendário Financeiro',
+        icon: Icons.calendar_month_rounded,
+      ),
       body: Column(
         children: [
           _buildToolbar(),
-          // Pedido do usuario: tela demorava a abrir apos login sem nenhum
-          // aviso visivel de carregamento (so havia um spinner de 16px no
-          // botao de refresh, facil de nao perceber) -- parecia "travada".
-          if (_loadingMonth || _loadingDay)
-            const LinearProgressIndicator(minHeight: 3, color: GridColors.primary),
           Expanded(
             child: _viewMode == 'day'
                 ? _buildSingleDayView()
@@ -1461,8 +1408,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         '';
 
     final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
-    final boletoFileId = (item['boletoFileId'] as num?)?.toInt();
-    final boletoFileName = item['boletoFileName'] as String? ?? 'boleto.pdf';
 
     final today = DateTime.now();
     final vencStr = _dateKey(item);
@@ -1577,16 +1522,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 color: GridColors.primary,
                 tooltip: 'Boleto viewer',
                 onTap: () => _abrirBoletoViewer(item, isPagar: isPagar),
-              ),
-            ],
-            if (boletoFileId != null) ...[
-              const SizedBox(width: 4),
-              _contaActionButton(
-                icon: Icons.download,
-                color: GridColors.primary,
-                tooltip: 'Baixar boleto',
-                onTap: () =>
-                    _baixarBoletoPostado(boletoFileId, boletoFileName),
               ),
             ],
             const SizedBox(width: 6),

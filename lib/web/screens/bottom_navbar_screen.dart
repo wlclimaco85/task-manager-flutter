@@ -1,4 +1,3 @@
-import '../../widgets/app_loading_overlay.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -9,6 +8,7 @@ import '../../features/agendamento/agendamento_module.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
+import '../../../services/alerta_polling_service.dart';
 import '../../../utils/security_matrix.dart';
 import '../../services/alert_caller.dart';
 import './aplicativo_screen.dart';
@@ -59,6 +59,7 @@ import './dividendo_grid_screen.dart';
 import './order_grid_screen.dart';
 import './pedido_grid_screen.dart';
 import './ticket_grid_screen.dart';
+import './alerta_aluno_grid_screen.dart';
 import './avaliacao_fisica_grid_screen.dart';
 import './academia_grid_screen.dart';
 import './conta_bancaria_grid_screen.dart';
@@ -86,8 +87,7 @@ import './consulta_dfe_screen.dart';
 import './manifestacao_destinatario_screen.dart';
 import './ponto_web_screen.dart';
 import './ponto_solicitacao_screen.dart';
-import 'ponto_ajuste_screen.dart';
-import 'relatorio_ponto_screen.dart';
+import './ponto_ajuste_screen.dart';
 import './configuracoes_sistema_screen.dart';
 import './chatMessageListScreen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
@@ -97,22 +97,16 @@ import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/screens/trading_config_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../features/trading/screens/carteira_screen.dart';
-import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/menu_config.dart';
 import '../../widgets/app_sidebar.dart';
-import '../../widgets/alertas/alertas_manuais_screen.dart';
-import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
-import '../../widgets/empresa_selecao_screen.dart';
 import '../../widgets/internal_tab_strip.dart';
-import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../models/open_tab.dart';
 import './alvara_grid_screen.dart';
 import './fornecedor_grid_screen.dart';
 import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
-import './certificado_empresa_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
@@ -208,6 +202,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       _openInitialTab();
     });
     _startPeriodicFetch();
+    unawaited(AlertaPollingService.instance.iniciar());
   }
 
   // ── Gerenciamento de abas internas ───────────────────────────────────────
@@ -386,7 +381,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebPedidoGridScreen(hasPermission: (p) => true), // 39: Pedidos
       WebConfiguracoesAdminScreen(
           hasPermission: (p) => true), // 40: ConfigAdmin
-      const AlertasManuaisScreen(), // 41: Alertas
+      WebAlertaAlunoGridScreen(hasPermission: (p) => true), // 41: AlertaAluno
       WebAvaliacaoFisicaGridScreen(
           hasPermission: (p) => true), // 42: AvaliacaoFisica
       WebContaBancariaGridScreen(
@@ -469,8 +464,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const CobrancaScreen(), // 105: Inadimplência e Cobrança
       const RenegociacaoScreen(), // 106: Renegociação de Títulos
       const WebDreScreen(), // 107: DRE Gerencial
-      WebTabelaPrecoScreen(
-          hasPermission: (p) => true), // 108: Tabela de Preços e Descontos
+      WebTabelaPrecoScreen(hasPermission: (p) => true), // 108: Tabela de Preços e Descontos
       const WebAprovacaoCompraScreen(), // 109: Aprovação de Compras
       const WindowsDevolucaoGridScreen(), // 110: Devoluções
       const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
@@ -500,8 +494,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 133
       const SizedBox.shrink(), // 134
       const SizedBox.shrink(), // 135
-      const InstagramMonitorScreen(), // 136: Instagram Monitor
-      const ChatKanbanScreen(), // 137: Kanban Chat
+       const InstagramMonitorScreen(), // 136: Instagram Monitor
+        const ChatKanbanScreen(), // 137: Kanban Chat
       const WebAtividadeDiariaScreen(), // 138: Atividade Diaria
       const DiarioNutricionalScreen(), // 139: Diario Nutricional
       const WebHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
@@ -510,8 +504,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       ), // 141: Historico de Treinos
       const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
       const DpDashboardScreen(), // 143: Dashboard DP
-      const RelatorioPontoScreen(), // 144: Relatórios DP/RH
-      const DashboardComercialMercadoriasScreen(), // 145: Dashboard Comercial
+      const SizedBox.shrink(), // 144: reservado
+      const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
       const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
       const SizedBox.shrink(), // 147: reservado
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
@@ -523,80 +517,36 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       ), // 151: Anamnese Digital
       const CalendarioTributarioScreen(), // 152: Calendario Tributario
       const ComunicadoCircularScreen(), // 153: Comunicados Circular
-      const RegistroCargaScreen(
-          sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
+      const RegistroCargaScreen(sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
       const FrequenciaScreen(), // 155: Frequencia Semanal
-      DynamicGridDynamicScreen(
-          telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
-      FaturarContratosScreen(), // 157: Faturar Contratos
-      DynamicGridDynamicScreen(
-          telaNome: 'equipamento',
-          hasPermission: (p) => true), // 158: Equipamentos
-      DynamicGridDynamicScreen(
-          telaNome: 'ordem_servico',
-          hasPermission: (p) => true), // 159: Ordens de Serviço
-      DynamicGridDynamicScreen(
-          telaNome: 'plano_manutencao',
-          hasPermission: (p) => true), // 160: Planos Manutenção
-      DynamicGridDynamicScreen(
-          telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
-      DynamicGridDynamicScreen(
-          telaNome: 'historico_manutencao',
-          hasPermission: (p) => true), // 162: Histórico Manutenção
-      DynamicGridDynamicScreen(
-          telaNome: 'tecnico_manutencao_screen',
-          hasPermission: (p) => true), // 163: Técnicos
-      DynamicGridDynamicScreen(
-          telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
+      DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
+      const SizedBox.shrink(), // 157: reservado
+      DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
+      DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
+      DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
+      DynamicGridDynamicScreen(telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
+      DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
+      DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
+      DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
       const SizedBox.shrink(), // 165: reservado
-      DynamicGridDynamicScreen(
-          telaNome: 'fila_atendimento_screen',
-          hasPermission: (p) => true), // 166: Filas Atendimento
-      DynamicGridDynamicScreen(
-          telaNome: 'categoria_chamado_screen',
-          hasPermission: (p) => true), // 167: Categorias Chamado
-      DynamicGridDynamicScreen(
-          telaNome: 'chamado_avaliacao_screen',
-          hasPermission: (p) => true), // 168: Avaliações
-      DynamicGridDynamicScreen(
-          telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
+      DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
+      DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
+      DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
+      DynamicGridDynamicScreen(telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
       const SizedBox.shrink(), // 170: reservado
-      DynamicGridDynamicScreen(
-          telaNome: 'projeto_etapa', hasPermission: (p) => true), // 171: Etapas
-      DynamicGridDynamicScreen(
-          telaNome: 'projeto_recurso',
-          hasPermission: (p) => true), // 172: Recursos
-      DynamicGridDynamicScreen(
-          telaNome: 'projeto_apontamento',
-          hasPermission: (p) => true), // 173: Apontamentos
-      DynamicGridDynamicScreen(
-          telaNome: 'projeto_medicao',
-          hasPermission: (p) => true), // 174: Medições
-      DynamicGridDynamicScreen(
-          telaNome: 'cargo_recurso',
-          hasPermission: (p) => true), // 175: Cargos/Recursos
-      DynamicGridDynamicScreen(
-          telaNome: 'precificacao',
-          hasPermission: (p) => true), // 176: Precificações
+      DynamicGridDynamicScreen(telaNome: 'projeto_etapa_screen', hasPermission: (p) => true), // 171: Etapas
+      DynamicGridDynamicScreen(telaNome: 'projeto_recurso_screen', hasPermission: (p) => true), // 172: Recursos
+      DynamicGridDynamicScreen(telaNome: 'projeto_apontamento_screen', hasPermission: (p) => true), // 173: Apontamentos
+      DynamicGridDynamicScreen(telaNome: 'projeto_medicao_screen', hasPermission: (p) => true), // 174: Medições
+      DynamicGridDynamicScreen(telaNome: 'cargo_recurso_screen', hasPermission: (p) => true), // 175: Cargos/Recursos
+      DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 176: Precificações
       const SizedBox.shrink(), // 177: reservado
-      DynamicGridDynamicScreen(
-          telaNome: 'custo_direto',
-          hasPermission: (p) => true), // 178: Custos Diretos
-      DynamicGridDynamicScreen(
-          telaNome: 'mao_de_obra',
-          hasPermission: (p) => true), // 179: Mão de Obra
-      DynamicGridDynamicScreen(
-          telaNome: 'precificacao_servico',
-          hasPermission: (p) => true), // 180: Serviços
-      DynamicGridDynamicScreen(
-          telaNome: 'condicao_pagamento',
-          hasPermission: (p) => true), // 181: Condições Pagamento
-      DynamicGridDynamicScreen(
-          telaNome: 'proposta_comercial',
-          hasPermission: (p) => true), // 182: Propostas Comerciais
+      DynamicGridDynamicScreen(telaNome: 'precificacao_custo_direto_screen', hasPermission: (p) => true), // 178: Custos Diretos
+      DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra', hasPermission: (p) => true), // 179: Mão de Obra
+      DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
+      DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
+      DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
-      const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
-      const LoginEmpresaAcessoAprovacaoScreen(), // 185: PermissoesMultiEmpresa
     ];
   }
 
@@ -639,24 +589,6 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       notificationOverlay?.remove();
     } catch (_) {}
     notificationOverlay = null;
-  }
-
-  Future<void> _handleTrocarEmpresa() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EmpresaSelecaoScreen()),
-    );
-    if (!mounted) return;
-    ModuloAccess.reset();
-    await ModuloAccess.load();
-    if (mounted) {
-      setState(() {
-        _screens = _buildScreensList();
-        _openTabs.clear();
-        _activeTabIndex = 0;
-        _openInitialTab();
-      });
-    }
   }
 
   void showNotificationDropdown(BuildContext context, Offset position) {
@@ -710,249 +642,203 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                               topRight: Radius.circular(12),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.notifications_outlined,
-                                  color: GridColors.textPrimary, size: 20),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  'Notificações',
-                                  style: TextStyle(
-                                    color: GridColors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
-                                  ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_outlined,
+                              color: GridColors.textPrimary, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Notificações',
+                              style: TextStyle(
+                                color: GridColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          if (totalNaoLidas > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GridColors.secondary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '$totalNaoLidas',
+                                style: const TextStyle(
+                                  color: GridColors.textPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              if (totalNaoLidas > 0)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: GridColors.secondary,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '$totalNaoLidas',
-                                    style: const TextStyle(
-                                      color: GridColors.textPrimary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: closeNotificationDropdown,
-                                borderRadius: BorderRadius.circular(20),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4),
-                                  child: Icon(Icons.close,
-                                      color: GridColors.textPrimaryMuted,
-                                      size: 18),
+                            ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: closeNotificationDropdown,
+                            borderRadius: BorderRadius.circular(20),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.close,
+                                  color: GridColors.textPrimaryMuted, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Ação "Marcar todas como lidas" ─────────────────────
+                    if (notifications.isNotEmpty)
+                      InkWell(
+                        onTap: () =>
+                            deleteAllNotifications(context, position),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: const BoxDecoration(
+                            color: GridColors.filterBackground,
+                            border: Border(
+                              bottom: BorderSide(
+                                  color: GridColors.divider, width: 1),
+                            ),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.done_all,
+                                  size: 16, color: GridColors.secondary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Marcar todas como lidas',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: GridColors.secondary,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      ),
 
-                        // ── Ações: Marcar lidas e Limpar todas ─────────────────
-                        if (notifications.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: const BoxDecoration(
-                              color: GridColors.filterBackground,
-                              border: Border(
-                                bottom: BorderSide(
-                                    color: GridColors.divider, width: 1),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                InkWell(
-                                  key: const Key(
-                                      'notificacoes_marcar_lidas_web_btn'),
-                                  onTap: () =>
-                                      deleteAllNotifications(context, position),
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 4),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.done_all,
-                                            size: 15,
-                                            color: GridColors.secondary),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'Marcar lidas',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: GridColors.secondary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                    // ── Lista ou estado vazio ───────────────────────────────
+                    notifications.isNotEmpty
+                        ? Flexible(
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              itemCount: notifications.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: GridColors.divider,
+                                  indent: 16,
+                                  endIndent: 16),
+                              itemBuilder: (_, i) {
+                                final n = notifications[i];
+                                final icone = _iconeParaTipo(n.status);
+                                final corIcone = _corParaTipo(n.status);
+                                final dataRelativa =
+                                    _dataRelativa(n.data);
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Ícone de tipo
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: corIcone.withOpacity(0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                      ],
-                                    ),
+                                        child: Icon(icone,
+                                            size: 18, color: corIcone),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      // Texto e data
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              n.texto,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                color: GridColors.textSecondary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              dataRelativa,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: GridColors.textMuted,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Botão marcar lida
+                                      InkWell(
+                                        onTap: () => deleteNotification(n),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(6),
+                                          child: Icon(Icons.check_circle_outline,
+                                              size: 18,
+                                              color: GridColors.secondary),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.notifications_off_outlined,
+                                    size: 48, color: GridColors.divider),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Sem notificações',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: GridColors.textMuted,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const Spacer(),
-                                InkWell(
-                                  key: const Key(
-                                      'notificacoes_limpar_todas_btn'),
-                                  onTap: () =>
-                                      deleteAllNotifications(context, position),
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 4),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.delete_sweep_outlined,
-                                            size: 15, color: GridColors.error),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          'Limpar todas',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: GridColors.error,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Você está em dia!',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: GridColors.textMuted),
                                 ),
                               ],
                             ),
                           ),
-
-                        // ── Lista ou estado vazio ───────────────────────────────
-                        notifications.isNotEmpty
-                            ? Flexible(
-                                child: ListView.separated(
-                                  shrinkWrap: true,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  itemCount: notifications.length,
-                                  separatorBuilder: (_, __) => const Divider(
-                                      height: 1,
-                                      thickness: 1,
-                                      color: GridColors.divider,
-                                      indent: 16,
-                                      endIndent: 16),
-                                  itemBuilder: (_, i) {
-                                    final n = notifications[i];
-                                    final icone = _iconeParaTipo(n.status);
-                                    final corIcone = _corParaTipo(n.status);
-                                    final dataRelativa = _dataRelativa(n.data);
-
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Ícone de tipo
-                                          Container(
-                                            width: 36,
-                                            height: 36,
-                                            decoration: BoxDecoration(
-                                              color: corIcone.withOpacity(0.12),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(icone,
-                                                size: 18, color: corIcone),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          // Texto e data
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  n.texto,
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                    color: GridColors
-                                                        .textSecondary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  maxLines: 3,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 3),
-                                                Text(
-                                                  dataRelativa,
-                                                  style: const TextStyle(
-                                                    fontSize: 11,
-                                                    color: GridColors.textMuted,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          // Botão marcar lida
-                                          InkWell(
-                                            onTap: () => deleteNotification(n),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(6),
-                                              child: Icon(
-                                                  Icons.check_circle_outline,
-                                                  size: 18,
-                                                  color: GridColors.secondary),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
-                            : Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 40),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.notifications_off_outlined,
-                                        size: 48, color: GridColors.divider),
-                                    SizedBox(height: 12),
-                                    Text(
-                                      'Sem notificações',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: GridColors.textMuted,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Você está em dia!',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: GridColors.textMuted),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          );
+            ),
+          ),
+        ],
+      );
         } catch (_) {
           closeNotificationDropdown();
           rethrow;
@@ -1084,11 +970,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const AppLoadingOverlay(
-        isFullScreen: true,
-        title: 'Carregando Sistema',
-        message: 'Preparando Calendário e abas...',
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
       body: Row(
@@ -1106,7 +988,6 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
               showNotificationDropdown(context, box.localToGlobal(Offset.zero));
             },
             onLogout: _handleLogout,
-            onTrocarEmpresa: _handleTrocarEmpresa,
             userName: userName,
             userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                 AuthUtility.userInfo?.login?.email ??

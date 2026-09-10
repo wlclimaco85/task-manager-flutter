@@ -21,7 +21,6 @@ class AppSidebar extends StatefulWidget {
   final int unreadAlerts;
   final VoidCallback onNotificationTap;
   final VoidCallback onLogout;
-  final VoidCallback? onTrocarEmpresa;
   final String userName;
   final String userEmail;
 
@@ -34,7 +33,6 @@ class AppSidebar extends StatefulWidget {
     required this.unreadAlerts,
     required this.onNotificationTap,
     required this.onLogout,
-    this.onTrocarEmpresa,
     required this.userName,
     required this.userEmail,
   });
@@ -68,21 +66,13 @@ class _AppSidebarState extends State<AppSidebar> {
     // Itens exclusivos do dono do sistema (wlclimaco@gmail.com).
     const ownerOnly = {'match', 'timeline', 'instagram_monitor'};
     if (ownerOnly.contains(item.id)) {
-      final email = _getUserEmail().toLowerCase();
+      final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
-    // Quando o backend enviou permissões RBAC, elas são a fonte de verdade.
-    // Snapshot vazio também é decisão válida: nenhuma tela liberada.
-    final permissionService = PermissionService();
-    if (permissionService.hasPermissionSnapshot) {
-      return permissionService.canViewScreen(item.id);
+    // Primeiro: verificar permissões dinâmicas do backend via PermissionService
+    if (PermissionService().canViewScreen(item.id)) {
+      return true;
     }
-    final sessionPermissoes = AuthUtility.userInfo?.permissoes;
-    if (sessionPermissoes != null) {
-      permissionService.setPermissoes(sessionPermissoes);
-      return permissionService.canViewScreen(item.id);
-    }
-
     // Fallback: manter compatibilidade com SecurityMatrix (módulos legados)
     // Converte item.id (snake_case) para camelCase para comparar com telaNome (backend).
     final camelCaseId = StringUtils.snakeToCamelCase(item.id);
@@ -95,10 +85,8 @@ class _AppSidebarState extends State<AppSidebar> {
     _computeAllowed();
     _applyDefaultExpansion();
     _loadFavorites();
-    AuthUtility.sessionVersion.addListener(_onSessionChanged);
     _searchCtrl.addListener(() {
-      if (mounted && !_disposed)
-        setState(() => _searchQuery = _searchCtrl.text);
+      if (mounted && !_disposed) setState(() => _searchQuery = _searchCtrl.text);
     });
   }
 
@@ -141,14 +129,8 @@ class _AppSidebarState extends State<AppSidebar> {
   @override
   void dispose() {
     _disposed = true;
-    AuthUtility.sessionVersion.removeListener(_onSessionChanged);
     _searchCtrl.dispose();
     super.dispose();
-  }
-
-  void _onSessionChanged() {
-    if (!mounted || _disposed) return;
-    setState(() {});
   }
 
   void _computeAllowed() {
@@ -168,25 +150,23 @@ class _AppSidebarState extends State<AppSidebar> {
 
   Future<void> _toggleFavorite(String itemId) async {
     final newState = await FavoritesService.toggle(_userId, itemId);
-    if (mounted && !_disposed)
-      setState(() {
-        if (newState) {
-          _favorites.add(itemId);
-        } else {
-          _favorites.remove(itemId);
-        }
-      });
+    if (mounted && !_disposed) setState(() {
+      if (newState) {
+        _favorites.add(itemId);
+      } else {
+        _favorites.remove(itemId);
+      }
+    });
   }
 
   void _toggleGroup(String groupId) {
-    if (mounted && !_disposed)
-      setState(() {
-        if (_expandedGroups.contains(groupId)) {
-          _expandedGroups.remove(groupId);
-        } else {
-          _expandedGroups.add(groupId);
-        }
-      });
+    if (mounted && !_disposed) setState(() {
+      if (_expandedGroups.contains(groupId)) {
+        _expandedGroups.remove(groupId);
+      } else {
+        _expandedGroups.add(groupId);
+      }
+    });
   }
 
   void _navigate(MenuItem item) {
@@ -208,61 +188,35 @@ class _AppSidebarState extends State<AppSidebar> {
   /// Suporta strings que já trazem prefixo "data:image/...;base64," do backend.
   /// Fix WR-04: usa MIME type genérico `image/*` para suportar PNG, JPEG, etc.
   Uint8List _getUserAvatar() {
-    final candidates = [
-      AuthUtility.userInfo?.login?.foto,
-      AuthUtility.userInfo?.data?.login?.foto,
-      AuthUtility.userInfo?.data?.photo,
-      AuthUtility.userInfo?.data?.codDadosPessoal?.photo,
-    ];
-    for (final raw in candidates) {
-      final avatar = _decodeUserAvatar(raw);
-      if (avatar.isNotEmpty) return avatar;
-    }
-    return Uint8List(0);
-  }
-
-  Uint8List _decodeUserAvatar(String? raw) {
+    final raw = AuthUtility.userInfo?.login?.foto ??
+        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
     if (raw == null || raw.trim().isEmpty) return Uint8List(0);
     try {
       final base64Only = raw.contains(';base64,')
           ? raw.substring(raw.indexOf(';base64,') + 8)
           : raw.trim();
       // Usa generic MIME type para suportar múltiplos formatos de imagem
-      final UriData? data = Uri.parse('data:image/*;base64,$base64Only').data;
+      final UriData? data =
+          Uri.parse('data:image/*;base64,$base64Only').data;
       if (data != null) return data.contentAsBytes();
     } catch (_) {}
     return Uint8List(0);
   }
 
   /// Nome da empresa ou parceiro do usuário logado.
-  /// Se o usuário for de um parceiro, prioriza o nome do parceiro.
   String _getCompanyName() {
-    final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome?.trim();
-    if (parceiroNome != null && parceiroNome.isNotEmpty) {
-      return parceiroNome;
-    }
-    return AuthUtility.userInfo?.login?.empresa?.nome?.trim() ??
-        AuthUtility.userInfo?.data?.login?.empresa?.nome?.trim() ??
+    return AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.nome ??
         '';
-  }
-
-  String _getUserEmail() {
-    return AuthUtility.userInfo?.login?.email ??
-        AuthUtility.userInfo?.data?.email ??
-        widget.userEmail;
-  }
-
-  String _getUserName() {
-    return AuthUtility.userInfo?.login?.nome ?? widget.userName;
   }
 
   /// Inicial para o avatar: usa o email (sempre disponível) em vez do nome.
   /// Strategy email-first: garante consistência visual entre plataformas.
   /// Fix WR-02: evita divergência cliente vs web de avatar initial.
   String _avatarInitial() {
-    final email = _getUserEmail();
+    final email = widget.userEmail;
     if (email.isNotEmpty) return email[0].toUpperCase();
-    final name = _getUserName();
+    final name = widget.userName;
     if (name.isNotEmpty) return name[0].toUpperCase();
     return 'U';
   }
@@ -404,9 +358,9 @@ class _AppSidebarState extends State<AppSidebar> {
                   children: [
                     // Linha 1: email (identificador principal do usuário)
                     Text(
-                      _getUserEmail().isNotEmpty
-                          ? _getUserEmail()
-                          : _getUserName(),
+                      widget.userEmail.isNotEmpty
+                          ? widget.userEmail
+                          : widget.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -431,35 +385,9 @@ class _AppSidebarState extends State<AppSidebar> {
                   widget.onNotificationTap,
                   badge: widget.unreadAlerts),
               const SizedBox(width: 4),
-              if (widget.onTrocarEmpresa != null &&
-                  AuthUtility.podeTrocarEmpresa) ...[
-                _iconBtn(Icons.swap_horiz, _textMuted, widget.onTrocarEmpresa!),
-                const SizedBox(width: 4),
-              ],
               _iconBtn(Icons.logout, _textMuted, widget.onLogout),
             ],
           ),
-          if (widget.onTrocarEmpresa != null && AuthUtility.podeTrocarEmpresa)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: InkWell(
-                onTap: widget.onTrocarEmpresa,
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  child: Row(
-                    children: [
-                      Icon(Icons.swap_horiz, color: _textMuted, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        'Trocar Empresa',
-                        style: TextStyle(color: _textMuted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

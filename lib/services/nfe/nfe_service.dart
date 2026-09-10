@@ -27,7 +27,7 @@ typedef LogCallback = void Function(String message);
 /// ```
 class NFeService {
   final Dio dio;
-  late LogCallback onLog;
+  late LogCallback _onLog;
 
   /// Configurações de retry
   static const Duration _backoffInitial = Duration(milliseconds: 500);
@@ -39,7 +39,15 @@ class NFeService {
     required this.dio,
     LogCallback? onLog,
   }) {
-    this.onLog = onLog ?? _defaultLog;
+    _onLog = onLog ?? _defaultLog;
+  }
+
+  /// Callback para logging (getter)
+  LogCallback get onLog => _onLog;
+
+  /// Callback para logging (setter — pode ser sobrescrito em testes)
+  set onLog(LogCallback callback) {
+    _onLog = callback;
   }
 
   /// Transmitir NFe para SEFAZ via backend com retry automático.
@@ -68,8 +76,7 @@ class NFeService {
     int maxRetries = _maxRetriesDefault,
     Duration timeout = _timeoutDefault,
   }) async {
-    _log(
-        'Iniciando transmissão NFe (nfeId=$nfeId, rpsId=$rpsId, maxRetries=$maxRetries, timeout=${timeout.inSeconds}s)');
+    _log('Iniciando transmissão NFe (nfeId=$nfeId, rpsId=$rpsId, maxRetries=$maxRetries, timeout=${timeout.inSeconds}s)');
 
     int tentativa = 0;
     NFeServiceException? ultimoErro;
@@ -77,8 +84,7 @@ class NFeService {
     while (tentativa <= maxRetries) {
       try {
         tentativa++;
-        _log(
-            'Transmissão tentativa $tentativa/${maxRetries + 1} (nfeId=$nfeId)');
+        _log('Transmissão tentativa $tentativa/${maxRetries + 1} (nfeId=$nfeId)');
 
         final response = await _transmitirComTimeout(
           nfeId: nfeId,
@@ -86,8 +92,7 @@ class NFeService {
           timeout: timeout,
         );
 
-        _log(
-            'Transmissão sucesso (nfeId=$nfeId, protocolo=${response.protocolo}, tentativa=$tentativa)');
+        _log('Transmissão sucesso (nfeId=$nfeId, protocolo=${response.protocolo}, tentativa=$tentativa)');
         return response;
       } on DioException catch (e) {
         ultimoErro = _handleDioException(e, nfeId, tentativa);
@@ -95,19 +100,17 @@ class NFeService {
         // Não faz retry em erros 4xx (exceto timeout/connection)
         final isClientError = _isClientError(e);
         if (isClientError) {
-          _log(
-              'Erro cliente não-retentável (nfeId=$nfeId, status=${e.response?.statusCode}, tentativa=$tentativa)');
+          _log('Erro cliente não-retentável (nfeId=$nfeId, status=${e.response?.statusCode}, tentativa=$tentativa)');
           throw ultimoErro;
         }
 
         // Faz retry para timeouts e 5xx
         if (tentativa <= maxRetries) {
           final delayMs = _calcularBackoff(tentativa - 1);
-          _log(
-              'Retry agendado (nfeId=$nfeId, tentativa=$tentativa, delayMs=$delayMs)');
+          _log('Retry agendado (nfeId=$nfeId, tentativa=$tentativa, delayMs=$delayMs)');
           await Future.delayed(Duration(milliseconds: delayMs));
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         _log('Erro inesperado (nfeId=$nfeId, tentativa=$tentativa): $e');
         throw NFeServiceException(
           'Erro inesperado durante transmissão: $e',
@@ -118,9 +121,7 @@ class NFeService {
 
     // Esgotou retries
     _log('Transmissão falhou após $tentativa tentativas (nfeId=$nfeId)');
-    throw ultimoErro ??
-        NFeServiceException(
-            'Falha ao transmitir NFe após $tentativa tentativas');
+    throw ultimoErro ?? NFeServiceException('Falha ao transmitir NFe após $tentativa tentativas');
   }
 
   /// Transmitir com timeout configurado
@@ -143,8 +144,7 @@ class NFeService {
     );
 
     if (response.statusCode == 200 || response.statusCode == 202) {
-      return NfeTransmissaoResponse.fromJson(
-          response.data as Map<String, dynamic>);
+      return NfeTransmissaoResponse.fromJson(response.data as Map<String, dynamic>);
     }
 
     throw DioException(
@@ -210,8 +210,7 @@ class NFeService {
     final statusCode = e.response?.statusCode;
     final descricao = _descricaoErro(e);
 
-    _log(
-        'DioException (nfeId=$nfeId, tentativa=$tentativa, status=$statusCode): $descricao');
+    _log('DioException (nfeId=$nfeId, tentativa=$tentativa, status=$statusCode): $descricao');
 
     return NFeServiceException(
       descricao,
@@ -222,7 +221,7 @@ class NFeService {
 
   /// Log estruturado
   void _log(String message) {
-    onLog(message);
+    _onLog(message);
   }
 
   /// Logger padrão (pode ser substituído em testes)

@@ -6,41 +6,25 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../customization/dynamic_grid_windows_screen.dart' hide SecurityCheck;
+import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../models/alvara_model.dart';
 import '../../models/auth_utility.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType, CustomAction, SecurityCheck;
+    show FieldConfigWindows, FieldType, CustomAction;
 import './ged_arquivos_screen.dart';
 
-// Correcao minima (autorizada pelo usuario) para destravar erro de
-// compilacao: este arquivo declarava seu proprio typedef SecurityCheck,
-// duplicado do que ja existe em generic_grid_windows_screen.dart. Quando
-// os dois eram importados sem prefixo no mesmo arquivo (ex.: telas de
-// detail de Parceiro/Empresa que passaram a importar alvara_grid_screen.dart
-// para a nova aba "Alvaras"), o Dart nao consegue resolver qual
-// SecurityCheck usar -- erro "is imported from both". Nao muda nenhuma
-// logica/funcionalidade da feature de Alvaras, so remove a duplicacao de
-// tipo e importa o typedef canonico.
+// Alias de tipo para checar permissões (mesmo padrão dos outros screens)
+typedef SecurityCheck = bool Function(String permission);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tela Web/Windows de Alvarás
 // ─────────────────────────────────────────────────────────────────────────────
 class WebAlvaraGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
-  final Map<String, dynamic>? extraParams;
-  final Map<String, dynamic>? additionalFormData;
-  final bool showAppBar;
 
-  const WebAlvaraGridScreen({
-    super.key,
-    required this.hasPermission,
-    this.extraParams,
-    this.additionalFormData,
-    this.showAppBar = true,
-  });
+  const WebAlvaraGridScreen({super.key, required this.hasPermission});
 
   // ── Dropdown helpers ────────────────────────────────────────────────────────
   static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
@@ -55,10 +39,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
       if (r.statusCode != 200) return [];
       final body = jsonDecode(r.body);
       final List lista = body['data']?['dados'] ?? body['data'] ?? [];
-      return lista
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      return lista.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
     } catch (_) {
       return [];
     }
@@ -99,9 +80,6 @@ class WebAlvaraGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => AlvaraModel.fromJson(json),
       toJson: (a) => a.toJson(),
-      extraParams: extraParams,
-      additionalFormData: additionalFormData,
-      showAppBar: showAppBar,
 
       fieldOverrides: [
         // ── Suprimir IDs de FK brutos ──────────────────────────────────────
@@ -171,11 +149,11 @@ class WebAlvaraGridScreen extends StatelessWidget {
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () async => const [
             {'id': 'Funcionamento', 'nome': 'Funcionamento'},
-            {'id': 'Sanitário', 'nome': 'Sanitário'},
-            {'id': 'Bombeiros', 'nome': 'Bombeiros'},
-            {'id': 'Ambiental', 'nome': 'Ambiental'},
-            {'id': 'Publicidade', 'nome': 'Publicidade'},
-            {'id': 'Outros', 'nome': 'Outros'},
+            {'id': 'Sanitário',     'nome': 'Sanitário'},
+            {'id': 'Bombeiros',     'nome': 'Bombeiros'},
+            {'id': 'Ambiental',     'nome': 'Ambiental'},
+            {'id': 'Publicidade',   'nome': 'Publicidade'},
+            {'id': 'Outros',        'nome': 'Outros'},
           ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -263,15 +241,13 @@ class WebAlvaraGridScreen extends StatelessWidget {
           label: 'Ver GED',
           isVisible: (item) => item.id != null,
           onPressed: (ctx, item) {
-            Navigator.push(
-                ctx,
-                MaterialPageRoute(
-                  builder: (_) => GedArquivosScreen(
-                    moduloOrigem: 'alvara',
-                    idOrigem: item.id,
-                    nomeOrigem: item.descricao,
-                  ),
-                ));
+            Navigator.push(ctx, MaterialPageRoute(
+              builder: (_) => GedArquivosScreen(
+                moduloOrigem: 'alvara',
+                idOrigem: item.id,
+                nomeOrigem: item.descricao,
+              ),
+            ));
           },
         ),
       ],
@@ -295,7 +271,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
     final arquivo = result.files.first;
     final bytes = arquivo.bytes ?? Uint8List(0);
     if (bytes.isEmpty) {
-      if (!context.mounted) return; // guard após await
+      if (!context.mounted) return;                     // guard após await
       _snack(context, 'Arquivo vazio.', Colors.red);
       return;
     }
@@ -315,14 +291,14 @@ class WebAlvaraGridScreen extends StatelessWidget {
 
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
-      if (!context.mounted) return; // guard após await
+      if (!context.mounted) return;                     // guard após await
       if (resp.statusCode == 200) {
         _snack(context, 'PDF enviado com sucesso!', Colors.green);
       } else {
         _snack(context, 'Erro ao enviar PDF (${resp.statusCode}).', Colors.red);
       }
     } catch (e) {
-      if (!context.mounted) return; // guard no catch
+      if (!context.mounted) return;                     // guard no catch
       _snack(context, 'Erro: $e', Colors.red);
     }
   }
@@ -355,9 +331,11 @@ class WebAlvaraGridScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Icon(Icons.picture_as_pdf, size: 64, color: Colors.red),
+                  const Icon(Icons.picture_as_pdf,
+                      size: 64, color: Colors.red),
                   const SizedBox(height: 12),
-                  SelectableText(url, style: const TextStyle(fontSize: 13)),
+                  SelectableText(url,
+                      style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.open_in_new),

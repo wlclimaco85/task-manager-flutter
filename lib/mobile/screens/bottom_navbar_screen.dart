@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
-import 'package:task_manager_flutter/services/permission_service.dart';
+import 'package:task_manager_flutter/services/alerta_polling_service.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
@@ -21,17 +20,14 @@ import 'chatMessageListScreen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/agendamento/agendamento_module.dart';
-import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
-import '../../services/ged_download_service.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
-import '../../web/screens/manifestacao_destinatario_screen.dart';
 import 'documento_screen.dart';
 import 'meu_perfil_screen.dart';
 import 'ponto_screen.dart';
@@ -50,11 +46,8 @@ import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
-import '../../widgets/alertas/alertas_manuais_screen.dart';
-import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
-import 'dashboard_financeiro_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -77,6 +70,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     _alertTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) _fetchAlerts();
     });
+    unawaited(AlertaPollingService.instance.iniciar());
   }
 
   @override
@@ -230,19 +224,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
 
     // 5. GED (gateado)
-    // Bug de producao (3 dias, so' mobile -- web funcionava com o mesmo
-    // login): mobile checava sec.canView(AppScreen.ged), que normaliza a
-    // chave de permissao pelo NOME DO ENUM DART ('ged'). O web (app_sidebar
-    // .dart) checa PermissionService.canViewScreen('ged'), que traduz o id
-    // do menu pra tela_nome REAL via _menuIdToTelaNome['ged'] = 'Arquivos'
-    // (normaliza pra 'arquivos'). Sao DUAS chaves diferentes ('ged' vs
-    // 'arquivos') pra checar a MESMA permissao real gravada no banco --
-    // como o cadastro em produção usa 'Arquivos' (que e' o que aparece na
-    // tela de Perfis), canView(AppScreen.ged) nunca encontrava a permissao,
-    // mesmo com o cadastro correto e mesmo apos reinstalar/relogar. Trocado
-    // pra usar o mesmo PermissionService do web, eliminando a duplicidade.
     items.add(
-      PermissionService().canViewScreen('ged')
+      sec.canView(AppScreen.ged)
           ? _gedDynamicGrid(sec)
           : _buildGatedPlaceholder('GED indisponível'),
     );
@@ -253,39 +236,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return items;
   }
 
-  // Bug de producao: este placeholder existe pra manter o IndexedStack com
-  // o mesmo numero de filhos da barra de abas quando o usuario nao tem
-  // permissao pra uma aba (Calendario/Chat/Comunicados/Chamados/GED) -- mas
-  // retornava SizedBox.shrink() ignorando a mensagem 'msg' recebida, entao
-  // a aba ficava com a tela em branco (sem erro, sem texto, sem indicacao
-  // nenhuma), parecendo quebrada em vez de "sem permissao". Mostra a
-  // mensagem de verdade, com o mesmo padrao visual ja usado em
-  // SemAcessoScreen (ver import 'sem_acesso_screen.dart') pra tela inteira,
-  // mas mais leve/inline pra caber dentro de uma unica aba.
+  /// Placeholder para slots sem permissão (evita IndexedStack quebrar).
   Widget _buildGatedPlaceholder(String msg) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_outline, size: 56, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              msg,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Entre em contato com o responsavel pelo seu cadastro para solicitar acesso.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
@@ -332,54 +285,28 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   /// Baixa o arquivo do GED (mobile) — mesma acao ja existente no Web.
-  ///
-  /// Bug de producao: quando `item['id']` nao dava pra converter pra int,
-  /// a funcao retornava na hora (`if (id == null) return;`) SEM nenhum
-  /// feedback -- nem SnackBar, nem log -- exatamente o "clica e nao
-  /// acontece nada" reportado. E mesmo os catches existentes so mostravam
-  /// SnackBar, sem chamar AppLogger -- entao um erro real de rede/download
-  /// tambem nunca aparecia no Console de Logs local nem no monitoramento
-  /// de producao (AppLogger.error/warn e' o que alimenta o
-  /// SistemaErrorReporter, ver app_logger.dart). Agora todo caminho de
-  /// falha loga E mostra feedback.
   Future<void> _baixarArquivo(
       BuildContext ctx, Map<String, dynamic> item) async {
-    final id = int.tryParse('${item['id']}');
-    if (id == null) {
-      AppLogger.i.warn(
-        'Download de GED cancelado: item sem id valido (${item['id']}). item=$item',
+    final id = item['id'];
+    if (id == null) return;
+    try {
+      final response = await NetworkCaller().getRequest(
+        ApiLinks.downloadArquivo(id.toString()),
       );
-      if (ctx.mounted) {
+      if (!ctx.mounted) return;
+      if (response.isSuccess) {
         ScaffoldMessenger.of(ctx).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Não foi possível identificar o arquivo para baixar.'),
-          ),
+          const SnackBar(content: Text('Download iniciado.')),
+        );
+      } else {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text('Erro ao baixar arquivo: ${response.statusCode}')),
         );
       }
-      return;
-    }
-    final nome = (item['fileName'] ?? item['nome'] ?? 'arquivo_$id').toString();
-    try {
-      final caminho = await GedDownloadService().download(id, nome);
-      AppLogger.i
-          .info('GED: arquivo $id ($nome) baixado e compartilhado -> $caminho');
+    } catch (e) {
       if (!ctx.mounted) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        const SnackBar(content: Text('Arquivo baixado com sucesso.')),
-      );
-    } on GedDownloadException catch (e, st) {
-      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
-      if (!ctx.mounted) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        SnackBar(content: Text('Erro ao baixar arquivo: ${e.statusCode}')),
-      );
-    } catch (e, st) {
-      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
-      if (!ctx.mounted) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        const SnackBar(content: Text('Erro ao baixar arquivo.')),
-      );
+      ScaffoldMessenger.of(ctx)
+          .showSnackBar(SnackBar(content: Text('Erro ao baixar arquivo: $e')));
     }
   }
 
@@ -512,20 +439,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     required List<String> labelKeys,
   }) async {
     final response = await NetworkCaller().getRequest(endpoint);
-    final body = response.body;
-    // `response.body` e' um getter -- o null-check precisa acontecer sobre
-    // a variavel local `body` (nao sobre `response.body` de novo) pra o
-    // Dart conseguir promover o tipo de Map<String, dynamic>? pra
-    // Map<String, dynamic> no resto da funcao.
-    if (!response.isSuccess || body == null) return [];
-    final dynamic dataNode = body['data'];
-    final raw = (dataNode is Map)
-        ? (dataNode['dados'] ??
-            dataNode['content'] ??
-            dataNode['items'] ??
-            dataNode)
-        : (dataNode ?? (body['dados'] ?? body['content'] ?? body['items']));
-    if (raw is! List) return [];
+    final raw = response.body?['data']?['dados'] ??
+        response.body?['data'] ??
+        response.body?['content'] ??
+        response.body;
+    if (!response.isSuccess || raw is! List) return [];
 
     return raw
         .whereType<Map>()
@@ -1000,24 +918,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
-      case "Dashboard Financeiro":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardFinanceiroMobileScreen(),
-          ),
-        );
-        break;
-      case "Dashboard Comercial":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardComercialMercadoriasScreen(
-              showAppBar: true,
-            ),
-          ),
-        );
-        break;
       case "Trading":
         nav = Navigator.push(
           context,
@@ -1045,13 +945,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ConfigFiscalScreen()),
-        );
-        break;
-      case "Manifestação Destinatário":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => const ManifestacaoDestinatarioScreen()),
         );
         break;
       case "CRM/Funil":
@@ -1096,12 +989,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const MobileMensalidadeScreen()),
         );
         break;
-      case "Alertas":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AlertasManuaisScreen()),
-        );
-        break;
       case "Alvarás":
         nav = Navigator.push(
           context,
@@ -1132,12 +1019,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Contratos GME":
         nav = _pushDynamicGrid(telaNome: 'contrato', sec: sec);
         break;
-      case "Faturar Contratos":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => FaturarContratosScreen()),
-        );
-        break;
       case "Equipamentos":
         nav = _pushDynamicGrid(telaNome: 'equipamento', sec: sec);
         break;
@@ -1151,7 +1032,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'horimetro', sec: sec);
         break;
       case "Histórico Manutenção":
-        nav = _pushDynamicGrid(telaNome: 'historico_manutencao', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
         break;
       case "Técnicos":
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
@@ -1174,38 +1056,43 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'projeto', sec: sec);
         break;
       case "Etapas Projeto":
-        nav = _pushDynamicGrid(telaNome: 'projeto_etapa', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_etapa_screen', sec: sec);
         break;
       case "Recursos Projeto":
-        nav = _pushDynamicGrid(telaNome: 'projeto_recurso', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_recurso_screen', sec: sec);
         break;
       case "Apontamentos":
-        nav = _pushDynamicGrid(telaNome: 'projeto_apontamento', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'projeto_apontamento_screen', sec: sec);
         break;
       case "Medições":
-        nav = _pushDynamicGrid(telaNome: 'projeto_medicao', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto_medicao_screen', sec: sec);
         break;
       case "Cargos/Recursos":
-        nav = _pushDynamicGrid(telaNome: 'cargo_recurso', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'cargo_recurso_screen', sec: sec);
         break;
       // Precificação
       case "Precificações":
-        nav = _pushDynamicGrid(telaNome: 'precificacao', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'precificacao_screen', sec: sec);
         break;
       case "Custos Diretos":
-        nav = _pushDynamicGrid(telaNome: 'custo_direto', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_custo_direto_screen', sec: sec);
         break;
       case "Mão de Obra":
-        nav = _pushDynamicGrid(telaNome: 'mao_de_obra', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_mao_de_obra', sec: sec);
         break;
       case "Serviços Precificação":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_servico', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'precificacao_servico_screen', sec: sec);
         break;
       case "Condições Pagamento":
-        nav = _pushDynamicGrid(telaNome: 'condicao_pagamento', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_condicao_pagamento_screen', sec: sec);
         break;
       case "Propostas Comerciais":
-        nav = _pushDynamicGrid(telaNome: 'proposta_comercial', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'proposta_comercial_screen', sec: sec);
         break;
       case "Agendar NFe Recorrente":
         nav = Navigator.push(
@@ -1232,7 +1119,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     foregroundColor: Colors.white),
                 onPressed: () async {
                   Navigator.pop(context);
-                  ModuloAccess.reset();
                   await AuthUtility.clearUserInfo();
                   if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
@@ -1406,8 +1292,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         'GME',
         Icons.precision_manufacturing,
         [
+          _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
           _MoreMenuAction(Icons.description, 'Contratos GME'),
-          _MoreMenuAction(Icons.receipt_long, 'Faturar Contratos'),
           _MoreMenuAction(Icons.build, 'Equipamentos'),
           _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
           _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),
@@ -1466,44 +1352,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
           if (sec.canView(AppScreen.logins))
             _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
-          if (sec.canView(AppScreen.comunicados))
-            _MoreMenuAction(Icons.notifications_active, 'Alertas'),
           _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))
             _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
-          if (sec.canView(AppScreen.configFiscal))
-            _MoreMenuAction(Icons.settings, 'Config Fiscal'),
+          _MoreMenuAction(Icons.settings, 'Config Fiscal'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
       ),
     ];
 
-    // Bug de producao (video do usuario): os grupos GME, Service Desk,
-    // Projetos e Precificacao apareciam pra TODO mundo, mesmo sem o modulo
-    // contratado e sem nenhuma permissao de tela -- os itens desses 4
-    // grupos ainda nao tem AppScreen/RBAC modelado (feature nova, sem
-    // integracao de tela/permissao ainda), entao nunca passavam por
-    // sec.canView() como os outros grupos. Ate esses modulos ganharem
-    // permissao granular de tela, a unica garantia possivel e' pelo modulo
-    // contratado da empresa (ModuloAccess.modulosContratados) -- os mesmos
-    // 4 nomes usados aqui tem que bater com o que a tela de Modulos
-    // Contratados grava no backend.
-    const gruposSemPermissaoGranular = {
-      'GME',
-      'Service Desk',
-      'Projetos',
-      'Precificação',
-    };
-
-    // Filtra grupos sem itens visiveis, e os 4 grupos acima sem modulo
-    // contratado (deny-by-default: sem contrato, sem exibir).
-    final gruposVisiveis = modulos
-        .where((g) => g.items.isNotEmpty)
-        .where((g) =>
-            !gruposSemPermissaoGranular.contains(g.nome) ||
-            contratados.contains(g.nome))
-        .toList();
+    // Filtra apenas grupos com itens visíveis
+    final gruposVisiveis = modulos.where((g) => g.items.isNotEmpty).toList();
 
     showModalBottomSheet(
       context: context,
@@ -1604,29 +1464,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   );
                 }),
                 const SizedBox(height: 8),
-                // Pedido do usuario: mostrar a versao instalada (mesma que
-                // sobe pro Google Play via fastlane -- versionName+versionCode
-                // do AndroidManifest, lidos em runtime via package_info_plus)
-                // pra facilitar confirmar se o app ja atualizou depois de um
-                // fix, sem precisar ir em Configuracoes do Android.
-                FutureBuilder<PackageInfo>(
-                  future: PackageInfo.fromPlatform(),
-                  builder: (context, snapshot) {
-                    final info = snapshot.data;
-                    if (info == null) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Versão ${info.version} (build ${info.buildNumber})',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    );
-                  },
-                ),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

@@ -5,7 +5,6 @@ import '../../services/network_caller.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
-import '../../services/ged_download_service.dart';
 import '../widgets/ged_file_card_mobile.dart';
 
 /// Tela GED mobile — lista arquivos em GridView com cards responsivos
@@ -87,43 +86,21 @@ class _GedArquivosMobileScreenState extends State<GedArquivosMobileScreen> {
 
   /// Download arquivo
   Future<void> _baixarArquivo(Map<String, dynamic> arq) async {
-    final id = int.tryParse('${arq['id']}');
-    if (id == null) return;
-    final nome = (arq['fileName'] ?? arq['nome'] ?? 'arquivo_$id').toString();
+    final id = arq['id'];
     L.i('[GedMobile] baixando arquivo $id');
-    try {
-      await GedDownloadService().download(id, nome);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arquivo baixado com sucesso.')),
-        );
-      }
-    } on GedDownloadException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar arquivo: ${e.statusCode}')),
-        );
-      }
-    } catch (e) {
-      L.e('[GedMobile] erro download: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao baixar arquivo.')),
-        );
-      }
-    }
+    // TODO: Implementar download_helper.downloadFile(id)
   }
 
   /// Renomear arquivo
-  Future<bool> _renomearArquivo(
-      Map<String, dynamic> arq, String novoNome) async {
+  Future<bool> _renomearArquivo(Map<String, dynamic> arq, String novoNome) async {
     final id = arq['id'];
     L.i('[GedMobile] renomeando arquivo $id para $novoNome');
 
     try {
       final url = ApiLinks.baseUrl + '/ged/$id/rename';
       final body = {'fileName': novoNome};
-      final resp = await NetworkCaller().postRequest(url, body);
+      final resp = await NetworkCaller()
+          .postRequest(url, body);
 
       if (resp.statusCode == 200) {
         // Atualizar estado local
@@ -221,7 +198,8 @@ class _GedArquivosMobileScreenState extends State<GedArquivosMobileScreen> {
                       child: Text('Nenhum arquivo encontrado'),
                     )
                   : GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                       ),
                       itemCount: _arquivos.length,
@@ -229,8 +207,7 @@ class _GedArquivosMobileScreenState extends State<GedArquivosMobileScreen> {
                         final arq = _arquivos[idx];
                         return GedFileCardMobile(
                           arq: arq,
-                          podeExcluir: arq['usuarioUploadId']?.toString() ==
-                              TenantContext.userId?.toString(),
+                          podeExcluir: true, // TODO: Validar permissão
                           onDownload: () => _baixarArquivo(arq),
                           onDelete: () => _excluirArquivo(arq),
                           onRename: (novoNome) =>

@@ -4,7 +4,6 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/nfse_model.dart';
-import 'details/nfse_detail_screen.dart';
 
 class NfseConsultaScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -69,16 +68,7 @@ class _NfseConsultaScreenState extends State<NfseConsultaScreen> {
         });
       }
     } catch (e) {
-      // BUG produção (card #504): mostrava o toString() cru da exceção
-      // ("Erro: NfseException(400): ...") -- NfseException já carrega uma
-      // mensagem de negócio legível (extraída do corpo da resposta em
-      // _extractError); exibida direto quando disponível, com fallback
-      // pro toString() genérico só pra exceções de outro tipo (ex.: erro
-      // de rede).
-      if (mounted) {
-        setState(() => _resultadoEmissao =
-            e is NfseException ? 'Erro: ${e.message}' : 'Erro: $e');
-      }
+      if (mounted) setState(() => _resultadoEmissao = 'Erro: $e');
     } finally {
       if (mounted) setState(() => _emitindo = false);
     }
@@ -203,7 +193,6 @@ class _NfseConsultaScreenState extends State<NfseConsultaScreen> {
       toJson: (obj) => obj.toJson(),
       hasPermission: widget.hasPermission,
       fieldConfigs: Nfse.fieldConfigs,
-      detailScreenBuilder: (item) => MobileNfseDetailScreen(item: item.toJson()),
       idFieldName: 'id',
       dateFieldName: 'dataEmissao',
       useUserBannerAppBar: true,

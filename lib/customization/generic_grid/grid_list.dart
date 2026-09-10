@@ -16,7 +16,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/app_logger.dart'; // L.d/L.i/L.w/L.e
-import '../../../utils/grid_user_preferences_key.dart';
 import '../../../widgets/user_banners.dart';
 
 import 'grid_helpers.dart';
@@ -186,30 +185,13 @@ class _GridListScreenState extends State<GridListScreen> {
   }
 
   String get _prefsKeyBase => '${widget.storageKey}_${widget.title}';
-  String get _columnPrefsKeyBase => GridUserPreferencesKey.base(
-        storageKey: widget.storageKey,
-        title: widget.title,
-      );
-  List<String> get _legacyColumnPrefsKeyBases => [
-        GridUserPreferencesKey.legacyBase(
-          storageKey: widget.storageKey,
-          title: widget.title,
-        ),
-        GridUserPreferencesKey.storageOnlyLegacyBase(widget.storageKey),
-      ];
 
   Future<void> _loadFieldPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       for (final c in widget.fieldConfigs) {
-        bool? saved = prefs.getBool(
-          GridUserPreferencesKey.columnKey(_columnPrefsKeyBase, c.fieldName),
-        );
-        for (final legacyKey in _legacyColumnPrefsKeyBases) {
-          saved ??= prefs.getBool(
-            GridUserPreferencesKey.legacyColumnKey(legacyKey, c.fieldName),
-          );
-        }
+        // Sincroniza com grid_page.dart: chave sem "_field_" no meio (card #425)
+        final saved = prefs.getBool('$_prefsKeyBase${c.fieldName}');
         if (saved != null) _fieldVisibility[c.fieldName] = saved;
       }
     } catch (e) {
@@ -221,8 +203,9 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       for (final c in widget.fieldConfigs) {
+        // Sincroniza com grid_page.dart: chave sem "_field_" no meio (card #425)
         await prefs.setBool(
-          GridUserPreferencesKey.columnKey(_columnPrefsKeyBase, c.fieldName),
+          '$_prefsKeyBase${c.fieldName}',
           _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
         );
       }
@@ -347,19 +330,17 @@ class _GridListScreenState extends State<GridListScreen> {
 
     try {
       final resp = await NetworkCaller().getRequest(url);
-      final body = resp.body;
-      // `resp.body` e' um getter -- o null-check precisa acontecer sobre a
-      // variavel local `body` (nao sobre `resp.body` de novo) pra o Dart
-      // conseguir promover o tipo de Map<String, dynamic>? pra
-      // Map<String, dynamic> no resto do bloco.
-      if (resp.statusCode == 200 && body != null) {
+      if (resp.statusCode == 200 && resp.body != null) {
+        // NetworkResponse._toMap já normaliza List do backend em {'data': [...]},
+        // então body é sempre Map e a lista sai de data/dados.
+        final body = resp.body ?? <String, dynamic>{};
         final list = extractAnyList(body['data'] ?? body['dados'] ?? body);
-        final total = (body['totalElements'] ??
+        final total = ((body['totalElements'] ??
                 body['total'] ??
                 (body['data'] is Map ? body['data']['totalElements'] : null) ??
                 (body['dados'] is Map
                     ? body['dados']['totalElements']
-                    : null)) as int? ??
+                    : null))) as int? ??
             list.length;
 
         setState(() {

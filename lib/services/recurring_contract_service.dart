@@ -49,11 +49,8 @@ class RecurringContractService {
   }
 
   Future<List<RecurringContract>> listContracts({int? empresaId}) async {
-    final url = empresaId == null
-        ? ApiLinks.allRecurringContracts
-        : '${ApiLinks.allRecurringContracts}?empresaId=$empresaId';
     final response = await http.get(
-      Uri.parse(TenantContext.applyToUrl(url)),
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.allRecurringContracts)),
       headers: TenantContext.jsonHeaders,
     );
 

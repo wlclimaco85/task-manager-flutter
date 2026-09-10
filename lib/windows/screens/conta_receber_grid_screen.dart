@@ -14,14 +14,12 @@ import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
 import '../../../widgets/boleto_importacao_lote_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows, FieldType;
+import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows, FieldType;
 import '../../../windows/screens/baixa_dialog_receber.dart';
 import '../../../windows/dialogs/parcelar_receber_dialog.dart';
 import '../../../windows/dialogs/recorrencia_receber_dialog.dart';
 import '../../../windows/dialogs/renegociacao_receber_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
-import '../../../widgets/finance/financeiro_parceiro_field_rules.dart';
 import 'package:http/http.dart' as http;
 
 class WindowsContaReceberGridScreen extends StatefulWidget {
@@ -45,8 +43,7 @@ class WindowsContaReceberGridScreen extends StatefulWidget {
       _WindowsContaReceberGridScreenState();
 }
 
-class _WindowsContaReceberGridScreenState
-    extends State<WindowsContaReceberGridScreen> {
+class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridScreen> {
   bool _importing = false;
 
   String _statusFilter = GridTexts.all;
@@ -74,10 +71,8 @@ class _WindowsContaReceberGridScreenState
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
     if (_statusFilter != GridTexts.all) params['status'] = _statusFilter;
-    if (_dataInicio != null)
-      params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
-    if (_dataFim != null)
-      params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
+    if (_dataInicio != null) params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
+    if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != GridTexts.all) params['tipo'] = _tipoFilter;
     if (widget.categoriaFinanceiraIdFixa != null) {
@@ -172,10 +167,8 @@ class _WindowsContaReceberGridScreenState
     );
     if (picked != null) {
       setState(() {
-        if (isInicio)
-          _dataInicio = picked;
-        else
-          _dataFim = picked;
+        if (isInicio) _dataInicio = picked;
+        else _dataFim = picked;
       });
     }
   }
@@ -192,8 +185,7 @@ class _WindowsContaReceberGridScreenState
           spacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text(GridTexts.statusLabel,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.statusLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 140,
               height: 36,
@@ -201,37 +193,25 @@ class _WindowsContaReceberGridScreenState
                 value: _statusFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _statusOptions
-                    .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s, style: const TextStyle(fontSize: 13))))
-                    .toList(),
+                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
                 onChanged: (v) => setState(() => _statusFilter = v!),
               ),
             ),
             const SizedBox(width: 12),
-            const Text(GridTexts.periodLabel,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.periodLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             InkWell(
               onTap: () => _pickDate(isInicio: true),
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                    border: Border.all(color: GridColors.divider),
-                    borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(
-                      _dataInicio != null
-                          ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}'
-                          : GridTexts.start,
-                      style: const TextStyle(fontSize: 13)),
+                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : GridTexts.start, style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
@@ -241,23 +221,16 @@ class _WindowsContaReceberGridScreenState
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                    border: Border.all(color: GridColors.divider),
-                    borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(
-                      _dataFim != null
-                          ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}'
-                          : GridTexts.end,
-                      style: const TextStyle(fontSize: 13)),
+                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : GridTexts.end, style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
             const SizedBox(width: 12),
-            const Text(GridTexts.typeLabel,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.typeLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 130,
               height: 36,
@@ -265,15 +238,10 @@ class _WindowsContaReceberGridScreenState
                 value: _tipoFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _tipoOptions
-                    .map((t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(t, style: const TextStyle(fontSize: 13))))
-                    .toList(),
+                items: _tipoOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
                 onChanged: (v) => setState(() => _tipoFilter = v!),
               ),
             ),
@@ -283,8 +251,7 @@ class _WindowsContaReceberGridScreenState
               child: ElevatedButton.icon(
                 onPressed: _applyFilters,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text(GridTexts.filter,
-                    style: TextStyle(fontSize: 13)),
+                label: const Text(GridTexts.filter, style: TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
@@ -298,8 +265,7 @@ class _WindowsContaReceberGridScreenState
               child: OutlinedButton.icon(
                 onPressed: _clearFilters,
                 icon: const Icon(Icons.clear, size: 18),
-                label:
-                    const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
+                label: const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
@@ -313,19 +279,6 @@ class _WindowsContaReceberGridScreenState
 
   @override
   Widget build(BuildContext context) {
-    final parceiroIdContexto =
-        FinanceiroParceiroFieldRules.normalizarParceiroId(
-      TenantContext.parceiroId,
-    );
-    final parceiroSelecionado = parceiroIdContexto?.toString();
-    final parceiroHabilitado = FinanceiroParceiroFieldRules.parceiroHabilitado(
-      parceiroId: parceiroIdContexto,
-    );
-    final fornecedorHabilitado =
-        FinanceiroParceiroFieldRules.fornecedorHabilitado(
-      parceiroId: parceiroIdContexto,
-    );
-
     return Column(
       children: [
         ..._buildFilterBar(),
@@ -352,13 +305,12 @@ class _WindowsContaReceberGridScreenState
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: fornecedorHabilitado,
+                  enabled: true,
                   fieldOrder: 11,
-                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
-                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
-              // Parceiro: travado apenas quando existe parceiro no login.
+              // Parceiro: locked no parceiro do login
               FieldConfigWindows(
                   fieldName: 'parceiro',
                   label: 'Parceiro',
@@ -366,11 +318,15 @@ class _WindowsContaReceberGridScreenState
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: parceiroHabilitado,
+                  enabled: false,
                   fieldOrder: 12,
-                  dropdownSelectedValue: parceiroSelecionado,
-                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
-                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Parceiro Rec: pré-marcado com parceiro do login (editável)
@@ -383,9 +339,8 @@ class _WindowsContaReceberGridScreenState
                   fieldType: FieldType.dropdown,
                   enabled: true,
                   fieldOrder: 13,
-                  dropdownSelectedValue: parceiroSelecionado,
-                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
-                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string
@@ -407,16 +362,12 @@ class _WindowsContaReceberGridScreenState
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List
-                          ? decoded
-                          : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list
-                          .map<Map<String, dynamic>>((e) => {
-                                'value': e['descricao'] ?? e['nome'] ?? '',
-                                'label': e['descricao'] ?? e['nome'] ?? '',
-                              })
-                          .toList();
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['descricao'] ?? e['nome'] ?? '',
+                        'label': e['descricao'] ?? e['nome'] ?? '',
+                      }).toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -437,23 +388,17 @@ class _WindowsContaReceberGridScreenState
                   dropdownFutureBuilder: () async {
                     final token = AuthUtility.userInfo?.token;
                     final resp = await http.get(
-                      Uri.parse(
-                          '${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
+                      Uri.parse('${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
                       headers: {'Authorization': 'Bearer $token'},
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List
-                          ? decoded
-                          : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list
-                          .map<Map<String, dynamic>>((e) => {
-                                'value': e['value'] ?? e,
-                                'label':
-                                    e['label'] ?? e['value'] ?? e.toString(),
-                              })
-                          .toList();
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['value'] ?? e,
+                        'label': e['label'] ?? e['value'] ?? e.toString(),
+                      }).toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -496,18 +441,15 @@ class _WindowsContaReceberGridScreenState
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: GridColors.secondary),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
                       )
                     : const Icon(Icons.upload_file, size: 18),
                 label: const Text('Importar Retorno CSV'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.secondary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
               ),
               // Fix card #470: import multi-arquivo de boletos PDF com
@@ -521,8 +463,7 @@ class _WindowsContaReceberGridScreenState
                     context: context,
                     builder: (dialogContext) => Dialog(
                       child: ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(maxWidth: 900, maxHeight: 700),
+                        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
                         child: Stack(
                           children: [
                             const BoletoImportacaoLoteScreen(),
@@ -532,8 +473,7 @@ class _WindowsContaReceberGridScreenState
                               child: IconButton(
                                 icon: const Icon(Icons.close),
                                 tooltip: 'Fechar',
-                                onPressed: () =>
-                                    Navigator.of(dialogContext).pop(),
+                                onPressed: () => Navigator.of(dialogContext).pop(),
                               ),
                             ),
                           ],
@@ -547,11 +487,9 @@ class _WindowsContaReceberGridScreenState
                 label: const Text('Importar Boletos (PDF)'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.primary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
               ),
             ],
@@ -559,51 +497,44 @@ class _WindowsContaReceberGridScreenState
               CustomAction<ContaReceber>(
                 icon: Icons.receipt_long,
                 label: GridTexts.charge,
-                onPressed: (context, object) =>
-                    _showBillingDialog(context, object),
+                onPressed: (context, object) => _showBillingDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.price_check,
                 label: GridTexts.lower,
-                onPressed: (context, object) =>
-                    _showBaixaDialog(context, object),
+                onPressed: (context, object) => _showBaixaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.credit_card,
                 label: GridTexts.installment,
-                onPressed: (context, object) =>
-                    _showParcelarDialog(context, object),
+                onPressed: (context, object) => _showParcelarDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.repeat,
                 label: GridTexts.recurrence,
-                onPressed: (context, object) =>
-                    _showRecorrenciaDialog(context, object),
+                onPressed: (context, object) => _showRecorrenciaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.swap_horiz,
                 label: GridTexts.renegotiate,
-                onPressed: (context, object) =>
-                    _showRenegociacaoDialog(context, object),
+                onPressed: (context, object) => _showRenegociacaoDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.attach_file,
                 label: GridTexts.attachments,
                 badgeCount: (obj) => obj.qtdAnexos,
-                onPressed: (context, object) =>
-                    _showAnexosDialog(context, object),
+                onPressed: (context, object) => _showAnexosDialog(context, object),
                 isVisible: (obj) => obj.id != null,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.receipt,
                 label: GridTexts.billingTicket,
-                onPressed: (context, object) =>
-                    _showBoletoDialog(context, object),
+                onPressed: (context, object) => _showBoletoDialog(context, object),
                 isVisible: (obj) => obj.id != null,
               ),
             ],
@@ -642,15 +573,13 @@ class _WindowsContaReceberGridScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       color: GridColors.primary,
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.attach_file,
-                            color: GridColors.textPrimary, size: 20),
+                        const Icon(Icons.attach_file, color: GridColors.textPrimary, size: 20),
                         const SizedBox(width: 10),
                         const Expanded(
                           child: Text(
@@ -664,11 +593,9 @@ class _WindowsContaReceberGridScreenState
                         ),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close,
-                              color: GridColors.textPrimaryMuted, size: 20),
+                          icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
                           padding: EdgeInsets.zero,
-                          constraints:
-                              const BoxConstraints(minWidth: 28, minHeight: 28),
+                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                         ),
                       ],
                     ),
@@ -743,8 +670,7 @@ class _WindowsContaReceberGridScreenState
   void _showRenegociacaoDialog(BuildContext context, ContaReceber conta) {
     showDialog(
       context: context,
-      builder: (BuildContext context) =>
-          RenegociacaoReceberDialog(conta: conta),
+      builder: (BuildContext context) => RenegociacaoReceberDialog(conta: conta),
     );
   }
 }

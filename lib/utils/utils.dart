@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../../../models/auth_utility.dart';
-import 'tenant_context.dart';
+
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 /// Signature for a function that creates a widget for a given `day`.
@@ -58,16 +58,12 @@ bool isSameDay(DateTime? a, DateTime? b) {
 }
 
 int? pegarEmpresaLogada() {
-  final empresaId = TenantContext.empresaId ??
-      AuthUtility.userInfo?.login?.empresa?.id ??
-      AuthUtility.userInfo?.data?.login?.empresa?.id;
+  final empresaId = AuthUtility.userInfo?.login?.empresa?.id;
   return (empresaId != null && empresaId != 0) ? empresaId : null;
 }
 
 int? pegarParceiroLogada() {
-  final parceiroId = TenantContext.parceiroId ??
-      AuthUtility.userInfo?.login?.parceiro?.id ??
-      AuthUtility.userInfo?.data?.login?.parceiro?.id;
+  final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
   return (parceiroId != null && parceiroId != 0) ? parceiroId : null;
 }
 

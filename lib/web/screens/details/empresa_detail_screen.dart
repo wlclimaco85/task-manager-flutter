@@ -4,8 +4,6 @@ import '../../../services/network_caller.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
-import '../../../widgets/smtp_config_tab.dart';
-import '../alvara_grid_screen.dart' show WebAlvaraGridScreen;
 import '../certificado_empresa_screen.dart';
 import '../login_grid_screen.dart' show WebLoginGridScreen;
 import '../comunicado_componente_screen.dart'
@@ -16,8 +14,7 @@ class WebEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
-  const WebEmpresaDetailScreen(
-      {super.key, required this.item, required this.hasPermission});
+  const WebEmpresaDetailScreen({super.key, required this.item, required this.hasPermission});
 
   @override
   State<WebEmpresaDetailScreen> createState() => _WebEmpresaDetailScreenState();
@@ -25,17 +22,6 @@ class WebEmpresaDetailScreen extends StatefulWidget {
 
 class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
   late Map<String, dynamic> _item;
-
-  // WR-03 (code review, mesmo bug do Parceiro): GenericDetailFormScreen le
-  // _item UMA UNICA VEZ (guardado por _initialized) para preencher os chips
-  // do multiselect. _preCarregarModulos() e assincrono e antes preenchia
-  // _item bem depois desse init ja ter rodado, entao o valor buscado do
-  // backend chegava tarde demais e o campo 'modulosServico' nunca refletia
-  // o dado real. Trava a construcao do form ate o fetch terminar.
-  bool _modulosCarregados = false;
-
-  // WR-01: falha de rede nao pode virar spinner preso nem falha silenciosa.
-  String? _modulosErro;
 
   @override
   void initState() {
@@ -46,98 +32,40 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
 
   Future<void> _preCarregarModulos() async {
     final id = _item['id'];
-    if (id == null) {
-      if (mounted) setState(() => _modulosCarregados = true);
-      return;
-    }
-    try {
-      final r = await NetworkCaller().getRequest(
-        '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$id',
-      );
-      if (!r.isSuccess || r.body == null) {
-        _modulosErro =
-            'Nao foi possivel carregar Modulo Servicos (HTTP ${r.statusCode}).';
-        return;
-      }
-      final raw = r.body is List
-          ? r.body
-          : (r.body?['data'] ?? r.body?['content'] ?? []);
-      if (raw is! List) {
-        _modulosErro = 'Resposta invalida ao carregar Modulo Servicos.';
-        return;
-      }
-      final ids = raw
-          .map((e) => e['id']?.toString() ?? '')
-          .where((s) => s.isNotEmpty)
-          .join(', ');
-      _item['modulosServico'] = ids;
-    } catch (e) {
-      // Bug documentado no CLAUDE.md (spinner preso sem erro visivel).
-      _modulosErro = 'Erro ao carregar Modulo Servicos: $e';
-    } finally {
-      if (mounted) setState(() => _modulosCarregados = true);
-      if (_modulosErro != null) _avisarErroModulos();
-    }
-  }
-
-  void _avisarErroModulos() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _modulosErro == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '$_modulosErro Os modulos exibidos podem estar desatualizados.',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 6),
-        ),
-      );
-    });
+    if (id == null) return;
+    final r = await NetworkCaller().getRequest(
+      '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$id',
+    );
+    if (!r.isSuccess || r.body == null) return;
+    final raw = r.body is List ? r.body : (r.body?['data'] ?? r.body?['content'] ?? []);
+    if (raw is! List) return;
+    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    if (mounted) setState(() => _item['modulosServico'] = ids);
   }
 
   static Future<List<Map<String, dynamic>>> _loadTiposParceiro() async {
     final r = await NetworkCaller().getRequest(ApiLinks.allTipoParceiro);
     if (!r.isSuccess || r.body == null) return [];
-    final raw = r.body!['data']?['dados'] ??
-        r.body!['data'] ??
-        r.body!['content'] ??
-        r.body;
+    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
     if (raw is! List) return [];
-    return raw
-        .map<Map<String, dynamic>>((e) {
-          final label = e['descricao']?.toString() ??
-              e['nome']?.toString() ??
-              e['id']?.toString() ??
-              '';
-          return {'value': e['id']?.toString() ?? '', 'label': label};
-        })
-        .where((m) => m['value']!.isNotEmpty)
-        .toList();
+    return raw.map<Map<String, dynamic>>((e) {
+      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
+      return {'value': e['id']?.toString() ?? '', 'label': label};
+    }).where((m) => m['value']!.isNotEmpty).toList();
   }
 
   static Future<List<Map<String, dynamic>>> _loadModulosServico() async {
     final r = await NetworkCaller().getRequest(ApiLinks.allModuloServico);
     if (!r.isSuccess || r.body == null) return [];
-    final raw = r.body!['data']?['dados'] ??
-        r.body!['data'] ??
-        r.body!['content'] ??
-        r.body;
+    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
     if (raw is! List) return [];
-    return raw
-        .map<Map<String, dynamic>>((e) {
-          final label = e['descricao']?.toString() ??
-              e['nome']?.toString() ??
-              e['id']?.toString() ??
-              '';
-          return {'value': e['id']?.toString() ?? '', 'label': label};
-        })
-        .where((m) => m['value']!.isNotEmpty)
-        .toList();
+    return raw.map<Map<String, dynamic>>((e) {
+      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
+      return {'value': e['id']?.toString() ?? '', 'label': label};
+    }).where((m) => m['value']!.isNotEmpty).toList();
   }
 
-  static Future<Map<String, dynamic>> _prePopularModulos(
-      Map<String, dynamic> itemMap) async {
+  static Future<Map<String, dynamic>> _prePopularModulos(Map<String, dynamic> itemMap) async {
     final parceiroId = itemMap['id'];
     if (parceiroId == null) return itemMap;
     final r = await NetworkCaller().getRequest(
@@ -147,18 +75,14 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
     final body = r.body;
     final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
     if (raw is! List) return itemMap;
-    final ids = raw
-        .map((e) => e['id']?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .join(', ');
+    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
     return {...itemMap, 'modulo_servicos': ids};
   }
 
   /// Persiste os módulos selecionados após salvar o parceiro.
   /// Envia formato {parceiroId, modulos:[{id, valor}]} para o backend gerar
   /// ContaReceber automaticamente em módulos novos com valor > 0.
-  static Future<void> _salvarModulos(
-      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+  static Future<void> _salvarModulos(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final parceiroId = formData['id'];
     if (parceiroId == null) return;
     final raw = formData['modulo_servicos'] as String? ?? '';
@@ -175,8 +99,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
   }
 
   /// Persiste os módulos selecionados da EMPRESA após salvar.
-  Future<void> _salvarModulosEmpresa(
-      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+  Future<void> _salvarModulosEmpresa(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final empresaId = formData['id'];
     if (empresaId == null) return;
     final raw = formData['modulosServico'] as String? ?? '';
@@ -193,19 +116,15 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_modulosCarregados) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
     final id = _item['id']?.toString() ?? '';
     final empresaId = _item['id'] as int? ?? 0;
-    final empresaNome = _item['nome']?.toString() ??
-        _item['razaoSocial']?.toString() ??
-        'Empresa';
+    final empresaNome = _item['nome']?.toString() ?? _item['razaoSocial']?.toString() ?? 'Empresa';
 
     return GenericDetailFormScreen(
       item: _item,
       telaNome: 'empresa',
       hasPermission: widget.hasPermission,
+      onAfterSave: _salvarModulosEmpresa,
       fieldOverrides: [
         // fileAttachment: dropdown FK que envia "" quando vazio → 500 no backend
         // Ocultado do formulário — upload de arquivo tem tela própria
@@ -231,12 +150,15 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           isInForm: true,
         ),
         // Módulos de serviço contratados pela empresa (M:N via empresa_modulo)
-        const FieldConfigWindows(
+        FieldConfigWindows(
           label: 'Modulo Servicos',
           fieldName: 'modulosServico',
-          isInForm: false,
-          isVisibleByDefault: false,
-          enabled: false,
+          icon: Icons.settings_outlined,
+          fieldType: FieldType.multiselect,
+          dropdownFutureBuilder: _loadModulosServico,
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
           isFilterable: false,
         ),
       ],
@@ -246,6 +168,8 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
+          prefetchExtraFields: _prePopularModulos,
+          onAfterSave: _salvarModulos,
           fieldOverrides: [
             // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
             const FieldConfigWindows(
@@ -283,12 +207,15 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
             // Módulos de serviço contratados (multiselect M:N via parceiro_modulo).
             // Fix (card #466): mesmo motivo acima -- backend retorna
             // 'modulo_servicos' para a tela 'parceiro'.
-            const FieldConfigWindows(
+            FieldConfigWindows(
               label: 'Modulo Servicos',
               fieldName: 'modulo_servicos',
-              isInForm: false,
-              isVisibleByDefault: false,
-              enabled: false,
+              icon: Icons.settings_outlined,
+              fieldType: FieldType.multiselect,
+              dropdownFutureBuilder: _loadModulosServico,
+              dropdownValueField: 'value',
+              dropdownDisplayField: 'label',
+              isInForm: true,
               isFilterable: false,
             ),
           ],
@@ -325,19 +252,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': id},
-          transformFormData:
-              WebComunicadoGridComponentesScreen.transformFormData,
-        ),
-        RelatedGridTab(
-          title: 'SMTP',
-          icon: Icons.mail_outline,
-          customWidget: empresaId > 0
-              ? SmtpConfigTab(
-                  scope: SmtpConfigScope.empresa,
-                  id: empresaId,
-                  nome: empresaNome,
-                )
-              : const Center(child: Text('ID da empresa nao disponivel')),
+          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
         ),
         RelatedGridTab(
           title: 'Certificado Digital',
@@ -356,19 +271,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           extraParams: {'empId': id},
         ),
         RelatedGridTab(
-          title: 'Alvarás',
-          icon: Icons.verified_user,
-          customWidget: empresaId > 0
-              ? WebAlvaraGridScreen(
-                  hasPermission: widget.hasPermission,
-                  extraParams: {'empresa': id},
-                  additionalFormData: {'empresa': id},
-                  showAppBar: false,
-                )
-              : const Center(child: Text('ID da empresa não disponível')),
-        ),
-        RelatedGridTab(
-          title: 'Módulos de Cobrança',
+          title: 'Módulos',
           icon: Icons.settings,
           customWidget: EmpresaModulosTab(
             empresaId: empresaId,

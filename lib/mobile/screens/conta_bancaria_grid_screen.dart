@@ -7,7 +7,6 @@ import 'package:task_manager_flutter/models/conta_bancaria_model.dart';
 import 'package:task_manager_flutter/services/conta_bancaria_caller.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/utils.dart';
-import 'package:task_manager_flutter/widgets/finance/ajuste_saldo_conta_dialog.dart';
 import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
 import 'package:task_manager_flutter/widgets/finance/extrato_operacional_dialog.dart';
 import '../../utils/grid_texts.dart';
@@ -81,13 +80,6 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 _showTransferDialog(context, item, ContaBancariaCaller()),
           ),
           CustomAction<ContaBancaria>(
-            icon: Icons.account_balance_wallet_outlined,
-            label: 'Ajustar Saldo',
-            onPressed: (context, item) =>
-                _showAjusteSaldoDialog(context, item, ContaBancariaCaller()),
-            isVisible: (item) => item.id != null,
-          ),
-          CustomAction<ContaBancaria>(
             icon: Icons.picture_as_pdf,
             label: 'Extrato PDF',
             onPressed: (context, item) =>
@@ -112,28 +104,6 @@ class ContaBancariaGridScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _showAjusteSaldoDialog(
-    BuildContext context,
-    ContaBancaria conta,
-    ContaBancariaCaller caller,
-  ) async {
-    final sucesso = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (_) => AjusteSaldoContaDialog(
-        conta: conta,
-        onSalvar: ({saldoInicial, saldoFinal}) => caller.ajustarSaldo(
-          contaId: conta.id!,
-          saldoInicial: saldoInicial,
-          saldoFinal: saldoFinal,
-        ),
-      ),
-    );
-
-    if (!context.mounted || sucesso != true) return;
-    _showSuccessDialog(context, 'Saldo ajustado com sucesso!');
   }
 
   void _showTransferDialog(

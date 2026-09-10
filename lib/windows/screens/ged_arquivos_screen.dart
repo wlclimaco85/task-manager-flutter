@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
+import '../../../models/tree_node.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/dropdown_helpers.dart';
@@ -210,39 +211,69 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       _snack('Selecione uma empresa primeiro', erro: true);
       return;
     }
+
     setState(() => _carregando = true);
-    // H5-21: inclui filtro de módulo e idOrigem quando disponíveis
-    final url = ApiLinks.arquivosPorEmpresa(
-      _empresaFiltroId!,
-      parceiroId: _parceiroFiltroId,
-      modulo: _moduloOrigemFiltro,
-      idOrigem: _idOrigemFiltro,
-    );
-    final r = await NetworkCaller().getRequest(url);
-    if (!mounted) return;
-    setState(() {
-      _carregando = false;
-      if (r.isSuccess && r.body != null) {
-        final raw = r.body is List
-            ? r.body
-            : r.body!['data'] ?? r.body!['content'] ?? [];
-        if (raw is List) {
-          _arquivos = raw
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList()
-            ..sort((a, b) {
-              final da = DateTime.tryParse(a['uploadDate']?.toString() ?? '');
-              final db = DateTime.tryParse(b['uploadDate']?.toString() ?? '');
-              if (da == null && db == null) return 0;
-              if (da == null) return 1;
-              if (db == null) return -1;
-              return db.compareTo(da);
-            });
+
+    int tentativas = 0;
+    const maxTentativas = 3;
+    const delayMs = 300;
+
+    while (tentativas < maxTentativas) {
+      try {
+        final url = ApiLinks.arquivosPorEmpresa(
+          _empresaFiltroId!,
+          parceiroId: _parceiroFiltroId,
+          modulo: _moduloOrigemFiltro,
+          idOrigem: _idOrigemFiltro,
+        );
+
+        final r = await NetworkCaller().getRequest(url);
+
+        if (!mounted) return;
+
+        setState(() {
+          _carregando = false;
+          if (r.isSuccess && r.body != null) {
+            final raw = r.body is List
+                ? r.body
+                : r.body!['data'] ?? r.body!['content'] ?? [];
+            if (raw is List) {
+              _arquivos = raw
+                  .map<Map<String, dynamic>>(
+                      (e) => Map<String, dynamic>.from(e))
+                  .toList()
+                ..sort((a, b) {
+                  final da =
+                      DateTime.tryParse(a['uploadDate']?.toString() ?? '');
+                  final db =
+                      DateTime.tryParse(b['uploadDate']?.toString() ?? '');
+                  if (da == null && db == null) return 0;
+                  if (da == null) return 1;
+                  if (db == null) return -1;
+                  return db.compareTo(da);
+                });
+            }
+          } else {
+            _arquivos = [];
+          }
+        });
+
+        // Sucesso — sair do loop
+        return;
+      } catch (e) {
+        tentativas++;
+
+        if (tentativas >= maxTentativas) {
+          if (!mounted) return;
+          setState(() => _carregando = false);
+          _snack('Erro ao carregar arquivos. Tente novamente.', erro: true);
+          return;
         }
-      } else {
-        _arquivos = [];
+
+        // Delay exponencial antes de tentar novamente
+        await Future.delayed(Duration(milliseconds: delayMs * (1 << tentativas)));
       }
-    });
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -360,6 +391,161 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     } else {
       _snack('Erro ao atualizar', erro: true);
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Hierarquia de Diretórios
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// Constrói uma árvore hierárquica de diretórios a partir de um
+  /// caminho separado por barras (ex: "Fiscal/2024/Janeiro").
+  TreeNode<Map<String, dynamic>> _buildDirectoryHierarchy(
+      List<Map<String, dynamic>> arquivos) {
+    final raiz = TreeNode<Map<String, dynamic>>(name: 'root');
+    final nosMapa = <String, TreeNode<Map<String, dynamic>>>{};
+    nosMapa['root'] = raiz;
+
+    for (final arq in arquivos) {
+      final caminhoDiretorio =
+          arq['diretorioNome']?.toString().trim() ?? 'Sem pasta';
+
+      // Separa o caminho por barras
+      final partes = caminhoDiretorio.split('/');
+
+      String caminhoAtual = '';
+      TreeNode<Map<String, dynamic>>? pai = raiz;
+
+      // Navega/cria cada nível do caminho
+      for (int i = 0; i < partes.length; i++) {
+        final parte = partes[i].trim();
+        if (parte.isEmpty) continue;
+
+        caminhoAtual += (caminhoAtual.isEmpty ? '' : '/') + parte;
+
+        if (!nosMapa.containsKey(caminhoAtual)) {
+          final novoNos = TreeNode<Map<String, dynamic>>(name: parte);
+          nosMapa[caminhoAtual] = novoNos;
+          pai?.children.add(novoNos);
+        }
+        pai = nosMapa[caminhoAtual];
+      }
+
+      // Adiciona o arquivo ao nó final
+      pai?.items.add(arq);
+    }
+
+    return raiz;
+  }
+
+  /// Constrói o widget para renderizar um nó da hierarquia com DataTable2.
+  /// Se [isRoot] = true, renderiza apenas os filhos diretos.
+  Widget _buildHierarchyNode(TreeNode<Map<String, dynamic>> no,
+      {bool isRoot = false}) {
+    final fmt = DateFormat('dd/MM/yyyy HH:mm');
+
+    if (isRoot) {
+      // Renderiza raiz: lista todos os filhos
+      if (no.children.isEmpty && no.items.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.folder_open, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 12),
+              Text(
+                'Nenhum arquivo encontrado',
+                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          ...no.children
+              .map((filho) => _buildHierarchyNode(filho, isRoot: false)),
+        ],
+      );
+    }
+
+    // Renderiza nó não-raiz como ExpansionTile com DataTable2
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: GridColors.divider),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        leading: Icon(
+          Icons.folder,
+          color: GridColors.secondary,
+        ),
+        title: Text(
+          no.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: GridColors.primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${no.totalItems}',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: GridColors.primary,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
+        children: [
+          ...no.children
+              .map((filho) => _buildHierarchyNode(filho, isRoot: false)),
+          if (no.items.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: DataTable2(
+                columnSpacing: 16,
+                horizontalMargin: 16,
+                minWidth: 600,
+                headingRowColor: WidgetStateProperty.all(
+                    GridColors.secondary.withValues(alpha: 0.1)),
+                headingTextStyle: const TextStyle(
+                  color: GridColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                columns: const [
+                  DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
+                  DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
+                  DataColumn2(label: Text('Parceiro'), size: ColumnSize.M),
+                  DataColumn2(label: Text('Data Upload'), size: ColumnSize.M),
+                  DataColumn2(
+                      label: Text('Ações'), size: ColumnSize.M, numeric: false),
+                ],
+                rows: no.items.map((arq) => _buildRow(arq, fmt)).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -572,103 +758,11 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       );
     }
 
-    // Agrupa por diretório (null/vazio → "Sem pasta")
-    final Map<String, List<Map<String, dynamic>>> grupos = {};
-    for (final arq in filtrados) {
-      final dir = arq['diretorioNome']?.toString().trim();
-      final chave = (dir == null || dir.isEmpty) ? 'Sem pasta' : dir;
-      grupos.putIfAbsent(chave, () => []).add(arq);
-    }
+    // Constrói a hierarquia de diretórios
+    final hierarquia = _buildDirectoryHierarchy(filtrados);
 
-    // Ordena as chaves: "Sem pasta" por último
-    final chaves = grupos.keys.toList()
-      ..sort((a, b) {
-        if (a == 'Sem pasta') return 1;
-        if (b == 'Sem pasta') return -1;
-        return a.compareTo(b);
-      });
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: chaves.map((chave) {
-        final itens = grupos[chave]!;
-        return _buildDiretorioSecao(chave, itens);
-      }).toList(),
-    );
-  }
-
-  Widget _buildDiretorioSecao(
-      String nomeDir, List<Map<String, dynamic>> itens) {
-    final fmt = DateFormat('dd/MM/yyyy HH:mm');
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: GridColors.divider),
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: true,
-        leading: Icon(
-          nomeDir == 'Sem pasta' ? Icons.inbox : Icons.folder,
-          color: nomeDir == 'Sem pasta' ? Colors.grey : GridColors.secondary,
-        ),
-        title: Text(
-          nomeDir,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: GridColors.primarySoft,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${itens.length}',
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: GridColors.primary,
-                    fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Icon(Icons.expand_more),
-          ],
-        ),
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(8),
-              bottomRight: Radius.circular(8),
-            ),
-            child: DataTable2(
-              columnSpacing: 16,
-              horizontalMargin: 16,
-              minWidth: 600,
-              headingRowColor: WidgetStateProperty.all(
-                  GridColors.secondary.withValues(alpha: 0.1)),
-              headingTextStyle: const TextStyle(
-                color: GridColors.textSecondary,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-              columns: const [
-                DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
-                DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
-                DataColumn2(label: Text('Parceiro'), size: ColumnSize.M),
-                DataColumn2(label: Text('Data Upload'), size: ColumnSize.M),
-                DataColumn2(
-                    label: Text('Ações'), size: ColumnSize.M, numeric: false),
-              ],
-              rows: itens.map((arq) => _buildRow(arq, fmt)).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Renderiza a árvore
+    return _buildHierarchyNode(hierarquia, isRoot: true);
   }
 
   DataRow2 _buildRow(Map<String, dynamic> arq, DateFormat fmt) {
@@ -749,8 +843,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 padding: const EdgeInsets.all(4),
               ),
             // Deletar
-            if (!isEditando && arq['usuarioUploadId']?.toString() ==
-                TenantContext.userId?.toString())
+            if (!isEditando)
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Excluir',

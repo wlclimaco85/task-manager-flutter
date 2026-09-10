@@ -1,30 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
-import '../../../utils/login_session_sync.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart'
-    show SecurityCheck, FieldType, FieldConfigWindows, FileConfig;
-import '../../../widgets/login_empresas_acesso_detail.dart';
+import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldType, FieldConfigWindows;
 import '../../../services/network_caller.dart';
-
-int? _loginAcessoAsInt(dynamic value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  if (value is Map) return _loginAcessoAsInt(value['id'] ?? value['value']);
-  return null;
-}
-
-bool _loginAcessoHasParceiro(dynamic value) => _loginAcessoAsInt(value) != null;
 
 class WindowsLoginDetailScreen extends StatelessWidget {
   final Login item;
   final SecurityCheck hasPermission;
 
-  const WindowsLoginDetailScreen(
-      {super.key, required this.item, required this.hasPermission});
+  const WindowsLoginDetailScreen({super.key, required this.item, required this.hasPermission});
 
   /// Carrega roles disponíveis filtradas por parceiroId/empresaId
   Future<List<Map<String, dynamic>>> _loadRolesDisponiveis(
@@ -56,25 +41,6 @@ class WindowsLoginDetailScreen extends StatelessWidget {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _loadSetores() async {
-    try {
-      final response = await NetworkCaller().getRequest(ApiLinks.allSetores);
-      final body = response.body;
-      if (!response.isSuccess || body == null) return [];
-
-      final data = body['data'];
-      final dynamic raw = data is Map ? (data['dados'] ?? data['items']) : data;
-      if (raw is! List) return [];
-
-      return raw
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
@@ -92,30 +58,6 @@ class WindowsLoginDetailScreen extends StatelessWidget {
         dropdownFutureBuilder: () =>
             _loadRolesDisponiveis(parceiroId, empresaId),
       ),
-      FieldConfigWindows(
-        fieldName: 'setores',
-        label: 'Setores',
-        fieldType: FieldType.multiselect,
-        isRequired: false,
-        dropdownValueField: 'id',
-        dropdownDisplayField: 'descricao',
-        dropdownFutureBuilder: _loadSetores,
-      ),
-      // Bug de producao: "Foto" caia no default do formulario generico
-      // (campo de texto) e mostrava a representacao bruta do valor salvo
-      // (ex.: "{id: 0, nome: }"). FieldType.file agora tem implementacao
-      // real (GenericDetailFormScreen._buildFileField) -- mesmo padrao ja
-      // usado no dialogo de criar/editar do grid (login_grid_screen.dart).
-      const FieldConfigWindows(
-        fieldName: 'foto',
-        label: 'Foto',
-        icon: Icons.photo_camera,
-        fieldType: FieldType.file,
-        fileConfig: FileConfig(
-          allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-          maxFileSize: 2 * 1024 * 1024,
-        ),
-      ),
     ];
 
     return GenericDetailFormScreen(
@@ -123,29 +65,12 @@ class WindowsLoginDetailScreen extends StatelessWidget {
       telaNome: 'login',
       hasPermission: hasPermission,
       fieldOverrides: fieldOverrides,
-      onAfterSave: sincronizarSessaoLoginAtualAposSalvar,
       relatedTabs: [
-        RelatedGridTab(
-          title: 'Empresas com acesso',
-          icon: Icons.business,
-          customWidgetBuilder: (currentItem) => LoginEmpresasAcessoDetail(
-            loginId: _loginAcessoAsInt(currentItem['id']),
-            loginTemParceiro: _loginAcessoHasParceiro(
-              currentItem['parceiro'] ??
-                  currentItem['parceiroId'] ??
-                  currentItem['parcId'],
-            ),
-          ),
-        ),
         RelatedGridTab(
           title: 'Roles',
           icon: Icons.security,
           telaNome: 'role',
-          extraParams: {
-            'loginId': loginId,
-            'empresaId': empresaId,
-            'parceiroId': parceiroId
-          },
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           // Usa endpoint com /boletobancos (extrai base do rolesDisponiveis)
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
@@ -154,11 +79,7 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
-          extraParams: {
-            'loginId': loginId,
-            'empresaId': empresaId,
-            'parceiroId': parceiroId
-          },
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
         ),
@@ -166,11 +87,7 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {
-            'usuarioAberturaId': loginId,
-            'empresaId': empresaId,
-            'parceiroId': parceiroId
-          },
+          extraParams: {'usuarioAberturaId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
         ),
       ],
     );

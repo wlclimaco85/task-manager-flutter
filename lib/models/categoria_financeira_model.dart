@@ -4,64 +4,35 @@ import '../widgets/generic_grid_screen.dart';
 
 class CategoriaFinanceira {
   int? id;
-  String? nome;
   String? descricao;
-  String? tipo;
-  bool? ativa;
-  int? parentId;
-  String? codigo;
-  bool? analitico;
+  double? valor;
 
   CategoriaFinanceira({
     this.id,
-    this.nome,
     this.descricao,
-    this.tipo = 'AMBOS',
-    this.ativa = true,
-    this.parentId,
-    this.codigo,
-    this.analitico = true,
+    this.valor,
   });
 
   factory CategoriaFinanceira.fromJson(Map<String, dynamic> json) {
     return CategoriaFinanceira(
       id: json['id'],
-      nome: json['nome']?.toString(),
-      descricao: json['descricao']?.toString(),
-      tipo: json['tipo']?.toString(),
-      ativa: json['ativa'] == true || json['ativa'] == 'true',
-      parentId: json['parentId'] ?? json['parent_id'] ?? (json['parent'] != null ? json['parent']['id'] : null),
-      codigo: json['codigo']?.toString(),
-      analitico: json['analitico'] == true || json['analitico'] == 'true',
+      descricao: json['descricao']?.toString() ?? json['nome']?.toString(),
+      valor: (json['valor'] as num?)?.toDouble(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'nome': nome,
       'descricao': descricao,
-      'tipo': tipo,
-      'ativa': ativa,
-      'parent': parentId != null ? {'id': parentId} : null,
-      'codigo': codigo,
-      'analitico': analitico,
+      'valor': valor,
     };
   }
 
   static List<FieldConfig> fieldConfigs = [
     const FieldConfig(
-      label: 'Código',
-      fieldName: 'codigo',
-      icon: Icons.numbers,
-      isInForm: true,
-      isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: true,
-    ),
-    const FieldConfig(
-      label: 'Nome',
-      fieldName: 'nome',
+      label: 'Descrição',
+      fieldName: 'descricao',
       icon: Icons.category,
       isInForm: true,
       isFilterable: true,
@@ -70,29 +41,14 @@ class CategoriaFinanceira {
       isFixed: true,
     ),
     const FieldConfig(
-      label: 'Descrição',
-      fieldName: 'descricao',
-      icon: Icons.description,
+      label: 'Valor padrão',
+      fieldName: 'valor',
+      icon: Icons.attach_money,
       isInForm: true,
-      isFilterable: true,
+      isFilterable: false,
+      fieldType: FieldType.currency,
       isVisibleByDefault: true,
       isFixed: false,
-    ),
-    const FieldConfig(
-      label: 'Ativa',
-      fieldName: 'ativa',
-      icon: Icons.check_circle,
-      isInForm: true,
-      fieldType: FieldType.boolean,
-      isVisibleByDefault: true,
-    ),
-    const FieldConfig(
-      label: 'Analítico',
-      fieldName: 'analitico',
-      icon: Icons.account_tree,
-      isInForm: true,
-      fieldType: FieldType.boolean,
-      isVisibleByDefault: true,
     ),
   ];
 }

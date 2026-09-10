@@ -78,9 +78,6 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 136:InstagramMonitor
-/// 183:AgendamentoNFeRecorrente
-/// 184:CertificadoDigital (empresa logada)
-/// 185:PermissoesMultiEmpresa
 
 class MenuConfig {
   MenuConfig._();
@@ -184,11 +181,6 @@ class MenuConfig {
             label: 'Dashboard Comercial',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
-        MenuItem(
-            id: 'certificado_digital',
-            label: 'Certificado Digital',
-            icon: FontAwesomeIcons.certificate,
-            screenIndex: 184),
       ],
     ),
     MenuGroup(
@@ -400,11 +392,6 @@ class MenuConfig {
             label: 'Dashboard DP',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 143),
-        MenuItem(
-            id: 'relatorio_dp_rh',
-            label: 'Relatórios DP/RH',
-            icon: FontAwesomeIcons.filePdf,
-            screenIndex: 144),
       ],
     ),
     MenuGroup(
@@ -422,11 +409,6 @@ class MenuConfig {
             label: 'Comunicados',
             icon: FontAwesomeIcons.newspaper,
             screenIndex: 0),
-        MenuItem(
-            id: 'alertas',
-            label: 'Alertas',
-            icon: FontAwesomeIcons.bell,
-            screenIndex: 41),
         MenuItem(
             id: 'chamados',
             label: 'Chamados',
@@ -548,11 +530,6 @@ class MenuConfig {
             label: 'Solicitações de Acesso',
             icon: FontAwesomeIcons.userCheck,
             screenIndex: 149),
-        MenuItem(
-            id: 'permissoes_multi_empresa',
-            label: 'Permissões Multi-Empresa',
-            icon: FontAwesomeIcons.buildingUser,
-            screenIndex: 185),
         MenuItem(
             id: 'obrigacoes_fiscais',
             label: 'Obrigações Fiscais',
@@ -752,14 +729,14 @@ class MenuConfig {
       icon: FontAwesomeIcons.gears,
       items: [
         MenuItem(
+            id: 'dashboard_gme',
+            label: 'Dashboard GME',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 156),
+        MenuItem(
             id: 'contrato',
             label: 'Contratos',
             icon: FontAwesomeIcons.fileContract,
-            screenIndex: 156),
-        MenuItem(
-            id: 'faturar_contratos',
-            label: 'Faturar Contratos',
-            icon: FontAwesomeIcons.receipt,
             screenIndex: 157),
         MenuItem(
             id: 'equipamento',

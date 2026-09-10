@@ -194,6 +194,15 @@ bool _isParceiroLockField(FieldConfigWindows config) {
       label == 'parceiro';
 }
 
+bool _isFornecedorLockField(FieldConfigWindows config) {
+  final field = config.fieldName.toLowerCase();
+  final label = config.label.toLowerCase();
+  return field == 'fornecedor' ||
+      field == 'fornecedorid' ||
+      field == 'fornecedor.id' ||
+      label == 'fornecedor';
+}
+
 @visibleForTesting
 bool isParceiroFieldDisabledByStorage(
   FieldConfigWindows config,
@@ -224,16 +233,12 @@ bool shouldPrefillParceiroField(
   return isParceiroField && hasParceiroContext;
 }
 
-// Fix (pedido explicito do usuario): o campo Fornecedor tinha uma trava
-// hardcoded por nome de campo/label ("fornecedor") aqui no widget generico,
-// que ignorava por completo o FieldConfigWindows.enabled passado pelas telas
-// (conta_pagar_grid_screen.dart e parceiro_detail_screen.dart, ambos com
-// enabled: true) -- o campo continuava bloqueado em QUALQUER contexto sem
-// parceiro vinculado, mesmo com as duas telas ja ajustadas. Fornecedor deve
-// ficar sempre acessivel; quem decide isso agora e so o enabled de cada
-// FieldConfigWindows especifico, sem essa segunda trava paralela.
-// isFornecedorFieldEnabledByStorage/_isFornecedorLockField removidos (nao
-// tinham mais nenhum papel depois dessa mudanca).
+@visibleForTesting
+bool isFornecedorFieldEnabledByStorage(
+  FieldConfigWindows config,
+  bool hasParceiroIdOrParcId,
+) =>
+    !_isFornecedorLockField(config) || hasParceiroIdOrParcId;
 
 class FieldConfigWindows {
   final String label;
@@ -697,13 +702,8 @@ class FieldFactory {
       case FieldType.url:
         return _buildUrlField(config, controller);
       case FieldType.multiselect:
-        final dependsOnCtrl =
-            config.dependsOnField != null && allControllers != null
-                ? allControllers[config.dependsOnField]
-                : null;
         return _buildMultiselectField(
-            config, controller, dropdownCache, context,
-            dependsOnController: dependsOnCtrl);
+            config, controller, dropdownCache, context);
       default:
         return _buildTextField(config, controller);
     }
@@ -1371,9 +1371,8 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<Map<String, dynamic>>> dropdownCache,
-    BuildContext context, {
-    TextEditingController? dependsOnController,
-  }) {
+    BuildContext context,
+  ) {
     final cacheKey = '${config.fieldName}_dropdown';
     final cached = dropdownCache[cacheKey];
     return _MultiSelectField(
@@ -1385,13 +1384,10 @@ class FieldFactory {
       initialOptions: cached,
       dropdownFutureBuilder:
           cached == null ? config.dropdownFutureBuilder : null,
-      dropdownFutureBuilderWithParam:
-          cached == null ? config.dropdownFutureBuilderWithParam : null,
       dropdownOptions: cached == null && config.dropdownFutureBuilder == null
           ? (config.dropdownOptions ?? [])
           : null,
       onOptionsLoaded: (opts) => dropdownCache[cacheKey] = opts,
-      dependsOnController: dependsOnController,
     );
   }
 
@@ -1422,26 +1418,18 @@ class _MultiSelectField extends StatefulWidget {
   /// [dropdownFutureBuilder] ou usa [dropdownOptions] estático.
   final List<Map<String, dynamic>>? initialOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
-  final Future<List<Map<String, dynamic>>> Function(String? param)?
-      dropdownFutureBuilderWithParam;
   final List<Map<String, dynamic>>? dropdownOptions;
 
   /// Callback para propagar o resultado carregado de volta ao cache externo.
   final void Function(List<Map<String, dynamic>> opts)? onOptionsLoaded;
-
-  /// Controller do campo pai (para cascade).
-  /// Quando o campo pai muda, este widget refaz o fetch com o novo valor.
-  final TextEditingController? dependsOnController;
 
   const _MultiSelectField({
     required this.config,
     required this.controller,
     this.initialOptions,
     this.dropdownFutureBuilder,
-    this.dropdownFutureBuilderWithParam,
     this.dropdownOptions,
     this.onOptionsLoaded,
-    this.dependsOnController,
   });
 
   @override
@@ -1452,7 +1440,6 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
   List<Map<String, dynamic>> _options = [];
   bool _loadingOptions = false;
-  String? _lastDependsOnValue;
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
@@ -1466,13 +1453,6 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     super.initState();
     _selectedValues = _parseController();
     widget.controller.addListener(_onControllerChanged);
-
-    // Se há cascade, registra listener para o campo pai
-    if (widget.dependsOnController != null) {
-      widget.dependsOnController!.addListener(_onDependencyChanged);
-      _lastDependsOnValue = widget.dependsOnController!.text;
-    }
-
     // Inicia carga de opções UMA ÚNICA VEZ — o Future fica cacheado no estado
     if (widget.initialOptions != null) {
       _options = widget.initialOptions!;
@@ -1487,10 +1467,6 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
           widget.onOptionsLoaded?.call(opts);
         }
       });
-    } else if (widget.dropdownFutureBuilderWithParam != null &&
-        widget.dependsOnController != null) {
-      _loadingOptions = true;
-      _fetchCascade(widget.dependsOnController!.text);
     } else {
       _options = widget.dropdownOptions ?? [];
     }
@@ -1509,7 +1485,6 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
-    widget.dependsOnController?.removeListener(_onDependencyChanged);
     super.dispose();
   }
 
@@ -1517,44 +1492,6 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     final parsed = _parseController();
     if (mounted && parsed.join(',') != _selectedValues.join(',')) {
       setState(() => _selectedValues = parsed);
-    }
-  }
-
-  void _onDependencyChanged() {
-    final newVal = widget.dependsOnController!.text;
-    if (newVal == _lastDependsOnValue) return;
-    _lastDependsOnValue = newVal;
-    if (mounted) {
-      setState(() {
-        widget.controller.text = ''; // Limpa seleção anterior
-        _selectedValues = [];
-        _options = [];
-      });
-    }
-    _fetchCascade(newVal);
-  }
-
-  Future<void> _fetchCascade(String? paramValue) async {
-    if (widget.dropdownFutureBuilderWithParam == null) return;
-    if (!mounted) return;
-
-    setState(() => _loadingOptions = true);
-    try {
-      final opts = await widget.dropdownFutureBuilderWithParam!(paramValue);
-      if (mounted) {
-        setState(() {
-          _options = opts;
-          _loadingOptions = false;
-        });
-        widget.onOptionsLoaded?.call(opts);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _options = [];
-          _loadingOptions = false;
-        });
-      }
     }
   }
 
@@ -2019,8 +1956,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   // consistência no DropdownButton) e o label para exibição nas tags de filtro.
   final Map<String, String?> _filterDropdownValues = {};
   final Map<String, String> _filterDropdownLabels = {};
-  final Set<String> _lockedFilters = {};
   final ScrollController _tableScrollController = ScrollController();
+  final Set<String> _lockedFilters = {};
 
   int? sortColumnIndex;
   bool sortAscending = true;
@@ -2099,18 +2036,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
-    if (widget.initialFilters != null) {
-      widget.initialFilters!.forEach((key, value) {
-        if (_filterControllers.containsKey(key)) {
-          _filterControllers[key]!.text = value.toString();
-        }
+    _loadFilterPreferences().then((_) {
+      // filtros iniciais explícitos do chamador têm prioridade sobre o salvo
+      if (widget.initialFilters != null) {
+        widget.initialFilters!.forEach((key, value) {
+          if (_filterControllers.containsKey(key)) {
+            _filterControllers[key]!.text = value.toString();
+          }
+        });
+      }
+      _applyTenantFilters();
+      _loadColumnPreferences().then((_) {
+        _loadItems(_currentPage, rowsPerPage);
       });
-    }
-
-    _applyTenantFilters();
-
-    _loadColumnPreferences().then((_) {
-      _loadItems(_currentPage, rowsPerPage);
     });
 
     if (widget.customActions != null) {
@@ -2183,6 +2121,42 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     } catch (e) {
       if (kDebugMode) {
         L.d('Erro ao carregar preferências: $e');
+      }
+    }
+  }
+
+  Future<void> _loadFilterPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}_filter_';
+
+      for (final entry in _filterControllers.entries) {
+        final saved = prefs.getString('$key${entry.key}');
+        if (saved != null && saved.isNotEmpty) entry.value.text = saved;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        L.d('Erro ao carregar filtros salvos: $e');
+      }
+    }
+  }
+
+  Future<void> _saveFilterPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}_filter_';
+
+      for (final entry in _filterControllers.entries) {
+        final prefKey = '$key${entry.key}';
+        if (entry.value.text.isEmpty) {
+          await prefs.remove(prefKey);
+        } else {
+          await prefs.setString(prefKey, entry.value.text);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        L.d('Erro ao salvar filtros: $e');
       }
     }
   }
@@ -2417,6 +2391,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   void _applyFilters() {
+    _saveFilterPreferences();
     setState(() {
       _currentPage = 0;
     });
@@ -2688,6 +2663,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 final isEditMode = item != null;
                 bool effectiveEnabled;
                 if (isPreFilled || isIdField) {
+                  effectiveEnabled = false;
+                } else if (!isFornecedorFieldEnabledByStorage(
+                  config,
+                  hasParceiroContext,
+                )) {
                   effectiveEnabled = false;
                 } else if (!isEditMode && config.enabledOnInsert != null) {
                   effectiveEnabled = config.enabledOnInsert!;
@@ -4510,8 +4490,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
-                onPressed: () {
-                  _saveColumnPreferences();
+                onPressed: () async {
+                  await _saveColumnPreferences();
                   setState(() {});
                   Navigator.pop(ctx);
                   _applyFilters();

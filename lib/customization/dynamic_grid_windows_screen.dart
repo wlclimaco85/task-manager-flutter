@@ -30,22 +30,12 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final T Function(Map<String, dynamic>) fromJson;
   final Map<String, dynamic> Function(T) toJson;
   final Widget Function(T item)? detailScreenBuilder;
-  /// Repassado a GenericGridScreen.editUsesDetailScreen — quando true, a
-  /// ação "Editar" abre a mesma tela de [detailScreenBuilder] em vez do
-  /// popup de formulário genérico.
-  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
   /// Ver GenericGridScreen.transformFormData — repassado como está.
   final Map<String, dynamic> Function(Map<String, dynamic> formData)?
       transformFormData;
   final CustomActionsBuilder<T>? customActions;
-  /// Repassado a GenericGridScreen.buttonPermissions. Quando omitido, usa o
-  /// default do GenericGridScreen (todos os botoes habilitados). Permite a
-  /// telas com maquina de estados (ex.: pedido_compra) desabilitar
-  /// Editar/Excluir genericos quando essas acoes precisam ser restritas por
-  /// status via CustomAction propria.
-  final Map<String, bool>? buttonPermissions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
   // Overrides de endpoint — quando informados substituem os valores que viriam da config da tela
@@ -77,12 +67,10 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     required this.fromJson,
     required this.toJson,
     this.detailScreenBuilder,
-    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
     this.customActions,
-    this.buttonPermissions,
     this.fieldOverrides,
     this.showAppBar = true,
     this.fetchEndpointOverride,
@@ -127,47 +115,7 @@ class _DynamicGridWindowsScreenState<T>
         await Future.delayed(Duration(seconds: i * 2)); // 2s, 4s, 6s, 8s
       }
     }
-    final fallback = _localTelaConfig(widget.telaNome);
-    if (fallback != null) return fallback;
     throw Exception("Tela '${widget.telaNome}' não encontrada.");
-  }
-
-  TelaConfig? _localTelaConfig(String nome) {
-    final key = nome.toLowerCase().trim();
-    if (key != 'nfse') return null;
-    const endpoint = '/api/nfse';
-    return TelaConfig(
-      id: -1099,
-      nome: 'nfse',
-      titulo: 'NFSe',
-      fetchEndpoint: endpoint,
-      createEndpoint: endpoint,
-      updateEndpoint: '$endpoint/:id',
-      deleteEndpoint: '$endpoint/:id',
-      fields: [
-        TelaField(label: 'Id', fieldName: 'id', isInForm: false),
-        TelaField(label: 'Número', fieldName: 'numero', fieldOrder: 1),
-        TelaField(
-          label: 'Tomador',
-          fieldName: 'tomador.nome',
-          isInForm: false,
-          fieldOrder: 2,
-        ),
-        TelaField(label: 'Status', fieldName: 'status', fieldOrder: 3),
-        TelaField(
-          label: 'Valor Total',
-          fieldName: 'valorTotal',
-          fieldType: TelaFieldType.currency,
-          fieldOrder: 4,
-        ),
-        TelaField(
-          label: 'Data de Emissão',
-          fieldName: 'dataEmissao',
-          fieldType: TelaFieldType.date,
-          fieldOrder: 5,
-        ),
-      ],
-    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -567,19 +515,10 @@ class _DynamicGridWindowsScreenState<T>
               enableCsvExport: true, filenamePrefix: 'dynamic'),
           paginationConfig: const PaginationConfig(),
           detailScreenBuilder: widget.detailScreenBuilder,
-          editUsesDetailScreen: widget.editUsesDetailScreen,
           extraParams: widget.extraParams,
           additionalFormData: widget.additionalFormData,
           transformFormData: widget.transformFormData,
           customActions: widget.customActions,
-          buttonPermissions: widget.buttonPermissions ??
-              const {
-                'create': true,
-                'edit': true,
-                'delete': true,
-                'deleteMultiple': true,
-                'export': true,
-              },
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,

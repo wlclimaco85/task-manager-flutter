@@ -10,7 +10,7 @@ class ExtratoOperacionalDialog extends StatefulWidget {
     super.key,
     required this.contaId,
     required this.contaNome,
-    this.initialDays = 90,
+    this.initialDays = 30,
   });
 
   final int contaId;
@@ -21,7 +21,7 @@ class ExtratoOperacionalDialog extends StatefulWidget {
     BuildContext context, {
     required int contaId,
     required String contaNome,
-    int initialDays = 90,
+    int initialDays = 30,
   }) {
     return showDialog<void>(
       context: context,
@@ -39,20 +39,7 @@ class ExtratoOperacionalDialog extends StatefulWidget {
 }
 
 class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
-  // Bug de producao: usuario reportou saldo inicial negativo (movimentacao
-  // real existente, confirmada no banco) mas "Sem movimentacoes" na tela,
-  // mesmo em "Ultimos 90 dias". Nao e' bug de consulta -- a baixa real
-  // (conferida no Postgres: conta 364, 2 titulos baixados em 02/06 e
-  // 09/06/2026) fica ANTES do inicio da janela de 90 dias (12/06/2026 pra
-  // "hoje" 09/09/2026), entao corretamente vira "saldo inicial" em vez de
-  // aparecer como item -- e' o mesmo comportamento correto de qualquer
-  // extrato bancario (saldo anterior carregado, so' o periodo escolhido
-  // aparece detalhado). O teto real e' so' 90 dias no maximo -- sem opcao
-  // de ver mais pra tras -- entao qualquer baixa com mais de 90 dias fica
-  // sempre escondida sem alternativa. Backend ja aceita ate 366 dias
-  // (FinanceFluxoServiceImpl.extratoOperacional), so faltava expor no
-  // filtro. Adicionadas opcoes de 180 e 365 dias.
-  static const _periodOptions = [7, 15, 30, 60, 90, 180, 365];
+  static const _periodOptions = [7, 15, 30, 60, 90];
   static const List<_FiltroOpcao> _statusOptions = [
     _FiltroOpcao(label: 'Todos os status'),
     _FiltroOpcao(label: 'Aberta', value: 'ABERTA'),
@@ -394,13 +381,11 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8FAFC),
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                   ),
                   child: Row(
                     children: [
                       const _HeaderCell(flex: 2, label: 'Data'),
-                      const _HeaderCell(flex: 2, label: 'Nro. Nota'),
                       const _HeaderCell(flex: 4, label: 'Histórico'),
                       const _HeaderCell(flex: 2, label: 'Entradas'),
                       const _HeaderCell(flex: 2, label: 'Saídas'),
@@ -422,8 +407,8 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                         )
                       : ListView.separated(
                           itemCount: extrato.itens.length,
-                          separatorBuilder: (_, __) => const Divider(
-                              height: 1, color: Color(0xFFE2E8F0)),
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 1, color: Color(0xFFE2E8F0)),
                           itemBuilder: (context, index) {
                             final item = extrato.itens[index];
                             return Padding(
@@ -436,15 +421,6 @@ class _ExtratoOperacionalDialogState extends State<ExtratoOperacionalDialog> {
                                   _DataCell(
                                     flex: 2,
                                     child: Text(_dateFormat.format(item.data)),
-                                  ),
-                                  _DataCell(
-                                    flex: 2,
-                                    child: Text(
-                                      item.numeroNota.trim().isEmpty
-                                          ? '-'
-                                          : item.numeroNota,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
                                   ),
                                   _DataCell(
                                     flex: 4,

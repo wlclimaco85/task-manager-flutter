@@ -4,8 +4,9 @@ title Hub Apps - Menu Unico
 color 0B
 
 set "APP_ROOT=C:\App_Academia"
-set "BACKEND_DIR=%APP_ROOT%\AppAcademia"
-if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_DIR%\bin"
+set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
+set "BACKEND_DIR=%BACKEND_REPO_DIR%"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_REPO_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_REPO_DIR%\bin"
 if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
 set "BACKEND_JAR="
 set "FLUTTER_DIR=%APP_ROOT%\task_manager_flutter"
@@ -69,7 +70,6 @@ echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
-    echo  [M] Subir o App do Dono (Admin Panel no Chrome)
 echo  [0] Sair
 echo.
 set "OP="
@@ -164,10 +164,6 @@ if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
     goto END_MENU
 )
-if /i "%OP%"=="M" (
-    call :START_ADMIN_PANEL_WEB
-    goto END_MENU
-)
 goto MENU
 
 :END_MENU
@@ -180,13 +176,16 @@ pause
 goto MENU
 
 :CHECK_PATHS
-if not exist "%BACKEND_DIR%" (
-    echo [ERRO] Pasta do backend nao encontrada: %BACKEND_DIR%
+if not defined APP_ROOT set "APP_ROOT=C:\App_Academia"
+if not defined BACKEND_REPO_DIR set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
+call :RESOLVE_BACKEND_DIR
+if not exist "%BACKEND_REPO_DIR%" (
+    echo [ERRO] Pasta do repositorio backend nao encontrada: %BACKEND_REPO_DIR%
     exit /b 1
 )
 if not exist "%BACKEND_DIR%\pom.xml" (
     echo [ERRO] pom.xml do backend nao encontrado: %BACKEND_DIR%\pom.xml
-    echo [DICA] O menu tentou localizar automaticamente em AppAcademia\bin e bin.
+    echo [DICA] O backend Maven deve estar em C:\App_Academia\AppAcademia ou C:\App_Academia\AppAcademia\bin.
     exit /b 1
 )
 if not exist "%FLUTTER_DIR%" (
@@ -211,7 +210,9 @@ if not exist "%SELENIUM_DIR%\run_selenium_tests.ps1" (
 exit /b 0
 
 :PREPARE_START_APP_REPOS
-call :CHOOSE_AND_UPDATE_REPO "Backend AppAcademia" "%BACKEND_DIR%"
+call :CHOOSE_AND_UPDATE_REPO "Backend AppAcademia" "%BACKEND_REPO_DIR%"
+if errorlevel 1 exit /b 1
+call :RESOLVE_BACKEND_DIR
 if errorlevel 1 exit /b 1
 call :CHOOSE_AND_UPDATE_REPO "Flutter Abraco Contabilidade" "%FLUTTER_DIR%"
 if errorlevel 1 exit /b 1
@@ -346,37 +347,37 @@ if /i "%CURRENT_BRANCH%"=="%SELECTED_BRANCH%" (
 )
 
 echo Atualizando %SELECTED_BRANCH% antes de subir...
-git pull --rebase --autostash
+git rev-parse --abbrev-ref --symbolic-full-name @{u} >nul 2>&1
 if errorlevel 1 (
-    echo [ERRO] Falha no pull de %SELECTED_BRANCH% em %REPO_LABEL%.
-    exit /b 1
+    echo [AVISO] Branch %SELECTED_BRANCH% sem upstream remoto. Continuando sem pull.
+) else (
+    git pull --rebase --autostash
+    if errorlevel 1 (
+        echo [ERRO] Falha no pull de %SELECTED_BRANCH% em %REPO_LABEL%.
+        exit /b 1
+    )
 )
 exit /b 0
 
 :RESOLVE_BACKEND_JAR
 set "BACKEND_JAR="
-if exist "%BACKEND_DIR%\target\boleto-service.jar" set "BACKEND_JAR=target\boleto-service.jar"
-if not defined BACKEND_JAR if exist "%BACKEND_DIR%\target\AppAcademia.jar" set "BACKEND_JAR=target\AppAcademia.jar"
+if exist "%BACKEND_DIR%\target\AppAcademia.jar" set "BACKEND_JAR=target\AppAcademia.jar"
+if not defined BACKEND_JAR if exist "%BACKEND_DIR%\target\boleto-service.jar" set "BACKEND_JAR=target\boleto-service.jar"
 for /f "delims=" %%J in ('dir /b /a-d "%BACKEND_DIR%\target\*.jar" 2^>nul ^| findstr /v /i "\.original$ sources javadoc"') do (
     if not defined BACKEND_JAR set "BACKEND_JAR=target\%%J"
 )
 if not defined BACKEND_JAR (
-    echo [ERRO] Nenhum jar executavel encontrado em %BACKEND_DIR%\target
+    echo [ERRO] Nenhum jar encontrado em %BACKEND_DIR%\target
     exit /b 1
 )
 exit /b 0
 
-:CHECK_BACKEND_COMPILE_SOURCE
-if not exist "%BACKEND_DIR%\src\main\java" (
-    echo [ERRO] Fontes Java do backend nao encontradas: %BACKEND_DIR%\src\main\java
-    exit /b 1
-)
-findstr /s /m /c:"@SpringBootApplication" "%BACKEND_DIR%\src\main\java\*.java" >nul 2>&1
-if errorlevel 1 (
-    echo [ERRO] Classe principal Spring Boot nao encontrada em: %BACKEND_DIR%\src\main\java
-    echo [DICA] Esta copia local tem pom.xml, mas nao tem a aplicacao Spring Boot completa para gerar o jar executavel.
-    exit /b 1
-)
+:RESOLVE_BACKEND_DIR
+if not defined APP_ROOT set "APP_ROOT=C:\App_Academia"
+if not defined BACKEND_REPO_DIR set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
+set "BACKEND_DIR=%BACKEND_REPO_DIR%"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_REPO_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_REPO_DIR%\bin"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
 exit /b 0
 
 :KILL_APP
@@ -386,12 +387,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$procIds = Get-NetTCPCon
 
 echo Matando processos Flutter/Dart ligados aos projetos...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$currentPid = $pid; $parentPid = (Get-CimInstance Win32_Process -Filter ('ProcessId=' + $currentPid)).ParentProcessId; $items = Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $currentPid -and $_.ProcessId -ne $parentPid -and ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
-timeout /t 2 /nobreak >nul
-exit /b 0
-
-:KILL_BACKEND_FOR_CLEAN
-echo [PRE-CLEAN] Liberando backend antigo para destravar target\spring.log...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$port = [int]$env:BACKEND_PORT; $backendDir = $env:BACKEND_DIR; $portPids = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique); $javaPids = @(Get-CimInstance Win32_Process | Where-Object { ($_.Name -in @('java.exe','javaw.exe')) -and ($_.CommandLine -like ('*' + $backendDir + '*') -or $_.CommandLine -like '*AppAcademia*.jar*' -or $_.CommandLine -like '*spring-boot:run*') } | Select-Object -ExpandProperty ProcessId); @($portPids + $javaPids) | Where-Object { $_ } | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $_ + ' encerrado') }"
 timeout /t 2 /nobreak >nul
 exit /b 0
 
@@ -420,16 +415,11 @@ echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
 echo [1/3] Compilando backend...
-call :CHECK_BACKEND_COMPILE_SOURCE
-if errorlevel 1 (
-    pause
-    exit /b 1
-)
 cd /d "%BACKEND_DIR%"
-call :KILL_BACKEND_FOR_CLEAN
-echo [PRE-CLEAN] Limpando build pelo Maven para evitar target gerado inconsistente...
-del /f /q "target\spring.log" 2>nul
-call mvnw.cmd clean package -DskipTests "-Dmaven.test.skip=true"
+echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
+rmdir /s /q "target\generated-sources" 2>nul
+rmdir /s /q "target\classes" 2>nul
+call mvnw.cmd clean package -DskipTests
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
@@ -509,9 +499,8 @@ echo  [1] task_manager_appAcademiaV003
 echo  [2] task_manager_app_daniel
 echo  [3] task_manager_flutter
 echo  [4] task_manager_flutter_merged_final
-    echo  [5] task_manager_admin_panel
 echo  [0] Voltar
-choice /c 123450 /n /m "Projeto: "
+choice /c 12340 /n /m "Projeto: "
 if "%ERRORLEVEL%"=="5" exit /b 1
 call :SET_FLUTTER_PROJECT %ERRORLEVEL%
 exit /b %ERRORLEVEL%
@@ -575,9 +564,8 @@ echo  [1] Abraco Contabilidade (task_manager_flutter)
 echo  [2] Portal Contabilidade (task_manager_flutter_merged_final)
 echo  [3] Meu Treino (task_manager_AppAcademiaV003)
 echo  [4] Safra Direto (task_manager_appDaniel)
-    echo  [5] App do Dono (task_manager_admin_panel)
 echo  [0] Voltar
-choice /c 123450 /n /m "Projeto: "
+choice /c 12340 /n /m "Projeto: "
 if "%ERRORLEVEL%"=="5" exit /b 1
 call :SET_FLUTTER_PROJECT_FULL %ERRORLEVEL%
 exit /b %ERRORLEVEL%
@@ -1295,7 +1283,7 @@ set "MSG=%DEFAULT_MSG%"
 set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
 if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\task_manager_admin_panel"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1336,7 +1324,7 @@ echo ============================================
 echo  Atualizando todos os repositorios
 echo ============================================
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\task_manager_admin_panel"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1415,18 +1403,3 @@ start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR%
 echo Instagram API iniciado em http://localhost:8500
 echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
 exit /b 0
-
-:START_ADMIN_PANEL_WEB
-  echo.
-  echo ============================================
-  echo  Iniciando Admin Panel no Chrome
-  echo ============================================
-  echo.
-  set "ADMIN_DIR=C:\App_Academia\task_manager_admin_panel"
-  if not exist "%ADMIN_DIR%" (
-      echo [ERRO] Pasta do Admin Panel nao encontrada: %ADMIN_DIR%
-      exit /b 1
-  )
-  start "AppAcademia-Admin-Web" cmd /k "cd /d %ADMIN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8082"
-  echo Admin Panel iniciando no Chrome em http://localhost:8082
-  exit /b 0

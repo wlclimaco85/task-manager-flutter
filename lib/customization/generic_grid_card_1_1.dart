@@ -24,7 +24,6 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
-import '../utils/grid_user_preferences_key.dart';
 import '../utils/grid_texts.dart';
 
 import '../../../models/network_response.dart';
@@ -304,7 +303,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       }
     }
 
-    _customActions = widget.customActions?.call() ?? [];
+    _customActions =
+        widget.customActions?.call() ?? [];
 
     await _loadFieldPreferences();
     _scrollController.addListener(_onScroll);
@@ -398,26 +398,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Future<void> _loadFieldPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = GridUserPreferencesKey.base(
-        storageKey: widget.storageKey,
-        title: widget.title,
-      );
-      final legacyKeys = [
-        GridUserPreferencesKey.legacyBase(
-          storageKey: widget.storageKey,
-          title: widget.title,
-        ),
-        GridUserPreferencesKey.storageOnlyLegacyBase(widget.storageKey),
-      ];
+      final key = '${widget.storageKey}_${widget.title}';
       for (final c in widget.fieldConfigs) {
-        bool? saved = prefs.getBool(
-          GridUserPreferencesKey.columnKey(key, c.fieldName),
-        );
-        for (final legacyKey in legacyKeys) {
-          saved ??= prefs.getBool(
-            GridUserPreferencesKey.legacyColumnKey(legacyKey, c.fieldName),
-          );
-        }
+        final saved = prefs.getBool('$key${c.fieldName}');
         if (saved != null) _fieldVisibility[c.fieldName] = saved;
       }
     } catch (_) {}
@@ -426,13 +409,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Future<void> _saveFieldPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = GridUserPreferencesKey.base(
-        storageKey: widget.storageKey,
-        title: widget.title,
-      );
+      final key = '${widget.storageKey}_${widget.title}';
       for (final c in widget.fieldConfigs) {
         await prefs.setBool(
-          GridUserPreferencesKey.columnKey(key, c.fieldName),
+          '$key${c.fieldName}',
           _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
         );
       }
@@ -464,15 +444,17 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       final NetworkResponse resp = await NetworkCaller().getRequest(url);
 
       if (resp.statusCode == 200 && resp.body != null) {
-        final body = resp.body!;
+        final body = resp.body ?? {};
+// Normaliza QUALQUER formato para List<Map<String, dynamic>>
         final list = _extractAnyList(body['data'] ?? body['dados'] ?? body);
 
-        final total = (body['totalElements'] ??
+// total seguro: tenta nas chaves usuais ou cai no length da lista
+        final total = ((body['totalElements'] ??
                 body['total'] ??
                 (body['data'] is Map ? body['data']['totalElements'] : null) ??
                 (body['dados'] is Map
                     ? body['dados']['totalElements']
-                    : null)) as int? ??
+                    : null))) as int? ??
             list.length;
 
         final newItems = list; // já está tipado/normalizado
@@ -1370,9 +1352,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) =>
-                        widget.detailScreenBuilder?.call(item) ??
-                        const SizedBox()),
+                    builder: (_) => widget.detailScreenBuilder?.call(item) ?? const SizedBox()),
               );
             } else {
               _openDetailPage(item);

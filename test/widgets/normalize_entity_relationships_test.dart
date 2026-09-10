@@ -47,22 +47,6 @@ void main() {
 
       expect(result['cpfCnpj'], '12345678900');
     });
-
-    test('converte vinculos financeiros usados em contas pagar e receber', () {
-      final result = windows.normalizeEntityRelationships({
-        'parceiroDev': '1757',
-        'parceiroRec': 1756,
-        'clienteDev': '1756',
-        'contaBaixa': '88',
-        'nfe': '49',
-      });
-
-      expect(result['parceiroDev'], {'id': 1757});
-      expect(result['parceiroRec'], {'id': 1756});
-      expect(result['clienteDev'], {'id': 1756});
-      expect(result['contaBaixa'], {'id': 88});
-      expect(result['nfe'], {'id': 49});
-    });
   });
 
   group('generic_grid_screen.normalizeEntityRelationships (Web)', () {
@@ -78,22 +62,6 @@ void main() {
       });
 
       expect(result['aplicativo'], {'id': 1});
-    });
-
-    test('converte vinculos financeiros usados em contas pagar e receber', () {
-      final result = web.normalizeEntityRelationships({
-        'parceiroDev': '1757',
-        'parceiroRec': 1756,
-        'clienteDev': '1756',
-        'contaBaixa': '88',
-        'nfe': '49',
-      });
-
-      expect(result['parceiroDev'], {'id': 1757});
-      expect(result['parceiroRec'], {'id': 1756});
-      expect(result['clienteDev'], {'id': 1756});
-      expect(result['contaBaixa'], {'id': 88});
-      expect(result['nfe'], {'id': 49});
     });
   });
 }

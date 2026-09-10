@@ -10,7 +10,6 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/boleto_viewer_widget.dart';
 import '../../../services/anexo_financeiro_service.dart';
-import '../../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../utils/document_baixa_helper.dart';
 import '../../../models/conta_pagar_model.dart';
@@ -377,7 +376,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // ── Colors ──────────────────────────────────────────────────────────────
   static const Color _red = GridColors.primary;
   static const Color _redLight = Color(0xFFFFEBEE);
-  static const Color _pagarAlertBackground = Color(0xFFC1121F);
   static const Color _green = GridColors.secondary;
   static const Color _greenLight = Color(0xFFE8F5E9);
   static const Color _orange = Color(0xFFE65100);
@@ -444,8 +442,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items =
-        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
@@ -467,14 +464,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
-    final allPagar = [...pagarList, ...items.unknown.where((u) => !_isTipo(u, 'RECEBER'))];
-    for (final item in allPagar) {
-      final dateStr = _dateKey(item);
+    for (final item in pagarList) {
+      final dateStr =
+          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isBaixa = _isBaixada(item);
-      final tributo = _hasDocumentoFiscal(item);
+      final isBaixa = item['status'] == 'BAIXADA';
+      final tributo = item['documentoFiscal'] == true;
       addMarker(
         dateStr,
         pagar: !isBaixa,
@@ -483,14 +480,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
-    final allReceber = [...receberList, ...items.unknown.where((u) => _isTipo(u, 'RECEBER'))];
-    for (final item in allReceber) {
-      final dateStr = _dateKey(item);
+    for (final item in receberList) {
+      final dateStr =
+          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isBaixa = _isBaixada(item);
-      final tributo = _hasDocumentoFiscal(item);
+      final isBaixa = item['status'] == 'BAIXADA';
+      final tributo = item['documentoFiscal'] == true;
       addMarker(
         dateStr,
         receber: !isBaixa,
@@ -520,8 +517,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items =
-        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
 
     if (!mounted) return;
     setState(() {
@@ -540,28 +536,25 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items =
-        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
     double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
 
-    final allPagar = [...pagarList, ...items.unknown.where((u) => !_isTipo(u, 'RECEBER'))];
-    for (final item in allPagar) {
-      final v = _moneyValue(item, 'valor');
-      if (_isBaixada(item)) {
+    for (final item in pagarList) {
+      final v = (item['valor'] as num?)?.toDouble() ?? 0;
+      if (item['status'] == 'BAIXADA') {
         totalPago += v;
-      } else if (!_isCancelada(item)) {
+      } else if (item['status'] != 'CANCELADA') {
         totalPagar += v;
       }
     }
-    final allReceber = [...receberList, ...items.unknown.where((u) => _isTipo(u, 'RECEBER'))];
-    for (final item in allReceber) {
-      final v = _moneyValue(item, 'valor');
-      if (_isBaixada(item)) {
+    for (final item in receberList) {
+      final v = (item['valor'] as num?)?.toDouble() ?? 0;
+      if (item['status'] == 'BAIXADA') {
         totalRecebido += v;
-      } else if (!_isCancelada(item)) {
+      } else if (item['status'] != 'CANCELADA') {
         totalReceber += v;
       }
     }
@@ -586,17 +579,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               title: 'Calendário Financeiro',
               icon: Icons.calendar_month,
             )
-          : null,
+          : const UserBannerAppBar(
+              screenTitle: 'Calendário Financeiro',
+            ),
       body: Column(
         children: [
           _buildToolbar(),
-          // Pedido do usuario: tela demorava a abrir apos login sem nenhum
-          // aviso visivel de carregamento (so havia um spinner de 16px no
-          // botao de refresh, facil de nao perceber) -- parecia "travada".
-          if (_loadingMonth || _loadingDay)
-            const LinearProgressIndicator(minHeight: 3, color: _red),
-          Expanded(
-              child: _viewMode == 'day' ? _buildDayView() : _buildMonthView()),
+          Expanded(child: _viewMode == 'day' ? _buildDayView() : _buildMonthView()),
         ],
       ),
     );
@@ -678,8 +667,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child:
-                        CircularProgressIndicator(strokeWidth: 2, color: _red),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: _red),
                   )
                 : const Icon(Icons.refresh, size: 20, color: _red),
           ),
@@ -699,8 +688,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   // Abre o popup de baixa da conta (a partir do item do calendário).
-  Future<void> _abrirBaixaConta(Map<String, dynamic> item,
-      {required bool isPagar}) async {
+  Future<void> _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) async {
     final id = item['id']?.toString();
     if (!DocumentoBaixaHelper.itemIdValido(id)) {
       _mostrarErro('ID da conta não encontrado');
@@ -785,8 +773,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   // Abre o Boleto Viewer (card #440): busca o primeiro anexo do lancamento
   // e mostra a linha digitavel (copiar) + baixar o PDF.
-  Future<void> _abrirBoletoViewer(Map<String, dynamic> item,
-      {required bool isPagar}) async {
+  Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
     // Fix card #443: itens do Calendario Financeiro (CalendarioFinanceiroItemDTO)
@@ -814,20 +801,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     } catch (e) {
       _mostrarErro('Erro ao abrir boleto: $e');
-    }
-  }
-
-  // Baixa o boleto realmente postado/importado (BoletoImportServiceImpl),
-  // persistido em ContaPagar/ContaReceber.file (FileAttachment). Distinto do
-  // _abrirBoletoViewer acima, que le do sistema separado de AnexoFinanceiro.
-  Future<void> _baixarBoletoPostado(int fileId, String fileName) async {
-    try {
-      final status = await UploadFileCaller().downloadFile(fileId, fileName);
-      if (status != 200 && mounted) {
-        _mostrarErro('Erro ao baixar boleto (status $status).');
-      }
-    } catch (e) {
-      _mostrarErro('Erro ao baixar boleto: $e');
     }
   }
 
@@ -1033,12 +1006,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     if (isSelected) {
       bgColor = _red;
       textColor = Colors.white;
-    } else if (markers.hasPagar) {
-      bgColor = _pagarAlertBackground;
-      textColor = Colors.white;
     } else if (isPast &&
         (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
       bgColor = _grey;
+    } else if (!isPast && markers.hasPagar) {
+      bgColor = _redLight;
     } else if (!isPast && markers.hasReceber) {
       bgColor = _greenLight;
     }
@@ -1074,8 +1046,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               spacing: 1,
               runSpacing: 1,
               children: [
-                if (markers.hasPagar)
-                  _statusBadgeIcon(Icons.arrow_upward, Colors.white, 11),
+                if (markers.hasPagar) _miniIcon(Icons.arrow_upward, _red, 11),
                 if (markers.hasReceber)
                   _miniIcon(Icons.arrow_downward, _green, 11),
                 if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 11),
@@ -1102,17 +1073,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _miniIcon(IconData icon, Color color, double size) {
     return Icon(icon, color: color, size: size);
-  }
-
-  Widget _statusBadgeIcon(IconData icon, Color color, double size) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      padding: const EdgeInsets.all(1.5),
-      child: Icon(icon, color: color, size: size),
-    );
   }
 
   // ── Legend ───────────────────────────────────────────────────────────────
@@ -1273,8 +1233,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
     final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
-    final boletoFileId = (item['boletoFileId'] as num?)?.toInt();
-    final boletoFileName = item['boletoFileName'] as String? ?? 'boleto.pdf';
 
     final today = DateTime.now();
     final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
@@ -1380,11 +1338,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
                 ),
-                // Ações: ver anexo (se houver), baixar boleto postado (se
-                // houver) e baixar conta (se ABERTA)
-                if (status == 'ABERTA' ||
-                    qtdAnexos > 0 ||
-                    boletoFileId != null) ...[
+                // Ações: ver anexo (se houver) e baixar conta (se ABERTA)
+                if (status == 'ABERTA' || qtdAnexos > 0) ...[
                   const SizedBox(height: 4),
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1392,7 +1347,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                       if (qtdAnexos > 0) ...[
                         _miniActionBtn(
                           icon: Icons.attach_file,
-                          color: GridColors.textPrimary.withValues(alpha: 0.55),
+                          color:
+                              GridColors.textPrimary.withValues(alpha: 0.55),
                           tooltip: 'Ver anexo',
                           onTap: () =>
                               _abrirAnexosConta(item, isPagar: isPagar),
@@ -1406,23 +1362,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                               _abrirBoletoViewer(item, isPagar: isPagar),
                         ),
                       ],
-                      if (boletoFileId != null) ...[
-                        const SizedBox(width: 2),
-                        _miniActionBtn(
-                          icon: Icons.download,
-                          color: GridColors.primary,
-                          tooltip: 'Baixar boleto',
-                          onTap: () => _baixarBoletoPostado(
-                              boletoFileId, boletoFileName),
-                        ),
-                      ],
                       if (status == 'ABERTA') ...[
                         const SizedBox(width: 2),
                         _miniActionBtn(
                           icon: Icons.price_check,
                           color: GridColors.success,
                           tooltip: 'Baixar conta',
-                          onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
+                          onTap: () =>
+                              _abrirBaixaConta(item, isPagar: isPagar),
                         ),
                       ],
                     ],

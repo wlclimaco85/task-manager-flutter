@@ -11,8 +11,9 @@ void main() {
           File('lib/windows/screens/details/parceiro_detail_screen.dart')
               .readAsStringSync();
 
-      expect(source, isNot(contains('Modulo Servicos')));
-      expect(source, isNot(contains('modulo_servicos')));
+      expect(source, contains("fieldName: 'modulo_servicos'"));
+      expect(source, contains("fieldName: 'modulosServico'"));
+      expect(source, contains('isInForm: false'));
       expect(source, isNot(contains('parceiro-modulo')));
       expect(source, isNot(contains('_salvarModulos')));
     });

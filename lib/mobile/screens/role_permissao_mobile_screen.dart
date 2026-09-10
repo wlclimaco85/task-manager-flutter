@@ -3,14 +3,15 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/role_permissao_model.dart';
 import '../../models/auth_utility.dart';
+import '../../models/tela_model.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
-import '../../utils/role_permission_group_selection.dart';
-import '../../utils/role_permission_catalog.dart';
 import '../../utils/tenant_context.dart';
+import '../../services/tela_service.dart';
 
 // Fix (card #471): normalizacao de nomes de tela (lowercase + remove "_")
-String _normalizeTelaNome(String s) => s.toLowerCase().replaceAll('_', '');
+String _normalizeTelaNome(String s) =>
+    s.toLowerCase().replaceAll('_', '');
 
 // Conversao de snake_case para camelCase
 String toBackendTelaNome(String screenName) {
@@ -35,32 +36,21 @@ class RolePermissaoMobileScreen extends StatefulWidget {
   const RolePermissaoMobileScreen({super.key});
 
   @override
-  State<RolePermissaoMobileScreen> createState() =>
-      _RolePermissaoMobileScreenState();
+  State<RolePermissaoMobileScreen> createState() => _RolePermissaoMobileScreenState();
 }
 
 class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
   List<RolePermissao> _permissoes = [];
   List<Map<String, dynamic>> _roles = [];
-  final TextEditingController _buscaCtrl = TextEditingController();
+  List<Tela> _telas = [];
   int? _roleId;
-  String _busca = '';
   bool _carregando = true;
-  final Set<String> _gruposSalvando = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _buscaCtrl.addListener(() {
-      setState(() => _busca = _buscaCtrl.text);
-    });
     _carregarDados();
-  }
-
-  @override
-  void dispose() {
-    _buscaCtrl.dispose();
-    super.dispose();
+    _carregarTelas();
   }
 
   Future<void> _carregarDados() async {
@@ -92,14 +82,27 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
           if (_roles.isNotEmpty) _roleId = _roles.first['id'] as int?;
           _carregando = false;
         });
-      } else {
-        setState(() => _carregando = false);
       }
     } catch (e) {
       setState(() => _carregando = false);
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+    }
+  }
+
+  Future<void> _carregarTelas() async {
+    try {
+      final telas = await TelaService.listarTelas();
+      if (mounted) {
+        setState(() {
+          _telas = telas;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar telas: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -113,8 +116,7 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
     try {
       final baseUri = Uri.parse(ApiLinks.baseUrl);
       final requestUri = baseUri.replace(
-        path:
-            '${baseUri.path}/api/role-permissao/$roleId/${Uri.encodeComponent(telaNome)}',
+        path: '${baseUri.path}/api/role-permissao/$roleId/${Uri.encodeComponent(telaNome)}',
       );
 
       final response = await http.put(
@@ -130,9 +132,7 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Erro ao salvar: ${response.statusCode}'),
-                backgroundColor: Colors.red),
+            SnackBar(content: Text('Erro ao salvar: ${response.statusCode}'), backgroundColor: Colors.red),
           );
         }
         return;
@@ -140,9 +140,7 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
 
       setState(() {
         final index = _permissoes.indexWhere(
-          (p) =>
-              p.roleId == roleId &&
-              _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(telaNome),
+          (p) => p.roleId == roleId && _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(telaNome),
         );
         if (index >= 0) {
           final atual = _permissoes[index];
@@ -171,11 +169,7 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Salvo'),
-            backgroundColor: GridColors.success,
-            duration: Duration(seconds: 1),
-          ),
+          const SnackBar(content: Text('Salvo'), duration: Duration(seconds: 1)),
         );
       }
     } catch (e) {
@@ -187,103 +181,8 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
     }
   }
 
-  Future<void> _salvarGrupo(RolePermissionGroup grupo, bool marcar) async {
-    if (_roleId == null || grupo.entries.isEmpty) return;
-    final roleId = _roleId!;
-    final grupoCompleto = resolveRolePermissionCompleteGroup(grupo);
-    final grupoKey = grupoCompleto.id;
-    if (_gruposSalvando.contains(grupoKey)) return;
-    setState(() => _gruposSalvando.add(grupoKey));
-
-    final token = AuthUtility.userInfo?.token ?? '';
-    final tenantId = TenantContext.empresaId?.toString() ?? '';
-
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/batch'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'X-Tenant-ID': tenantId,
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(buildRolePermissionGroupBatch(
-          roleId: roleId,
-          grupo: grupoCompleto,
-          marcar: marcar,
-        )),
-      );
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro ao salvar menu: ${response.statusCode}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      setState(() => _atualizarGrupoLocal(roleId, grupoCompleto, marcar));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(marcar ? 'Menu liberado' : 'Menu bloqueado'),
-            backgroundColor: GridColors.success,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _gruposSalvando.remove(grupoKey));
-      }
-    }
-  }
-
-  void _atualizarGrupoLocal(
-    int roleId,
-    RolePermissionGroup grupo,
-    bool marcar,
-  ) {
-    for (final tela in grupo.entries) {
-      final index = _permissoes.indexWhere(
-        (p) =>
-            p.roleId == roleId &&
-            _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(tela.telaNome),
-      );
-      if (index >= 0) {
-        _permissoes[index] = rolePermissionWithAllFields(
-          _permissoes[index],
-          valor: marcar,
-        );
-      } else {
-        _permissoes.add(RolePermissao(
-          id: 0,
-          roleId: roleId,
-          roleKey: '',
-          roleDescription: '',
-          telaNome: tela.telaNome,
-          podeVer: marcar,
-          podeInserir: marcar,
-          podeEditar: marcar,
-          podeDeletar: marcar,
-          podeBaixar: marcar,
-        ));
-      }
-    }
-  }
-
-  RolePermissao _permissaoDe(RolePermissionMenuEntry tela) {
-    final telaNomeNormalizado = _normalizeTelaNome(tela.telaNome);
+  RolePermissao _permissaoDe(Tela tela) {
+    final telaNomeNormalizado = _normalizeTelaNome(tela.nome);
     return _permissoes.firstWhere(
       (p) =>
           p.roleId == _roleId &&
@@ -293,7 +192,7 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
         roleId: _roleId!,
         roleKey: '',
         roleDescription: '',
-        telaNome: tela.telaNome,
+        telaNome: tela.nome,
         podeVer: false,
         podeInserir: false,
         podeEditar: false,
@@ -330,25 +229,6 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
                         onChanged: (v) => setState(() => _roleId = v),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: TextField(
-                        controller: _buscaCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Buscar tela',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _busca.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Limpar busca',
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: _buscaCtrl.clear,
-                                ),
-                          border: const OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
                     Expanded(child: _buildListaMobile()),
                   ],
                 ),
@@ -361,142 +241,61 @@ class _RolePermissaoMobileScreenState extends State<RolePermissaoMobileScreen> {
   Widget _buildListaMobile() {
     if (_roleId == null) return const SizedBox();
 
-    final grupos = RolePermissionCatalog.groups(query: _busca);
-    if (grupos.isEmpty) {
-      return const Center(child: Text('Nenhuma tela encontrada'));
+    if (_telas.isEmpty) {
+      return const Center(child: Text('Nenhuma tela disponível'));
     }
 
-    return ListView(
-      children: [
-        for (final grupo in grupos) ...[
-          _groupHeader(grupo),
-          for (final tela in grupo.entries)
-            Builder(
-              builder: (context) {
-                final p = _permissaoDe(tela);
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tela.label,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _permCheckbox(
-                                'Ver',
-                                p.podeVer,
-                                () => _salvar(
-                                    tela.telaNome, 'podeVer', !p.podeVer)),
-                            _permCheckbox(
-                                'Inserir',
-                                p.podeInserir,
-                                () => _salvar(tela.telaNome, 'podeInserir',
-                                    !p.podeInserir)),
-                            _permCheckbox(
-                                'Editar',
-                                p.podeEditar,
-                                () => _salvar(tela.telaNome, 'podeEditar',
-                                    !p.podeEditar)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _permCheckbox(
-                                  'Deletar',
-                                  p.podeDeletar,
-                                  () => _salvar(tela.telaNome, 'podeDeletar',
-                                      !p.podeDeletar)),
-                            ),
-                            Expanded(
-                              child: _permCheckbox(
-                                  'Baixar',
-                                  p.podeBaixar,
-                                  () => _salvar(tela.telaNome, 'podeBaixar',
-                                      !p.podeBaixar)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
-      ],
-    );
-  }
+    return ListView.builder(
+      itemCount: _telas.length,
+      itemBuilder: (context, index) {
+        final tela = _telas[index];
+        final p = _permissaoDe(tela);
 
-  Widget _groupHeader(RolePermissionGroup grupo) {
-    final grupoCompleto = resolveRolePermissionCompleteGroup(grupo);
-    final value = rolePermissionGroupCheckboxValue(
-      grupo: grupoCompleto,
-      permissaoDe: _permissaoDe,
-    );
-    final salvando = _gruposSalvando.contains(grupoCompleto.id);
-    final tooltip = salvando
-        ? 'Salvando permissões de ${grupo.label}'
-        : 'Marcar ou desmarcar todas as permissões de ${grupo.label}';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: GridColors.primary.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          children: [
-            Tooltip(
-              message: tooltip,
-              child: Checkbox(
-                value: value,
-                tristate: true,
-                semanticLabel: tooltip,
-                onChanged:
-                    salvando ? null : (_) => _salvarGrupo(grupo, value != true),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                grupo.label,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            salvando
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text(
-                    'Tudo',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: GridColors.textSecondary,
-                    ),
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Nome da tela
+                Text(
+                  tela.descricao.isNotEmpty ? tela.descricao : tela.nome,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-            const SizedBox(width: 8),
-          ],
-        ),
-      ),
+                ),
+                const SizedBox(height: 12),
+
+                // Primeira linha: Ver, Inserir, Editar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _permCheckbox('Ver', p.podeVer, () => _salvar(tela.nome, 'podeVer', !p.podeVer)),
+                    _permCheckbox('Inserir', p.podeInserir, () => _salvar(tela.nome, 'podeInserir', !p.podeInserir)),
+                    _permCheckbox('Editar', p.podeEditar, () => _salvar(tela.nome, 'podeEditar', !p.podeEditar)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Segunda linha: Deletar, Baixar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _permCheckbox('Deletar', p.podeDeletar, () => _salvar(tela.nome, 'podeDeletar', !p.podeDeletar)),
+                    ),
+                    Expanded(
+                      child: _permCheckbox('Baixar', p.podeBaixar, () => _salvar(tela.nome, 'podeBaixar', !p.podeBaixar)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

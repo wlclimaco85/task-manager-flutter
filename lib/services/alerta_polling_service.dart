@@ -23,7 +23,7 @@ class AlertaPollingService {
     AlertaNovoDetector detector = const AlertaNovoDetector(),
     NotificadorPlataforma? notificador,
     Future<List<Map<String, dynamic>>?> Function()? buscarNotificacoes,
-    Duration intervalo = const Duration(seconds: 60),
+    Duration intervalo = const Duration(seconds: 20),
   })  : _detector = detector,
         _notificador = notificador,
         _buscarNotificacoesParaTeste = buscarNotificacoes,
@@ -60,6 +60,15 @@ class AlertaPollingService {
     await _notificador!.inicializar();
     _timer = Timer.periodic(_intervalo, (_) => _executarCiclo());
     await _executarCiclo();
+  }
+
+  /// Dispara imediatamente uma notificacao nativa avulsa (ex: recebimento de chat em tempo real)
+  Future<void> notificarInstantaneo({
+    required String titulo,
+    required String corpo,
+  }) async {
+    _notificador ??= criarNotificadorPlataforma();
+    await _notificador!.notificar(titulo: titulo, corpo: corpo);
   }
 
   /// Status atual da permissao ('granted'/'denied'/'default'/'unsupported').
@@ -128,9 +137,31 @@ class AlertaPollingService {
 
   Future<void> _notificarAlertas(List<Map<String, dynamic>> alertas) async {
     for (final alerta in alertas) {
-      final texto = alerta['mensagem']?.toString() ?? 'Nova notificação';
+      final tipo = alerta['tipo']?.toString();
+      final texto = alerta['mensagem']?.toString() ??
+          alerta['texto']?.toString() ??
+          alerta['conteudo']?.toString() ??
+          'Nova notificação recebida';
+      String titulo = 'Abraço Contabilidade';
+      if (tipo != null && tipo.isNotEmpty) {
+        if (tipo == 'CHAMADO') {
+          titulo = '🎫 Chamado';
+        } else if (tipo == 'GED') {
+          titulo = '📎 Documentos (GED)';
+        } else if (tipo == 'COMUNICADO') {
+          titulo = '📢 Comunicado';
+        } else if (tipo == 'ALVARA') {
+          titulo = '⚠️ Vencimento de Alvará';
+        } else if (tipo == 'CP' || tipo == 'CR') {
+          titulo = '💰 Financeiro';
+        } else if (tipo == 'CHAT') {
+          titulo = '💬 Chat / Atendimento';
+        }
+      }
       await _notificador?.notificar(
-          titulo: 'Abraço Contabilidade', corpo: texto);
+        titulo: titulo,
+        corpo: texto,
+      );
     }
   }
 

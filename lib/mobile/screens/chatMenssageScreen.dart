@@ -13,16 +13,15 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/chat_model.dart';
 import '../../../utils/api_links.dart';
-import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/anexo_preview_dialog.dart';
-import '../../../widgets/chat/chat_message_payload.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/chat_transfer_dialog.dart';
 import '../../../widgets/chat/chat_add_participant_dialog.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../services/ai_assistant_service.dart';
+import '../../services/alerta_polling_service.dart';
 import '../../services/chat_caller.dart';
 import 'ticket_form_bottom_sheet.dart';
 
@@ -30,7 +29,6 @@ class ChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
   final String chatId;
-  final ValueChanged<ChatMessage>? onMessagePersisted;
   // Fix card #444: chamado apos finalizar com sucesso, para o container
   // (lista de atendimento) voltar para a lista.
   final VoidCallback? onFinalized;
@@ -40,7 +38,6 @@ class ChatMessageScreen extends StatefulWidget {
     required this.sector,
     required this.userName,
     required this.chatId,
-    this.onMessagePersisted,
     this.onFinalized,
   });
 
@@ -84,11 +81,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   bool _isDuplicate(ChatMessage msg) {
-    return msg.chatId != null &&
-        _messages.any((m) =>
-            m.content == msg.content &&
-            m.sender == msg.sender &&
-            m.timestamp == msg.timestamp);
+    return msg.chatId != null && _messages.any((m) =>
+      m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
   }
 
   void _adoptRealChatIdIfNeeded(ChatMessage msg) {
@@ -118,11 +112,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             final decoded = json.decode(message) as Map<String, dynamic>;
             final msg = ChatMessage.fromJson(decoded);
             _adoptRealChatIdIfNeeded(msg);
-            if ((msg.chatId ?? '').isNotEmpty && msg.chatId != '0') {
-              widget.onMessagePersisted?.call(_normalizeMessage(msg));
-            }
             if (!_isDuplicate(msg)) {
               if (mounted && !_disposed) setState(() => _messages.add(msg));
+              if (msg.sender.isNotEmpty && msg.sender != _loggedUserEmail) {
+                final remetente = msg.sender;
+                final preview = msg.content.isNotEmpty
+                    ? msg.content
+                    : (msg.fileName != null ? '📎 Arquivo: ${msg.fileName}' : 'Nova mensagem recebida');
+                AlertaPollingService.instance.notificarInstantaneo(
+                  titulo: '💬 Chat: $remetente',
+                  corpo: preview,
+                );
+              }
             }
             _scrollToBottom();
           } catch (_) {}
@@ -145,24 +146,19 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _scheduleReconnect() {
     _retryCount++;
     if (!mounted || _retryCount >= _maxRetries || _disposed) return;
-    final delay = Duration(
-        seconds:
-            (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
-    Future.delayed(delay, () {
-      if (mounted && !_disposed) _connectWebSocket();
-    });
+    final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
+    Future.delayed(delay, () { if (mounted && !_disposed) _connectWebSocket(); });
   }
 
   Future<void> _loadInitialMessages() async {
     if (mounted && !_disposed) setState(() => _isLoading = true);
     try {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
-      if (mounted && !_disposed)
-        setState(() {
-          _messages
-            ..clear()
-            ..addAll(data.map(_normalizeMessage));
-        });
+      if (mounted && !_disposed) setState(() {
+        _messages
+          ..clear()
+          ..addAll(data.map(_normalizeMessage));
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       _showSnack('Erro ao carregar mensagens: $e', error: true);
@@ -172,67 +168,47 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   ChatMessage _normalizeMessage(ChatMessage msg) {
-    return normalizeChatMessageForDisplay(msg);
+    return ChatMessage(
+      sender: msg.sender,
+      content: msg.content.isNotEmpty ? msg.content : (msg.text ?? ''),
+      type: msg.type.isNotEmpty ? msg.type : 'text',
+      timestamp: msg.timestamp ?? msg.uploadDate,
+      empId: msg.empId,
+      codApp: msg.codApp,
+      codUsuOrig: msg.codUsuOrig,
+      codUsuDest: msg.codUsuDest,
+      sector: msg.sector,
+      chatId: msg.chatId,
+      uploadDate: msg.uploadDate,
+      text: msg.text,
+      fileId: msg.fileId,
+      fileName: msg.fileName,
+      fileUrl: msg.fileUrl,
+    );
   }
 
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
-    if (content.isEmpty) return;
-    if (_channel == null || !_wsConnected) {
-      _showSnack('Conexao do chat ainda nao esta pronta. Tente novamente.',
-          error: true);
-      return;
-    }
+    if (content.isEmpty || _channel == null) return;
 
-    final payload = buildChatOutgoingPayload(
-      senderName: _loggedUserName,
-      senderEmail: _loggedUserEmail,
-      content: content,
-      sector: widget.sector,
-      type: 'text',
-      chatId: _effectiveChatId,
-      empresaId: TenantContext.empresaId,
-      parceiroId: TenantContext.parceiroId,
-      aplicativoId: TenantContext.aplicativoId,
-      userId: TenantContext.userId,
-    );
+    _channel!.sink.add(json.encode({
+      'sender': _loggedUserName,
+      'senderName': _loggedUserName,
+      'senderEmail': _loggedUserEmail,
+      'content': content,
+      'sector': widget.sector,
+      'type': 'text',
+      'timestamp': DateTime.now().toIso8601String(),
+      'chatId': _effectiveChatId,
+      if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      if (TenantContext.aplicativoId != null)
+        'codApp': TenantContext.aplicativoId,
+    }));
 
-    _channel!.sink.add(json.encode(payload));
     _messageController.clear();
-    final localMessage = ChatMessage.fromJson(payload);
-    _adoptRealChatIdIfNeeded(localMessage);
-    if (!_isDuplicate(localMessage)) {
-      setState(() => _messages.add(localMessage));
-    }
-    _scrollToBottom();
-  }
-
-  // Bug de producao: ver comentario equivalente em web/screens/chatMenssageScreen.dart.
-  int? get _parceiroDoChatUpload {
-    for (final m in _messages) {
-      if (m.parceiroId != null) return m.parceiroId;
-    }
-    return TenantContext.parceiroId;
   }
 
   Future<void> _uploadAndSendFile() async {
-    // Bug de producao: usuario reportou "nao esta dando certo fazer upload"
-    // sem nenhum erro visivel nem log -- este metodo so mostrava SnackBar,
-    // nunca chamava AppLogger (mesma classe de bug ja corrigida no download
-    // do GED, ver bottom_navbar_screen.dart._baixarArquivo). Alem disso, o
-    // envio so' checava _channel == null, nao _wsConnected -- se o usuario
-    // tentar anexar arquivo logo ao abrir um chat NOVO, antes do handshake
-    // do WebSocket terminar (que e' quando o chat recebe seu chatId real,
-    // ver _adoptRealChatIdIfNeeded), o upload pode ser enviado com
-    // chatId='0' (placeholder), que o backend rejeita.
-    if (!_wsConnected) {
-      AppLogger.i.warn(
-        'Upload de chat cancelado: WebSocket ainda nao conectado (chatId=$_effectiveChatId).',
-      );
-      _showSnack('Conexao do chat ainda nao esta pronta. Tente novamente.',
-          error: true);
-      return;
-    }
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
@@ -251,10 +227,9 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         return;
       }
 
-      // Bug de producao: ver comentario equivalente em web/screens/chatMenssageScreen.dart.
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(TenantContext.applyToUrl(ApiLinks.chatUpload(_effectiveChatId))),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadFile)),
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
@@ -265,19 +240,26 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null)
           'empId': TenantContext.empresaId.toString(),
-        if (_parceiroDoChatUpload != null)
-          'parceiroId': _parceiroDoChatUpload.toString(),
+        if (TenantContext.parceiroId != null)
+          'parceiroId': TenantContext.parceiroId.toString(),
+        // Fix card #429: FileController.uploadFile exige estes 5 campos
+        // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
+        // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
+        // GED (ged_arquivos_screen.dart) quando nenhum diretorio e escolhido.
+        'fileName': file.name,
+        'fileType': (file.extension ?? '').toLowerCase(),
+        'diretorio': '{"id":0}',
+        'empresa': '{"id":${TenantContext.empresaId ?? 0}}',
+        'parceiro': '{"id":${TenantContext.parceiroId ?? 0}}',
+        'modulo': 'chat',
       });
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
       if (response.statusCode != 200) {
-        AppLogger.i.error(
-          'Falha no upload de chat (chatId=$_effectiveChatId, arquivo=${file.name}): '
-          'HTTP ${response.statusCode} — $responseBody',
-        );
         _showSnack('Falha no upload (${response.statusCode})', error: true);
         return;
       }
@@ -290,44 +272,26 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           (jsonResponse['fileUrl'] ?? jsonResponse['data']?['fileUrl'])
               ?.toString();
       if (fileId == null) {
-        AppLogger.i.error(
-          'Upload de chat concluido sem fileId (chatId=$_effectiveChatId, resposta=$responseBody)',
-        );
         _showSnack('Upload concluido, mas o arquivo voltou sem identificador',
             error: true);
         return;
       }
 
-      final payload = buildChatOutgoingPayload(
-        senderName: _loggedUserName,
-        senderEmail: _loggedUserEmail,
-        content: 'Arquivo: ${file.name}',
-        sector: widget.sector,
-        type: 'file',
-        chatId: _effectiveChatId,
-        empresaId: TenantContext.empresaId,
-        parceiroId: TenantContext.parceiroId,
-        aplicativoId: TenantContext.aplicativoId,
-        userId: TenantContext.userId,
-        fileName: file.name,
-        fileId: fileId,
-        fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
-      );
-      _channel!.sink.add(json.encode(payload));
-      final localMessage = ChatMessage.fromJson(payload);
-      _adoptRealChatIdIfNeeded(localMessage);
-      if (!_isDuplicate(localMessage)) {
-        setState(() => _messages.add(localMessage));
-      }
-      _scrollToBottom();
-      AppLogger.i.info(
-        'Upload de chat concluido: fileId=$fileId, arquivo=${file.name}, chatId=$_effectiveChatId',
-      );
-    } catch (e, st) {
-      AppLogger.i.error(
-        'Erro no upload de chat (chatId=$_effectiveChatId): $e',
-        st,
-      );
+      _channel!.sink.add(json.encode({
+        'sender': _loggedUserName,
+        'senderName': _loggedUserName,
+        'senderEmail': _loggedUserEmail,
+        'content': 'Arquivo: ${file.name}',
+        'sector': widget.sector,
+        'type': 'file',
+        'fileName': file.name,
+        'fileId': fileId,
+        'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
+        'timestamp': DateTime.now().toIso8601String(),
+        'chatId': _effectiveChatId,
+        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      }));
+    } catch (e) {
       _showSnack('Erro no upload: $e', error: true);
     }
   }
@@ -352,8 +316,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         .where((m) =>
             m.type == 'file' &&
             m.fileId != null &&
-            extensoesImagem
-                .contains((m.fileName ?? '').split('.').last.toLowerCase()))
+            extensoesImagem.contains(
+                (m.fileName ?? '').split('.').last.toLowerCase()))
         .map((m) => {'fileId': m.fileId, 'fileName': m.fileName})
         .toList();
   }
@@ -385,40 +349,22 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
-    if (result == null || !mounted || _disposed) return;
-    final id = (result as dynamic).id;
-    final mensagem =
-        '🎫 Chamado #$id criado com sucesso! Para acompanhar, acesse a tela de Chamados.';
-
-    final payload = buildChatOutgoingPayload(
-      senderName: _loggedUserName,
-      senderEmail: _loggedUserEmail,
-      content: mensagem,
-      sector: widget.sector,
-      type: 'ticket',
-      chatId: _effectiveChatId,
-      empresaId: TenantContext.empresaId,
-      parceiroId: TenantContext.parceiroId,
-      aplicativoId: TenantContext.aplicativoId,
-      userId: TenantContext.userId,
-      ticketId: id is int ? id : int.tryParse(id.toString()),
-    );
-
-    if (_channel != null) {
-      try {
-        _channel!.sink.add(json.encode(payload));
-      } catch (e) {
-        L.d('Erro ao enviar confirmação de chamado no chat: $e');
-      }
-    }
-
-    final localMessage = ChatMessage.fromJson(payload);
-    _adoptRealChatIdIfNeeded(localMessage);
-    if (!_isDuplicate(localMessage)) {
-      setState(() => _messages.add(localMessage));
-    }
-    _scrollToBottom();
-    _showSnack(mensagem, error: false);
+    if (result == null || _channel == null || !mounted || _disposed) return;
+    try {
+      final id = (result as dynamic).id;
+      _channel!.sink.add(json.encode({
+        'sender': _loggedUserName,
+        'senderName': _loggedUserName,
+        'senderEmail': _loggedUserEmail,
+        'content': 'Chamado aberto com sucesso (ID $id)',
+        'sector': widget.sector,
+        'type': 'ticket',
+        'ticketId': id,
+        'timestamp': DateTime.now().toIso8601String(),
+        'chatId': _effectiveChatId,
+        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      }));
+    } catch (_) {}
   }
 
   Future<void> _correctDraft() async {
@@ -478,10 +424,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
-    // Bug de producao: usuario reportou "nao esta dando certo... nem
-    // download do arquivo do chat" sem nenhum log -- este metodo tambem so
-    // mostrava SnackBar, nunca chamava AppLogger (mesma classe de bug ja
-    // corrigida no download do GED, ver bottom_navbar_screen.dart).
     try {
       final response = await http.get(
         Uri.parse(
@@ -496,22 +438,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         final uri = Uri.file(file.path);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          AppLogger.i.warn(
-            'Download de chat: arquivo salvo mas sem app instalado pra abrir '
-            '${file.path} (fileId=$fileId).',
-          );
         }
-        AppLogger.i.info('Download de chat concluido: fileId=$fileId -> ${file.path}');
         _showSnack('Arquivo salvo em: ${file.path}');
       } else {
-        AppLogger.i.error(
-          'Falha no download de chat (fileId=$fileId): HTTP ${response.statusCode} — ${response.body}',
-        );
         _showSnack('Falha ao baixar (${response.statusCode})', error: true);
       }
-    } catch (e, st) {
-      AppLogger.i.error('Erro no download de chat (fileId=$fileId): $e', st);
+    } catch (e) {
       _showSnack('Erro ao baixar: $e', error: true);
     }
   }
@@ -534,12 +466,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   String _displayName(ChatMessage message) {
-    return chatMessageDisplayName(
-      message,
-      isMine: _isMine(message),
-      loggedUserName: _loggedUserName,
-      sector: widget.sector,
-    );
+    if (message.sender.trim().isNotEmpty) return message.sender.trim();
+    return _isMine(message) ? _loggedUserName : widget.sector;
   }
 
   String _formatTime(String? timestamp) {
@@ -563,16 +491,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   // existia, so faltava a ligacao com a tela real de chat.
   Future<void> _transferirChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de transferir.',
-          error: true);
+      _showSnack('Envie ao menos uma mensagem antes de transferir.', error: true);
       return;
     }
     final transferido = await showDialog<bool>(
       context: context,
-      builder: (_) => ChatTransferDialog(
-        chatId: _effectiveChatId,
-        sector: widget.sector,
-      ),
+      builder: (_) => ChatTransferDialog(chatId: _effectiveChatId),
     );
     if (transferido == true && mounted) {
       widget.onFinalized?.call();
@@ -582,8 +506,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   // Card #474 (Fase 3 fila de atendimento).
   Future<void> _incluirParticipante() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de incluir participante.',
-          error: true);
+      _showSnack('Envie ao menos uma mensagem antes de incluir participante.', error: true);
       return;
     }
     await showDialog<bool>(
@@ -594,8 +517,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _finalizarChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de finalizar.',
-          error: true);
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
       return;
     }
 
@@ -610,11 +532,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (resultado == null || !mounted || _disposed) return;
 
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalizarConversa(
-        _effectiveChatId,
-        satisfacao: resultado.satisfacao.valor,
-        nota: resultado.nota,
-      ));
+      final url = TenantContext.applyToUrl(
+          ApiLinks.chatFinalizarConversa(
+            _effectiveChatId,
+            satisfacao: resultado.satisfacao.valor,
+            nota: resultado.nota,
+          ));
       final response = await http.put(
         Uri.parse(url),
         headers: TenantContext.headers,

@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../../../utils/api_links.dart';
-import '../../../utils/tenant_context.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../widgets/finance/billing_charge_dialog.dart';
 import '../screens/baixa_dialog_receber.dart';
 import '../screens/desfazer_baixa_dialog.dart';
-import '../screens/parcelar_receber_dialog.dart';
-import '../screens/recorrencia_receber_dialog.dart';
-import '../screens/renegociacao_receber_dialog.dart';
 
 class ContaReceberGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -82,42 +77,6 @@ class ContaReceberGridScreen extends StatelessWidget {
           isVisible: (obj) => obj.id != null,
           onPressed: (context, object) => _showAnexos(context, object),
         ),
-        // Pedido do usuario: mobile tem que ter as mesmas opcoes do web
-        // (ver web/screens/conta_receber_grid_screen.dart) -- Parcelar,
-        // Recorrencia, Renegociar e Clonar so existiam no web/windows.
-        CustomAction<ContaReceber>(
-          icon: Icons.credit_card,
-          label: 'Parcelar',
-          onPressed: (context, object) => showDialog(
-            context: context,
-            builder: (_) => ParcelarReceberDialog(conta: object),
-          ),
-          isVisible: (obj) => obj.status == StatusConta.ABERTA,
-        ),
-        CustomAction<ContaReceber>(
-          icon: Icons.repeat,
-          label: 'Recorrência',
-          onPressed: (context, object) => showDialog(
-            context: context,
-            builder: (_) => RecorrenciaReceberDialog(conta: object),
-          ),
-          isVisible: (obj) => obj.status == StatusConta.ABERTA,
-        ),
-        CustomAction<ContaReceber>(
-          icon: Icons.swap_horiz,
-          label: 'Renegociar',
-          onPressed: (context, object) => showDialog(
-            context: context,
-            builder: (_) => RenegociacaoReceberDialog(conta: object),
-          ),
-          isVisible: (obj) => obj.status == StatusConta.ABERTA,
-        ),
-        CustomAction<ContaReceber>(
-          icon: Icons.copy,
-          label: 'Clonar',
-          onPressed: (context, object) => _clonarLancamento(context, object.id),
-          isVisible: (_) => true,
-        ),
       ],
       useUserBannerAppBar: true,
       onUserBannerTapped: onUserBannerTapped,
@@ -166,45 +125,5 @@ class ContaReceberGridScreen extends StatelessWidget {
         return BillingChargeDialog(conta: conta);
       },
     );
-  }
-
-  /// Clona um lançamento — mesma ação já existente no Web (ver
-  /// web/screens/conta_receber_grid_screen.dart).
-  Future<void> _clonarLancamento(BuildContext context, int? id) async {
-    if (id == null) return;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Clonar Lançamento'),
-        content: Text('Deseja clonar o lançamento #$id?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clonar'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !context.mounted) return;
-    try {
-      final response = await http.post(
-        Uri.parse(ApiLinks.clonarContaReceber('$id')),
-        headers: TenantContext.headers,
-      );
-      if (!context.mounted) return;
-      final msg = (response.statusCode == 200 || response.statusCode == 201)
-          ? 'Lançamento #$id clonado com sucesso!'
-          : 'Erro ao clonar: ${response.statusCode}';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Erro: $e')));
-      }
-    }
   }
 }

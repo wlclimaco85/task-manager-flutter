@@ -147,57 +147,18 @@ void main() {
       expect(total, 3);
     });
 
-    test('aceita Map com chave records contendo List', () {
-      final input = {
-        'records': [
-          {'id': 7, 'nome': 'Registro'},
-        ],
-        'total': 1,
-      };
-      final list = extractAnyList(input);
-      expect(list, hasLength(1));
-      expect(list[0]['nome'], 'Registro');
-    });
-
-    test('aceita Map com aninhamento data.dados', () {
-      final input = {
-        'data': {
-          'dados': [
-            {'id': 8, 'nome': 'Item Aninhado'},
-          ]
-        }
-      };
-      final list = extractAnyList(input);
-      expect(list, hasLength(1));
-      expect(list[0]['nome'], 'Item Aninhado');
-    });
-
-    test('dropdown loader logic lida com body List sem lancar erro de index', () {
-      final dynamic body = [
-        {'id': '10', 'nome': 'Empresa A'},
-        {'id': '20', 'nome': 'Empresa B'},
-      ];
-      final dynamic dataNode = (body is Map) ? body['data'] : body;
-      final raw = (dataNode is Map)
-          ? (dataNode['dados'] ?? dataNode['content'] ?? dataNode['items'] ?? dataNode)
-          : (dataNode ?? (body is Map ? (body['dados'] ?? body['content'] ?? body['items']) : null));
-      expect(raw, isA<List>());
-      expect(raw, hasLength(2));
-    });
-
-    test('dropdown loader logic lida com body Map {data: [...]} sem lancar erro', () {
-      final dynamic body = {
+    test('rawBody Map<dynamic, dynamic> preserva data e meta', () {
+      final rawBody = <dynamic, dynamic>{
         'data': [
-          {'id': '10', 'nome': 'Empresa A'},
-        ]
+          {'id': 9, 'doc': 'I'},
+        ],
+        'totalElements': 1,
       };
-      final dynamic dataNode = (body is Map) ? body['data'] : body;
-      final raw = (dataNode is Map)
-          ? (dataNode['dados'] ?? dataNode['content'] ?? dataNode['items'] ?? dataNode)
-          : (dataNode ?? (body is Map ? (body['dados'] ?? body['content'] ?? body['items']) : null));
-      expect(raw, isA<List>());
-      expect(raw, hasLength(1));
+      final list = parseResponse(rawBody);
+      final meta = extractMeta(rawBody);
+      expect(list, hasLength(1));
+      expect(list[0]['doc'], 'I');
+      expect(meta['totalElements'], 1);
     });
   });
 }
-

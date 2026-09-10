@@ -10,11 +10,7 @@ import '../../../models/auth_utility.dart';
 import '../../../services/tela_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/automacao_fiscal_screen.dart';
-import '../../../widgets/importacao_sintegra_card.dart';
-import '../../../widgets/importacao_sped_card.dart';
 import '../../../widgets/searchable_dropdown.dart';
-import 'defaults_importacao_screen.dart';
 
 const _primary = GridColors.primary;
 const _green = GridColors.secondary;
@@ -143,41 +139,7 @@ class _ConfiguracoesSistemaScreenState
           const SizedBox(height: 20),
           _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
-          _section('Importacao Fiscal', Icons.receipt_long_outlined, [
-            ImportacaoSintegraCard(baseUrl: ApiLinks.baseUrl),
-            const SizedBox(height: 12),
-            ImportacaoSpedCard(baseUrl: ApiLinks.baseUrl),
-          ]),
-          const SizedBox(height: 20),
-          _section('Automação Fiscal', Icons.folder_special_outlined, [
-            _actionCard(
-                id: 'automacao_fiscal',
-                title: 'Automação Fiscal (Pastas)',
-                subtitle:
-                    'Configura uma pasta monitorada (boletos/speds/sintegra) para '
-                    'importação automática periódica.',
-                icon: Icons.folder_special_outlined,
-                color: _green,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const AutomacaoFiscalScreen()))),
-          ]),
-          const SizedBox(height: 20),
           _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
-          const SizedBox(height: 20),
-          _section('Defaults Financeiros de Importação',
-              Icons.account_balance_wallet_outlined, [
-            _actionCard(
-                id: 'defaults_importacao',
-                title: 'Defaults de Importação (SINTEGRA/SPED)',
-                subtitle:
-                    'Conta bancária, conta/caixa e centro de custo padrão por '
-                    'empresa, usados quando o arquivo importado vier '
-                    'incompleto.',
-                icon: Icons.account_balance_wallet_outlined,
-                color: _primary,
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const DefaultsImportacaoScreen()))),
-          ]),
           const SizedBox(height: 20),
           if (_resultados.isNotEmpty) _buildResultados(),
         ]),

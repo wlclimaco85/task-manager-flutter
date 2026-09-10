@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/categoria_financeira_model.dart';
 import '../../../utils/api_links.dart';
-import '../../../widgets/generic_grid_screen.dart' show SecurityCheck;
-import '../../../widgets/generic_tree_screen.dart';
+import '../../../widgets/generic_grid_screen.dart';
 
 class WebCategoriaFinanceiraGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -13,7 +12,7 @@ class WebCategoriaFinanceiraGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GenericTreeScreen<CategoriaFinanceira>(
+    return GenericGridScreen<CategoriaFinanceira>(
       title: 'Categorias Financeiras',
       fetchEndpoint: ApiLinks.allCategoriasFinanceiras,
       createEndpoint: ApiLinks.createCategoriaFinanceira,
@@ -24,7 +23,16 @@ class WebCategoriaFinanceiraGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: CategoriaFinanceira.fieldConfigs,
       idFieldName: 'id',
-      parentIdFieldName: 'parentId',
+      exportConfig: const ExportConfig(
+        enableCsvExport: true,
+        filenamePrefix: 'categorias_financeiras',
+      ),
+      paginationConfig: const PaginationConfig(
+        defaultRowsPerPage: 10,
+        availableRowsPerPage: [10, 25, 50],
+      ),
+      enableSearch: true,
+      enableColumnReorder: true,
     );
   }
 }

@@ -2,19 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
-import '../../../services/nfse_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
-import '../../../utils/nfse_ux_helper.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
 const _green = GridColors.secondary;
-const _bord = GridColors.borderSubtle;
-const _grey = GridColors.neutral;
-const _dark = GridColors.textDefault;
-const _bg = GridColors.surfaceAlt;
+const _bord = Color(0xFFDDDDDD);
+const _grey = Color(0xFF757575);
+const _dark = Color(0xFF212121);
+const _bg = Color(0xFFF5F5F5);
 
 const _codigoServicoMunicipalNfseKeys = [
   'codigoServicoMunicipal',
@@ -33,16 +31,9 @@ String? resolveCodigoServicoMunicipalNfse(Map<String, dynamic>? cidade) {
   return null;
 }
 
-/// Tela de inserção/detalhe de NFSe.
-///
-/// Layout em 6 seções sequenciais tipo card (sem abas, sem paineis lado a
-/// lado assimétricos): Dados da nota / Cliente-Tomador / Dados fiscais do
-/// serviço / Serviços da nota / Impostos retidos / Totais — organização
-/// inspirada nos fluxos públicos de NFS-e de Conta Azul e Omie (card
-/// 6F94hyxf). Buscas de campos relacionados (empresa, tomador, série,
-/// município, produto/serviço) abrem como autocomplete inline ancorado no
-/// próprio campo (ver [SearchableDropdownField.inline]), não mais como
-/// [Dialog] modal cobrindo a tela.
+/// Tela de inserção/detalhe de NFSe — espelha o layout do NfeSankhyaDetailScreen:
+/// cabeçalho fiscal à esquerda + grid de itens (produtos de serviço) à direita
+/// com aba de Impostos (ISS).
 class NfseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   const NfseDetailScreen({super.key, required this.item});
@@ -51,9 +42,9 @@ class NfseDetailScreen extends StatefulWidget {
 }
 
 class _NfseDetailScreenState extends State<NfseDetailScreen> {
+  int _tab = 0;
   bool _itensGrid = true;
   int _selItem = 0;
-  int _novoItemSeq = 0;
 
   List<Map<String, dynamic>> _itens = [];
 
@@ -79,10 +70,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   DateTime? _dataCompetencia;
 
   String? _empresaNome;
-
-  final _nfseCaller = NfseCaller();
-  bool _emitindoNfse = false;
-  bool _cancelandoNfse = false;
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfseId => widget.item['id']?.toString() ?? '';
@@ -234,7 +221,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   /// Busca cidades no servidor pelo termo digitado (debounce feito pelo
-  /// SearchableDropdownField). Usada pelo popover "Município de Prestação"
+  /// SearchableDropdownField). Usada pelo popup "Município de Prestação"
   /// para não depender de carregar as 5571 cidades no cliente.
   Future<List<Map<String, dynamic>>> _buscarCidadesServidor(
       String termo) async {
@@ -301,17 +288,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   // ── Salvar cabeçalho ──────────────────────────────────────────────────────
 
   Future<void> _salvarCabecalho() async {
-    final errosMunicipais = <String>[
-      if (_municipioCtrl.text.trim().isEmpty) 'Município de Prestação',
-      if (_codigoServicoCtrl.text.trim().isEmpty) 'Código de Serviço Municipal',
-    ];
-    if (errosMunicipais.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(NfseUxHelper.erroValidacaoMunicipal(errosMunicipais)),
-        backgroundColor: _red,
-      ));
-      return;
-    }
     final body = <String, dynamic>{
       if (!_isNovo) 'id': widget.item['id'],
       'numero': _numeroCtrl.text,
@@ -354,249 +330,13 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(_mensagemErro(r.statusCode, r.body)),
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
             backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
-    }
-  }
-
-  /// Extrai mensagem de erro legível do corpo da resposta (ex: validação
-  /// municipal recusada pelo backend), caindo no status HTTP cru quando o
-  /// corpo não trouxer um campo de mensagem reconhecido.
-  String _mensagemErro(int statusCode, String body) {
-    return NfseUxHelper.readableHttpError(
-      statusCode,
-      body,
-      'Falha ao salvar dados municipais da NFS-e',
-    );
-  }
-
-  // ── Emitir / Cancelar na prefeitura (card 4phuZyDS) ─────────────────────
-  //
-  // Antes desta mudança, os botões Emitir/Cancelar só existiam no painel
-  // avulso NfseCaller (nfse_screen.dart), desconectado do registro Nfse real
-  // -- o status exibido aqui ficava sempre "PENDENTE". Agora a própria tela
-  // de detalhe chama o endpoint fiscal (POST /api/fiscal/nfse/emitir|cancelar)
-  // com o nfseId do registro real; o backend persiste o status retornado
-  // de volta em Nfse.status (ver NfseFacade.sincronizarStatusNoRegistro) e
-  // esta tela reflete o mesmo valor localmente, sem precisar recarregar.
-
-  /// Achado de code review (card 4phuZyDS): os botões ficavam sempre
-  /// habilitados para qualquer NFSe existente, permitindo reemitir uma nota
-  /// já autorizada ou cancelar uma já cancelada -- risco fiscal (chamada
-  /// real à prefeitura sem necessidade), não só de UX.
-  bool get _statusJaAutorizado =>
-      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
-          .toUpperCase()
-          .contains('AUTORIZAD');
-  bool get _statusJaCancelado =>
-      NfseUxHelper.statusPrefeituraLabel(_statusVal ?? '')
-          .toUpperCase()
-          .contains('CANCELAD');
-
-  /// Tomador (parceiro) atualmente selecionado no dropdown, ou `null`.
-  Map<String, dynamic>? get _tomadorSelecionado {
-    if (_tomadorId == null) return null;
-    for (final t in _tomadores) {
-      if (t['id']?.toString() == _tomadorId) return t;
-    }
-    return null;
-  }
-
-  /// Descrição/valor agregados a partir dos itens da nota, exigidos pelo
-  /// endpoint fiscal (NfseEmitirRequest.servicoDescricao/valor) -- a tela
-  /// trabalha com múltiplos itens, então soma o valor total e junta as
-  /// descrições numa única string legível.
-  ({String descricao, double valor, String aliquota, String codTrib})
-      _resumoItensParaEmissao() {
-    if (_itens.isEmpty) {
-      return (descricao: '', valor: 0, aliquota: '', codTrib: '');
-    }
-    final descricoes = _itens
-        .map((i) => i['descricao']?.toString().trim() ?? '')
-        .where((d) => d.isNotEmpty)
-        .join('; ');
-    var total = 0.0;
-    for (final i in _itens) {
-      total += double.tryParse(
-              (i['valorTotal'] ?? i['valor_total'] ?? '').toString()) ??
-          0;
-    }
-    final primeiro = _itens.first;
-    final aliquota = (primeiro['aliquotaIss'] ?? primeiro['aliquota_iss'])
-            ?.toString() ??
-        '';
-    final codTrib = (primeiro['codigoTributacaoMunicipal'] ??
-                primeiro['codigo_tributacao_municipal'])
-            ?.toString() ??
-        '';
-    return (
-      descricao: descricoes,
-      valor: total,
-      aliquota: aliquota,
-      codTrib: codTrib
-    );
-  }
-
-  /// Valida os pré-requisitos para chamar o endpoint fiscal, retornando a
-  /// lista de campos faltantes (vazia quando pronto para enviar).
-  List<String> _validarPreRequisitosFiscais({required bool paraCancelar}) {
-    final erros = <String>[];
-    if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
-    if (paraCancelar) {
-      if (_numeroCtrl.text.trim().isEmpty) erros.add('Número da NFSe');
-      return erros;
-    }
-    if (_municipioCtrl.text.trim().isEmpty) erros.add('Município de Prestação');
-    final tomador = _tomadorSelecionado;
-    if (tomador == null) erros.add('Tomador / Parceiro');
-    final cnpjTomador = tomador?['cpf']?.toString().trim() ?? '';
-    if (cnpjTomador.isEmpty) erros.add('CPF/CNPJ do Tomador');
-    if (_itens.isEmpty) {
-      erros.add('Serviços da nota (adicione ao menos um item)');
-    }
-    return erros;
-  }
-
-  Future<void> _emitirNfse() async {
-    final erros = _validarPreRequisitosFiscais(paraCancelar: false);
-    if (erros.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Preencha antes de emitir: ${erros.join(', ')}.'),
-        backgroundColor: _red,
-      ));
-      return;
-    }
-    final resumo = _resumoItensParaEmissao();
-    final tomador = _tomadorSelecionado!;
-    setState(() => _emitindoNfse = true);
-    try {
-      final result = await _nfseCaller.emitir(
-        municipio: _municipioCtrl.text,
-        cnpjTomador: tomador['cpf']?.toString() ?? '',
-        nomeTomador: tomador['nome']?.toString() ?? '',
-        descricaoServico: resumo.descricao,
-        valor: resumo.valor,
-        aliquotaIss: double.tryParse(resumo.aliquota) ?? 0,
-        cnae: '',
-        codigoTributacao: resumo.codTrib.isNotEmpty
-            ? resumo.codTrib
-            : _codigoServicoCtrl.text,
-        empresaId: _empresaId,
-        nfseId: int.tryParse(_nfseId),
-      );
-      if (!mounted) return;
-      final novoStatus = result['status']?.toString();
-      final novoNumero = result['nfseNumber']?.toString();
-      setState(() {
-        if (novoStatus != null && novoStatus.isNotEmpty) {
-          _statusVal = novoStatus;
-        }
-        if (novoNumero != null &&
-            novoNumero.isNotEmpty &&
-            _numeroCtrl.text.trim().isEmpty) {
-          _numeroCtrl.text = novoNumero;
-        }
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(NfseUxHelper.retornoPrefeitura(result)),
-        backgroundColor: _green,
-      ));
-    } on NfseException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), backgroundColor: _red));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao emitir: $e'), backgroundColor: _red));
-      }
-    } finally {
-      if (mounted) setState(() => _emitindoNfse = false);
-    }
-  }
-
-  Future<void> _cancelarNfse() async {
-    final erros = _validarPreRequisitosFiscais(paraCancelar: true);
-    if (erros.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Preencha antes de cancelar: ${erros.join(', ')}.'),
-        backgroundColor: _red,
-      ));
-      return;
-    }
-    final motivo = await _pedirMotivoCancelamento();
-    if (motivo == null || motivo.trim().isEmpty) return;
-    setState(() => _cancelandoNfse = true);
-    try {
-      final result = await _nfseCaller.cancelar(
-        numero: _numeroCtrl.text,
-        motivo: motivo,
-        empresaId: _empresaId,
-        municipio: _municipioCtrl.text,
-        nfseId: int.tryParse(_nfseId),
-      );
-      if (!mounted) return;
-      final novoStatus = result['status']?.toString();
-      setState(() {
-        if (novoStatus != null && novoStatus.isNotEmpty) {
-          _statusVal = novoStatus;
-        }
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(NfseUxHelper.retornoPrefeitura(result)),
-        backgroundColor: _green,
-      ));
-    } on NfseException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), backgroundColor: _red));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ao cancelar: $e'), backgroundColor: _red));
-      }
-    } finally {
-      if (mounted) setState(() => _cancelandoNfse = false);
-    }
-  }
-
-  Future<String?> _pedirMotivoCancelamento() async {
-    final ctrl = TextEditingController();
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Cancelar NFSe'),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            decoration:
-                const InputDecoration(labelText: 'Motivo do cancelamento'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Voltar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(ctrl.text),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        ),
-      );
-    } finally {
-      // Achado de code review (card 4phuZyDS): ctrl não era liberado --
-      // o dialog é efêmero (fecha antes de qualquer novo build), então é
-      // seguro descartar assim que o showDialog retorna.
-      ctrl.dispose();
     }
   }
 
@@ -640,14 +380,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Item salvo!'), backgroundColor: _green));
       } else {
-        // BUG produção (card #504): _salvarItem mostrava "Erro <statusCode>"
-        // cru, sem parsear o corpo da resposta -- apontado como o MESMO
-        // achado em 2 ciclos consecutivos de QA (07/08 e 11/08/24/08),
-        // enquanto _salvarCabecalho (acima) já usava _mensagemErro desde o
-        // início. Unifica o tratamento de erro entre os dois.
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(_mensagemErro(r.statusCode, r.body)),
-            backgroundColor: _red));
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
@@ -656,26 +390,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
-  /// Cria um novo item local com `_localId` estável (gerado uma única vez,
-  /// antes de o item ter `id` do backend) — garante uma [Key] estável para
-  /// o formulário do item mesmo antes do primeiro salvamento, evitando que
-  /// o Flutter reconcilie o Element errado entre itens diferentes da lista.
   void _novoItem() => setState(() {
-        _novoItemSeq++;
-        _itens.add({
-          'nfse_id': int.tryParse(_nfseId) ?? 0,
-          '_localId': 'novo_$_novoItemSeq',
-        });
+        _itens.add({'nfse_id': int.tryParse(_nfseId) ?? 0});
         _selItem = _itens.length - 1;
         _itensGrid = false;
       });
-
-  /// Identidade estável do item (id do backend quando existir, senão o
-  /// `_localId` gerado localmente) — usada como [Key] do formulário do item
-  /// para que cada item tenha seus próprios [TextEditingController],
-  /// evitando o memory leak e a corrupção de dados entre itens (CR-01/CR-02).
-  String _itemKey(Map<String, dynamic> item) =>
-      item['id']?.toString() ?? item['_localId']?.toString() ?? '_sem_id';
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -686,25 +405,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       appBar: AppBar(
         backgroundColor: _red,
         foregroundColor: Colors.white,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('NFSe #$_nfseId',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(width: 6),
-            // BUG produção (card #504): nenhum texto/tooltip explicava a
-            // diferença entre NFSe e NFe (critério de aceite apontado como
-            // FAIL desde 28/07, nunca corrigido).
-            Tooltip(
-              message: 'NFSe (Nota Fiscal de Serviços) é municipal e tributa '
-                  'ISS, diferente da NFe (estadual, tributa ICMS sobre '
-                  'mercadorias). Por isso os campos e o fluxo de envio são '
-                  'diferentes: aqui a nota é enviada para a prefeitura do '
-                  'município de prestação, não para a SEFAZ estadual.',
-              child: Icon(Icons.info_outline, size: 16, color: Colors.white.withOpacity(0.85)),
-            ),
-          ],
-        ),
+        title: Text('NFSe #$_nfseId',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
           TextButton.icon(
             onPressed: _salvarCabecalho,
@@ -728,17 +430,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _cardDadosDaNota(),
+                    _cabecalho(),
                     const SizedBox(height: 12),
-                    _cardClienteTomador(),
+                    _itensPanel(),
                     const SizedBox(height: 12),
-                    _cardDadosFiscaisServico(),
-                    const SizedBox(height: 12),
-                    _cardServicosDaNota(),
-                    const SizedBox(height: 12),
-                    _cardImpostosRetidos(),
-                    const SizedBox(height: 12),
-                    _cardTotais(),
+                    _rodape(),
                   ],
                 ),
               ),
@@ -746,6 +442,44 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  // CABECALHO
+  Widget _cabecalho() {
+    final hasSession = AuthUtility.userInfo?.login != null;
+    return _sectionCard(
+      title: 'Dados da NFSe',
+      icon: Icons.receipt_long,
+      action: ElevatedButton.icon(
+        onPressed: _salvarCabecalho,
+        icon: const Icon(Icons.save, size: 14),
+        label: const Text('Salvar'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+      child: _formGrid([
+        hasSession && _empresaNome != null
+            ? _inpDisabledText('Empresa', _empresaNome!)
+            : _ddObj('Empresa', _empresaId, _empresas, 'nome',
+                (v) => setState(() => _empresaId = v)),
+        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
+            (v) => setState(() => _tomadorId = v)),
+        _ddSerie(),
+        _inp('Numero', _numeroCtrl),
+        _dateField('Data Emissao', _dataEmissao,
+            (d) => setState(() => _dataEmissao = d)),
+        _dateField('Data Competencia', _dataCompetencia,
+            (d) => setState(() => _dataCompetencia = d)),
+        _ddCidade(),
+        _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
+        _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
+        _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+            (v) => setState(() => _ambienteVal = v)),
+      ]),
     );
   }
 
@@ -758,7 +492,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: _bord),
+        border: Border.all(color: GridColors.borderSubtle),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
@@ -775,105 +509,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             if (action != null) action,
           ]),
         ),
-        Container(height: 1, color: _bord),
+        Container(height: 1, color: GridColors.borderSubtle),
         Padding(padding: const EdgeInsets.all(16), child: child),
-      ]),
-    );
-  }
-
-  // 1) DADOS DA NOTA — número, série, datas, status, ambiente.
-  Widget _cardDadosDaNota() {
-    return _sectionCard(
-      title: 'Dados da nota',
-      icon: Icons.receipt_long,
-      action: Wrap(spacing: 8, children: [
-        if (!_isNovo) ...[
-          OutlinedButton.icon(
-            onPressed: (_emitindoNfse || _statusJaAutorizado)
-                ? null
-                : _emitirNfse,
-            icon: _emitindoNfse
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.send, size: 14),
-            label: Text(_statusJaAutorizado ? 'Já autorizada' : 'Emitir'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _green,
-              side: const BorderSide(color: _green),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: (_cancelandoNfse || _statusJaCancelado)
-                ? null
-                : _cancelarNfse,
-            icon: _cancelandoNfse
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.cancel_outlined, size: 14),
-            label: Text(_statusJaCancelado ? 'Já cancelada' : 'Cancelar'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _red,
-              side: const BorderSide(color: _red),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
-          ),
-        ],
-        ElevatedButton.icon(
-          onPressed: _salvarCabecalho,
-          icon: const Icon(Icons.save, size: 14),
-          label: const Text('Salvar'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _green,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-        ),
-      ]),
-      child: _formGrid([
-        _ddSerie(),
-        _inp('Número', _numeroCtrl),
-        _dateField('Data Emissão', _dataEmissao,
-            (d) => setState(() => _dataEmissao = d)),
-        _dateField('Data Competência', _dataCompetencia,
-            (d) => setState(() => _dataCompetencia = d)),
-        _statusChip(_statusVal ?? 'PENDENTE'),
-        _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
-            (v) => setState(() => _ambienteVal = v)),
-      ]),
-    );
-  }
-
-  // 2) CLIENTE / TOMADOR — empresa emitente e tomador do serviço.
-  Widget _cardClienteTomador() {
-    final hasSession = AuthUtility.userInfo?.login != null;
-    return _sectionCard(
-      title: 'Cliente / Tomador',
-      icon: Icons.people_alt,
-      child: _formGrid([
-        hasSession && _empresaNome != null
-            ? _inpDisabledText('Empresa', _empresaNome!)
-            : _ddObj('Empresa', _empresaId, _empresas, 'nome',
-                (v) => setState(() => _empresaId = v)),
-        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
-            (v) => setState(() => _tomadorId = v)),
-      ]),
-    );
-  }
-
-  // 3) DADOS FISCAIS DO SERVIÇO — município de prestação e código de serviço municipal.
-  Widget _cardDadosFiscaisServico() {
-    return _sectionCard(
-      title: 'Dados fiscais do serviço',
-      icon: Icons.gavel,
-      child: _formGrid([
-        _ddCidade(),
-        _inp('Código de Serviço Municipal', _codigoServicoCtrl,
-            icon: Icons.location_city),
       ]),
     );
   }
@@ -893,8 +530,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     });
   }
 
-  Widget _inp(String label, TextEditingController ctrl, {IconData? icon}) =>
-      Padding(
+  Widget _inp(String label, TextEditingController ctrl) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: TextFormField(
           controller: ctrl,
@@ -902,7 +538,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
-            prefixIcon: icon != null ? Icon(icon, size: 16, color: _red) : null,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(color: _bord)),
@@ -916,77 +551,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ),
       );
 
-  /// Chip de status com cor/ícone conforme o retorno da prefeitura —
-  /// substitui o texto cinza puro anterior para dar clareza visual imediata
-  /// (critério de aceite: "retorno prefeitura mapeado e exibido").
-  Widget _statusChip(String status) {
-    // Card 4phuZyDS: os adaptadores de município reais retornam status em
-    // INGLÊS (ISSUED/AUTHORIZED/CANCELLED/CONTINGENCY), que o backend agora
-    // persiste em Nfse.status quando a emissão/cancelamento passa pelo
-    // nfseId real. O "contains" abaixo era só em português e nunca batia
-    // com esses valores -- o chip ficava sempre "Pendente" mesmo já
-    // autorizado/cancelado na prefeitura. NfseUxHelper.statusPrefeituraLabel
-    // já traduz os dois idiomas; usamos o rótulo traduzido (sempre em
-    // português) tanto para exibir quanto para decidir cor/ícone.
-    final label = NfseUxHelper.statusPrefeituraLabel(status);
-    final upper = label.toUpperCase();
-    Color cor;
-    IconData icone;
-    String descricaoAcessivel;
-    if (upper.contains('AUTORIZAD')) {
-      cor = _green;
-      icone = Icons.check_circle;
-      descricaoAcessivel = 'Status: autorizado';
-    } else if (upper.contains('REJEITAD') || upper.contains('ERRO')) {
-      cor = _red;
-      icone = Icons.error;
-      descricaoAcessivel = 'Status: rejeitado ou com erro';
-    } else if (upper.contains('CANCELAD')) {
-      cor = _grey;
-      icone = Icons.cancel;
-      descricaoAcessivel = 'Status: cancelado';
-    } else {
-      cor = _grey;
-      icone = Icons.hourglass_empty;
-      descricaoAcessivel = 'Status: pendente';
-    }
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: 'Status',
-          labelStyle: const TextStyle(fontSize: 11, color: _grey),
-          filled: true,
-          fillColor: _bg,
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: _bord)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: _bord)),
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        ),
-        child: Row(children: [
-          Icon(icone, size: 14, color: cor, semanticLabel: descricaoAcessivel),
-          const SizedBox(width: 6),
-          // Flexible + ellipsis: o rótulo traduzido ("Autorizada pela
-          // prefeitura") é bem mais longo que o valor bruto antigo
-          // ("PENDENTE") e a célula desta grade de 3 colunas tem largura
-          // fixa -- sem isso o texto mais longo estoura o Row (RenderFlex
-          // overflow) em vez de truncar graciosamente.
-          Flexible(
-            child: Text(label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontSize: 12, color: cor, fontWeight: FontWeight.w600)),
-          ),
-        ]),
-      ),
-    );
-  }
-
   Widget _inpDisabledText(String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: InputDecorator(
@@ -994,7 +558,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             labelText: label,
             labelStyle: const TextStyle(fontSize: 11, color: _grey),
             filled: true,
-            fillColor: _bg,
+            fillColor: const Color(0xFFF5F5F5),
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(color: _bord)),
@@ -1023,7 +587,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           displayField: 'nome',
           nullable: true,
           nullLabel: '— Selecione —',
-          inline: true,
           onChanged: cb,
         ),
       );
@@ -1045,7 +608,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione —',
-        inline: true,
         onChanged: cb,
       ),
     );
@@ -1071,7 +633,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione —',
-        inline: true,
         onChanged: (v) {
           setState(() => _serieId = v);
           final s = _series.firstWhere((o) => o['id']?.toString() == v,
@@ -1094,7 +655,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: 'Município de Prestação',
-        prefixIcon: Icons.location_city,
         value: _cidades.any((o) => o['id']?.toString() == _cidadeId)
             ? _cidadeId
             : null,
@@ -1103,7 +663,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione —',
-        inline: true,
         onSearch: _buscarCidadesServidor,
         onChanged: (v) => setState(() => _cidadeId = v),
         // Usa o item completo devolvido pelo widget (local ou vindo da busca
@@ -1154,8 +713,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
           child: Row(children: [
-            Icon(Icons.calendar_today,
-                size: 14, color: _grey, semanticLabel: 'Selecionar data'),
+            const Icon(Icons.calendar_today, size: 14, color: _grey),
             const SizedBox(width: 6),
             Text(
               val != null
@@ -1169,10 +727,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  // 4) SERVIÇOS DA NOTA — lista/formulário de itens.
-  Widget _cardServicosDaNota() {
+  // ── ITENS ──
+  Widget _itensPanel() {
     return _sectionCard(
-      title: 'Serviços da nota',
+      title: 'Servicos da nota',
       icon: Icons.design_services,
       child: Column(children: [
         Wrap(
@@ -1180,17 +738,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Text('Itens (Serviços)',
+              const Text('Itens (Servicos)',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(width: 8),
               _togBtn(Icons.view_list, _itensGrid,
-                  () => setState(() => _itensGrid = true), 'Ver em grade'),
+                  () => setState(() => _itensGrid = true)),
               const SizedBox(width: 4),
-              _togBtn(
-                  Icons.edit_note,
-                  !_itensGrid,
-                  () => setState(() => _itensGrid = false),
-                  'Ver em formulário'),
+              _togBtn(Icons.edit_note, !_itensGrid,
+                  () => setState(() => _itensGrid = false)),
               const SizedBox(width: 8),
               SizedBox(
                   height: 28,
@@ -1219,26 +774,21 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                                 const EdgeInsets.symmetric(horizontal: 8)))),
               ],
               if (!_itensGrid && _itens.isNotEmpty) ...[
-                _nb(Icons.first_page, () => setState(() => _selItem = 0),
-                    'Primeiro item'),
+                _nb(Icons.first_page, () => setState(() => _selItem = 0)),
                 _nb(
                     Icons.chevron_left,
                     () => setState(() {
                           if (_selItem > 0) _selItem--;
-                        }),
-                    'Item anterior'),
+                        })),
                 Text(' ${_selItem + 1}/${_itens.length} ',
                     style: const TextStyle(fontSize: 11)),
                 _nb(
                     Icons.chevron_right,
                     () => setState(() {
                           if (_selItem < _itens.length - 1) _selItem++;
-                        }),
-                    'Próximo item'),
-                _nb(
-                    Icons.last_page,
-                    () => setState(() => _selItem = _itens.length - 1),
-                    'Último item'),
+                        })),
+                _nb(Icons.last_page,
+                    () => setState(() => _selItem = _itens.length - 1)),
               ],
             ]),
         const SizedBox(height: 12),
@@ -1258,243 +808,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  /// Renderiza o formulário do item atualmente selecionado usando uma
-  /// [Key] estável por item ([_itemKey]) — ao navegar para outro item, o
-  /// Flutter desmonta o [_NfseItemFormFields] anterior (chamando
-  /// `dispose()` em seus controllers) e monta um novo com seus próprios
-  /// controllers, eliminando o memory leak e a corrupção de dados entre
-  /// itens (CR-01/CR-02 do card).
   Widget _iForm() {
     if (_selItem >= _itens.length) return const SizedBox();
     final item = _itens[_selItem];
-    return _NfseItemFormFields(
-      key: ValueKey(_itemKey(item)),
-      item: item,
-      produtos: _produtos,
-      onSalvar: () => _salvarItem(item),
-      onProdutoSelecionado: (prod) => setState(() {}),
-    );
-  }
-
-  Widget _gridSemHeader(
-      {required String telaNome, Map<String, dynamic>? extraParams}) {
-    return DynamicGridWindowsScreen<Map<String, dynamic>>(
-      key: ValueKey('${telaNome}_$_nfseId'),
-      telaNome: telaNome,
-      hasPermission: (p) => p == 'create' ? false : true,
-      fromJson: (json) => json,
-      toJson: (a) => a,
-      extraParams: extraParams,
-      showAppBar: false,
-    );
-  }
-
-  Widget _togBtn(IconData ic, bool on, VoidCallback cb, String label) =>
-      Tooltip(
-        message: label,
-        child: InkWell(
-          onTap: cb,
-          child: Semantics(
-            button: true,
-            label: label,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                  color: on ? _green : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: on ? _green : _bord)),
-              child: Icon(ic, size: 16, color: on ? Colors.white : _grey),
-            ),
-          ),
-        ),
-      );
-
-  Widget _nb(IconData ic, VoidCallback cb, String label) => Tooltip(
-        message: label,
-        child: InkWell(
-          onTap: cb,
-          child: Semantics(
-            button: true,
-            label: label,
-            child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1),
-                child: Icon(ic, size: 18, color: _dark)),
-          ),
-        ),
-      );
-
-  // 5) IMPOSTOS RETIDOS — ISS por item, como card sequencial próprio (não
-  // mais aba interna do card de resumo).
-  Widget _cardImpostosRetidos() {
-    return _sectionCard(
-      title: 'Impostos retidos',
-      icon: Icons.account_balance,
-      child: _impostosConteudo(),
-    );
-  }
-
-  /// Aba Impostos — ISS / alíquota ISS / código de tributação municipal /
-  /// ISS retido por item (espelha _impostosTab do NfeSankhyaDetailScreen,
-  /// mas exibindo os campos de ISS de cada item da NFSe).
-  Widget _impostosConteudo() {
-    if (_itens.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 4),
-        child: Text('Impostos (ISS) calculados a partir dos itens.',
-            style: TextStyle(color: _grey, fontSize: 12)),
-      );
-    }
-    return Column(
-      children: _itens.asMap().entries.map((entry) {
-        final i = entry.key;
-        final item = entry.value;
-        final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
-        final aliquota = item['aliquotaIss']?.toString() ??
-            item['aliquota_iss']?.toString() ??
-            '-';
-        final valorIss = item['valorIss']?.toString() ??
-            item['valor_iss']?.toString() ??
-            '-';
-        final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
-            item['codigo_tributacao_municipal']?.toString() ??
-            '-';
-        final retido = item['issRetido'] == true || item['iss_retido'] == true;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: _bord)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(descricao,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 16, runSpacing: 6, children: [
-              _impInfo('Alíquota ISS', '$aliquota%'),
-              _impInfo('Valor ISS', valorIss),
-              _impInfo('Cód. Tributação Municipal', codTrib),
-              _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
-            ]),
-          ]),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _impInfo(String label, String value) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: _grey)),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: _dark)),
-      ]);
-
-  // 6) TOTAIS — resumo de valores da nota, como card sequencial próprio.
-  Widget _cardTotais() {
-    final vt = widget.item['valorTotal']?.toString() ?? '0,00';
-    return _sectionCard(
-      title: 'Totais',
-      icon: Icons.summarize,
-      child: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
-    );
-  }
-
-  Widget _card(String label, String value) => Container(
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-            color: _bg,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: _bord)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: _grey)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.bold, color: _dark)),
-        ]),
-      );
-}
-
-/// Formulário dos campos de um item (serviço) da NFSe, isolado em um
-/// [StatefulWidget] próprio e instanciado com uma [Key] estável por item
-/// (ver [_NfseDetailScreenState._itemKey]).
-///
-/// Antes desta extração, cada campo do item criava um [TextEditingController]
-/// novo a cada rebuild do widget pai (sem cache por item e sem `dispose()`),
-/// causando memory leak (CR-01) e corrupção de dados/cursor pulando entre
-/// itens diferentes por falta de identidade estável (CR-02). Agora os
-/// controllers são criados uma única vez em [initState], atualizados sem
-/// recriação em [didUpdateWidget] e liberados em [dispose] — o próprio
-/// framework do Flutter chama `dispose()` automaticamente quando este
-/// widget sai da árvore (ex: ao trocar de item selecionado, já que a
-/// [Key] muda).
-class _NfseItemFormFields extends StatefulWidget {
-  final Map<String, dynamic> item;
-  final List<Map<String, dynamic>> produtos;
-  final VoidCallback onSalvar;
-  final ValueChanged<Map<String, dynamic>> onProdutoSelecionado;
-
-  const _NfseItemFormFields({
-    required super.key,
-    required this.item,
-    required this.produtos,
-    required this.onSalvar,
-    required this.onProdutoSelecionado,
-  });
-
-  @override
-  State<_NfseItemFormFields> createState() => _NfseItemFormFieldsState();
-}
-
-class _NfseItemFormFieldsState extends State<_NfseItemFormFields> {
-  static const _campos = [
-    'descricao',
-    'quantidade',
-    'valorUnitario',
-    'valorTotal'
-  ];
-  final Map<String, TextEditingController> _controllers = {};
-
-  @override
-  void initState() {
-    super.initState();
-    for (final campo in _campos) {
-      _controllers[campo] =
-          TextEditingController(text: widget.item[campo]?.toString() ?? '');
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _NfseItemFormFields oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Mesmo item (mesma Key) — sincroniza o texto exibido com o mapa (ex:
-    // seleção de produto preenchendo descrição/valor) sem recriar os
-    // controllers, preservando posição do cursor e foco do usuário.
-    for (final campo in _campos) {
-      final novo = widget.item[campo]?.toString() ?? '';
-      final ctrl = _controllers[campo];
-      if (ctrl != null && ctrl.text != novo) ctrl.text = novo;
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final ctrl in _controllers.values) {
-      ctrl.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final item = widget.item;
     final prodId =
         (item['produto'] is Map ? item['produto']['id'] : item['produto_id'])
             ?.toString();
@@ -1502,9 +818,9 @@ class _NfseItemFormFieldsState extends State<_NfseItemFormFields> {
       padding: const EdgeInsets.all(10),
       child: Column(children: [
         // Produto — somente os marcados como serviço (Produto.isServico == true)
-        _ddObjItem('Produto (Serviço)', prodId, widget.produtos, 'nome', (v) {
-          final prod = widget.produtos
-              .firstWhere((p) => p['id']?.toString() == v, orElse: () => {});
+        _ddObjItem('Produto (Serviço)', prodId, _produtos, 'nome', (v) {
+          final prod = _produtos.firstWhere((p) => p['id']?.toString() == v,
+              orElse: () => {});
           setState(() {
             item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
             if (prod.isNotEmpty) {
@@ -1517,17 +833,16 @@ class _NfseItemFormFieldsState extends State<_NfseItemFormFields> {
                   prod['codigoTributacaoMunicipal']?.toString() ?? '';
             }
           });
-          widget.onProdutoSelecionado(item);
         }),
-        _campoItem('Descrição', 'descricao'),
-        _campoItem('Quantidade', 'quantidade'),
-        _campoItem('Vl. Unitário', 'valorUnitario'),
-        _campoItem('Vl. Total', 'valorTotal'),
+        _iInp('Descrição', item, 'descricao'),
+        _iInp('Quantidade', item, 'quantidade'),
+        _iInp('Vl. Unitário', item, 'valorUnitario'),
+        _iInp('Vl. Total', item, 'valorTotal'),
         const SizedBox(height: 12),
         SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-                onPressed: widget.onSalvar,
+                onPressed: () => _salvarItem(item),
                 icon: const Icon(Icons.save, size: 14),
                 label: const Text('Salvar Item',
                     style:
@@ -1540,14 +855,13 @@ class _NfseItemFormFieldsState extends State<_NfseItemFormFields> {
     );
   }
 
-  Widget _campoItem(String label, String key) {
-    final ctrl = _controllers[key]!;
+  Widget _iInp(String label, Map<String, dynamic> item, String key) {
+    final ctrl = TextEditingController(text: item[key]?.toString() ?? '');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
-        key: ValueKey('item_field_$key'),
         controller: ctrl,
-        onChanged: (value) => widget.item[key] = value,
+        onChanged: (value) => item[key] = value,
         style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(
           labelText: label,
@@ -1588,9 +902,177 @@ class _NfseItemFormFieldsState extends State<_NfseItemFormFields> {
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione Serviço —',
-        inline: true,
         onChanged: cb,
       ),
     );
   }
+
+  Widget _gridSemHeader(
+      {required String telaNome, Map<String, dynamic>? extraParams}) {
+    return DynamicGridWindowsScreen<Map<String, dynamic>>(
+      key: ValueKey('${telaNome}_$_nfseId'),
+      telaNome: telaNome,
+      hasPermission: (p) => p == 'create' ? false : true,
+      fromJson: (json) => json,
+      toJson: (a) => a,
+      extraParams: extraParams,
+      showAppBar: false,
+    );
+  }
+
+  Widget _togBtn(IconData ic, bool on, VoidCallback cb) => InkWell(
+        onTap: cb,
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+              color: on ? _green : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: on ? _green : _bord)),
+          child: Icon(ic, size: 16, color: on ? Colors.white : _grey),
+        ),
+      );
+
+  Widget _nb(IconData ic, VoidCallback cb) => InkWell(
+        onTap: cb,
+        child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: Icon(ic, size: 18, color: _dark)),
+      );
+
+  // ── RODAPÉ: abas ──
+  Widget _rodape() {
+    final tabs = ['Totais', 'Impostos'];
+    return _sectionCard(
+      title: 'Resumo e impostos',
+      icon: Icons.summarize,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(
+            color: GridColors.gridHeader,
+            child: Row(children: [
+              const SizedBox(width: 8),
+              ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
+            ])),
+        Container(height: 1, color: GridColors.borderSubtle),
+        SizedBox(height: 180, child: _tabContent()),
+      ]),
+    );
+  }
+
+  Widget _tabBtn(int idx, String label) {
+    final on = _tab == idx;
+    return GestureDetector(
+      onTap: () => setState(() => _tab = idx),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+            color: on ? Colors.white : Colors.transparent,
+            border: Border(
+                bottom: BorderSide(
+                    color: on ? _red : Colors.transparent, width: 2))),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: on ? FontWeight.bold : FontWeight.normal,
+                color: on ? _red : _grey)),
+      ),
+    );
+  }
+
+  Widget _tabContent() {
+    switch (_tab) {
+      case 0:
+        return _totaisTab();
+      case 1:
+        return _impostosTab();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _totaisTab() {
+    final vt = widget.item['valorTotal']?.toString() ?? '0,00';
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
+    );
+  }
+
+  Widget _card(String label, String value) => Container(
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+            color: _bg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _bord)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: _grey)),
+          const SizedBox(height: 4),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.bold, color: _dark)),
+        ]),
+      );
+
+  /// Aba Impostos — ISS / alíquota ISS / código de tributação municipal /
+  /// ISS retido por item (espelha _impostosTab do NfeSankhyaDetailScreen,
+  /// mas exibindo os campos de ISS de cada item da NFSe).
+  Widget _impostosTab() {
+    if (_itens.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(10),
+        child: Text('Impostos (ISS) calculados a partir dos itens.',
+            style: TextStyle(color: _grey, fontSize: 12)),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.all(10),
+      itemCount: _itens.length,
+      separatorBuilder: (_, __) => const Divider(height: 16),
+      itemBuilder: (_, i) {
+        final item = _itens[i];
+        final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
+        final aliquota = item['aliquotaIss']?.toString() ??
+            item['aliquota_iss']?.toString() ??
+            '-';
+        final valorIss = item['valorIss']?.toString() ??
+            item['valor_iss']?.toString() ??
+            '-';
+        final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
+            item['codigo_tributacao_municipal']?.toString() ??
+            '-';
+        final retido = item['issRetido'] == true || item['iss_retido'] == true;
+        return Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _bord)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(descricao,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const SizedBox(height: 6),
+            Wrap(spacing: 16, runSpacing: 6, children: [
+              _impInfo('Alíquota ISS', '$aliquota%'),
+              _impInfo('Valor ISS', valorIss),
+              _impInfo('Cód. Tributação Municipal', codTrib),
+              _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
+            ]),
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _impInfo(String label, String value) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: _grey)),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: _dark)),
+      ]);
 }

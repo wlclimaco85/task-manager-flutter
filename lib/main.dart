@@ -5,8 +5,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart' show GestureBinding;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -16,9 +15,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
 import 'services/session_expired_handler.dart';
-import 'services/push_notification_service.dart';
-import 'services/alerta_polling_service.dart';
-import 'services/sistema_error_reporter.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'utils/app_logger.dart';
@@ -34,9 +30,10 @@ void _logErr(String tag, Object e, [StackTrace? s]) =>
 
 void main() {
   // runZonedGuarded captura erros assíncronos não tratados em qualquer ponto.
-  runZonedGuarded(() {
+  runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     _log('WidgetsFlutterBinding pronto');
+
     // Desliga o resampling de eventos de ponteiro (Flutter guarda amostras e
     // as reproduz num callback do scheduler para suavizar toques). O crash
     // reportado pelo cliente ("Null check operator... gestures library...
@@ -62,26 +59,15 @@ void main() {
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
       print('[APP-ERROR] PlatformDispatcher (engine/gestures): $error');
       print('[APP-ERROR] stack:\n$stack');
-      SistemaErrorReporter.instance.reportarErro(
-        mensagem: error.toString(),
-        detalhes: stack.toString(),
-        classeOuRota: 'PlatformDispatcher',
-      );
       return true;
     };
 
     // Erros do framework -> console (com biblioteca/contexto/stack, que apontam o widget).
     FlutterError.onError = (FlutterErrorDetails details) {
       print('[APP-ERROR] FlutterError: ${details.exceptionAsString()}');
-      print(
-          '[APP-ERROR] biblioteca: ${details.library} | contexto: ${details.context}');
+      print('[APP-ERROR] biblioteca: ${details.library} | contexto: ${details.context}');
       print('[APP-ERROR] stack:\n${details.stack}');
       FlutterError.presentError(details);
-      SistemaErrorReporter.instance.reportarErro(
-        mensagem: details.exceptionAsString(),
-        detalhes: details.stack?.toString(),
-        classeOuRota: details.library ?? 'FlutterFramework',
-      );
     };
     try {
       AppLogger.i.initCapture();
@@ -100,129 +86,78 @@ void main() {
     // tamanho certo via LayoutBuilder. O erro detalhado já sai pelo
     // FlutterError.onError acima — aqui não duplicar.
     ErrorWidget.builder = (FlutterErrorDetails details) {
-      print(
-          '[APP-ERROR] _AdaptiveErrorBox exibida (detalhes acima via FlutterError).');
+      print('[APP-ERROR] _AdaptiveErrorBox exibida (detalhes acima via FlutterError).');
       return const _AdaptiveErrorBox();
     };
 
-    _log('runApp bootstrap');
-    runApp(const TaskManagerBootstrap());
+    try {
+      await initializeDateFormatting('pt_BR', null);
+      _log('initializeDateFormatting ok');
+    } catch (e, s) {
+      _logErr('initializeDateFormatting', e, s);
+    }
+
+    try {
+      await Hive.initFlutter();
+      _log('Hive.initFlutter ok');
+    } catch (e, s) {
+      _logErr('Hive.initFlutter', e, s);
+    }
+
+    // Blindagem: box corrompida não pode derrubar o app antes do runApp.
+    try {
+      await Hive.openBox('vendas_contingencia');
+      _log('openBox vendas_contingencia ok');
+    } catch (e, s) {
+      _logErr('openBox vendas_contingencia (tentando recriar)', e, s);
+      try {
+        await Hive.deleteBoxFromDisk('vendas_contingencia');
+        await Hive.openBox('vendas_contingencia');
+        _log('box vendas_contingencia recriada após corrupção');
+      } catch (e2, s2) {
+        _logErr('recriação da box vendas_contingencia', e2, s2);
+      }
+    }
+
+    // Blindagem: sessão corrompida -> limpa e cai para login em vez de crashar.
+    bool loggedIn = false;
+    try {
+      loggedIn = await AuthUtility.isUserLoggedIn();
+      _log('isUserLoggedIn = $loggedIn');
+    } catch (e, s) {
+      _logErr('isUserLoggedIn (limpando sessão)', e, s);
+      try {
+        await AuthUtility.clearUserInfo();
+      } catch (_) {}
+      loggedIn = false;
+    }
+
+    if (loggedIn) {
+      try {
+        await ModuloAccess.load();
+        _log('ModuloAccess.load ok');
+      } catch (e, s) {
+        _logErr('ModuloAccess.load', e, s);
+      }
+    }
+
+    _log('runApp');
+    runApp(TaskManagerApp(loggedIn: loggedIn));
   }, (error, stack) {
     print('[APP-ERROR] erro não tratado: $error');
     print('[APP-ERROR] stack:\n$stack');
-    SistemaErrorReporter.instance.reportarErro(
-      mensagem: error.toString(),
-      detalhes: stack.toString(),
-      classeOuRota: 'runZonedGuarded',
-    );
   });
 }
 
-Future<bool> _carregarEstadoInicial() async {
-  try {
-    await PushNotificationService.inicializarFirebaseSeDisponivel();
-    _log('PushNotificationService.inicializarFirebaseSeDisponivel ok');
-  } catch (e, s) {
-    _logErr('PushNotificationService.inicializarFirebaseSeDisponivel', e, s);
-  }
-
-  try {
-    await initializeDateFormatting('pt_BR', null);
-    _log('initializeDateFormatting ok');
-  } catch (e, s) {
-    _logErr('initializeDateFormatting', e, s);
-  }
-
-  try {
-    await Hive.initFlutter();
-    _log('Hive.initFlutter ok');
-  } catch (e, s) {
-    _logErr('Hive.initFlutter', e, s);
-  }
-
-  try {
-    await Hive.openBox('vendas_contingencia');
-    _log('openBox vendas_contingencia ok');
-  } catch (e, s) {
-    _logErr('openBox vendas_contingencia (tentando recriar)', e, s);
-    try {
-      await Hive.deleteBoxFromDisk('vendas_contingencia');
-      await Hive.openBox('vendas_contingencia');
-      _log('box vendas_contingencia recriada apos corrupcao');
-    } catch (e2, s2) {
-      _logErr('recriacao da box vendas_contingencia', e2, s2);
-    }
-  }
-
-  bool loggedIn = false;
-  try {
-    loggedIn = await AuthUtility.isUserLoggedIn();
-    _log('isUserLoggedIn = $loggedIn');
-  } catch (e, s) {
-    _logErr('isUserLoggedIn (limpando sessao)', e, s);
-    try {
-      await AuthUtility.clearUserInfo();
-    } catch (_) {}
-    loggedIn = false;
-  }
-
-  if (loggedIn) {
-    try {
-      await ModuloAccess.load();
-      _log('ModuloAccess.load ok');
-    } catch (e, s) {
-      _logErr('ModuloAccess.load', e, s);
-    }
-    try {
-      await PushNotificationService.registrarDispositivoLogado();
-      _log('PushNotificationService.registrarDispositivoLogado ok');
-    } catch (e, s) {
-      _logErr('PushNotificationService.registrarDispositivoLogado', e, s);
-    }
-    try {
-      await AlertaPollingService.instance.iniciar();
-      _log('AlertaPollingService.iniciar ok');
-    } catch (e, s) {
-      _logErr('AlertaPollingService.iniciar', e, s);
-    }
-  }
-
-  return loggedIn;
-}
-
-class TaskManagerBootstrap extends StatefulWidget {
-  const TaskManagerBootstrap({super.key});
-
-  @override
-  State<TaskManagerBootstrap> createState() => _TaskManagerBootstrapState();
-}
-
-class _TaskManagerBootstrapState extends State<TaskManagerBootstrap> {
-  bool? _loggedIn;
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarEstadoInicial().then((loggedIn) {
-      if (mounted) setState(() => _loggedIn = loggedIn);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => TaskManagerApp(loggedIn: _loggedIn);
-}
-
 class TaskManagerApp extends StatelessWidget {
-  final bool? loggedIn;
+  final bool loggedIn;
   const TaskManagerApp({super.key, required this.loggedIn});
 
   @override
   Widget build(BuildContext context) {
     Widget home;
 
-    if (loggedIn == null) {
-      home = const _BootLoadingScreen();
-    } else if (loggedIn!) {
+    if (loggedIn) {
       if (kIsWeb) {
         home = const WebBottomNavBarScreen();
       } else if (defaultTargetPlatform == TargetPlatform.windows) {
@@ -302,82 +237,6 @@ class TaskManagerApp extends StatelessWidget {
   }
 }
 
-class _BootLoadingScreen extends StatelessWidget {
-  const _BootLoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: GridColors.secondary,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 24,
-                          offset: Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.apartment_rounded,
-                      color: GridColors.primary,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Abraço Contabilidade',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Carregando sistema',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: GridColors.textPrimaryMuted,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: const LinearProgressIndicator(
-                      minHeight: 6,
-                      backgroundColor: Color(0x33FFFFFF),
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(GridColors.primary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Tela exibida quando o build de um widget falha (substitui o "fundo rosa" /
 /// ErrorWidget padrão). Oferece limpar dados locais e recarregar — caminho de
 /// recuperação para cache antigo ou storage corrompido.
@@ -418,8 +277,7 @@ class _AdaptiveErrorBox extends StatelessWidget {
           return const Center(
             child: Tooltip(
               message: 'Erro ao carregar',
-              child:
-                  Icon(Icons.error_outline, size: 20, color: GridColors.error),
+              child: Icon(Icons.error_outline, size: 20, color: GridColors.error),
             ),
           );
         }
@@ -481,7 +339,8 @@ class _ErroTelaCompleta extends StatelessWidget {
                   const Text(
                     'Não foi possível carregar o sistema',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(

@@ -1,4 +1,3 @@
-import '../../widgets/app_loading_overlay.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -9,6 +8,7 @@ import '../../features/agendamento/agendamento_module.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
+import '../../../services/alerta_polling_service.dart';
 import '../../../utils/security_matrix.dart';
 import '../../services/alert_caller.dart';
 import '../../../windows/screens/alimento_grid_screen.dart';
@@ -58,6 +58,7 @@ import '../../../windows/screens/dividendo_grid_screen.dart';
 import '../../../windows/screens/order_grid_screen.dart';
 import '../../../windows/screens/pedido_grid_screen.dart';
 import '../../../windows/screens/ticket_grid_screen.dart';
+import '../../../windows/screens/alerta_aluno_grid_screen.dart';
 import '../../../windows/screens/avaliacao_fisica_grid_screen.dart';
 import '../../../windows/screens/academia_grid_screen.dart';
 import '../../../windows/screens/conta_bancaria_grid_screen.dart';
@@ -84,11 +85,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/menu_config.dart';
 import '../../../widgets/app_sidebar.dart';
-import '../../../widgets/alertas/alertas_manuais_screen.dart';
-import '../../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
-import '../../../widgets/empresa_selecao_screen.dart';
 import '../../../widgets/internal_tab_strip.dart';
-import '../../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../../models/open_tab.dart';
 // Telas web reutilizadas no Windows
 import '../../windows/screens/nfe_finalidade_grid_screen.dart';
@@ -103,7 +100,6 @@ import '../../windows/screens/modulo_servico_grid_screen.dart';
 import '../../windows/screens/ponto_web_screen.dart';
 import '../../windows/screens/ponto_solicitacao_screen.dart';
 import '../../windows/screens/ponto_ajuste_screen.dart';
-import '../../windows/screens/relatorio_ponto_screen.dart';
 import '../../windows/screens/configuracoes_sistema_screen.dart';
 import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
@@ -115,7 +111,6 @@ import '../../windows/screens/consulta_dfe_screen.dart';
 import '../../windows/screens/manifestacao_destinatario_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
-import '../../windows/screens/certificado_empresa_screen.dart';
 import '../../windows/screens/orcamento_grid_screen.dart';
 import '../../windows/screens/pedido_venda_grid_screen.dart';
 import '../../windows/screens/pedido_compra_grid_screen.dart';
@@ -143,7 +138,6 @@ import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
 import '../../web/screens/instagram_monitor_screen.dart';
-import '../../screens/contratos/faturar_contratos_screen.dart';
 import '../../widgets/chat/chat_kanban_screen.dart';
 import './atividade_diaria_screen.dart';
 import '../../features/diario_nutricional/diario_nutricional_screen.dart';
@@ -209,6 +203,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       _openInitialTab();
     });
     _startPeriodicFetch();
+    unawaited(AlertaPollingService.instance.iniciar());
   }
 
   // ── Gerenciamento de abas internas ───────────────────────────────────────
@@ -364,7 +359,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsOrderGridScreen(hasPermission: (perm) => true),
         WindowsPedidoGridScreen(hasPermission: (perm) => true),
         WindowsConfiguracoesAdminScreen(hasPermission: (perm) => true),
-        const AlertasManuaisScreen(),
+        WindowsAlertaAlunoGridScreen(hasPermission: (perm) => true),
         WindowsAvaliacaoFisicaGridScreen(hasPermission: (perm) => true),
         WindowsContaBancariaGridScreen(hasPermission: (perm) => true),
         WindowsClassificacaoGridScreen(hasPermission: (perm) => true),
@@ -430,8 +425,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WindowsOrcamentoGridScreen(), // 94: Orçamentos
         WindowsPedidoVendaGridScreen(
             hasPermission: (perm) => true), // 95: Pedidos de Venda
-        WindowsPedidoCompraGridScreen(
-            hasPermission: (perm) => true), // 96: Pedidos de Compra
+        const WindowsPedidoCompraGridScreen(), // 96: Pedidos de Compra
         const ConsultaDfeScreen(), // 97: Consulta DF-e
         const ManifestacaoDestinatarioScreen(), // 98: Manifestação Destinatário
         const NfseScreen(), // 99: NFSe
@@ -485,8 +479,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         ), // 141: Historico de Treinos
         const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
         const DpDashboardScreen(), // 143: Dashboard DP
-        const RelatorioPontoScreen(), // 144: Relatórios DP/RH
-        const DashboardComercialMercadoriasScreen(), // 145: Dashboard Comercial
+        const SizedBox.shrink(), // 144: reservado
+        const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
         const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
         const SizedBox.shrink(), // 147: reservado
         const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
@@ -501,79 +495,34 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const RegistroCargaScreen(
             sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
-        DynamicGridDynamicScreen(
-            telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
-        FaturarContratosScreen(), // 157: Faturar Contratos
-        DynamicGridDynamicScreen(
-            telaNome: 'equipamento',
-            hasPermission: (p) => true), // 158: Equipamentos
-        DynamicGridDynamicScreen(
-            telaNome: 'ordem_servico',
-            hasPermission: (p) => true), // 159: Ordens de Serviço
-        DynamicGridDynamicScreen(
-            telaNome: 'plano_manutencao',
-            hasPermission: (p) => true), // 160: Planos Manutenção
-        DynamicGridDynamicScreen(
-            telaNome: 'horimetro',
-            hasPermission: (p) => true), // 161: Horímetro
-        DynamicGridDynamicScreen(
-            telaNome: 'historico_manutencao',
-            hasPermission: (p) => true), // 162: Histórico Manutenção
-        DynamicGridDynamicScreen(
-            telaNome: 'tecnico_manutencao_screen',
-            hasPermission: (p) => true), // 163: Técnicos
-        DynamicGridDynamicScreen(
-            telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
+        DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
+        const SizedBox.shrink(), // 157: reservado
+        DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
+        DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
+        DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
+        DynamicGridDynamicScreen(telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
+        DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
+        DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
+        DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
         const SizedBox.shrink(), // 165: reservado
-        DynamicGridDynamicScreen(
-            telaNome: 'fila_atendimento_screen',
-            hasPermission: (p) => true), // 166: Filas Atendimento
-        DynamicGridDynamicScreen(
-            telaNome: 'categoria_chamado_screen',
-            hasPermission: (p) => true), // 167: Categorias Chamado
-        DynamicGridDynamicScreen(
-            telaNome: 'chamado_avaliacao_screen',
-            hasPermission: (p) => true), // 168: Avaliações
-        DynamicGridDynamicScreen(
-            telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
+        DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
+        DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
+        DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
+        DynamicGridDynamicScreen(telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
         const SizedBox.shrink(), // 170: reservado
-        DynamicGridDynamicScreen(
-            telaNome: 'projeto_etapa',
-            hasPermission: (p) => true), // 171: Etapas
-        DynamicGridDynamicScreen(
-            telaNome: 'projeto_recurso',
-            hasPermission: (p) => true), // 172: Recursos
-        DynamicGridDynamicScreen(
-            telaNome: 'projeto_apontamento',
-            hasPermission: (p) => true), // 173: Apontamentos
-        DynamicGridDynamicScreen(
-            telaNome: 'projeto_medicao',
-            hasPermission: (p) => true), // 174: Medições
-        DynamicGridDynamicScreen(
-            telaNome: 'cargo_recurso',
-            hasPermission: (p) => true), // 175: Cargos/Recursos
-        DynamicGridDynamicScreen(
-            telaNome: 'precificacao',
-            hasPermission: (p) => true), // 176: Precificações
+        DynamicGridDynamicScreen(telaNome: 'projeto_etapa_screen', hasPermission: (p) => true), // 171: Etapas
+        DynamicGridDynamicScreen(telaNome: 'projeto_recurso_screen', hasPermission: (p) => true), // 172: Recursos
+        DynamicGridDynamicScreen(telaNome: 'projeto_apontamento_screen', hasPermission: (p) => true), // 173: Apontamentos
+        DynamicGridDynamicScreen(telaNome: 'projeto_medicao_screen', hasPermission: (p) => true), // 174: Medições
+        DynamicGridDynamicScreen(telaNome: 'cargo_recurso_screen', hasPermission: (p) => true), // 175: Cargos/Recursos
+        DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 176: Precificações
         const SizedBox.shrink(), // 177: reservado
-        DynamicGridDynamicScreen(
-            telaNome: 'custo_direto',
-            hasPermission: (p) => true), // 178: Custos Diretos
-        DynamicGridDynamicScreen(
-            telaNome: 'mao_de_obra',
-            hasPermission: (p) => true), // 179: Mão de Obra
-        DynamicGridDynamicScreen(
-            telaNome: 'precificacao_servico',
-            hasPermission: (p) => true), // 180: Serviços
-        DynamicGridDynamicScreen(
-            telaNome: 'condicao_pagamento',
-            hasPermission: (p) => true), // 181: Condições Pagamento
-        DynamicGridDynamicScreen(
-            telaNome: 'proposta_comercial',
-            hasPermission: (p) => true), // 182: Propostas Comerciais
+        DynamicGridDynamicScreen(telaNome: 'precificacao_custo_direto_screen', hasPermission: (p) => true), // 178: Custos Diretos
+        DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra', hasPermission: (p) => true), // 179: Mão de Obra
+        DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
+        DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
+        DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
         const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
-        const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
-        const LoginEmpresaAcessoAprovacaoScreen(), // 185: PermissoesMultiEmpresa
       ];
 
   String get userName {
@@ -624,26 +573,6 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   void closeNotificationDropdown() {
     notificationOverlay?.remove();
     notificationOverlay = null;
-  }
-
-  Future<void> _handleTrocarEmpresa() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EmpresaSelecaoScreen()),
-    );
-    if (!mounted) return;
-    ModuloAccess.reset();
-    await ModuloAccess.load();
-    if (mounted) {
-      setState(() {
-        final userInfo = AuthUtility.userInfo?.data;
-        final loginInfo = AuthUtility.userInfo?.login;
-        _screens = _buildScreens(userInfo ?? loginInfo);
-        _openTabs.clear();
-        _activeTabIndex = 0;
-        _openInitialTab();
-      });
-    }
   }
 
   void showNotificationDropdown(BuildContext context, Offset position) {
@@ -738,75 +667,34 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                         ],
                       ),
                     ),
-                    // ── Ações: Marcar lidas e Limpar todas ─────────────────
                     if (notifications.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: const BoxDecoration(
-                          color: GridColors.filterBackground,
-                          border: Border(
-                            bottom:
-                                BorderSide(color: GridColors.divider, width: 1),
+                      InkWell(
+                        onTap: () => deleteAllNotifications(context, position),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: const BoxDecoration(
+                            color: GridColors.filterBackground,
+                            border: Border(
+                              bottom: BorderSide(
+                                  color: GridColors.divider, width: 1),
+                            ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            InkWell(
-                              key: const Key(
-                                  'notificacoes_marcar_lidas_win_btn'),
-                              onTap: () =>
-                                  deleteAllNotifications(context, position),
-                              borderRadius: BorderRadius.circular(4),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.done_all,
-                                        size: 15, color: GridColors.secondary),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Marcar lidas',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: GridColors.secondary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                          child: Row(
+                            children: const [
+                              Icon(Icons.done_all,
+                                  size: 16, color: GridColors.secondary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Marcar todas como lidas',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: GridColors.secondary,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
-                            const Spacer(),
-                            InkWell(
-                              key: const Key('notificacoes_limpar_todas_btn'),
-                              onTap: () =>
-                                  deleteAllNotifications(context, position),
-                              borderRadius: BorderRadius.circular(4),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.delete_sweep_outlined,
-                                        size: 15, color: GridColors.error),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Limpar todas',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: GridColors.error,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     notifications.isNotEmpty
@@ -1043,11 +931,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const AppLoadingOverlay(
-        isFullScreen: true,
-        title: 'Carregando Sistema',
-        message: 'Preparando Calendário e abas...',
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
       body: Row(
@@ -1065,7 +949,6 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
               showNotificationDropdown(context, box.localToGlobal(Offset.zero));
             },
             onLogout: _handleLogout,
-            onTrocarEmpresa: _handleTrocarEmpresa,
             userName: userName,
             userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                 AuthUtility.userInfo?.login?.email ??

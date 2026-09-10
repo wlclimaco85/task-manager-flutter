@@ -24,12 +24,12 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
   Future<void> inicializar() async {
     if (_pronto) return;
     try {
-      const settings = InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        iOS: DarwinInitializationSettings(),
-        macOS: DarwinInitializationSettings(),
-        linux: LinuxInitializationSettings(defaultActionName: 'Abrir'),
-        windows: WindowsInitializationSettings(
+      final settings = InitializationSettings(
+        android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: const DarwinInitializationSettings(),
+        macOS: const DarwinInitializationSettings(),
+        linux: const LinuxInitializationSettings(defaultActionName: 'Abrir'),
+        windows: const WindowsInitializationSettings(
           appName: 'Abraço Contabilidade',
           appUserModelId: 'com.appacademia.taskmanagerflutter',
           // GUID fixo do app -- exigido pela API do Windows para
@@ -40,14 +40,6 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
       );
       await _plugin.initialize(settings);
       _pronto = true;
-      // Bug de producao: inicializar() sozinho NUNCA pede a permissao de
-      // notificacao em runtime do Android 13+ (API 33+, POST_NOTIFICATIONS)
-      // nem do iOS -- sem essa chamada explicita, TODA notificacao nativa
-      // fica muda e sem erro nenhum visivel (plugin.show() nao lanca
-      // excecao, so nao aparece nada na tela). E' a causa mais provavel de
-      // "nao tem notificacao no celular mesmo": o app roda em Android
-      // 13/14/15 (maioria dos aparelhos hoje) sem nunca ter pedido a
-      // permissao runtime.
       await _pedirPermissaoRuntime();
     } catch (e) {
       L.w('[NotificadorLocal] falha ao inicializar plugin nativo: $e');
@@ -75,9 +67,12 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
 
   @override
   Future<void> notificar({required String titulo, required String corpo}) async {
+    if (!_pronto) {
+      await inicializar();
+    }
     if (!_pronto) return;
     try {
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: AndroidNotificationDetails(
           _canalId,
           _canalNome,
@@ -85,9 +80,9 @@ class _NotificadorLocalNativo implements NotificadorPlataforma {
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
-        linux: LinuxNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
+        macOS: const DarwinNotificationDetails(),
+        linux: const LinuxNotificationDetails(),
       );
       await _plugin.show(_proximoId++, titulo, corpo, details);
     } catch (e) {

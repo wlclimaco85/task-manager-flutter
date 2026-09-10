@@ -68,7 +68,6 @@ List<Map<String, dynamic>> extractAnyList(dynamic body) {
       map['items'],
       map['results'],
       map['list'],
-      map['records'],
     ];
 
     for (final c in candidates) {
@@ -77,9 +76,6 @@ List<Map<String, dynamic>> extractAnyList(dynamic body) {
             .whereType<Map>()
             .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
             .toList();
-      } else if (c is Map) {
-        final inner = extractAnyList(c);
-        if (inner.isNotEmpty) return inner;
       }
     }
 

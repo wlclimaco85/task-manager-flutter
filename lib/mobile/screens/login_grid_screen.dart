@@ -8,7 +8,6 @@ import '../../models/login_model.dart';
 import '../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
-import '../../utils/login_payload_defaults.dart';
 import 'details/login_detail_screen.dart';
 
 class LoginGridScreen extends StatelessWidget {
@@ -89,7 +88,12 @@ class LoginGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createLogin,
       updateEndpointOverride: ApiLinks.updateLogin(':id'),
       deleteEndpointOverride: ApiLinks.deleteLogin(':id'),
-      additionalFormData: buildLoginAdditionalFormData(ativo: true),
+      additionalFormData: const {
+        'ativo': true,
+        'trocarSenhaProximoLogin': true,
+        // Aplicativo fixo desta tela: sempre APP_CONTABILIDADE (id=1).
+        'aplicativo': {'id': 1},
+      },
       // mustChangePassword / passwordResetToken / passwordResetExpires são
       // derivados pelo backend a cada troca de senha (ver LoginController) —
       // não precisam mais ser calculados/enviados pelo Flutter.

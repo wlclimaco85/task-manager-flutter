@@ -9,7 +9,6 @@ class ChatMessage {
 
   // Novos campos do payload
   final int? empId;
-  final int? parceiroId;
   final int? codApp;
   final int? codUsuOrig;
   final int? codUsuDest;
@@ -20,13 +19,6 @@ class ChatMessage {
   // Fix card #444: status real da conversa (Aberto/Finalizado), vindo do
   // backend agrupado por chatId (antes nao existia e a UI usava 'Ativo' fixo).
   final String? status;
-  final int? atendenteId;
-
-  // Nome e foto reais do remetente, enriquecidos pelo backend a partir de
-  // Login.nome e Login.foto (codUsuOrig). Permitem substituir o texto do
-  // setor pela identidade real de quem respondeu.
-  final String? senderName;
-  final String? senderFoto;
 
   ChatMessage({
     required this.sender,
@@ -36,7 +28,6 @@ class ChatMessage {
     this.fileName,
     this.timestamp,
     this.empId,
-    this.parceiroId,
     this.codApp,
     this.codUsuOrig,
     this.codUsuDest,
@@ -46,70 +37,27 @@ class ChatMessage {
     this.text,
     this.fileUrl,
     this.status,
-    this.atendenteId,
-    this.senderName,
-    this.senderFoto,
   });
 
-  // Construtor a partir de JSON com suporte a fileAttachment aninhado e inferência de tipo
+  // Construtor a partir de JSON
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    final fileAttachment = json['fileAttachment'] is Map
-        ? json['fileAttachment'] as Map<String, dynamic>
-        : (json['file_attachment'] is Map
-            ? json['file_attachment'] as Map<String, dynamic>
-            : null);
-
-    final extractedFileId = _intFromJson(json['fileId'] ??
-        json['file_id'] ??
-        fileAttachment?['id'] ??
-        fileAttachment?['fileId']);
-
-    final extractedFileName = (json['fileName'] ??
-            json['file_name'] ??
-            fileAttachment?['fileName'] ??
-            fileAttachment?['file_name'] ??
-            fileAttachment?['name'])
-        ?.toString();
-
-    final rawContent = (json['content'] ?? json['text'] ?? '').toString();
-    String type = (json['type'] ?? '').toString();
-    if (type.isEmpty) {
-      if (extractedFileId != null || extractedFileName != null) {
-        type = 'file';
-      } else if (rawContent.contains('Chamado #') ||
-          rawContent.contains('🎫 Chamado')) {
-        type = 'ticket';
-      } else {
-        type = 'text';
-      }
-    }
-
-    final finalContent = rawContent.isNotEmpty
-        ? rawContent
-        : (extractedFileName != null ? 'Arquivo: $extractedFileName' : '');
-
     return ChatMessage(
       sender: json['sender'] ?? '',
-      content: finalContent,
-      type: type,
-      fileId: extractedFileId,
-      fileName: extractedFileName,
+      content: json['content'] ?? '',
+      type: json['type'] ?? '',
+      fileId: json['fileId'],
+      fileName: json['fileName'],
       timestamp: json['timestamp'],
-      fileUrl: json['fileUrl'] ?? (fileAttachment?['fileUrl']?.toString()),
-      empId: _intFromJson(json['empId'] ?? json['empresaId']),
-      parceiroId: _intFromJson(
-          json['parceiroId'] ?? json['parcId'] ?? json['clienteId']),
-      codApp: _intFromJson(json['codApp']),
-      codUsuOrig: _intFromJson(json['codUsuOrig']),
-      codUsuDest: _intFromJson(json['codUsuDest']),
+      fileUrl: json['fileUrl'],
+      empId: json['empId'],
+      codApp: json['codApp'],
+      codUsuOrig: json['codUsuOrig'],
+      codUsuDest: json['codUsuDest'],
       sector: json['sector'],
       chatId: json['chatId'],
       uploadDate: json['uploadDate'],
-      text: json['text'] ?? finalContent,
+      text: json['text'],
       status: json['status'],
-      atendenteId: _intFromJson(json['atendenteId']),
-      senderName: json['senderName'],
-      senderFoto: json['senderFoto'],
     );
   }
 
@@ -126,7 +74,6 @@ class ChatMessage {
 
     // Novos campos
     data['empId'] = empId;
-    data['parceiroId'] = parceiroId;
     data['codApp'] = codApp;
     data['codUsuOrig'] = codUsuOrig;
     data['codUsuDest'] = codUsuDest;
@@ -135,9 +82,6 @@ class ChatMessage {
     data['uploadDate'] = uploadDate;
     data['text'] = text;
     data['status'] = status;
-    data['atendenteId'] = atendenteId;
-    if (senderName != null) data['senderName'] = senderName;
-    if (senderFoto != null) data['senderFoto'] = senderFoto;
 
     return data;
   }
@@ -148,50 +92,6 @@ class ChatMessage {
         .map((item) => ChatMessage.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
-
-  static int? _intFromJson(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    return int.tryParse(value.toString());
-  }
-}
-
-ChatMessage normalizeChatMessageForDisplay(ChatMessage msg) {
-  return ChatMessage(
-    sender: msg.sender,
-    content: msg.content.isNotEmpty ? msg.content : (msg.text ?? ''),
-    type: msg.type.isNotEmpty ? msg.type : 'text',
-    timestamp: msg.timestamp ?? msg.uploadDate,
-    empId: msg.empId,
-    parceiroId: msg.parceiroId,
-    codApp: msg.codApp,
-    codUsuOrig: msg.codUsuOrig,
-    codUsuDest: msg.codUsuDest,
-    sector: msg.sector,
-    chatId: msg.chatId,
-    uploadDate: msg.uploadDate,
-    text: msg.text,
-    fileId: msg.fileId,
-    fileName: msg.fileName,
-    fileUrl: msg.fileUrl,
-    status: msg.status,
-    atendenteId: msg.atendenteId,
-    senderName: msg.senderName,
-    senderFoto: msg.senderFoto,
-  );
-}
-
-String chatMessageDisplayName(
-  ChatMessage message, {
-  required bool isMine,
-  required String loggedUserName,
-  required String sector,
-}) {
-  final senderName = message.senderName?.trim() ?? '';
-  if (senderName.isNotEmpty) return senderName;
-  final sender = message.sender.trim();
-  if (sender.isNotEmpty) return sender;
-  return isMine ? loggedUserName : sector;
 }
 
 /// Modelo para item do kanban de chat.
@@ -231,8 +131,7 @@ class ChatKanbanItem {
       clienteEmail: json['clienteEmail']?.toString(),
       setor: json['setor']?.toString() ?? json['sector']?.toString(),
       setorId: json['setorId']?.toString(),
-      ultimaMensagem:
-          json['ultimaMensagem']?.toString() ?? json['lastMessage']?.toString(),
+      ultimaMensagem: json['ultimaMensagem']?.toString() ?? json['lastMessage']?.toString(),
       status: json['status']?.toString() ?? 'Aguardando',
       naoLidos: int.tryParse(json['naoLidos']?.toString() ?? '0') ?? 0,
       dataUltimaMensagem: json['dataUltimaMensagem'] != null
@@ -245,19 +144,19 @@ class ChatKanbanItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'chatId': chatId,
-        'cliente': cliente,
-        'clienteEmail': clienteEmail,
-        'setor': setor,
-        'setorId': setorId,
-        'ultimaMensagem': ultimaMensagem,
-        'status': status,
-        'naoLidos': naoLidos,
-        'dataUltimaMensagem': dataUltimaMensagem?.toIso8601String(),
-        'usuarioResponsavel': usuarioResponsavel,
-        'usuarioResponsavelId': usuarioResponsavelId,
-        'empresaId': empresaId,
-      };
+    'chatId': chatId,
+    'cliente': cliente,
+    'clienteEmail': clienteEmail,
+    'setor': setor,
+    'setorId': setorId,
+    'ultimaMensagem': ultimaMensagem,
+    'status': status,
+    'naoLidos': naoLidos,
+    'dataUltimaMensagem': dataUltimaMensagem?.toIso8601String(),
+    'usuarioResponsavel': usuarioResponsavel,
+    'usuarioResponsavelId': usuarioResponsavelId,
+    'empresaId': empresaId,
+  };
 }
 
 class ChatMessageModel {

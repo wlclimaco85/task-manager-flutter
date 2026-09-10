@@ -69,5 +69,3 @@ tools/selenium/.venv/
 tools/selenium/.artifacts/
 
 android/build/
-
-coverage/

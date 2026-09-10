@@ -16,7 +16,10 @@ class AlertaNovoDetector {
   }) {
     final novos = <Map<String, dynamic>>[];
     for (final alerta in alertasAtuais) {
-      final id = _extrairId(alerta['id']);
+      final id = _extrairId(alerta['id'] ??
+          alerta['referenciaId'] ??
+          alerta['alertaId'] ??
+          alerta['codAlerta']);
       if (id != null && !idsConhecidos.contains(id)) {
         novos.add(alerta);
       }
@@ -29,7 +32,10 @@ class AlertaNovoDetector {
   Set<int> extrairIds(List<Map<String, dynamic>> alertas) {
     final ids = <int>{};
     for (final alerta in alertas) {
-      final id = _extrairId(alerta['id']);
+      final id = _extrairId(alerta['id'] ??
+          alerta['referenciaId'] ??
+          alerta['alertaId'] ??
+          alerta['codAlerta']);
       if (id != null) ids.add(id);
     }
     return ids;

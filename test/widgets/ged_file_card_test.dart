@@ -177,5 +177,4 @@ void main() {
 
     expect(chamado, isTrue);
   });
-
 }

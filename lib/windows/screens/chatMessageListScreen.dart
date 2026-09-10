@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -8,7 +6,6 @@ import '../../../models/chamado_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/chat/chat_list_logic.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../services/chat_caller.dart';
 import '../../../windows/screens/chatMenssageScreen.dart';
@@ -64,30 +61,10 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
     'Fiscal',
   ];
 
-  // Pedido explicito do usuario: a conversa/notificacao tem que "ficar
-  // disponivel" pra todos os usuarios do setor -- o WebSocket so' entrega em
-  // tempo real pra quem esta com uma conversa aberta (ver
-  // ChatWebSocketHandler); quem esta parado na LISTA (sem nenhuma conversa
-  // selecionada) nao tem nenhum socket ativo. Poll periodico e' a rede de
-  // seguranca pra essa tela sempre refletir o backend, mesmo sem WS ou push.
-  static const Duration _pollInterval = Duration(seconds: 15);
-  Timer? _pollTimer;
-
   @override
   void initState() {
     super.initState();
     _bootstrap();
-    _pollTimer = Timer.periodic(_pollInterval, (_) {
-      if (!_isLoading && _selectedChat == null) {
-        _loadChats();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pollTimer?.cancel();
-    super.dispose();
   }
 
   Future<void> _bootstrap() async {
@@ -131,14 +108,24 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   Future<void> _loadChats() async {
     try {
       final data = await ChatCaller().fetchChats(context);
-      final chats = buildChatListItemsFromMessages(data)
+      final chats = data
           .map(
-            (item) => Chat(
-              chatId: item.chatId,
-              sector: item.sector,
-              lastMessage: item.lastMessage,
-              timestamp: item.timestamp,
-              status: item.status,
+            (msg) => Chat(
+              chatId: msg.chatId ?? '0',
+              sector: msg.sector ?? 'Setor desconhecido',
+              lastMessage: msg.text ?? msg.content,
+              timestamp:
+                  DateTime.tryParse(msg.uploadDate ?? msg.timestamp ?? '') ??
+                      DateTime.now(),
+              // Fix card #444: status real vindo do backend (agrupado por
+              // chatId), antes hardcoded 'Ativo' para toda conversa.
+              // Fix card #469: backend usa o enum FECHADO (nao "Finalizado")
+              // para marcar conversa encerrada -- startsWith('final') nunca
+              // batia com nenhum valor real, entao a conversa nunca saia de
+              // "Abertos" mesmo apos finalizar com sucesso.
+              status: (msg.status ?? '').toUpperCase() == 'FECHADO'
+                  ? 'Finalizado'
+                  : 'Ativo',
             ),
           )
           .toList();
@@ -159,11 +146,18 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   }
 
   List<Chat> get _filteredChats => _chats
-      .where((c) => (c.status == 'Finalizado') == _mostrarFinalizados)
+      .where((c) =>
+          (c.status == 'Finalizado') == _mostrarFinalizados)
       .toList();
 
   List<String> get _sectorLabels {
-    return sectorLabelsFromCadastro(_setores, fallback: _fallbackSectors);
+    final labels = _setores
+        .map((item) =>
+            (item['label'] ?? item['descricao'] ?? item['nome'] ?? '')
+                .toString())
+        .where((label) => label.trim().isNotEmpty)
+        .toList();
+    return labels.isEmpty ? _fallbackSectors : labels;
   }
 
   void _startNewChat(String sector) {
@@ -253,18 +247,16 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
 
   Future<void> _finalizeChat(Chat chat) async {
     if (chat.chatId.isEmpty || chat.chatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de finalizar.',
-          error: true);
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
       return;
     }
     try {
       // Fix card #444: usava ApiLinks.chatFinalize (PUT /api/chat/{id} sem
       // corpo, id Integer de mensagem) -- mesmo bug ja corrigido no card
       // #430 dentro da tela de conversa, mas nao replicado aqui na lista.
-      final url =
-          TenantContext.applyToUrl(ApiLinks.chatFinalizarConversa(chat.chatId));
-      final response =
-          await http.put(Uri.parse(url), headers: TenantContext.headers);
+      final url = TenantContext.applyToUrl(
+          ApiLinks.chatFinalizarConversa(chat.chatId));
+      final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
           final index = _chats.indexWhere((item) => item.chatId == chat.chatId);
@@ -290,8 +282,7 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   Future<void> _deleteChat(Chat chat) async {
     try {
       final url = TenantContext.applyToUrl(ApiLinks.chatDelete(chat.chatId));
-      final response =
-          await http.delete(Uri.parse(url), headers: TenantContext.headers);
+      final response = await http.delete(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
           _chats.removeWhere((item) => item.chatId == chat.chatId);
@@ -341,7 +332,6 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                     sector: _selectedChat!.sector,
                     userName: widget.userName,
                     chatId: _selectedChat!.chatId,
-                    onMessagePersisted: _upsertChatFromMessage,
                     // Fix card #444: ao finalizar dentro da conversa, volta
                     // para a lista de atendimentos.
                     onFinalized: () {
@@ -444,8 +434,7 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                     message: _mostrarFinalizados
                         ? 'Conversas finalizadas aparecem aqui.'
                         : 'Abra um atendimento para falar com o setor responsavel.',
-                    onStart:
-                        _mostrarFinalizados ? null : _showSectorSelectionDialog,
+                    onStart: _mostrarFinalizados ? null : _showSectorSelectionDialog,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -470,39 +459,6 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
         ],
       ),
     );
-  }
-
-  void _upsertChatFromMessage(dynamic message) {
-    final chatId = (message.chatId ?? '').toString();
-    if (chatId.isEmpty || chatId == '0') return;
-    final sector =
-        (message.sector ?? _selectedChat?.sector ?? 'Atendimento').toString();
-    final lastMessage = ((message.text ?? '').toString().isNotEmpty
-            ? message.text
-            : message.content)
-        .toString();
-    final timestamp = DateTime.tryParse(
-            (message.uploadDate ?? message.timestamp ?? '').toString()) ??
-        DateTime.now();
-    final status = chatStatusLabel(message.status?.toString());
-    setState(() {
-      final chat = Chat(
-        chatId: chatId,
-        sector: sector,
-        lastMessage: lastMessage,
-        timestamp: timestamp,
-        status: status,
-      );
-      final index = _chats.indexWhere((item) => item.chatId == chatId);
-      if (index >= 0) {
-        _chats[index] = chat;
-      } else {
-        _chats.insert(0, chat);
-      }
-      if (_selectedChat?.chatId == '0' || _selectedChat?.chatId == chatId) {
-        _selectedChat = chat;
-      }
-    });
   }
 }
 

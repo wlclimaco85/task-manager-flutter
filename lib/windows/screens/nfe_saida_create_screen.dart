@@ -8,7 +8,6 @@ import '../../utils/api_links.dart';
 import '../../utils/nfe_totais_calculator.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/grid_colors.dart';
-import '../../widgets/fiscal/nf_status_bar.dart';
 import '../../widgets/nfe/nfe_item_form_dialog.dart';
 import '../../widgets/nfe/nfe_items_table.dart';
 import '../../widgets/searchable_dropdown.dart';
@@ -211,22 +210,9 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   }
 
   Future<void> _salvar() async {
-    // BUG produção (card #503): _formKey era declarado e atribuído ao Form,
-    // mas .validate() nunca era chamado -- os campos SearchableDropdownField
-    // com isRequired:true (ex.: "Destinatário") já implementam validação
-    // real via FormField (ver widgets/searchable_dropdown.dart), mas nunca
-    // recebiam a chance de mostrar o erro inline porque validate() nunca
-    // rodava. A checagem manual de `erros` abaixo continua necessária pra
-    // validações que não são campo de Form (ex.: lista de itens vazia).
-    if (!(_formKey.currentState?.validate() ?? true)) {
-      return;
-    }
     final erros = <String>[];
     if (_topSelected == null) erros.add('Tipo de Operação');
     if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
-    if (_destinatarioId == null || _destinatarioId!.isEmpty) {
-      erros.add('Destinatário');
-    }
     if (_serieVal == null || _serieVal!.isEmpty) erros.add('Série');
     if (_items.isEmpty) erros.add('Itens (adicione ao menos 1)');
     if (erros.isNotEmpty) {
@@ -349,18 +335,32 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      // NfStatusBar (card #503 -- ver task_manager_flutter_merged_final):
-      // mesmo padrão de AppBar já usado no app base para telas fiscais,
-      // com badge de ambiente (Produção/Homologação) sempre visível --
-      // critério de UX "status de autorização sempre visível" apontado
-      // como FAIL em vários ciclos de QA por esse widget existir só no
-      // arquivo, nunca integrado a nenhuma tela real deste repositório.
-      appBar: NfStatusBar(
-        titulo: 'Nova NF-e Saída',
-        icone: Icons.description_outlined,
-        ambiente: _ambienteVal,
-        loading: _saving,
-        onSalvarRascunho: _saving ? null : _salvar,
+      appBar: AppBar(
+        title: const Text('Nova NF-e Saída'),
+        backgroundColor: _primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: _saving ? null : _salvar,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.save, color: Colors.white),
+              label: Text(_saving ? 'Salvando...' : 'Salvar',
+                  style: const TextStyle(color: Colors.white)),
+              style: TextButton.styleFrom(
+                  backgroundColor: _success,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6))),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -456,7 +456,6 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                     displayField: 'nome',
                     onChanged: (v) => setState(() => _destinatarioId = v),
                     nullable: true,
-                    isRequired: true,
                     hintText: 'Selecione o destinatário...',
                   ),
                 ),

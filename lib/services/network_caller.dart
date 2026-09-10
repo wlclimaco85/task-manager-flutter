@@ -220,9 +220,8 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('Error in PUT request: $e');
-      AppLogger.i.error('[PUT] erro: $e', stack);
       return NetworkResponse(false, 500, {'error': 'Network error: $e'});
     }
   }
@@ -254,9 +253,8 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('Error in PATCH request: $e');
-      AppLogger.i.error('[PATCH] erro: $e', stack);
       return NetworkResponse(false, 500, {'error': 'Network error: $e'});
     }
   }
@@ -281,17 +279,12 @@ class NetworkCaller {
       // sempre. /rest/auth/ ja cobre o endpoint real de autenticacao.
       final uri = Uri.tryParse(url);
       final String uriPath = uri?.path ?? '';
-      final bool isAuthRequest =
-          uriPath.contains('/rest/auth/') || uriPath.contains('inserirAluno');
-      final bool preservaEmpresaIdDoBody =
-          uriPath.contains('/empresas-acesso/solicitar');
+      final bool isAuthRequest = uriPath.contains('/rest/auth/') ||
+          uriPath.contains('inserirAluno');
 
       if (!isAuthRequest && body != null) {
-        // Solicitação multiempresa informa a empresa alvo no payload.
-        // Nesse caso nao sobrescreve empresaId com a empresa ativa da sessao.
-        final enrichedBody = preservaEmpresaIdDoBody
-            ? Map<String, dynamic>.from(body)
-            : TenantHelper.applyToBody(body);
+        // Usa TenantHelper para injetar empresa/parceiro/aplicativo no body
+        final enrichedBody = TenantHelper.applyToBody(body);
         enrichedBody['audit'] ??= {};
         enrichedBody['audit']['empresaId'] = user?.empresa?.id;
         enrichedBody['audit']['appId'] = user?.aplicativo?.id;
@@ -339,13 +332,11 @@ class NetworkCaller {
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
-        if (!isAuthRequest)
-          _handleUnauthorized(response.statusCode, enrichedUrl);
+        if (!isAuthRequest) _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e, stack) {
       log('💥 [POST] Erro: $e\n$stack');
-      AppLogger.i.error('[POST] erro: $e', stack);
     }
     return NetworkResponse(false, -1, null);
   }
@@ -388,9 +379,8 @@ class NetworkCaller {
         _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e, stack) {
+    } catch (e) {
       log(e.toString());
-      AppLogger.i.error('[DELETE] erro: $e', stack);
       return NetworkResponse(false, -1, null);
     }
   }

@@ -4,7 +4,6 @@ import '../../../models/empresa_model.dart';
 import '../../../models/aplicativo_model.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/role_model.dart';
-import '../../../models/setor_model.dart';
 import '../../../utils/utils.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
@@ -17,19 +16,11 @@ class Login {
   String? cpfCnpj;
   String? foto;
   List<Role>? roles;
-  List<Setor>? setores;
   LoginEnum? tipoLogin;
   Empresa? empresa;
   Parceiro? parceiro;
   Aplicativo? aplicativo;
   bool? trocarSenhaProximoLogin;
-  // Bug de producao: campo "Ativo" da tela de Cadastro sempre voltava vazio
-  // ao reabrir/salvar o registro. Login.fromJson/toJson descartavam esse
-  // campo (nao existia no model), entao mesmo depois do backend passar a
-  // persistir 'ativo' de verdade (Login.java/LoginController), o round-trip
-  // fromJson->toJson feito por WebLoginDetailScreen ao montar o formulario
-  // apagava o valor antes mesmo de chegar no GenericDetailFormScreen.
-  bool? ativo;
   DateTime? dhCreatedAt;
   DateTime? dhUpdatedAt;
 
@@ -41,13 +32,11 @@ class Login {
     this.cpfCnpj,
     this.foto,
     this.roles,
-    this.setores,
     this.tipoLogin,
     this.empresa,
     this.parceiro,
     this.aplicativo,
     this.trocarSenhaProximoLogin,
-    this.ativo,
     this.dhCreatedAt,
     this.dhUpdatedAt,
   });
@@ -61,13 +50,11 @@ class Login {
       'cpfCnpj': cpfCnpj,
       'foto': foto,
       'roles': roles?.map((role) => role.toJson()).toList(),
-      'setores': setores?.map((setor) => setor.toJson()).toList(),
       'tipoLogin': tipoLogin?.value, // Salve o value em vez do index
       'empresa': empresa?.toJson(),
       'parceiro': parceiro?.toJson(),
       'aplicativo': aplicativo?.toJson(),
       'trocarSenhaProximoLogin': trocarSenhaProximoLogin,
-      'ativo': ativo,
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
       'dhUpdatedAt': dhUpdatedAt?.toIso8601String(),
     };
@@ -84,9 +71,6 @@ class Login {
 
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()
-          : null;
-      setores = json['setores'] != null
-          ? (json['setores'] as List).map((i) => Setor.fromJson(i)).toList()
           : null;
 
       if (json['tipoLogin'] != null) {
@@ -107,7 +91,6 @@ class Login {
           json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null;
 
       trocarSenhaProximoLogin = json['trocarSenhaProximoLogin'] == true;
-      ativo = json['ativo'] == null ? null : json['ativo'] == true;
 
       // CORRIGIDO: chaves corretas para as datas
       dhCreatedAt = json['dhCreatedAt'] != null
@@ -435,10 +418,7 @@ class Data {
     firstName = json['firstName'];
     lastName = json['lastName'];
     mobile = json['mobile'];
-    final photoValue = json['photo']?.toString();
-    photo = photoValue != null && photoValue.trim().isNotEmpty
-        ? photoValue
-        : json['foto']?.toString();
+    photo = json['photo'];
     codDadosPessoal = json['codDadosPessoal'] != null
         ? DadosPessoal.fromJson(json['codDadosPessoal'])
         : null;

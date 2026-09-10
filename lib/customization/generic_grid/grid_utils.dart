@@ -103,39 +103,11 @@ String? tryDateToIso(String text, String format) {
 
 /// retorna lista independente de onde está (data, dados, content, items)
 List<Map<String, dynamic>> extractAnyList(dynamic data) {
-  if (data == null) return [];
   if (data is List) {
-    return data
-        .whereType<Map>()
-        .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return data.whereType<Map<String, dynamic>>().toList();
   } else if (data is Map) {
-    final map = Map<String, dynamic>.from(data);
-    final candidates = [
-      map['data'],
-      map['dados'],
-      map['content'],
-      map['items'],
-      map['results'],
-      map['list'],
-      map['records'],
-    ];
-    for (final c in candidates) {
-      if (c is List) {
-        return c
-            .whereType<Map>()
-            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-            .toList();
-      } else if (c is Map) {
-        final inner = extractAnyList(c);
-        if (inner.isNotEmpty) return inner;
-      }
-    }
-    return [map];
-  } else if (data is String) {
-    try {
-      return extractAnyList(jsonDecode(data));
-    } catch (_) {}
+    if (data['content'] is List) return extractAnyList(data['content']);
+    if (data['items'] is List) return extractAnyList(data['items']);
   }
   return [];
 }

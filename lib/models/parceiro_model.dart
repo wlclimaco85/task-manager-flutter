@@ -176,7 +176,6 @@ class Parceiro {
     if (endereco != null) data['endereco'] = endereco!.toJson();
     if (empresa != null) data['empresa'] = empresa!.toJson();
     if (regime != null) data['regime'] = regime!.toJson();
-    data['regime'] = regime;
     data['valorMensal'] = valorMensal;
     data['diaVencimentoMensalidade'] = diaVencimentoMensalidade;
     data['observacao'] = observacao;
@@ -212,8 +211,7 @@ class Parceiro {
   /// não configurado), 1-30 = dia fixo do mês.
   static List<Map<String, dynamic>> get diaVencimentoOptions => [
         {'value': 0, 'label': '5º Dia Útil'},
-        for (var dia = 1; dia <= 30; dia++)
-          {'value': dia, 'label': 'Dia $dia'},
+        for (var dia = 1; dia <= 30; dia++) {'value': dia, 'label': 'Dia $dia'},
       ];
 
   // ==========================================================
