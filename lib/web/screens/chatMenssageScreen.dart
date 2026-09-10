@@ -26,10 +26,8 @@ class WebChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
   final String chatId;
-  // Fix card #444: chamado apos finalizar com sucesso, para o container
-  // (lista de atendimento) voltar para a lista em vez de manter a
-  // conversa finalizada aberta.
   final VoidCallback? onFinalized;
+  final ValueChanged<ChatMessage>? onMessagePersisted;
 
   const WebChatMessageScreen({
     super.key,
@@ -37,6 +35,7 @@ class WebChatMessageScreen extends StatefulWidget {
     required this.userName,
     required this.chatId,
     this.onFinalized,
+    this.onMessagePersisted,
   });
 
   @override
@@ -112,6 +111,7 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
             _adoptRealChatIdIfNeeded(msg);
             if (!_isDuplicate(msg)) {
               setState(() => _messages.add(msg));
+              widget.onMessagePersisted?.call(msg);
             }
             _scrollToBottom();
           } catch (_) {}
@@ -328,7 +328,7 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     if (criado == null || !mounted) return;
     final id = (criado as dynamic).id;
     final mensagem =
-        '🎫 Chamado #$id aberto com sucesso! Você será notificado assim que houver andamento.';
+        'Chamado aberto número #$id. Para acompanhar, acesse a tela de chamados.';
 
     bool enviouNoChat = false;
     if (_channel != null) {

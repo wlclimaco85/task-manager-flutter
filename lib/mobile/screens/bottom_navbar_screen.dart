@@ -47,6 +47,7 @@ import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
+import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -914,6 +915,23 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+        break;
+      case "Dashboard Comercial":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              appBar: UserBannerAppBar(
+                screenTitle: 'Dashboard Comercial',
+                showFilterButton: false,
+                showBackButton: true,
+              ),
+              body: SafeArea(
+                child: DashboardComercialMercadoriasScreen(showAppBar: false),
+              ),
+            ),
+          ),
         );
         break;
       case "Trading":

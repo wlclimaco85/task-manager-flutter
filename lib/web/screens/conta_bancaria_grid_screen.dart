@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_bancaria_model.dart';
+import '../../../services/conta_bancaria_caller.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../../widgets/finance/extrato_operacional_dialog.dart';
+import '../../../widgets/finance/ajuste_saldo_conta_dialog.dart';
 
 class WebContaBancariaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -38,6 +40,33 @@ class WebContaBancariaGridScreen extends StatelessWidget {
             contaId: item.id!,
             contaNome: _contaLabel(item),
           ),
+        ),
+        CustomAction<ContaBancaria>(
+          icon: Icons.account_balance_wallet_outlined,
+          label: 'Ajustar Saldo',
+          isVisible: (item) => item.id != null,
+          onPressed: (context, item) async {
+            final alterou = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AjusteSaldoContaDialog(
+                conta: item,
+                onSalvar: ({saldoInicial, saldoFinal}) =>
+                    ContaBancariaCaller().ajustarSaldo(
+                  contaId: item.id!,
+                  saldoInicial: saldoInicial,
+                  saldoFinal: saldoFinal,
+                ),
+              ),
+            );
+            if (alterou == true && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Saldo ajustado com sucesso!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          },
         ),
       ],
     );

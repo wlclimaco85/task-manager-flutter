@@ -40,6 +40,26 @@ class ContaBancariaCaller {
     }
   }
 
+  /// Ajustar saldo (inicial ou final) da conta
+  Future<bool> ajustarSaldo({
+    required int contaId,
+    double? saldoInicial,
+    double? saldoFinal,
+  }) async {
+    try {
+      final url = '${ApiLinks.contasBancarias}/$contaId/ajustar-saldo';
+      final body = <String, dynamic>{};
+      if (saldoInicial != null) body['saldoInicial'] = saldoInicial;
+      if (saldoFinal != null) body['saldoFinal'] = saldoFinal;
+      final NetworkResponse response =
+          await NetworkCaller().postRequest(url, body);
+      return response.isSuccess;
+    } catch (e) {
+      debugPrint('Erro ao ajustar saldo: $e');
+      return false;
+    }
+  }
+
   /// Transferência entre contas
   Future<bool> transferirSaldo({
     required int contaOrigemId,

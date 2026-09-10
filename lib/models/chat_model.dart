@@ -19,6 +19,11 @@ class ChatMessage {
   // Fix card #444: status real da conversa (Aberto/Finalizado), vindo do
   // backend agrupado por chatId (antes nao existia e a UI usava 'Ativo' fixo).
   final String? status;
+  final int? atendenteId;
+  final String? atendenteNome;
+  final String? senderNome;
+  final String? senderName;
+  final String? senderFoto;
 
   ChatMessage({
     required this.sender,
@@ -37,6 +42,11 @@ class ChatMessage {
     this.text,
     this.fileUrl,
     this.status,
+    this.atendenteId,
+    this.atendenteNome,
+    this.senderNome,
+    this.senderName,
+    this.senderFoto,
   });
 
   // Construtor a partir de JSON
@@ -58,6 +68,11 @@ class ChatMessage {
       uploadDate: json['uploadDate'],
       text: json['text'],
       status: json['status'],
+      atendenteId: json['atendenteId'],
+      atendenteNome: json['atendenteNome'],
+      senderNome: json['senderNome'] ?? json['senderName'] ?? json['nome'],
+      senderName: json['senderName'] ?? json['senderNome'] ?? json['nome'],
+      senderFoto: json['senderFoto'] ?? json['foto'] ?? json['fotoUrl'],
     );
   }
 
@@ -82,6 +97,9 @@ class ChatMessage {
     data['uploadDate'] = uploadDate;
     data['text'] = text;
     data['status'] = status;
+    data['atendenteId'] = atendenteId;
+    data['atendenteNome'] = atendenteNome;
+    data['senderFoto'] = senderFoto;
 
     return data;
   }

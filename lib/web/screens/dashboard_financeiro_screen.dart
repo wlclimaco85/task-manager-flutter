@@ -265,6 +265,7 @@ class _WebDashboardFinanceiroScreenState
                 value: _empresaId,
                 items: _empresas,
                 hint: 'Empresa',
+                enabled: _parceiroId == null,
                 onChanged: (v) {
                   _empresaId = v;
                   _loadDashboard();
@@ -315,6 +316,7 @@ class _WebDashboardFinanceiroScreenState
     required List<Map<String, dynamic>> items,
     required String hint,
     required ValueChanged<int?> onChanged,
+    bool enabled = true,
   }) {
     return SizedBox(
       width: 200,

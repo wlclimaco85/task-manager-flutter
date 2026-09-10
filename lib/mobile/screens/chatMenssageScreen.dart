@@ -345,7 +345,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'sender': _loggedUserName,
         'senderName': _loggedUserName,
         'senderEmail': _loggedUserEmail,
-        'content': 'Chamado aberto com sucesso (ID $id)',
+        'content':
+            'Chamado aberto número #$id. Para acompanhar, acesse a tela de chamados.',
         'sector': widget.sector,
         'type': 'ticket',
         'ticketId': id,

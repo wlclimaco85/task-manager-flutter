@@ -4,8 +4,13 @@ import '../../utils/grid_colors.dart';
 
 class ChatTransferDialog extends StatefulWidget {
   final String chatId;
+  final String? sector;
 
-  const ChatTransferDialog({super.key, required this.chatId});
+  const ChatTransferDialog({
+    super.key,
+    required this.chatId,
+    this.sector,
+  });
 
   @override
   State<ChatTransferDialog> createState() => _ChatTransferDialogState();
@@ -24,7 +29,7 @@ class _ChatTransferDialogState extends State<ChatTransferDialog> {
   }
 
   Future<void> _carregar() async {
-    final usuarios = await _caller.fetchUsuariosSetor('');
+    final usuarios = await _caller.fetchUsuariosSetor(widget.sector ?? '');
     if (mounted) setState(() { _usuarios = usuarios; _loading = false; });
   }
 

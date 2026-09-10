@@ -22,6 +22,7 @@ import '../../../windows/screens/conta_pagar_grid_screen.dart';
 import '../../../windows/screens/conta_receber_grid_screen.dart';
 import '../../../windows/screens/dashboard_financeiro_screen.dart';
 import '../../../windows/screens/dashboard_mensalidade_screen.dart';
+import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import '../../../widgets/boleto_importacao_lote_screen.dart';
 import '../../../widgets/solicitacao_acesso_aprovacao_screen.dart';
 import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
@@ -478,7 +479,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
         const DpDashboardScreen(), // 143: Dashboard DP
         const SizedBox.shrink(), // 144: reservado
-        const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
+        const DashboardComercialMercadoriasScreen(), // 145: Dashboard Comercial
         const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
         const SizedBox.shrink(), // 147: reservado
         const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote

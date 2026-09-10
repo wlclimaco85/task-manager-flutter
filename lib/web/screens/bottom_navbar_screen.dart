@@ -34,6 +34,7 @@ import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
 import './dashboard_mensalidade_screen.dart';
+import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import '../../widgets/boleto_importacao_lote_screen.dart';
 import '../../widgets/solicitacao_acesso_aprovacao_screen.dart';
 import './conta_receber_grid_screen.dart';
@@ -366,7 +367,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      const WebCalendarScreen(useLightHeader: true), // 31: Calendario — sem header duplicado (pedido usuario 2026-09-10)
+      const WebCalendarScreen(), // 31: Calendario — header padrao (fix card #438)
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -503,7 +504,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
       const DpDashboardScreen(), // 143: Dashboard DP
       const SizedBox.shrink(), // 144: reservado
-      const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
+      const DashboardComercialMercadoriasScreen(), // 145: Dashboard Comercial
       const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
       const SizedBox.shrink(), // 147: reservado
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
