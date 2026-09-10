@@ -84,6 +84,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../utils/menu_config.dart';
 import '../../../widgets/app_sidebar.dart';
 import '../../../widgets/alertas/alertas_manuais_screen.dart';
+import '../../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import '../../../widgets/empresa_selecao_screen.dart';
 import '../../../widgets/internal_tab_strip.dart';
 import '../../../widgets/login_empresa_acesso_aprovacao_screen.dart';
@@ -484,7 +485,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
         const DpDashboardScreen(), // 143: Dashboard DP
         const RelatorioPontoScreen(), // 144: Relatórios DP/RH
-        const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
+        const DashboardComercialMercadoriasScreen(), // 145: Dashboard Comercial
         const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
         const SizedBox.shrink(), // 147: reservado
         const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
@@ -499,33 +500,76 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const RegistroCargaScreen(
             sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
-        DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
+        DynamicGridDynamicScreen(
+            telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
         FaturarContratosScreen(), // 157: Faturar Contratos
-        DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
-        DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
-        DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
-        DynamicGridDynamicScreen(telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
-        DynamicGridDynamicScreen(telaNome: 'historico_manutencao', hasPermission: (p) => true), // 162: Histórico Manutenção
-        DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
-        DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
+        DynamicGridDynamicScreen(
+            telaNome: 'equipamento',
+            hasPermission: (p) => true), // 158: Equipamentos
+        DynamicGridDynamicScreen(
+            telaNome: 'ordem_servico',
+            hasPermission: (p) => true), // 159: Ordens de Serviço
+        DynamicGridDynamicScreen(
+            telaNome: 'plano_manutencao',
+            hasPermission: (p) => true), // 160: Planos Manutenção
+        DynamicGridDynamicScreen(
+            telaNome: 'horimetro',
+            hasPermission: (p) => true), // 161: Horímetro
+        DynamicGridDynamicScreen(
+            telaNome: 'historico_manutencao',
+            hasPermission: (p) => true), // 162: Histórico Manutenção
+        DynamicGridDynamicScreen(
+            telaNome: 'tecnico_manutencao_screen',
+            hasPermission: (p) => true), // 163: Técnicos
+        DynamicGridDynamicScreen(
+            telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
         const SizedBox.shrink(), // 165: reservado
-        DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
-        DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
-        DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
-        DynamicGridDynamicScreen(telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
+        DynamicGridDynamicScreen(
+            telaNome: 'fila_atendimento_screen',
+            hasPermission: (p) => true), // 166: Filas Atendimento
+        DynamicGridDynamicScreen(
+            telaNome: 'categoria_chamado_screen',
+            hasPermission: (p) => true), // 167: Categorias Chamado
+        DynamicGridDynamicScreen(
+            telaNome: 'chamado_avaliacao_screen',
+            hasPermission: (p) => true), // 168: Avaliações
+        DynamicGridDynamicScreen(
+            telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
         const SizedBox.shrink(), // 170: reservado
-        DynamicGridDynamicScreen(telaNome: 'projeto_etapa', hasPermission: (p) => true), // 171: Etapas
-        DynamicGridDynamicScreen(telaNome: 'projeto_recurso', hasPermission: (p) => true), // 172: Recursos
-        DynamicGridDynamicScreen(telaNome: 'projeto_apontamento', hasPermission: (p) => true), // 173: Apontamentos
-        DynamicGridDynamicScreen(telaNome: 'projeto_medicao', hasPermission: (p) => true), // 174: Medições
-        DynamicGridDynamicScreen(telaNome: 'cargo_recurso', hasPermission: (p) => true), // 175: Cargos/Recursos
-        DynamicGridDynamicScreen(telaNome: 'precificacao', hasPermission: (p) => true), // 176: Precificações
+        DynamicGridDynamicScreen(
+            telaNome: 'projeto_etapa',
+            hasPermission: (p) => true), // 171: Etapas
+        DynamicGridDynamicScreen(
+            telaNome: 'projeto_recurso',
+            hasPermission: (p) => true), // 172: Recursos
+        DynamicGridDynamicScreen(
+            telaNome: 'projeto_apontamento',
+            hasPermission: (p) => true), // 173: Apontamentos
+        DynamicGridDynamicScreen(
+            telaNome: 'projeto_medicao',
+            hasPermission: (p) => true), // 174: Medições
+        DynamicGridDynamicScreen(
+            telaNome: 'cargo_recurso',
+            hasPermission: (p) => true), // 175: Cargos/Recursos
+        DynamicGridDynamicScreen(
+            telaNome: 'precificacao',
+            hasPermission: (p) => true), // 176: Precificações
         const SizedBox.shrink(), // 177: reservado
-        DynamicGridDynamicScreen(telaNome: 'custo_direto', hasPermission: (p) => true), // 178: Custos Diretos
-        DynamicGridDynamicScreen(telaNome: 'mao_de_obra', hasPermission: (p) => true), // 179: Mão de Obra
-        DynamicGridDynamicScreen(telaNome: 'precificacao_servico', hasPermission: (p) => true), // 180: Serviços
-        DynamicGridDynamicScreen(telaNome: 'condicao_pagamento', hasPermission: (p) => true), // 181: Condições Pagamento
-        DynamicGridDynamicScreen(telaNome: 'proposta_comercial', hasPermission: (p) => true), // 182: Propostas Comerciais
+        DynamicGridDynamicScreen(
+            telaNome: 'custo_direto',
+            hasPermission: (p) => true), // 178: Custos Diretos
+        DynamicGridDynamicScreen(
+            telaNome: 'mao_de_obra',
+            hasPermission: (p) => true), // 179: Mão de Obra
+        DynamicGridDynamicScreen(
+            telaNome: 'precificacao_servico',
+            hasPermission: (p) => true), // 180: Serviços
+        DynamicGridDynamicScreen(
+            telaNome: 'condicao_pagamento',
+            hasPermission: (p) => true), // 181: Condições Pagamento
+        DynamicGridDynamicScreen(
+            telaNome: 'proposta_comercial',
+            hasPermission: (p) => true), // 182: Propostas Comerciais
         const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
         const MeuCertificadoDigitalScreen(), // 184: Certificado Digital
         const LoginEmpresaAcessoAprovacaoScreen(), // 185: PermissoesMultiEmpresa
@@ -701,14 +745,15 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                         decoration: const BoxDecoration(
                           color: GridColors.filterBackground,
                           border: Border(
-                            bottom: BorderSide(
-                                color: GridColors.divider, width: 1),
+                            bottom:
+                                BorderSide(color: GridColors.divider, width: 1),
                           ),
                         ),
                         child: Row(
                           children: [
                             InkWell(
-                              key: const Key('notificacoes_marcar_lidas_win_btn'),
+                              key: const Key(
+                                  'notificacoes_marcar_lidas_win_btn'),
                               onTap: () =>
                                   deleteAllNotifications(context, position),
                               borderRadius: BorderRadius.circular(4),

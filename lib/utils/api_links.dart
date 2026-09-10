@@ -1494,6 +1494,8 @@ class ApiLinks {
       '$_baseUrlNew/api/dashboard/financeiro-area/kpis';
   static String get dashboardComercialKpis =>
       '$_baseUrlNew/api/dashboard/comercial/kpis';
+  static String get dashboardComercialMercadorias =>
+      '$_baseUrlNew/api/dashboard/comercial/mercadorias';
   static String get dashboardDpAreaKpis =>
       '$_baseUrlNew/api/dashboard/dp-area/kpis';
   static String get dashboardFiscalKpis =>

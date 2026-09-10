@@ -51,6 +51,7 @@ import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import '../../widgets/alertas/alertas_manuais_screen.dart';
+import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
 import 'dashboard_financeiro_screen.dart';
@@ -351,7 +352,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       if (ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(
           const SnackBar(
-            content: Text('Não foi possível identificar o arquivo para baixar.'),
+            content:
+                Text('Não foi possível identificar o arquivo para baixar.'),
           ),
         );
       }
@@ -360,7 +362,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     final nome = (item['fileName'] ?? item['nome'] ?? 'arquivo_$id').toString();
     try {
       final caminho = await GedDownloadService().download(id, nome);
-      AppLogger.i.info('GED: arquivo $id ($nome) baixado e compartilhado -> $caminho');
+      AppLogger.i
+          .info('GED: arquivo $id ($nome) baixado e compartilhado -> $caminho');
       if (!ctx.mounted) return;
       ScaffoldMessenger.of(ctx).showSnackBar(
         const SnackBar(content: Text('Arquivo baixado com sucesso.')),
@@ -515,10 +518,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     // Dart conseguir promover o tipo de Map<String, dynamic>? pra
     // Map<String, dynamic> no resto da funcao.
     if (!response.isSuccess || body == null) return [];
-    final dynamic dataNode = (body is Map) ? body['data'] : body;
+    final dynamic dataNode = body['data'];
     final raw = (dataNode is Map)
-        ? (dataNode['dados'] ?? dataNode['content'] ?? dataNode['items'] ?? dataNode)
-        : (dataNode ?? (body is Map ? (body['dados'] ?? body['content'] ?? body['items']) : null));
+        ? (dataNode['dados'] ??
+            dataNode['content'] ??
+            dataNode['items'] ??
+            dataNode)
+        : (dataNode ?? (body['dados'] ?? body['content'] ?? body['items']));
     if (raw is! List) return [];
 
     return raw
@@ -1002,6 +1008,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         );
         break;
+      case "Dashboard Comercial":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardComercialMercadoriasScreen(
+              showAppBar: true,
+            ),
+          ),
+        );
+        break;
       case "Trading":
         nav = Navigator.push(
           context,
@@ -1135,8 +1151,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'horimetro', sec: sec);
         break;
       case "Histórico Manutenção":
-        nav =
-            _pushDynamicGrid(telaNome: 'historico_manutencao', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'historico_manutencao', sec: sec);
         break;
       case "Técnicos":
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
