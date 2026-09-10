@@ -426,6 +426,7 @@ class _WebDashboardFinanceiroScreenState
                   onPressed: () {
                     setState(() {
                       _empresaId = pegarEmpresaLogada();
+                      _parceiroId = pegarParceiroLogada();
                       _contaBancariaId = null;
                       _dataInicio = null;
                       _dataFim = null;
@@ -452,6 +453,7 @@ class _WebDashboardFinanceiroScreenState
                   value: _empresaId,
                   items: _empresas,
                   hint: 'Empresa',
+                  enabled: _parceiroId == null,
                   onChanged: (v) {
                     _empresaId = v;
                     _loadDashboard();
@@ -551,6 +553,7 @@ class _WebDashboardFinanceiroScreenState
     required List<Map<String, dynamic>> items,
     required String hint,
     required ValueChanged<int?> onChanged,
+    bool enabled = true,
   }) {
     return SizedBox(
       width: 210,
@@ -562,7 +565,7 @@ class _WebDashboardFinanceiroScreenState
           labelStyle: const TextStyle(fontSize: 13, color: GridColors.textMuted),
           isDense: true,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: enabled ? Colors.white : GridColors.filterBackground,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: GridColors.divider),
@@ -593,7 +596,7 @@ class _WebDashboardFinanceiroScreenState
                 ),
               )),
         ],
-        onChanged: onChanged,
+        onChanged: enabled ? onChanged : null,
       ),
     );
   }

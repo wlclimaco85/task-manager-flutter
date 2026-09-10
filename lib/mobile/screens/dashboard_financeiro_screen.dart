@@ -416,6 +416,7 @@ class _DashboardFinanceiroMobileScreenState
                 onPressed: () {
                   setState(() {
                     _empresaId = pegarEmpresaLogada();
+                    _parceiroId = pegarParceiroLogada();
                     _contaBancariaId = null;
                     _dataInicio = null;
                     _dataFim = null;
@@ -438,6 +439,7 @@ class _DashboardFinanceiroMobileScreenState
                 value: _empresaId,
                 items: _empresas,
                 hint: 'Empresa',
+                enabled: _parceiroId == null,
                 onChanged: (v) {
                   _empresaId = v;
                   _loadDashboard();
@@ -500,6 +502,7 @@ class _DashboardFinanceiroMobileScreenState
     required List<Map<String, dynamic>> items,
     required String hint,
     required ValueChanged<int?> onChanged,
+    bool enabled = true,
   }) {
     return DropdownButtonFormField<int>(
       value: value,
@@ -509,7 +512,7 @@ class _DashboardFinanceiroMobileScreenState
         labelStyle: const TextStyle(fontSize: 12, color: GridColors.textMuted),
         isDense: true,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: enabled ? Colors.white : GridColors.filterBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: GridColors.divider),
@@ -533,7 +536,7 @@ class _DashboardFinanceiroMobileScreenState
                   overflow: TextOverflow.ellipsis),
             )),
       ],
-      onChanged: onChanged,
+      onChanged: enabled ? onChanged : null,
     );
   }
 
