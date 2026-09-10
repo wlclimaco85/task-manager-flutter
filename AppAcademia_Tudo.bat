@@ -14,6 +14,7 @@ set "FLUTTER_CLIENT_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_BASE_DIR=%APP_ROOT%\task_manager_flutter_merged_final"
 set "FLUTTER_V003_DIR=%APP_ROOT%\task_manager_AppAcademiaV003"
 set "FLUTTER_DANIEL_DIR=%APP_ROOT%\task_manager_appDaniel"
+set "FLUTTER_ADMIN_DIR=%APP_ROOT%\task_manager_admin_panel"
 set "SELENIUM_DIR=%APP_ROOT%\.selenium-app-academia-e2e"
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
@@ -70,6 +71,7 @@ echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
+echo  [M] Subir o App do Dono (Admin Panel no Chrome)
 echo  [0] Sair
 echo.
 set "OP="
@@ -162,6 +164,10 @@ if /i "%OP%"=="K" (
 )
 if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
+    goto END_MENU
+)
+if /i "%OP%"=="M" (
+    call :START_ADMIN_PANEL
     goto END_MENU
 )
 goto MENU
@@ -1402,4 +1408,14 @@ echo.
 start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR% && call venv\Scripts\activate.bat && python server.py"
 echo Instagram API iniciado em http://localhost:8500
 echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
+exit /b 0
+
+:START_ADMIN_PANEL
+echo.
+echo ============================================
+echo  App do Dono (Admin Panel) no Chrome
+echo ============================================
+echo.
+call :START_BACKEND_ONLY
+call :START_FLUTTER_WEB "AdminPanel" "%FLUTTER_ADMIN_DIR%" 8083
 exit /b 0
