@@ -610,48 +610,142 @@ class _MessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final text =
         message.content.isNotEmpty ? message.content : (message.text ?? '');
-    if (message.type == 'file') {
-      return InkWell(
-        onTap: onOpenFile,
+
+    final isFile = message.type == 'file' ||
+        message.fileId != null ||
+        (message.fileName != null && message.fileName!.isNotEmpty) ||
+        text.startsWith('Arquivo:');
+
+    if (isFile) {
+      final fileName = message.fileName ??
+          (text.startsWith('Arquivo:')
+              ? text.replaceFirst('Arquivo:', '').trim()
+              : 'Arquivo anexado');
+
+      final ext = fileName.split('.').last.toLowerCase();
+      IconData fileIcon = Icons.insert_drive_file_outlined;
+      Color iconColor = GridColors.primary;
+      if (ext == 'pdf') {
+        fileIcon = Icons.picture_as_pdf_outlined;
+        iconColor = const Color(0xFFD32F2F);
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) {
+        fileIcon = Icons.image_outlined;
+        iconColor = GridColors.secondary;
+      } else if (['xlsx', 'xls', 'csv'].contains(ext)) {
+        fileIcon = Icons.table_chart_outlined;
+        iconColor = const Color(0xFF2E7D32);
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(top: 2, bottom: 2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: GridColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onOpenFile,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(fileIcon, color: iconColor, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: GridColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Clique para visualizar ou baixar',
+                          style: TextStyle(
+                            color: GridColors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: GridColors.secondary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.download_rounded,
+                      size: 18,
+                      color: GridColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (message.type == 'ticket' || text.contains('Chamado #') || text.contains('🎫 Chamado')) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: GridColors.secondary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: GridColors.secondary.withValues(alpha: 0.28)),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.attach_file, color: GridColors.primary, size: 18),
-            const SizedBox(width: 6),
+            const Icon(Icons.assignment_turned_in_outlined,
+                size: 20, color: GridColors.secondary),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
-                message.fileName ?? 'Arquivo anexado',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                text.isEmpty ? 'Chamado aberto com sucesso' : text,
                 style: const TextStyle(
-                  color: GridColors.primary,
-                  decoration: TextDecoration.underline,
+                  color: GridColors.textSecondary,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  height: 1.3,
                 ),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    if (message.type == 'ticket') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.assignment_turned_in_outlined,
-              size: 18, color: GridColors.secondary),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              text.isEmpty ? 'Chamado aberto com sucesso' : text,
-              style: const TextStyle(
-                color: GridColors.textSecondary,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ),
-        ],
       );
     }
 

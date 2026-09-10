@@ -51,16 +51,51 @@ class ChatMessage {
     this.senderFoto,
   });
 
-  // Construtor a partir de JSON
+  // Construtor a partir de JSON com suporte a fileAttachment aninhado e inferência de tipo
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final fileAttachment = json['fileAttachment'] is Map
+        ? json['fileAttachment'] as Map<String, dynamic>
+        : (json['file_attachment'] is Map
+            ? json['file_attachment'] as Map<String, dynamic>
+            : null);
+
+    final extractedFileId = _intFromJson(json['fileId'] ??
+        json['file_id'] ??
+        fileAttachment?['id'] ??
+        fileAttachment?['fileId']);
+
+    final extractedFileName = (json['fileName'] ??
+            json['file_name'] ??
+            fileAttachment?['fileName'] ??
+            fileAttachment?['file_name'] ??
+            fileAttachment?['name'])
+        ?.toString();
+
+    final rawContent = (json['content'] ?? json['text'] ?? '').toString();
+    String type = (json['type'] ?? '').toString();
+    if (type.isEmpty) {
+      if (extractedFileId != null || extractedFileName != null) {
+        type = 'file';
+      } else if (rawContent.contains('Chamado #') ||
+          rawContent.contains('🎫 Chamado')) {
+        type = 'ticket';
+      } else {
+        type = 'text';
+      }
+    }
+
+    final finalContent = rawContent.isNotEmpty
+        ? rawContent
+        : (extractedFileName != null ? 'Arquivo: $extractedFileName' : '');
+
     return ChatMessage(
       sender: json['sender'] ?? '',
-      content: json['content'] ?? '',
-      type: json['type'] ?? '',
-      fileId: _intFromJson(json['fileId']),
-      fileName: json['fileName'],
+      content: finalContent,
+      type: type,
+      fileId: extractedFileId,
+      fileName: extractedFileName,
       timestamp: json['timestamp'],
-      fileUrl: json['fileUrl'],
+      fileUrl: json['fileUrl'] ?? (fileAttachment?['fileUrl']?.toString()),
       empId: _intFromJson(json['empId'] ?? json['empresaId']),
       parceiroId: _intFromJson(
           json['parceiroId'] ?? json['parcId'] ?? json['clienteId']),
@@ -70,7 +105,7 @@ class ChatMessage {
       sector: json['sector'],
       chatId: json['chatId'],
       uploadDate: json['uploadDate'],
-      text: json['text'],
+      text: json['text'] ?? finalContent,
       status: json['status'],
       atendenteId: _intFromJson(json['atendenteId']),
       senderName: json['senderName'],

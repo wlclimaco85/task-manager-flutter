@@ -32,6 +32,7 @@ void main() {
 
       // Verifica que o Scaffold está presente
       expect(find.byType(Scaffold), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets(
@@ -52,6 +53,7 @@ void main() {
 
       // Verifica que é um IconButton (botão clicável)
       expect(find.byType(IconButton), findsWidgets);
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('ChatSupportPalette.page deve ser diferente de GridColors.background',

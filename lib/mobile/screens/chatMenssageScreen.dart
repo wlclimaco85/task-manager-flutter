@@ -298,7 +298,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         return;
       }
 
-      _channel!.sink.add(json.encode(buildChatOutgoingPayload(
+      final payload = buildChatOutgoingPayload(
         senderName: _loggedUserName,
         senderEmail: _loggedUserEmail,
         content: 'Arquivo: ${file.name}',
@@ -312,7 +312,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         fileName: file.name,
         fileId: fileId,
         fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
-      )));
+      );
+      _channel!.sink.add(json.encode(payload));
+      final localMessage = ChatMessage.fromJson(payload);
+      _adoptRealChatIdIfNeeded(localMessage);
+      if (!_isDuplicate(localMessage)) {
+        setState(() => _messages.add(localMessage));
+      }
+      _scrollToBottom();
       AppLogger.i.info(
         'Upload de chat concluido: fileId=$fileId, arquivo=${file.name}, chatId=$_effectiveChatId',
       );
@@ -378,23 +385,40 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
-    if (result == null || _channel == null || !mounted || _disposed) return;
-    try {
-      final id = (result as dynamic).id;
-      _channel!.sink.add(json.encode(buildChatOutgoingPayload(
-        senderName: _loggedUserName,
-        senderEmail: _loggedUserEmail,
-        content: 'Chamado aberto com sucesso (ID $id)',
-        sector: widget.sector,
-        type: 'ticket',
-        chatId: _effectiveChatId,
-        empresaId: TenantContext.empresaId,
-        parceiroId: TenantContext.parceiroId,
-        aplicativoId: TenantContext.aplicativoId,
-        userId: TenantContext.userId,
-        ticketId: id is int ? id : int.tryParse(id.toString()),
-      )));
-    } catch (_) {}
+    if (result == null || !mounted || _disposed) return;
+    final id = (result as dynamic).id;
+    final mensagem =
+        '🎫 Chamado #$id criado com sucesso! Para acompanhar, acesse a tela de Chamados.';
+
+    final payload = buildChatOutgoingPayload(
+      senderName: _loggedUserName,
+      senderEmail: _loggedUserEmail,
+      content: mensagem,
+      sector: widget.sector,
+      type: 'ticket',
+      chatId: _effectiveChatId,
+      empresaId: TenantContext.empresaId,
+      parceiroId: TenantContext.parceiroId,
+      aplicativoId: TenantContext.aplicativoId,
+      userId: TenantContext.userId,
+      ticketId: id is int ? id : int.tryParse(id.toString()),
+    );
+
+    if (_channel != null) {
+      try {
+        _channel!.sink.add(json.encode(payload));
+      } catch (e) {
+        L.d('Erro ao enviar confirmação de chamado no chat: $e');
+      }
+    }
+
+    final localMessage = ChatMessage.fromJson(payload);
+    _adoptRealChatIdIfNeeded(localMessage);
+    if (!_isDuplicate(localMessage)) {
+      setState(() => _messages.add(localMessage));
+    }
+    _scrollToBottom();
+    _showSnack(mensagem, error: false);
   }
 
   Future<void> _correctDraft() async {

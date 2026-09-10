@@ -285,7 +285,7 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         return;
       }
 
-      _channel!.sink.add(json.encode(buildChatOutgoingPayload(
+      final payload = buildChatOutgoingPayload(
         senderName: _loggedUserName,
         senderEmail: _loggedUserEmail,
         content: 'Arquivo: ${file.name}',
@@ -299,7 +299,14 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         fileName: file.name,
         fileId: fileId,
         fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
-      )));
+      );
+      _channel!.sink.add(json.encode(payload));
+      final localMessage = ChatMessage.fromJson(payload);
+      _adoptRealChatIdIfNeeded(localMessage);
+      if (!_isDuplicate(localMessage)) {
+        setState(() => _messages.add(localMessage));
+      }
+      _scrollToBottom();
     } catch (e) {
       _showSnack('Erro no upload: $e', error: true);
     }
@@ -349,36 +356,38 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     if (criado == null || !mounted) return;
     final id = (criado as dynamic).id;
     final mensagem =
-        '🎫 Chamado #$id aberto com sucesso! Você será notificado assim que houver andamento.';
+        '🎫 Chamado #$id criado com sucesso! Para acompanhar, acesse a tela de Chamados.';
 
-    bool enviouNoChat = false;
+    final payload = buildChatOutgoingPayload(
+      senderName: _loggedUserName,
+      senderEmail: _loggedUserEmail,
+      content: mensagem,
+      sector: widget.sector,
+      type: 'ticket',
+      chatId: _effectiveChatId,
+      empresaId: TenantContext.empresaId,
+      parceiroId: TenantContext.parceiroId,
+      aplicativoId: TenantContext.aplicativoId,
+      userId: TenantContext.userId,
+      ticketId: id is int ? id : int.tryParse(id.toString()),
+    );
+
     if (_channel != null) {
       try {
-        _channel!.sink.add(json.encode(buildChatOutgoingPayload(
-          senderName: _loggedUserName,
-          senderEmail: _loggedUserEmail,
-          content: mensagem,
-          sector: widget.sector,
-          type: 'ticket',
-          chatId: _effectiveChatId,
-          empresaId: TenantContext.empresaId,
-          parceiroId: TenantContext.parceiroId,
-          aplicativoId: TenantContext.aplicativoId,
-          userId: TenantContext.userId,
-          ticketId: id is int ? id : int.tryParse(id.toString()),
-        )));
-        enviouNoChat = true;
+        _channel!.sink.add(json.encode(payload));
       } catch (e) {
         L.d('Erro ao enviar confirmação de chamado no chat: $e');
       }
     }
 
     if (!mounted) return;
-    if (!enviouNoChat) {
-      // Fallback: garante que o usuário saiba do número do chamado mesmo se
-      // a conexão de chat tiver caído.
-      _showSnack(mensagem, error: false);
+    final localMessage = ChatMessage.fromJson(payload);
+    _adoptRealChatIdIfNeeded(localMessage);
+    if (!_isDuplicate(localMessage)) {
+      setState(() => _messages.add(localMessage));
     }
+    _scrollToBottom();
+    _showSnack(mensagem, error: false);
   }
 
   Future<void> _correctDraft() async {
