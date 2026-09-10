@@ -711,36 +711,74 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                       ),
                     ),
 
-                    // ── Ação "Marcar todas como lidas" ─────────────────────
+                    // ── Ações: Marcar lidas e Limpar todas ─────────────────
                     if (notifications.isNotEmpty)
-                      InkWell(
-                        onTap: () =>
-                            deleteAllNotifications(context, position),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: const BoxDecoration(
-                            color: GridColors.filterBackground,
-                            border: Border(
-                              bottom: BorderSide(
-                                  color: GridColors.divider, width: 1),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: const BoxDecoration(
+                          color: GridColors.filterBackground,
+                          border: Border(
+                            bottom: BorderSide(
+                                color: GridColors.divider, width: 1),
                           ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.done_all,
-                                  size: 16, color: GridColors.secondary),
-                              SizedBox(width: 6),
-                              Text(
-                                'Marcar todas como lidas',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: GridColors.secondary,
-                                  fontWeight: FontWeight.w500,
+                        ),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              key: const Key('notificacoes_marcar_lidas_web_btn'),
+                              onTap: () =>
+                                  deleteAllNotifications(context, position),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.done_all,
+                                        size: 15, color: GridColors.secondary),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Marcar lidas',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: GridColors.secondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const Spacer(),
+                            InkWell(
+                              key: const Key('notificacoes_limpar_todas_btn'),
+                              onTap: () =>
+                                  deleteAllNotifications(context, position),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.delete_sweep_outlined,
+                                        size: 15, color: GridColors.error),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Limpar todas',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: GridColors.error,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 

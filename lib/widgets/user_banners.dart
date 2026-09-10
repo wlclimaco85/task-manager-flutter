@@ -742,16 +742,33 @@ class _NotificationPanel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton.icon(
             onPressed: onMarcarTodas,
-            icon:
-                const Icon(Icons.done_all, size: 16, color: GridColors.success),
+            icon: const Icon(Icons.done_all, size: 16, color: GridColors.success),
             label: const Text(
-              'Marcar todas como lidas',
+              'Marcar lidas',
               style: TextStyle(
                 color: GridColors.success,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            key: const Key('notificacoes_limpar_todas_btn'),
+            onPressed: onMarcarTodas,
+            icon: const Icon(Icons.delete_sweep_outlined,
+                size: 16, color: GridColors.error),
+            label: const Text(
+              'Limpar todas',
+              style: TextStyle(
+                color: GridColors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
