@@ -8,6 +8,8 @@ import '../../services/conta_bancaria_caller.dart';
 import '../../services/empresa_caller.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/utils.dart';
+import '../../models/saude_financeira_model.dart';
+import '../../widgets/finance/saude_financeira_section.dart';
 
 class WebDashboardFinanceiroScreen extends StatefulWidget {
   final bool showAppBar;
@@ -59,6 +61,15 @@ class _WebDashboardFinanceiroScreenState
 
   // Filtro período rápido
   String _periodoFilter = '30d';
+
+  SaudeFinanceiraModel get _saudeFinanceira => SaudeFinanceiraModel.calcular(
+        saldoAtual: _kpiSaldo != 0 ? _kpiSaldo : _saldoProjetado,
+        aReceber: _aReceber,
+        aPagar: _aPagar,
+        receitasMes: _kpiEntradas,
+        despesasMes: _kpiSaidas,
+        inadimplenciaPerc: _kpiInadimplencia,
+      );
 
   @override
   void initState() {
@@ -303,6 +314,8 @@ class _WebDashboardFinanceiroScreenState
           _buildFiltrosCard(),
           const SizedBox(height: 20),
           _buildKpiGrid(),
+          const SizedBox(height: 24),
+          SaudeFinanceiraSection(model: _saudeFinanceira),
           const SizedBox(height: 24),
           _buildChartsRow(),
           const SizedBox(height: 24),

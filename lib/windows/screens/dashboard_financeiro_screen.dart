@@ -7,6 +7,8 @@ import '../../services/dashboard_financeiro_caller.dart';
 import '../../services/conta_bancaria_caller.dart';
 import '../../services/empresa_caller.dart';
 import '../../utils/utils.dart';
+import '../../models/saude_financeira_model.dart';
+import '../../widgets/finance/saude_financeira_section.dart';
 import '../../utils/grid_colors.dart';
 
 class WindowsDashboardFinanceiroScreen extends StatefulWidget {
@@ -58,6 +60,15 @@ class _WindowsDashboardFinanceiroScreenState
   List<_ProjecaoItem> _projecao = [];
 
   String _periodoFilter = '30d';
+
+  SaudeFinanceiraModel get _saudeFinanceira => SaudeFinanceiraModel.calcular(
+        saldoAtual: _kpiSaldo != 0 ? _kpiSaldo : _saldoProjetado,
+        aReceber: _aReceber,
+        aPagar: _aPagar,
+        receitasMes: _kpiEntradas,
+        despesasMes: _kpiSaidas,
+        inadimplenciaPerc: _kpiInadimplencia,
+      );
 
   @override
   void initState() {
@@ -296,6 +307,8 @@ class _WindowsDashboardFinanceiroScreenState
           _buildFiltrosCard(),
           const SizedBox(height: 20),
           _buildKpiGrid(),
+          const SizedBox(height: 24),
+          SaudeFinanceiraSection(model: _saudeFinanceira),
           const SizedBox(height: 24),
           _buildChartsRow(),
           const SizedBox(height: 24),

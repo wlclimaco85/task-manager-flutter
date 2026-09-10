@@ -7,6 +7,8 @@ import '../../services/dashboard_financeiro_caller.dart';
 import '../../services/conta_bancaria_caller.dart';
 import '../../services/empresa_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../models/saude_financeira_model.dart';
+import '../../widgets/finance/saude_financeira_section.dart';
 import '../../utils/utils.dart';
 
 /// Dashboard Financeiro para Mobile com visual moderno, responsivo e limpo
@@ -55,6 +57,15 @@ class _DashboardFinanceiroMobileScreenState
 
   // Filtro período rápido
   String _periodoFilter = '30d';
+
+  SaudeFinanceiraModel get _saudeFinanceira => SaudeFinanceiraModel.calcular(
+        saldoAtual: _kpiSaldo != 0 ? _kpiSaldo : _saldoProjetado,
+        aReceber: _aReceber,
+        aPagar: _aPagar,
+        receitasMes: _kpiEntradas,
+        despesasMes: _kpiSaidas,
+        inadimplenciaPerc: _kpiInadimplencia,
+      );
 
   // Toggle do card de filtros para economizar espaço de tela touch
   bool _filtrosAbertos = false;
@@ -307,6 +318,11 @@ class _DashboardFinanceiroMobileScreenState
           _buildKpisGrid(),
           const SizedBox(height: 14),
           _buildSecondaryKpisRow(),
+          const SizedBox(height: 16),
+          SaudeFinanceiraSection(
+            model: _saudeFinanceira,
+            isCompact: true,
+          ),
           const SizedBox(height: 16),
           _buildFluxoChartCard(),
           if (_projecao.isNotEmpty) ...[

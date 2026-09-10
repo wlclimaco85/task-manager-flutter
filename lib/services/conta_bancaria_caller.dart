@@ -69,6 +69,27 @@ class ContaBancariaCaller {
     }
   }
 
+  /// Ajusta saldo inicial ou saldo final da conta.
+  Future<bool> ajustarSaldo({
+    required int contaId,
+    double? saldoInicial,
+    double? saldoFinal,
+  }) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        '${ApiLinks.contasBancarias}/$contaId/ajustar-saldo',
+        {
+          if (saldoInicial != null) 'saldoInicial': saldoInicial,
+          if (saldoFinal != null) 'saldoFinal': saldoFinal,
+        },
+      );
+      return response.isSuccess;
+    } catch (e) {
+      debugPrint('Erro ao ajustar saldo da conta: $e');
+      return false;
+    }
+  }
+
   /// Extrato PDF
   Future<Uint8List?> gerarExtratoPdf({
     required int contaId,
