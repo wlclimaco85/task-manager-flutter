@@ -835,6 +835,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       body: Column(
         children: [
           _buildToolbar(),
+          // Pedido do usuario: tela demorava a abrir apos login sem nenhum
+          // aviso visivel de carregamento (so havia um spinner de 16px no
+          // botao de refresh, facil de nao perceber) -- parecia "travada".
+          if (_loadingMonth || _loadingDay)
+            const LinearProgressIndicator(minHeight: 3, color: GridColors.primary),
           Expanded(
             child: _viewMode == 'day'
                 ? _buildSingleDayView()
