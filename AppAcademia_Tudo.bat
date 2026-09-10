@@ -426,12 +426,10 @@ if errorlevel 1 (
     exit /b 1
 )
 cd /d "%BACKEND_DIR%"
-echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
 call :KILL_BACKEND_FOR_CLEAN
+echo [PRE-CLEAN] Limpando build pelo Maven para evitar target gerado inconsistente...
 del /f /q "target\spring.log" 2>nul
-rmdir /s /q "target\generated-sources" 2>nul
-rmdir /s /q "target\classes" 2>nul
-call mvnw.cmd clean package -DskipTests
+call mvnw.cmd clean package -DskipTests "-Dmaven.test.skip=true"
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
