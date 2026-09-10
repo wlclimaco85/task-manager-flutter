@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/ged_file_type.dart';
 import '../../../utils/grid_colors.dart';
@@ -79,6 +80,27 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   String? _parceiroUploadNome;
   bool _enviando = false;
 
+  // Pedido do usuario: tempo de retencao do arquivo no servidor + descricao
+  // pra ser localizado pelo Chat GED Inteligente (ver bugs.md 2026-09-09
+  // 16:25:39 -- backend ja aceitava esses campos, so' faltava a UI).
+  int _diasRetencaoUpload = 30;
+  final TextEditingController _descricaoChatUploadCtrl =
+      TextEditingController();
+
+  static const _opcoesDiasRetencao = <int, String>{
+    1: '1 dia',
+    10: '10 dias',
+    20: '20 dias',
+    30: '30 dias (padrão)',
+    40: '40 dias',
+    50: '50 dias',
+    60: '60 dias',
+    180: '180 dias',
+    365: '1 ano',
+    730: '2 anos',
+    1825: '5 anos',
+  };
+
   // ── Edição inline ─────────────────────────────────────────────────────────
   Map<String, dynamic>? _editando;
   final _nomeCtrl = TextEditingController();
@@ -139,6 +161,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   @override
   void dispose() {
     _nomeCtrl.dispose();
+    _descricaoChatUploadCtrl.dispose();
     super.dispose();
   }
 
@@ -259,6 +282,10 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
       req.fields['empresa'] = '{"id":$_empresaFiltroId}';
       req.fields['parceiro'] = '{"id":${_parceiroUploadId ?? 0}}';
+      req.fields['diasRetencao'] = _diasRetencaoUpload.toString();
+      if (_descricaoChatUploadCtrl.text.trim().isNotEmpty) {
+        req.fields['descricaoChat'] = _descricaoChatUploadCtrl.text.trim();
+      }
       // H5-21: inclui módulo de origem no upload quando disponível
       if (_moduloOrigemFiltro != null)
         req.fields['modulo'] = _moduloOrigemFiltro!;
@@ -274,9 +301,11 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         await _buscarArquivos();
       } else {
         _snack('Erro no upload: ${resp.statusCode}', erro: true);
+        AppLogger.i.warn('[GED] Erro no upload (status ${resp.statusCode})');
       }
-    } catch (e) {
+    } catch (e, st) {
       _snack('Erro: $e', erro: true);
+      AppLogger.i.error('[GED] Erro no upload: $e', st);
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -745,6 +774,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
           _contextoParceiro ? widget.idOrigem : _parceiroFiltroId;
       _parceiroUploadNome =
           _contextoParceiro ? widget.nomeOrigem : _parceiroFiltroNome;
+      _diasRetencaoUpload = 30;
+      _descricaoChatUploadCtrl.clear();
     });
 
     showDialog(
@@ -864,6 +895,37 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
+                const SizedBox(height: 16),
+                _buildDropdown<int>(
+                  label: 'Tempo de permanência no servidor',
+                  value: _diasRetencaoUpload,
+                  items: _opcoesDiasRetencao.entries
+                      .map((e) => DropdownMenuItem<int>(
+                            value: e.key,
+                            child: Text(e.value),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() => _diasRetencaoUpload = v ?? 30);
+                    setStateDialog(() {});
+                  },
+                  icon: Icons.schedule,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descricaoChatUploadCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição / período (opcional)',
+                    helperText:
+                        'Usado pelo Chat para localizar e enviar este arquivo quando o '
+                        'cliente pedir (ex.: "boleto de água de agosto").',
+                    helperMaxLines: 2,
+                    prefixIcon: Icon(Icons.chat_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                  minLines: 1,
+                ),
               ],
             ),
           ),
