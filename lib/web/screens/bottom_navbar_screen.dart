@@ -367,7 +367,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      const WebCalendarScreen(), // 31: Calendario — header padrao (fix card #438)
+      const WebCalendarScreen(useLightHeader: true), // 31: Calendario — sem header duplicado (pedido usuario 2026-09-10)
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)

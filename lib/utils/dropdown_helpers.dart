@@ -2,7 +2,7 @@ import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 import '../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType;
+    show FieldConfigWindows, FieldType, PaginaDropdown;
 
 /// Helper centralizado para carregar dropdowns comuns
 class DropdownHelpers {
@@ -59,6 +59,196 @@ class DropdownHelpers {
     return load(ApiLinks.allParceirosPorEmp(empresaId), displayField: 'nome');
   }
 
+  /// Busca paginada + server-side (LIKE multi-campo: nome, razão social,
+  /// CPF/CNPJ, email) de parceiros — usada pelo dropdown de Parceiro/
+  /// Fornecedor em Contas a Pagar/Receber.
+  ///
+  /// Corrige bug de produção: o dropdown antes carregava só o 1º lote de 25
+  /// registros (GET /api/parceiro sem parâmetros) e filtrava só client-side
+  /// sobre esse lote pequeno — termos que só batiam em parceiros fora da 1ª
+  /// página nunca apareciam na busca. Agora reconsulta o backend a cada
+  /// termo digitado (ver `busca=` no ParceiroController) e devolve o total
+  /// real para o diálogo poder paginar via scroll até esgotar os resultados.
+  /// [empresaId] restringe a busca a uma empresa específica (ex.: tela GED,
+  /// onde o usuário escolhe a empresa num filtro à parte antes de escolher
+  /// o parceiro) — sem ele, o backend usa a empresa do tenant logado.
+  /// [tipoParceiro] restringe aos parceiros com esse TipoParceiro vinculado
+  /// (ex.: "Fornecedor") — usado pelo campo Fornecedor de Contas a Pagar/
+  /// Receber, que não deve trazer todos os parceiros da empresa.
+  static Future<PaginaDropdown> parceirosBusca({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+    String? empresaId,
+    String? tipoParceiro,
+  }) async {
+    final url = '${ApiLinks.allParceiros}${buildParceirosBuscaQuery(
+      busca: busca,
+      pagina: pagina,
+      tamanho: tamanho,
+      empresaId: empresaId,
+      tipoParceiro: tipoParceiro,
+    )}';
+    try {
+      final resp = await NetworkCaller().getRequest(url);
+      if (!resp.isSuccess || resp.body == null) {
+        // WR-01 (debito conhecido desde o card 580): erro de rede/servidor
+        // nao pode parecer "busca sem resultado" -- usuario via "Nenhum
+        // resultado" e nao dava pra saber se o parceiro simplesmente nao
+        // existia ou se o backend tinha quebrado.
+        return PaginaDropdown([], 0,
+            erro: 'Erro ao buscar (status ${resp.statusCode}).');
+      }
+      return parsePaginaDropdown(resp.body);
+    } catch (e) {
+      return PaginaDropdown([], 0, erro: 'Erro ao buscar: $e');
+    }
+  }
+
+  /// Monta a query string (`?pagina=...&tamanho=...[&busca=...][&empresaId=...][&tipoParceiro=...]`)
+  /// de [parceirosBusca] — extraído em função pura para poder ser testado sem
+  /// rede (ver dropdown_helpers_busca_test.dart).
+  static String buildParceirosBuscaQuery({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+    String? empresaId,
+    String? tipoParceiro,
+  }) {
+    final termo = busca?.trim();
+    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
+    if (termo != null && termo.isNotEmpty) {
+      query.write('&busca=${Uri.encodeQueryComponent(termo)}');
+    }
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empresaId=${Uri.encodeQueryComponent(empresaId)}');
+    }
+    if (tipoParceiro != null && tipoParceiro.isNotEmpty) {
+      query.write('&tipoParceiro=${Uri.encodeQueryComponent(tipoParceiro)}');
+    }
+    return query.toString();
+  }
+
+  /// Busca paginada + server-side (nome, via GET /api/empresa?nome=...) do
+  /// dropdown de Empresa — mesma classe de bug do card 580 (Parceiro): o
+  /// dropdown carregava só o 1º lote de 25 registros (sem parâmetro nenhum)
+  /// e filtrava só client-side sobre esse lote fixo, escondendo empresas
+  /// fora da 1ª página. `nome` (não `busca`) é o filtro real aceito por
+  /// EmpresaController — já faz ILIKE server-side, sem precisar de mudança
+  /// de backend.
+  static Future<PaginaDropdown> empresasBusca({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) async {
+    final url =
+        '${ApiLinks.allEmpresas}${buildEmpresasBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho)}';
+    try {
+      final resp = await NetworkCaller().getRequest(url);
+      if (!resp.isSuccess || resp.body == null) {
+        return PaginaDropdown([], 0,
+            erro: 'Erro ao buscar (status ${resp.statusCode}).');
+      }
+      return parsePaginaDropdown(resp.body);
+    } catch (e) {
+      return PaginaDropdown([], 0, erro: 'Erro ao buscar: $e');
+    }
+  }
+
+  /// Monta a query string (`?pagina=...&tamanho=...[&nome=...]`) de
+  /// [empresasBusca] — extraído em função pura para poder ser testado sem
+  /// rede (ver dropdown_helpers_busca_test.dart).
+  static String buildEmpresasBuscaQuery({
+    String? busca,
+    required int pagina,
+    int tamanho = 25,
+  }) {
+    final termo = busca?.trim();
+    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');
+    if (termo != null && termo.isNotEmpty) {
+      query.write('&nome=${Uri.encodeQueryComponent(termo)}');
+    }
+    return query.toString();
+  }
+
+  /// Converte o corpo `{data: {dados: [...], totalElements: N}}` retornado
+  /// pelo backend em [PaginaDropdown] — extraído em função pura para poder
+  /// ser testado sem rede (ver dropdown_helpers_busca_test.dart).
+  static PaginaDropdown parsePaginaDropdown(dynamic raw) {
+    if (raw is! Map) return const PaginaDropdown([], 0);
+    final data = raw['data'] is Map ? raw['data'] : raw;
+    if (data is! Map) return const PaginaDropdown([], 0);
+    final lista = (data['dados'] as List?) ?? const [];
+    final total = (data['totalElements'] as num?)?.toInt() ?? lista.length;
+    final items = lista.whereType<Map>().map((e) {
+      final item = Map<String, dynamic>.from(e);
+      if (item['nome'] == null || item['nome'].toString().isEmpty) {
+        item['nome'] =
+            item['razaoSocial'] ?? item['email'] ?? item['id']?.toString() ?? '';
+      }
+      return item;
+    }).toList();
+    return PaginaDropdown(items, total);
+  }
+
+  /// Resolve o rótulo de exibição de um parceiro pelo id — usado para
+  /// mostrar o valor pré-selecionado do dropdown de busca remota
+  /// ([parceirosBusca]) quando o registro não está na página carregada
+  /// (ex: tela de edição de Conta a Pagar/Receber já com Fornecedor/
+  /// Parceiro preenchido).
+  static Future<String?> parceiroLabelPorId(String id) async {
+    try {
+      final resp =
+          await NetworkCaller().getRequest('${ApiLinks.allParceiros}/$id');
+      if (!resp.isSuccess || resp.body == null) return null;
+      return parseParceiroLabel(resp.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrai o rótulo de exibição (nome, com fallback para razão social e
+  /// email) do corpo `{data: {...}}` de `GET /api/parceiro/{id}` — extraído
+  /// em função pura para poder ser testado sem rede (ver
+  /// dropdown_helpers_busca_test.dart).
+  static String? parseParceiroLabel(dynamic raw) {
+    if (raw is! Map) return null;
+    final data = raw['data'] is Map ? raw['data'] : raw;
+    if (data is! Map) return null;
+    final nome = data['nome']?.toString();
+    if (nome != null && nome.isNotEmpty) return nome;
+    final razaoSocial = data['razaoSocial']?.toString();
+    if (razaoSocial != null && razaoSocial.isNotEmpty) return razaoSocial;
+    return data['email']?.toString();
+  }
+
+  /// Resolve o rótulo de exibição de uma empresa pelo id — usado para
+  /// mostrar o valor pré-selecionado do dropdown de busca remota
+  /// ([empresasBusca]) quando o registro não está na página carregada.
+  static Future<String?> empresaLabelPorId(String id) async {
+    try {
+      final resp =
+          await NetworkCaller().getRequest('${ApiLinks.allEmpresas}/$id');
+      if (!resp.isSuccess || resp.body == null) return null;
+      return parseEmpresaLabel(resp.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrai o rótulo de exibição (nome, com fallback para razão social e
+  /// email) do corpo de `GET /api/empresa/{id}` — diferente do formato de
+  /// `GET /api/parceiro/{id}`, EmpresaController devolve a entidade direto,
+  /// sem envelope `{data: {...}}` (ver EmpresaController.getEmpresaById).
+  static String? parseEmpresaLabel(dynamic raw) {
+    if (raw is! Map) return null;
+    final nome = raw['nome']?.toString();
+    if (nome != null && nome.isNotEmpty) return nome;
+    final razaoSocial = raw['razaoSocial']?.toString();
+    if (razaoSocial != null && razaoSocial.isNotEmpty) return razaoSocial;
+    return raw['email']?.toString();
+  }
+
   static Future<List<Map<String, dynamic>>> aplicativos() =>
       load('${ApiLinks.baseUrl}/api/aplicativo', displayField: 'nome');
 
@@ -86,23 +276,75 @@ class DropdownHelpers {
       '${ApiLinks.baseUrl}/api/contas-bancaria',
       displayField: 'nome',
     );
-    return lista.map((item) {
-      final descricao = item['descricao']?.toString().trim() ?? '';
-      final banco = item['banco']?.toString().trim() ?? '';
-      final numero = item['numero']?.toString().trim() ?? '';
-      final bancoNumero = [
-        if (banco.isNotEmpty) banco,
-        if (numero.isNotEmpty) numero,
-      ].join(' - ');
-      final nome = [
-        if (descricao.isNotEmpty) descricao,
-        if (bancoNumero.isNotEmpty) bancoNumero,
-      ].join(' • ');
-      if (nome.isNotEmpty) {
-        item['nome'] = nome;
-      }
-      return item;
+    return lista.map(_comNomeFormatadoDeContaBancaria).toList();
+  }
+
+  /// Monta o rótulo de exibição "Descrição • Banco - Número" de uma conta
+  /// bancária/caixa — extraído para ser reaproveitado por [contasBancarias]
+  /// e [contasBancariasPorEmpresa].
+  static Map<String, dynamic> _comNomeFormatadoDeContaBancaria(
+      Map<String, dynamic> item) {
+    final descricao = item['descricao']?.toString().trim() ?? '';
+    final banco = item['banco']?.toString().trim() ?? '';
+    final numero = item['numero']?.toString().trim() ?? '';
+    final bancoNumero = [
+      if (banco.isNotEmpty) banco,
+      if (numero.isNotEmpty) numero,
+    ].join(' - ');
+    final nome = [
+      if (descricao.isNotEmpty) descricao,
+      if (bancoNumero.isNotEmpty) bancoNumero,
+    ].join(' • ');
+    if (nome.isNotEmpty) {
+      item['nome'] = nome;
+    }
+    return item;
+  }
+
+  /// Carrega contas bancárias/caixa filtradas pela empresa informada (ao
+  /// invés da empresa do login) — usado por telas de administração/config
+  /// que operam fora do tenant do usuário logado (ex.: Defaults de
+  /// Importação em Sistema > Config de Sistemas, onde a empresa é escolhida
+  /// na própria tela). Sem [empresaId], traz todas as contas visíveis.
+  /// [apenasCaixa] filtra pelo campo `tipo == 'CAIXA'`; por padrão traz as
+  /// contas que NÃO são caixa (conta corrente, poupança etc.).
+  static Future<List<Map<String, dynamic>>> contasBancariasPorEmpresa(
+    String? empresaId, {
+    bool apenasCaixa = false,
+    // Pedido explicito do usuario: conta bancaria e' cadastrada por
+    // PARCEIRO (ContaBancaria.parceiro_id), nao so por empresa -- ao
+    // importar SINTEGRA/SPED, o combo deve trazer so as contas do parceiro
+    // identificado pelo CNPJ do arquivo, nao de todos os parceiros da
+    // empresa. Sem parceiroId (uso normal fora do fluxo de import), filtra
+    // so por empresa como antes.
+    String? parceiroId,
+  }) async {
+    final query = StringBuffer('?tamanho=200');
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empresa=$empresaId');
+    }
+    if (parceiroId != null && parceiroId.isNotEmpty) {
+      query.write('&parceiro=$parceiroId');
+    }
+    final lista = await load(
+      '${ApiLinks.baseUrl}/api/contas-bancaria$query',
+      displayField: 'nome',
+    );
+    return lista.map(_comNomeFormatadoDeContaBancaria).where((item) {
+      final tipo = item['tipo']?.toString().toUpperCase() ?? '';
+      return apenasCaixa ? tipo == 'CAIXA' : tipo != 'CAIXA';
     }).toList();
+  }
+
+  /// Carrega centros de custo filtrados pela empresa informada — mesmo
+  /// motivo de [contasBancariasPorEmpresa]. Sem [empresaId], traz todos.
+  static Future<List<Map<String, dynamic>>> centrosCustoPorEmpresa(
+      String? empresaId) {
+    final query = StringBuffer('?tamanho=200');
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empId=$empresaId');
+    }
+    return load('${ApiLinks.allCentrosCusto}$query', displayField: 'nome');
   }
 
   static Future<List<Map<String, dynamic>>> gruposMusculares() =>
@@ -119,6 +361,18 @@ class DropdownHelpers {
 
   static Future<List<Map<String, dynamic>>> horariosFunc() =>
       load('${ApiLinks.baseUrl}/api/horarioFunc', displayField: 'nome');
+
+  /// Carrega roles filtradas pela empresa fornecida.
+  /// Se [empresaId] for nulo ou vazio, retorna todas as roles disponíveis.
+  static Future<List<Map<String, dynamic>>> rolesPorEmpresa(String? empresaId) {
+    if (empresaId == null || empresaId.isEmpty) {
+      return load('${ApiLinks.baseUrl}/api/role/disponiveis',
+          displayField: 'description');
+    }
+    return load(
+        '${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId',
+        displayField: 'description');
+  }
 
   // ---- FieldConfigWindows prontos ----
 
@@ -352,5 +606,24 @@ class DropdownHelpers {
         isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: horariosFunc,
+      );
+
+  /// Campo Roles com cascade automático por empresa.
+  /// Quando o usuário muda a empresa selecionada, o campo de Roles recarrega
+  /// mostrando apenas as roles compatíveis com aquela empresa.
+  static FieldConfigWindows rolesField({bool required = false}) =>
+      FieldConfigWindows(
+        label: 'Roles',
+        fieldName: 'roles',
+        fieldType: FieldType.multiselect,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'description',
+        enabled: true,
+        isInForm: true,
+        isFilterable: true,
+        isRequired: required,
+        // Cascade: filtra roles pela empresa selecionada
+        dependsOnField: 'empresa',
+        dropdownFutureBuilderWithParam: rolesPorEmpresa,
       );
 }

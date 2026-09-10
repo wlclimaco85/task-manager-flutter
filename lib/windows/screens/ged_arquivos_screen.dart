@@ -8,9 +8,13 @@ import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/app_logger.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/ged_file_type.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show RemoteDropdownSearchDialog;
 import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
 import '../../utils/grid_texts.dart';
@@ -58,12 +62,12 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _empresas = [];
-  List<Map<String, dynamic>> _parceiros = [];
   List<Map<String, dynamic>> _diretorios = [];
 
   int? _empresaFiltroId;
   String? _empresaFiltroNome;
   int? _parceiroFiltroId;
+  String? _parceiroFiltroNome;
 
   // ── Filtro por módulo de origem (H5-21) ───────────────────────────────────
   String? _moduloOrigemFiltro;
@@ -73,7 +77,29 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   PlatformFile? _arquivoSelecionado;
   int? _diretorioUploadId;
   int? _parceiroUploadId;
+  String? _parceiroUploadNome;
   bool _enviando = false;
+
+  // Pedido do usuario: tempo de retencao do arquivo no servidor + descricao
+  // pra ser localizado pelo Chat GED Inteligente (ver bugs.md 2026-09-09
+  // 16:25:39 -- backend ja aceitava esses campos, so' faltava a UI).
+  int _diasRetencaoUpload = 30;
+  final TextEditingController _descricaoChatUploadCtrl =
+      TextEditingController();
+
+  static const _opcoesDiasRetencao = <int, String>{
+    1: '1 dia',
+    10: '10 dias',
+    20: '20 dias',
+    30: '30 dias (padrão)',
+    40: '40 dias',
+    50: '50 dias',
+    60: '60 dias',
+    180: '180 dias',
+    365: '1 ano',
+    730: '2 anos',
+    1825: '5 anos',
+  };
 
   // ── Edição inline ─────────────────────────────────────────────────────────
   Map<String, dynamic>? _editando;
@@ -99,16 +125,25 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         setState(() {
           _empresaFiltroId = empresaInicial;
         });
-        _carregarParceiros(empresaInicial);
       }
       if (_contextoParceiro) {
         setState(() {
           _parceiroFiltroId = widget.idOrigem;
+          _parceiroFiltroNome = widget.nomeOrigem;
         });
       } else if (TenantContext.hasParceiro) {
+        final parceiroId = TenantContext.parceiroId;
         setState(() {
-          _parceiroFiltroId = TenantContext.parceiroId;
+          _parceiroFiltroId = parceiroId;
         });
+        if (parceiroId != null) {
+          DropdownHelpers.parceiroLabelPorId(parceiroId.toString())
+              .then((nome) {
+            if (mounted && nome != null) {
+              setState(() => _parceiroFiltroNome = nome);
+            }
+          });
+        }
       }
       // H5-21: aplicar filtro de módulo de origem se fornecido
       if (widget.moduloOrigem != null && widget.idOrigem != null) {
@@ -126,6 +161,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   @override
   void dispose() {
     _nomeCtrl.dispose();
+    _descricaoChatUploadCtrl.dispose();
     super.dispose();
   }
 
@@ -144,26 +180,6 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       if (raw is List) {
         setState(() {
           _empresas = raw
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
-        });
-      }
-    }
-  }
-
-  Future<void> _carregarParceiros(int empresaId) async {
-    setState(() => _parceiros = []);
-    final r = await NetworkCaller()
-        .getRequest(ApiLinks.allParceirosPorEmp(empresaId.toString()));
-    if (!mounted) return;
-    if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ??
-          r.body!['data'] ??
-          r.body!['content'] ??
-          r.body;
-      if (raw is List) {
-        setState(() {
-          _parceiros = raw
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
               .toList();
         });
@@ -266,6 +282,10 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
       req.fields['empresa'] = '{"id":$_empresaFiltroId}';
       req.fields['parceiro'] = '{"id":${_parceiroUploadId ?? 0}}';
+      req.fields['diasRetencao'] = _diasRetencaoUpload.toString();
+      if (_descricaoChatUploadCtrl.text.trim().isNotEmpty) {
+        req.fields['descricaoChat'] = _descricaoChatUploadCtrl.text.trim();
+      }
       // H5-21: inclui módulo de origem no upload quando disponível
       if (_moduloOrigemFiltro != null)
         req.fields['modulo'] = _moduloOrigemFiltro!;
@@ -281,9 +301,11 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         await _buscarArquivos();
       } else {
         _snack('Erro no upload: ${resp.statusCode}', erro: true);
+        AppLogger.i.warn('[GED] Erro no upload (status ${resp.statusCode})');
       }
-    } catch (e) {
+    } catch (e, st) {
       _snack('Erro: $e', erro: true);
+      AppLogger.i.error('[GED] Erro no upload: $e', st);
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -457,11 +479,11 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                       .firstWhere((e) => e['id'] == v, orElse: () => {})['nome']
                       ?.toString();
                   _parceiroFiltroId = null;
+                  _parceiroFiltroNome = null;
                   _parceiroUploadId = null;
-                  _parceiros = [];
+                  _parceiroUploadNome = null;
                   _arquivos = [];
                 });
-                if (v != null) _carregarParceiros(v);
               },
               icon: Icons.business,
             ),
@@ -470,19 +492,17 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
           // Parceiro (opcional)
           Expanded(
             flex: 3,
-            child: _buildDropdown<int>(
+            child: _buildParceiroBuscaField(
               label: 'Parceiro/Cliente',
-              value: _parceiroFiltroId,
+              placeholder: 'Todos',
               enabled: _empresaFiltroId != null,
-              items: [
-                const DropdownMenuItem<int>(value: null, child: Text('Todos')),
-                ..._parceiros.map((p) => DropdownMenuItem<int>(
-                      value: p['id'] as int?,
-                      child: Text(p['nome']?.toString() ?? ''),
-                    )),
-              ],
-              onChanged: (v) => setState(() => _parceiroFiltroId = v),
-              icon: Icons.person,
+              empresaId: _empresaFiltroId,
+              valorId: _parceiroFiltroId,
+              valorNome: _parceiroFiltroNome,
+              onSelecionado: (id, nome) => setState(() {
+                _parceiroFiltroId = id;
+                _parceiroFiltroNome = nome;
+              }),
             ),
           ),
           const SizedBox(width: 12),
@@ -729,7 +749,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 padding: const EdgeInsets.all(4),
               ),
             // Deletar
-            if (!isEditando)
+            if (!isEditando && arq['usuarioUploadId']?.toString() ==
+                TenantContext.userId?.toString())
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Excluir',
@@ -751,6 +772,10 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       _diretorioUploadId = null;
       _parceiroUploadId =
           _contextoParceiro ? widget.idOrigem : _parceiroFiltroId;
+      _parceiroUploadNome =
+          _contextoParceiro ? widget.nomeOrigem : _parceiroFiltroNome;
+      _diasRetencaoUpload = 30;
+      _descricaoChatUploadCtrl.clear();
     });
 
     showDialog(
@@ -828,24 +853,19 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 const SizedBox(height: 12),
                 if (!_contextoParceiro) ...[
                   // Parceiro (opcional)
-                  _buildDropdown<int>(
+                  _buildParceiroBuscaField(
                     label: 'Parceiro/Cliente (opcional)',
-                    value: _parceiroUploadId,
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('Sem parceiro'),
-                      ),
-                      ..._parceiros.map((p) => DropdownMenuItem<int>(
-                            value: p['id'] as int?,
-                            child: Text(p['nome']?.toString() ?? ''),
-                          )),
-                    ],
-                    onChanged: (v) {
-                      setState(() => _parceiroUploadId = v);
+                    placeholder: 'Sem parceiro',
+                    empresaId: _empresaFiltroId,
+                    valorId: _parceiroUploadId,
+                    valorNome: _parceiroUploadNome,
+                    onSelecionado: (id, nome) {
+                      setState(() {
+                        _parceiroUploadId = id;
+                        _parceiroUploadNome = nome;
+                      });
                       setStateDialog(() {});
                     },
-                    icon: Icons.person,
                   ),
                   const SizedBox(height: 16),
                 ] else
@@ -875,6 +895,37 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
+                const SizedBox(height: 16),
+                _buildDropdown<int>(
+                  label: 'Tempo de permanência no servidor',
+                  value: _diasRetencaoUpload,
+                  items: _opcoesDiasRetencao.entries
+                      .map((e) => DropdownMenuItem<int>(
+                            value: e.key,
+                            child: Text(e.value),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() => _diasRetencaoUpload = v ?? 30);
+                    setStateDialog(() {});
+                  },
+                  icon: Icons.schedule,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descricaoChatUploadCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição / período (opcional)',
+                    helperText:
+                        'Usado pelo Chat para localizar e enviar este arquivo quando o '
+                        'cliente pedir (ex.: "boleto de água de agosto").',
+                    helperMaxLines: 2,
+                    prefixIcon: Icon(Icons.chat_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                  minLines: 1,
+                ),
               ],
             ),
           ),
@@ -922,6 +973,65 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       decoration: _inputDecoration(label, icon),
       items: items,
       onChanged: enabled ? onChanged : null,
+    );
+  }
+
+  /// Campo de Parceiro/Cliente com busca remota (LIKE multi-campo + scroll
+  /// infinito) — mesmo padrão já usado em Contas a Pagar/Receber (card 580).
+  /// Substitui o antigo dropdown simples (GET /api/parceiro/empresa/{id} sem
+  /// paginação, só os 25 primeiros, sem filtro) pelo mesmo componente
+  /// (RemoteDropdownSearchDialog) usado no resto do sistema.
+  Widget _buildParceiroBuscaField({
+    required String label,
+    required String placeholder,
+    required int? empresaId,
+    required int? valorId,
+    required String? valorNome,
+    required void Function(int? id, String? nome) onSelecionado,
+    bool enabled = true,
+  }) {
+    return InkWell(
+      onTap: !enabled
+          ? null
+          : () async {
+              final resultado = await showDialog<Map<String, dynamic>>(
+                context: context,
+                builder: (_) => RemoteDropdownSearchDialog(
+                  title: label,
+                  valueField: 'id',
+                  displayField: 'nome',
+                  currentValue: valorId?.toString(),
+                  loadPage: ({busca, required pagina}) =>
+                      DropdownHelpers.parceirosBusca(
+                    busca: busca,
+                    pagina: pagina,
+                    empresaId: empresaId?.toString(),
+                  ),
+                ),
+              );
+              if (resultado == null) return;
+              if (resultado.isEmpty) {
+                onSelecionado(null, null);
+                return;
+              }
+              onSelecionado(
+                int.tryParse(resultado['id']?.toString() ?? ''),
+                resultado['nome']?.toString(),
+              );
+            },
+      child: InputDecorator(
+        decoration: _inputDecoration(label, Icons.person).copyWith(
+          suffixIcon: const Icon(Icons.arrow_drop_down),
+          enabled: enabled,
+        ),
+        child: Text(
+          valorNome ?? placeholder,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: valorNome == null ? Colors.grey.shade600 : null,
+          ),
+        ),
+      ),
     );
   }
 

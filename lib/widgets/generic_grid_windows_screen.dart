@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
+import '../utils/grid_user_preferences_key.dart';
 import '../utils/grid_texts.dart';
 
 import '../../../models/auth_utility.dart';
@@ -90,8 +92,20 @@ String _mimeFromFileName(String name) {
 // prontos como Map -- por isso a conversao so acontece quando o valor
 // ainda e String/num (idempotente, nao mexe em quem ja e objeto).
 const entityRelationshipFields = [
-  'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
-  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+  'empresa',
+  'parceiro',
+  'aplicativo',
+  'fornecedor',
+  'cliente',
+  'parceiroDev',
+  'parceiroRec',
+  'clienteDev',
+  'contaBancaria',
+  'contaBaixa',
+  'nfe',
+  'setor',
+  'centroCusto',
+  'formaPagamento',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(
@@ -107,6 +121,119 @@ Map<String, dynamic> normalizeEntityRelationships(
   }
   return updated;
 }
+
+bool _hasUsableStorageId(Object? value) {
+  final text = value?.toString().trim();
+  if (text == null || text.isEmpty) return false;
+  final normalized = text.toLowerCase();
+  return normalized != '0' && normalized != 'null' && normalized != 'false';
+}
+
+const _parceiroScopeKeys = ['parceiro', 'parceiroid', 'parcid', 'clienteid'];
+const _empresaScopeKeys = ['empresa', 'empresaid', 'empid'];
+
+/// `true` se `extraParams` (contexto de navegação — ex.: aba "Contas a
+/// Pagar" dentro da tela de um Parceiro específico) traz explicitamente um
+/// parceiro/parcId. Bug (card campo-parceiro-fornecedor-disabled-invertido):
+/// a versão anterior lia `SharedPreferences.get('parceiroId'/'parcId')`, mas
+/// NADA no app grava essas chaves — a leitura sempre retornava null,
+/// deixando o campo "Fornecedor" travado para sempre e o campo "Parceiro"
+/// dependente só do login (ver `effectiveHasParceiroContext`).
+@visibleForTesting
+bool hasParceiroContextInExtraParams(Map<String, dynamic>? extraParams) {
+  if (extraParams == null) return false;
+  for (final entry in extraParams.entries) {
+    if (_parceiroScopeKeys.contains(entry.key.toLowerCase()) &&
+        _hasUsableStorageId(entry.value)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// `true` se `extraParams` escopa explicitamente por empresa (ex.: aba
+/// "Contas a Pagar" dentro da tela de uma Empresa) SEM trazer parceiro —
+/// nesse caso o contexto de parceiro NUNCA se aplica, mesmo que o login do
+/// usuário logado seja de um parceiro (ex.: escritório contábil navegando
+/// dentro de uma empresa cliente).
+@visibleForTesting
+bool hasExplicitEmpresaOnlyScope(Map<String, dynamic>? extraParams) {
+  if (extraParams == null) return false;
+  final hasEmpresaKey =
+      extraParams.keys.any((k) => _empresaScopeKeys.contains(k.toLowerCase()));
+  return hasEmpresaKey && !hasParceiroContextInExtraParams(extraParams);
+}
+
+/// Contexto efetivo de parceiro usado para travar "Parceiro" e liberar
+/// "Fornecedor" (e vice-versa) nos formulários financeiros.
+///
+/// Prioridade:
+/// 1. `extraParams` com parceiro/parceiroId/parcId explícito (drill-down a
+///    partir da tela de um Parceiro específico) → SEMPRE contexto de parceiro.
+/// 2. `extraParams` com empresa/empresaId explícito e SEM parceiro (drill-down
+///    a partir da tela de uma Empresa) → NUNCA contexto de parceiro.
+/// 3. Sem `extraParams` (acesso direto pelo menu principal, sem navegação
+///    aninhada) → cai no próprio login (`TenantContext.hasParceiro`).
+@visibleForTesting
+bool effectiveHasParceiroContext(
+  Map<String, dynamic>? extraParams,
+  bool tenantHasParceiro,
+) {
+  if (hasParceiroContextInExtraParams(extraParams)) return true;
+  if (hasExplicitEmpresaOnlyScope(extraParams)) return false;
+  return tenantHasParceiro;
+}
+
+bool _isParceiroLockField(FieldConfigWindows config) {
+  final field = config.fieldName.toLowerCase();
+  final label = config.label.toLowerCase();
+  return field == 'parceiro' ||
+      field == 'parceiroid' ||
+      field == 'parceiro.id' ||
+      field == 'parcid' ||
+      label == 'parceiro';
+}
+
+@visibleForTesting
+bool isParceiroFieldDisabledByStorage(
+  FieldConfigWindows config,
+  bool hasParceiroIdOrParcId,
+) =>
+    _isParceiroLockField(config) && hasParceiroIdOrParcId;
+
+/// Decide se um campo dropdown de "Parceiro" (ou variantes: fieldName
+/// contendo "parceiro", ou "cliente") deve ser pré-preenchido com
+/// [TenantContext.parceiroId] no INSERT — usado no bloco "TAREFA 1" de
+/// [_GenericGridWindowsScreenState._openForm].
+///
+/// Bug de producao (card WdlEAxFK): antes usava `TenantContext.hasParceiro`
+/// bruto (so o login), nao o contexto EFETIVO ja calculado por
+/// [effectiveHasParceiroContext] -- um Cliente abrindo uma tela em
+/// drill-down de Empresa (extraParams so com empresa, regra 2 de
+/// [effectiveHasParceiroContext]) ainda tinha o campo Parceiro
+/// pre-preenchido com o proprio parceiro, mesmo o campo devendo ficar sem
+/// contexto de parceiro nenhum ali.
+@visibleForTesting
+bool shouldPrefillParceiroField(
+  FieldConfigWindows config,
+  bool hasParceiroContext,
+) {
+  final fn = config.fieldName.toLowerCase();
+  final isParceiroField =
+      fn == 'parceiro' || fn.contains('parceiro') || fn == 'cliente';
+  return isParceiroField && hasParceiroContext;
+}
+
+// Fix (pedido explicito do usuario): o campo Fornecedor tinha uma trava
+// hardcoded por nome de campo/label ("fornecedor") aqui no widget generico,
+// que ignorava por completo o FieldConfigWindows.enabled passado pelas telas
+// (conta_pagar_grid_screen.dart e parceiro_detail_screen.dart, ambos com
+// enabled: true) -- o campo continuava bloqueado em QUALQUER contexto sem
+// parceiro vinculado, mesmo com as duas telas ja ajustadas. Fornecedor deve
+// ficar sempre acessivel; quem decide isso agora e so o enabled de cada
+// FieldConfigWindows especifico, sem essa segunda trava paralela.
+// isFornecedorFieldEnabledByStorage/_isFornecedorLockField removidos (nao
+// tinham mais nenhum papel depois dessa mudanca).
 
 class FieldConfigWindows {
   final String label;
@@ -164,6 +291,22 @@ class FieldConfigWindows {
   final bool? enabledOnInsert;
   final bool? enabledOnEdit;
 
+  /// Busca remota paginada (server-side) — para dropdowns cujo universo de
+  /// opções é grande demais para carregar de uma vez (ex: Parceiro). Quando
+  /// definido, o dropdown NÃO faz o fetch único de [dropdownFutureBuilder]/
+  /// [dropdownOptions]: abre um diálogo com busca debounced (reconsulta o
+  /// backend a cada termo digitado) e paginação real via scroll (carrega
+  /// mais páginas conforme o usuário rola a lista), em vez de filtrar
+  /// localmente sobre um lote fixo já carregado.
+  final Future<PaginaDropdown> Function({String? busca, required int pagina})?
+      dropdownRemoteSearch;
+
+  /// Resolve o rótulo exibido para o valor pré-selecionado (edição/valor
+  /// travado) quando [dropdownRemoteSearch] está definido — o registro
+  /// selecionado pode não estar na página atualmente carregada pelo
+  /// dropdown remoto. Ignorado quando [dropdownRemoteSearch] é null.
+  final Future<String?> Function(String id)? dropdownResolveLabel;
+
   const FieldConfigWindows({
     required this.label,
     required this.fieldName,
@@ -196,7 +339,23 @@ class FieldConfigWindows {
     this.visibleWhenValue,
     this.enabledOnInsert,
     this.enabledOnEdit,
+    this.dropdownRemoteSearch,
+    this.dropdownResolveLabel,
   });
+}
+
+/// Página de resultados de um dropdown com busca remota paginada (ver
+/// [FieldConfigWindows.dropdownRemoteSearch]).
+class PaginaDropdown {
+  final List<Map<String, dynamic>> items;
+  final int total;
+
+  /// Preenchido quando a busca falhou (erro de rede, status != 200, corpo
+  /// invalido) -- diferencia "erro real" de "busca sem resultado", que antes
+  /// pareciam a mesma coisa ("Nenhum resultado") na tela.
+  final String? erro;
+
+  const PaginaDropdown(this.items, this.total, {this.erro});
 }
 
 // Configuração de exportação
@@ -538,8 +697,13 @@ class FieldFactory {
       case FieldType.url:
         return _buildUrlField(config, controller);
       case FieldType.multiselect:
+        final dependsOnCtrl =
+            config.dependsOnField != null && allControllers != null
+                ? allControllers[config.dependsOnField]
+                : null;
         return _buildMultiselectField(
-            config, controller, dropdownCache, context);
+            config, controller, dropdownCache, context,
+            dependsOnController: dependsOnCtrl);
       default:
         return _buildTextField(config, controller);
     }
@@ -780,7 +944,10 @@ class FieldFactory {
     final cep = cepController.text.replaceAll(RegExp(r'\D'), '');
     if (cep.length != 8) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('CEP deve ter 8 dígitos', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('CEP deve ter 8 dígitos',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -792,7 +959,10 @@ class FieldFactory {
         if (data['erro'] == true) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('CEP não encontrado', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.warning),
+              const SnackBar(
+                  content: Text('CEP não encontrado',
+                      style: TextStyle(color: Colors.white)),
+                  backgroundColor: GridColors.warning),
             );
           }
           return;
@@ -802,7 +972,8 @@ class FieldFactory {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}', style: const TextStyle(color: Colors.white)),
+                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}',
+                    style: const TextStyle(color: Colors.white)),
                 backgroundColor: GridColors.success),
           );
         }
@@ -810,7 +981,10 @@ class FieldFactory {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao buscar CEP: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+          SnackBar(
+              content: Text('Erro ao buscar CEP: $e',
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     }
@@ -882,6 +1056,16 @@ class FieldFactory {
         controller: controller,
         options: const [],
         dependsOnController: dependsOnController,
+      );
+    }
+
+    // Busca remota paginada: o widget gerencia o próprio fetch por página
+    // dentro do diálogo — não carrega a lista inteira de uma vez.
+    if (config.dropdownRemoteSearch != null) {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: const [],
       );
     }
 
@@ -964,8 +1148,8 @@ class FieldFactory {
             ),
           ),
         ElevatedButton.icon(
-          onPressed: () =>
-              _selectFiles(config, controller, fileCache, context, onFileChanged),
+          onPressed: () => _selectFiles(
+              config, controller, fileCache, context, onFileChanged),
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
@@ -1187,8 +1371,9 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<Map<String, dynamic>>> dropdownCache,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    TextEditingController? dependsOnController,
+  }) {
     final cacheKey = '${config.fieldName}_dropdown';
     final cached = dropdownCache[cacheKey];
     return _MultiSelectField(
@@ -1200,10 +1385,13 @@ class FieldFactory {
       initialOptions: cached,
       dropdownFutureBuilder:
           cached == null ? config.dropdownFutureBuilder : null,
+      dropdownFutureBuilderWithParam:
+          cached == null ? config.dropdownFutureBuilderWithParam : null,
       dropdownOptions: cached == null && config.dropdownFutureBuilder == null
           ? (config.dropdownOptions ?? [])
           : null,
       onOptionsLoaded: (opts) => dropdownCache[cacheKey] = opts,
+      dependsOnController: dependsOnController,
     );
   }
 
@@ -1234,18 +1422,26 @@ class _MultiSelectField extends StatefulWidget {
   /// [dropdownFutureBuilder] ou usa [dropdownOptions] estático.
   final List<Map<String, dynamic>>? initialOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  final Future<List<Map<String, dynamic>>> Function(String? param)?
+      dropdownFutureBuilderWithParam;
   final List<Map<String, dynamic>>? dropdownOptions;
 
   /// Callback para propagar o resultado carregado de volta ao cache externo.
   final void Function(List<Map<String, dynamic>> opts)? onOptionsLoaded;
+
+  /// Controller do campo pai (para cascade).
+  /// Quando o campo pai muda, este widget refaz o fetch com o novo valor.
+  final TextEditingController? dependsOnController;
 
   const _MultiSelectField({
     required this.config,
     required this.controller,
     this.initialOptions,
     this.dropdownFutureBuilder,
+    this.dropdownFutureBuilderWithParam,
     this.dropdownOptions,
     this.onOptionsLoaded,
+    this.dependsOnController,
   });
 
   @override
@@ -1256,6 +1452,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
   List<Map<String, dynamic>> _options = [];
   bool _loadingOptions = false;
+  String? _lastDependsOnValue;
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
@@ -1269,6 +1466,13 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     super.initState();
     _selectedValues = _parseController();
     widget.controller.addListener(_onControllerChanged);
+
+    // Se há cascade, registra listener para o campo pai
+    if (widget.dependsOnController != null) {
+      widget.dependsOnController!.addListener(_onDependencyChanged);
+      _lastDependsOnValue = widget.dependsOnController!.text;
+    }
+
     // Inicia carga de opções UMA ÚNICA VEZ — o Future fica cacheado no estado
     if (widget.initialOptions != null) {
       _options = widget.initialOptions!;
@@ -1283,6 +1487,10 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
           widget.onOptionsLoaded?.call(opts);
         }
       });
+    } else if (widget.dropdownFutureBuilderWithParam != null &&
+        widget.dependsOnController != null) {
+      _loadingOptions = true;
+      _fetchCascade(widget.dependsOnController!.text);
     } else {
       _options = widget.dropdownOptions ?? [];
     }
@@ -1301,6 +1509,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
+    widget.dependsOnController?.removeListener(_onDependencyChanged);
     super.dispose();
   }
 
@@ -1308,6 +1517,44 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     final parsed = _parseController();
     if (mounted && parsed.join(',') != _selectedValues.join(',')) {
       setState(() => _selectedValues = parsed);
+    }
+  }
+
+  void _onDependencyChanged() {
+    final newVal = widget.dependsOnController!.text;
+    if (newVal == _lastDependsOnValue) return;
+    _lastDependsOnValue = newVal;
+    if (mounted) {
+      setState(() {
+        widget.controller.text = ''; // Limpa seleção anterior
+        _selectedValues = [];
+        _options = [];
+      });
+    }
+    _fetchCascade(newVal);
+  }
+
+  Future<void> _fetchCascade(String? paramValue) async {
+    if (widget.dropdownFutureBuilderWithParam == null) return;
+    if (!mounted) return;
+
+    setState(() => _loadingOptions = true);
+    try {
+      final opts = await widget.dropdownFutureBuilderWithParam!(paramValue);
+      if (mounted) {
+        setState(() {
+          _options = opts;
+          _loadingOptions = false;
+        });
+        widget.onOptionsLoaded?.call(opts);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _options = [];
+          _loadingOptions = false;
+        });
+      }
     }
   }
 
@@ -1662,8 +1909,18 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
+
+  /// Quando true, a ação "Editar" do menu de ações abre o mesmo
+  /// [detailScreenBuilder] usado por "Visualizar", em vez do popup de
+  /// formulário genérico ([_openForm]). Default false para não alterar o
+  /// comportamento das telas que já usam o popup.
+  /// Ao voltar da tela, o grid é recarregado automaticamente — não é
+  /// necessário nenhum callback de salvar na tela de destino, mas ela deve
+  /// persistir de fato as alterações antes do usuário navegar de volta.
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
+
   /// Hook opcional para ajustar o formData final antes do envio (ex.: copiar
   /// um campo do form para outro campo fixo do payload). Aplicado após o
   /// merge de [additionalFormData]. Não afeta telas que não o utilizarem.
@@ -1721,6 +1978,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.initialFilters,
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.additionalFormData,
     this.transformFormData,
@@ -1864,14 +2122,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final empresaId = TenantContext.empresaId;
     final parceiroId = TenantContext.parceiroId;
     final empresaNome = AuthUtility.userInfo?.login?.empresa?.nome ??
-        AuthUtility.userInfo?.login?.empresa?.razaoSocial ?? '';
+        AuthUtility.userInfo?.login?.empresa?.razaoSocial ??
+        '';
     final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome ??
-        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ?? '';
+        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ??
+        '';
 
     const empresaKeys = {'empresa', 'empresaId', 'empresa.id', 'empId'};
     const parceiroKeys = {'parceiro', 'parceiroId', 'parceiro.id', 'parcId'};
 
-    for (final config in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
+    for (final config
+        in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
       final fn = config.fieldName;
       if (empresaId != null && empresaKeys.contains(fn)) {
         _filterControllers[fn]?.text = empresaId.toString();
@@ -1891,10 +2152,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _loadColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
+      final legacyKeys = [
+        GridUserPreferencesKey.legacyBase(
+          storageKey: widget.storageKey,
+          title: widget.title,
+        ),
+        GridUserPreferencesKey.storageOnlyLegacyBase(widget.storageKey),
+      ];
 
       for (final config in widget.FieldConfigWindowss) {
-        final savedValue = prefs.getBool('$key${config.fieldName}');
+        bool? savedValue = prefs.getBool(
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
+        );
+        for (final legacyKey in legacyKeys) {
+          savedValue ??= prefs.getBool(
+            GridUserPreferencesKey.legacyColumnKey(
+              legacyKey,
+              config.fieldName,
+            ),
+          );
+        }
         if (savedValue != null) {
           _columnVisibility[config.fieldName] = savedValue;
         }
@@ -1919,11 +2200,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _saveColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
 
       for (final config in widget.FieldConfigWindowss) {
         await prefs.setBool(
-          '$key${config.fieldName}',
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
           _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
         );
       }
@@ -2156,6 +2440,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null
         ? Map<String, dynamic>.from(widget.toJson(item))
         : <String, dynamic>{};
+    final hasParceiroContext = effectiveHasParceiroContext(
+      widget.extraParams,
+      TenantContext.hasParceiro,
+    );
 
     // Busca dados extras (ex.: vínculos M:N que não vêm na entidade) ANTES de
     // montar os controllers, mesclando no itemMap no formato que os campos
@@ -2241,12 +2529,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               TenantContext.hasEmpresa) {
             initialValue = TenantContext.empresaId.toString();
             preFilledFields.add(config.fieldName);
-          } else if ((fn == 'parceiro' ||
-                  fn.contains('parceiro') ||
-                  fn == 'cliente') &&
-              TenantContext.hasParceiro) {
+          } else if (shouldPrefillParceiroField(config, hasParceiroContext)) {
             initialValue = TenantContext.parceiroId.toString();
-            preFilledFields.add(config.fieldName);
+            if (isParceiroFieldDisabledByStorage(
+              config,
+              hasParceiroContext,
+            )) {
+              preFilledFields.add(config.fieldName);
+            }
           }
         }
       }
@@ -2268,8 +2558,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) =>
-            _buildForm(ctx, item, controllers, preFilledFields, setDialogState),
+        builder: (ctx, setDialogState) => _buildForm(
+          ctx,
+          item,
+          controllers,
+          preFilledFields,
+          hasParceiroContext,
+          setDialogState,
+        ),
       ),
     );
   }
@@ -2279,6 +2575,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     T? item,
     Map<String, TextEditingController> controllers,
     Set<String> preFilledFields,
+    bool hasParceiroContext,
     StateSetter setDialogState,
   ) {
     final preFilledFields0 = preFilledFields;
@@ -2804,7 +3101,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['create']!) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sem permissão para criar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error));
+      ).showSnackBar(const SnackBar(
+          content: Text('Sem permissão para criar',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: GridColors.error));
       return false;
     }
 
@@ -2818,8 +3118,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     if (widget.transformFormData != null) {
-      final transformed =
-          widget.transformFormData!(Map<String, dynamic>.from(enrichedFormData));
+      final transformed = widget
+          .transformFormData!(Map<String, dynamic>.from(enrichedFormData));
       enrichedFormData
         ..clear()
         ..addAll(transformed);
@@ -3005,7 +3305,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<bool> _updateItem(Map<String, dynamic> formData) async {
     if (!widget.hasPermission('edit') || !widget.buttonPermissions['edit']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para editar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para editar',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return false;
     }
@@ -3019,8 +3322,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     if (widget.transformFormData != null) {
-      final transformed =
-          widget.transformFormData!(Map<String, dynamic>.from(adjustedFormData));
+      final transformed = widget
+          .transformFormData!(Map<String, dynamic>.from(adjustedFormData));
       adjustedFormData
         ..clear()
         ..addAll(transformed);
@@ -3086,7 +3389,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('delete') ||
         !widget.buttonPermissions['delete']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para excluir', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para excluir',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -3122,7 +3428,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['deleteMultiple']!) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sem permissão para excluir múltiplos itens', style: TextStyle(color: Colors.white)),
+          content: Text('Sem permissão para excluir múltiplos itens',
+              style: TextStyle(color: Colors.white)),
           backgroundColor: GridColors.error,
         ),
       );
@@ -3150,7 +3457,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               setState(() => selectedRows.clear());
             },
             style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.error, foregroundColor: Colors.white),
+                backgroundColor: GridColors.error,
+                foregroundColor: Colors.white),
             child: const Text('Excluir'),
           ),
         ],
@@ -3162,7 +3470,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('export') ||
         !widget.buttonPermissions['export']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para exportar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+        const SnackBar(
+            content: Text('Sem permissão para exportar',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error),
       );
       return;
     }
@@ -3659,27 +3970,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final isLocked = _lockedFilters.contains(config.fieldName);
 
     return GestureDetector(
-      onTap: isLocked ? null : () async {
-        final result = await showDialog<Map<String, dynamic>>(
-          context: context,
-          builder: (_) => _FilterSearchDialog(options: options, vf: vf, df: df),
-        );
-        if (result == null) return; // cancelado
-        final val = result[vf]?.toString() ?? '';
-        setState(() {
-          if (val.isEmpty) {
-            _filterControllers[config.fieldName]?.clear();
-            _filterDropdownValues.remove(config.fieldName);
-            _filterDropdownLabels.remove(config.fieldName);
-          } else {
-            _filterControllers[config.fieldName]!.text = val;
-            _filterDropdownValues[config.fieldName] = val;
-            _filterDropdownLabels[config.fieldName] =
-                result[df]?.toString() ?? val;
-          }
-        });
-        _applyFilters();
-      },
+      onTap: isLocked
+          ? null
+          : () async {
+              final result = await showDialog<Map<String, dynamic>>(
+                context: context,
+                builder: (_) =>
+                    _FilterSearchDialog(options: options, vf: vf, df: df),
+              );
+              if (result == null) return; // cancelado
+              final val = result[vf]?.toString() ?? '';
+              setState(() {
+                if (val.isEmpty) {
+                  _filterControllers[config.fieldName]?.clear();
+                  _filterDropdownValues.remove(config.fieldName);
+                  _filterDropdownLabels.remove(config.fieldName);
+                } else {
+                  _filterControllers[config.fieldName]!.text = val;
+                  _filterDropdownValues[config.fieldName] = val;
+                  _filterDropdownLabels[config.fieldName] =
+                      result[df]?.toString() ?? val;
+                }
+              });
+              _applyFilters();
+            },
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: config.label,
@@ -3721,7 +4035,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 14,
-            color: isLocked ? Colors.grey.shade600 : (hasValue ? null : Colors.grey.shade500),
+            color: isLocked
+                ? Colors.grey.shade600
+                : (hasValue ? null : Colors.grey.shade500),
           ),
         ),
       ),
@@ -4364,24 +4680,29 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             config.fieldType == FieldType.dropdown &&
             config.dropdownDisplayField.isNotEmpty) {
           // CR-02: Verificar se chave existe antes de acessar
-          final displayField = displayValue.containsKey(config.dropdownDisplayField)
-              ? displayValue[config.dropdownDisplayField]
-              : null;
+          final displayField =
+              displayValue.containsKey(config.dropdownDisplayField)
+                  ? displayValue[config.dropdownDisplayField]
+                  : null;
           if (displayField != null) {
             displayValue = displayField;
-          } else if (displayValue.containsKey('nome') && displayValue['nome'] != null) {
+          } else if (displayValue.containsKey('nome') &&
+              displayValue['nome'] != null) {
             displayValue = displayValue['nome'];
-          } else if (displayValue.containsKey('name') && displayValue['name'] != null) {
+          } else if (displayValue.containsKey('name') &&
+              displayValue['name'] != null) {
             displayValue = displayValue['name'];
-          } else if (displayValue.containsKey('label') && displayValue['label'] != null) {
+          } else if (displayValue.containsKey('label') &&
+              displayValue['label'] != null) {
             displayValue = displayValue['label'];
           } else {
             // CR-01: Log warning se nenhum field de display foi encontrado
-            L.w('No display field found for dropdown. Map keys: ${(displayValue as Map).keys.join(", ")}');
+            L.w('No display field found for dropdown. Map keys: ${displayValue.keys.join(", ")}');
             // Fallback seguro: se houver id, converter para string; senão usar placeholder
-            displayValue = displayValue.containsKey('id') && displayValue['id'] != null
-                ? displayValue['id'].toString()
-                : '---';
+            displayValue =
+                displayValue.containsKey('id') && displayValue['id'] != null
+                    ? displayValue['id'].toString()
+                    : '---';
           }
         }
 
@@ -4528,13 +4849,38 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   itemBuilder: (_) => menuItems,
                   onSelected: (value) {
                     if (value == '__edit__') {
-                      _openForm(item: item);
+                      if (widget.editUsesDetailScreen &&
+                          widget.detailScreenBuilder != null) {
+                        Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        widget.detailScreenBuilder!(item)))
+                            .then((_) {
+                          if (mounted) _loadItems(_currentPage, rowsPerPage);
+                        });
+                      } else {
+                        _openForm(item: item);
+                      }
                     } else if (value == '__view__') {
+                      // Bug de producao ("sai e volta, nao salvou nada"):
+                      // diferente do ramo __edit__ acima, este nunca dava
+                      // reload no grid ao voltar. A tela de detalhe
+                      // (GenericDetailFormScreen) salva de verdade no
+                      // backend (PUT confirmado 200), mas o item exibido
+                      // na LISTA continuava o valor antigo em memoria --
+                      // reabrir o mesmo registro (por "Visualizar" ou por
+                      // "Editar" quando editUsesDetailScreen=false, unico
+                      // caminho pra telas como Parceiro) reexibia o item
+                      // desatualizado do grid, dando a impressao de que
+                      // nada foi salvo.
                       Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
-                                  widget.detailScreenBuilder!(item)));
+                                  widget.detailScreenBuilder!(item))).then((_) {
+                        if (mounted) _loadItems(_currentPage, rowsPerPage);
+                      });
                     } else if (value == '__delete__') {
                       _deleteItem(_getNestedValue(itemMap, widget.idFieldName)
                           .toString());
@@ -5062,9 +5408,28 @@ class _SearchableDropdownWindowsState
       _lastDependsOnValue = widget.dependsOnController!.text;
       _fetchCascade(_lastDependsOnValue);
       widget.dependsOnController!.addListener(_onDependencyChanged);
+    } else if (widget.config.dropdownRemoteSearch != null) {
+      _resolveRemoteLabelIfNeeded();
     } else {
       _resolvedOptions = widget.options;
       _resolveLabel();
+    }
+  }
+
+  /// Resolve o rótulo exibido para um valor já selecionado quando o dropdown
+  /// usa busca remota (não há lista local para procurar) — ex: tela de
+  /// edição de Conta a Pagar/Receber com Fornecedor/Parceiro já preenchido.
+  Future<void> _resolveRemoteLabelIfNeeded() async {
+    final val = widget.controller.text.isNotEmpty
+        ? widget.controller.text
+        : widget.config.dropdownSelectedValue?.toString();
+    if (val == null || val.isEmpty) return;
+    if (widget.controller.text.isEmpty) widget.controller.text = val;
+    final resolver = widget.config.dropdownResolveLabel;
+    if (resolver == null) return;
+    final label = await resolver(val);
+    if (mounted && label != null) {
+      setState(() => _selectedLabel = label);
     }
   }
 
@@ -5127,15 +5492,24 @@ class _SearchableDropdownWindowsState
 
   Future<void> _openSearch() async {
     if (!widget.config.enabled) return;
+    final remoteSearch = widget.config.dropdownRemoteSearch;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _DropdownSearchDialog(
-        title: widget.config.label,
-        options: _resolvedOptions,
-        valueField: widget.config.dropdownValueField,
-        displayField: widget.config.dropdownDisplayField,
-        currentValue: widget.controller.text,
-      ),
+      builder: (_) => remoteSearch != null
+          ? RemoteDropdownSearchDialog(
+              title: widget.config.label,
+              valueField: widget.config.dropdownValueField,
+              displayField: widget.config.dropdownDisplayField,
+              currentValue: widget.controller.text,
+              loadPage: remoteSearch,
+            )
+          : _DropdownSearchDialog(
+              title: widget.config.label,
+              options: _resolvedOptions,
+              valueField: widget.config.dropdownValueField,
+              displayField: widget.config.dropdownDisplayField,
+              currentValue: widget.controller.text,
+            ),
     );
     if (result != null) {
       setState(() {
@@ -5208,6 +5582,290 @@ class _SearchableDropdownWindowsState
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dialog de busca remota (server-side + scroll pagination) ────────────────
+//
+// Bug de producao corrigido aqui: o dropdown de Parceiro/Fornecedor em Contas
+// a Pagar/Receber carregava so o 1o lote de 25 registros (GET /api/parceiro
+// sem parametros de busca/paginacao) e filtrava so client-side sobre esse
+// lote pequeno — termos que so batiam em registros fora da 1a pagina nunca
+// apareciam. Este dialog reconsulta o backend a cada termo digitado
+// (debounce) e carrega mais paginas conforme o usuario rola a lista, ate
+// esgotar os resultados reais.
+class RemoteDropdownSearchDialog extends StatefulWidget {
+  final String title;
+  final String valueField;
+  final String displayField;
+  final String? currentValue;
+  final Future<PaginaDropdown> Function({String? busca, required int pagina})
+      loadPage;
+
+  const RemoteDropdownSearchDialog({
+    super.key,
+    required this.title,
+    required this.valueField,
+    required this.displayField,
+    required this.loadPage,
+    this.currentValue,
+  });
+
+  @override
+  State<RemoteDropdownSearchDialog> createState() =>
+      RemoteDropdownSearchDialogState();
+}
+
+class RemoteDropdownSearchDialogState
+    extends State<RemoteDropdownSearchDialog> {
+  final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  Timer? _debounce;
+  final List<Map<String, dynamic>> _items = [];
+  int _pagina = 0;
+  int _total = 0;
+  bool _loading = false;
+  bool _loadingMore = false;
+  String _termoAtual = '';
+  int _requestToken = 0;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _carregarPrimeiraPagina();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_loading || _loadingMore) return;
+    if (_items.length >= _total) return;
+    if (!_scrollCtrl.hasClients) return;
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 80) {
+      _carregarProximaPagina();
+    }
+  }
+
+  Future<void> _carregarPrimeiraPagina() async {
+    final token = ++_requestToken;
+    setState(() => _loading = true);
+    final pagina = await widget.loadPage(
+      busca: _termoAtual.isEmpty ? null : _termoAtual,
+      pagina: 0,
+    );
+    if (!mounted || token != _requestToken) return;
+    setState(() {
+      _items
+        ..clear()
+        ..addAll(pagina.items);
+      _total = pagina.total;
+      _pagina = 0;
+      _loading = false;
+      _erro = pagina.erro;
+    });
+  }
+
+  Future<void> _carregarProximaPagina() async {
+    // Incrementa (não só lê) o token — mesma defesa de _carregarPrimeiraPagina.
+    // Hoje o único chamador é _onScroll, já protegido por _loading/_loadingMore,
+    // mas sem incrementar aqui um futuro segundo chamador (ex.: botão "carregar
+    // mais" manual) poderia invalidar-se mutuamente de forma incorreta.
+    final token = ++_requestToken;
+    setState(() => _loadingMore = true);
+    final proximaPagina = _pagina + 1;
+    final pagina = await widget.loadPage(
+      busca: _termoAtual.isEmpty ? null : _termoAtual,
+      pagina: proximaPagina,
+    );
+    if (!mounted || token != _requestToken) return;
+    setState(() {
+      _items.addAll(pagina.items);
+      _total = pagina.total;
+      _pagina = proximaPagina;
+      _loadingMore = false;
+      _erro = pagina.erro;
+    });
+  }
+
+  void _onSearchChanged(String q) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _termoAtual = q.trim();
+      _carregarPrimeiraPagina();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+        child: Column(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: GridColors.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Buscar ${widget.title.toLowerCase()}...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _onSearchChanged('');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: GridColors.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: GridColors.primary, width: 2),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    _loading ? 'Buscando...' : '$_total resultado(s)',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(<String, dynamic>{}),
+                    child: const Text(GridTexts.clearSelection,
+                        style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _items.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              _erro ?? 'Nenhum resultado',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _erro != null
+                                    ? GridColors.error
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _scrollCtrl,
+                          itemCount: _items.length + (_loadingMore ? 1 : 0),
+                          itemBuilder: (_, i) {
+                            if (i >= _items.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                ),
+                              );
+                            }
+                            final o = _items[i];
+                            final val = o[widget.valueField]?.toString();
+                            final label =
+                                o[widget.displayField]?.toString() ?? val ?? '';
+                            final isSelected = val == widget.currentValue;
+                            return ListTile(
+                              dense: true,
+                              selected: isSelected,
+                              selectedTileColor:
+                                  GridColors.primary.withValues(alpha: 0.08),
+                              leading: isSelected
+                                  ? const Icon(Icons.check_circle,
+                                      color: GridColors.primary, size: 18)
+                                  : const Icon(Icons.radio_button_unchecked,
+                                      color: Colors.grey, size: 18),
+                              title: Text(label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? GridColors.primary
+                                        : const Color(0xFF212121),
+                                  )),
+                              onTap: () => Navigator.of(context).pop(o),
+                            );
+                          },
+                        ),
+            ),
+          ],
         ),
       ),
     );
