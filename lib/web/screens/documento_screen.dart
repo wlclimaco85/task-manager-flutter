@@ -377,6 +377,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // ── Colors ──────────────────────────────────────────────────────────────
   static const Color _red = GridColors.primary;
   static const Color _redLight = Color(0xFFFFEBEE);
+  static const Color _pagarAlertBackground = Color(0xFFC1121F);
   static const Color _green = GridColors.secondary;
   static const Color _greenLight = Color(0xFFE8F5E9);
   static const Color _orange = Color(0xFFE65100);
@@ -443,7 +444,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
@@ -518,7 +520,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
 
     if (!mounted) return;
     setState(() {
@@ -537,7 +540,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
@@ -591,7 +595,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           // botao de refresh, facil de nao perceber) -- parecia "travada".
           if (_loadingMonth || _loadingDay)
             const LinearProgressIndicator(minHeight: 3, color: _red),
-          Expanded(child: _viewMode == 'day' ? _buildDayView() : _buildMonthView()),
+          Expanded(
+              child: _viewMode == 'day' ? _buildDayView() : _buildMonthView()),
         ],
       ),
     );
@@ -673,8 +678,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: _red),
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2, color: _red),
                   )
                 : const Icon(Icons.refresh, size: 20, color: _red),
           ),
@@ -694,7 +699,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   // Abre o popup de baixa da conta (a partir do item do calendário).
-  Future<void> _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) async {
+  Future<void> _abrirBaixaConta(Map<String, dynamic> item,
+      {required bool isPagar}) async {
     final id = item['id']?.toString();
     if (!DocumentoBaixaHelper.itemIdValido(id)) {
       _mostrarErro('ID da conta não encontrado');
@@ -779,7 +785,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   // Abre o Boleto Viewer (card #440): busca o primeiro anexo do lancamento
   // e mostra a linha digitavel (copiar) + baixar o PDF.
-  Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
+  Future<void> _abrirBoletoViewer(Map<String, dynamic> item,
+      {required bool isPagar}) async {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
     // Fix card #443: itens do Calendario Financeiro (CalendarioFinanceiroItemDTO)
@@ -1026,11 +1033,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     if (isSelected) {
       bgColor = _red;
       textColor = Colors.white;
+    } else if (markers.hasPagar) {
+      bgColor = _pagarAlertBackground;
+      textColor = Colors.white;
     } else if (isPast &&
         (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
       bgColor = _grey;
-    } else if (!isPast && markers.hasPagar) {
-      bgColor = _redLight;
     } else if (!isPast && markers.hasReceber) {
       bgColor = _greenLight;
     }
@@ -1066,7 +1074,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               spacing: 1,
               runSpacing: 1,
               children: [
-                if (markers.hasPagar) _miniIcon(Icons.arrow_upward, _red, 11),
+                if (markers.hasPagar)
+                  _statusBadgeIcon(Icons.arrow_upward, Colors.white, 11),
                 if (markers.hasReceber)
                   _miniIcon(Icons.arrow_downward, _green, 11),
                 if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 11),
@@ -1093,6 +1102,17 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _miniIcon(IconData icon, Color color, double size) {
     return Icon(icon, color: color, size: size);
+  }
+
+  Widget _statusBadgeIcon(IconData icon, Color color, double size) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: const EdgeInsets.all(1.5),
+      child: Icon(icon, color: color, size: size),
+    );
   }
 
   // ── Legend ───────────────────────────────────────────────────────────────
@@ -1372,8 +1392,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                       if (qtdAnexos > 0) ...[
                         _miniActionBtn(
                           icon: Icons.attach_file,
-                          color:
-                              GridColors.textPrimary.withValues(alpha: 0.55),
+                          color: GridColors.textPrimary.withValues(alpha: 0.55),
                           tooltip: 'Ver anexo',
                           onTap: () =>
                               _abrirAnexosConta(item, isPagar: isPagar),
@@ -1403,8 +1422,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                           icon: Icons.price_check,
                           color: GridColors.success,
                           tooltip: 'Baixar conta',
-                          onTap: () =>
-                              _abrirBaixaConta(item, isPagar: isPagar),
+                          onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
                         ),
                       ],
                     ],
