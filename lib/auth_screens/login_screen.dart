@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import '../../mobile/screens/bottom_navbar_screen.dart';
 import '../../windows/screens/bottom_navbar_screen.dart';
@@ -17,6 +21,7 @@ import 'solicitacao_acesso_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -28,11 +33,85 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _loginInProgress = false;
   bool _obscurePassword = true;
+  bool _loadingNoticias = true;
+  List<Map<String, dynamic>> _noticias = [];
 
   @override
   void initState() {
     super.initState();
+    _carregarNoticias();
   }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _carregarNoticias() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('${ApiLinks.noticiasPublicas}?limite=12'))
+          .timeout(const Duration(seconds: 6));
+      if (resp.statusCode == 200) {
+        final list =
+            (jsonDecode(resp.body) as List).cast<Map<String, dynamic>>();
+        list.sort((a, b) {
+          final da =
+              a['dtNoticia']?.toString() ?? a['dtImport']?.toString() ?? '';
+          final db =
+              b['dtNoticia']?.toString() ?? b['dtImport']?.toString() ?? '';
+          return db.compareTo(da);
+        });
+        if (mounted) {
+          setState(() {
+            _noticias = list;
+            _loadingNoticias = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[LoginScreen] Falha ao carregar noticias publicas: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        if (_noticias.isEmpty) {
+          _noticias = _noticiasFallback;
+        }
+        _loadingNoticias = false;
+      });
+    }
+  }
+
+  static const List<Map<String, dynamic>> _noticiasFallback = [
+    {
+      'id': 1,
+      'titulo': 'Novidades no Portal do Cliente e Atendimento Integrado',
+      'resumo':
+          'Acompanhe seus documentos, guias de impostos, conciliações e converse com nossos atendentes diretamente pelo Chat em tempo real.',
+      'categoria': 'Comunicado',
+      'dtNoticia': '2026-09-10T10:00:00',
+    },
+    {
+      'id': 2,
+      'titulo': 'Calendário Fiscal e Vencimento de Obrigações',
+      'resumo':
+          'Fique atento aos prazos de fechamento contábil e emissão de guias do mês. Acesse a aba Calendário para detalhes.',
+      'categoria': 'Fiscal',
+      'dtNoticia': '2026-09-08T09:00:00',
+    },
+    {
+      'id': 3,
+      'titulo': 'Armazenamento em Nuvem e GED Inteligente com Busca por IA',
+      'resumo':
+          'Agora seus boletos, alvarás e contratos ficam armazenados com tempo de retenção customizado e localização instantânea no Chat.',
+      'categoria': 'Tecnologia',
+      'dtNoticia': '2026-09-05T14:30:00',
+    },
+  ];
 
   void _goHome() {
     if (kIsWeb) {
@@ -54,7 +133,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
+      return;
+    }
     setState(() => _loginInProgress = true);
     final resp = await NetworkCaller().postRequest(ApiLinks.login, {
       'email': _emailController.text.trim(),
@@ -63,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loginInProgress = false);
     if (resp.isSuccess && resp.body != null) {
       final model = LoginModel.fromJson(resp.body!);
-      if ((model.token ?? "").isEmpty) {
+      if ((model.token ?? '').isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text(GridTexts.loginTokenMissing)));
@@ -96,11 +177,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showTrocarSenhaDialog(String email) async {
-    final atualCtrl  = TextEditingController();
-    final novaCtrl   = TextEditingController();
+    final atualCtrl = TextEditingController();
+    final novaCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
-    bool obscureAtual   = true;
-    bool obscureNova    = true;
+    bool obscureAtual = true;
+    bool obscureNova = true;
     bool obscureConfirm = true;
     bool loading = false;
     String? erro;
@@ -110,11 +191,13 @@ class _LoginScreenState extends State<LoginScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Row(children: [
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Row(children: [
             Icon(Icons.lock_reset, color: GridColors.secondary, size: 24),
-            const SizedBox(width: 8),
-            const Text('Trocar senha', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            SizedBox(width: 8),
+            Text('Trocar senha',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           ]),
           content: SizedBox(
             width: 320,
@@ -127,13 +210,16 @@ class _LoginScreenState extends State<LoginScreen> {
               if (erro != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red.shade200),
                   ),
-                  child: Text(erro!, style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                  child: Text(erro!,
+                      style: TextStyle(
+                          color: Colors.red.shade700, fontSize: 12)),
                 ),
               _SenhaField(
                 label: 'Senha atual',
@@ -165,37 +251,44 @@ class _LoginScreenState extends State<LoginScreen> {
                   backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: loading
                     ? null
                     : () async {
-                        final atual   = atualCtrl.text.trim();
-                        final nova    = novaCtrl.text.trim();
+                        final atual = atualCtrl.text.trim();
+                        final nova = novaCtrl.text.trim();
                         final confirm = confirmCtrl.text.trim();
                         if (atual.isEmpty || nova.isEmpty || confirm.isEmpty) {
                           setS(() => erro = 'Preencha todos os campos.');
                           return;
                         }
                         if (nova.length < 6) {
-                          setS(() => erro = 'A nova senha deve ter pelo menos 6 caracteres.');
+                          setS(() => erro =
+                              'A nova senha deve ter pelo menos 6 caracteres.');
                           return;
                         }
                         if (nova != confirm) {
-                          setS(() => erro = 'Nova senha e confirmação não conferem.');
+                          setS(() => erro =
+                              'Nova senha e confirmação não conferem.');
                           return;
                         }
-                        setS(() { loading = true; erro = null; });
-                        // Valida senha atual tentando autenticar
+                        setS(() {
+                          loading = true;
+                          erro = null;
+                        });
                         final checkResp = await NetworkCaller().postRequest(
                           ApiLinks.login,
                           {'email': email, 'password': atual},
                         );
                         if (!checkResp.isSuccess) {
-                          setS(() { loading = false; erro = 'Senha atual incorreta.'; });
+                          setS(() {
+                            loading = false;
+                            erro = 'Senha atual incorreta.';
+                          });
                           return;
                         }
-                        // Altera senha
                         final alterResp = await NetworkCaller().postRequest(
                           '${ApiLinks.baseUrl}/api/login/alterar-senha',
                           {'email': email, 'novaSenha': nova},
@@ -204,12 +297,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (alterResp.isSuccess) {
                           Navigator.of(ctx).pop(true);
                         } else {
-                          setS(() => erro = 'Erro ao alterar senha. Tente novamente.');
+                          setS(() => erro =
+                              'Erro ao alterar senha. Tente novamente.');
                         }
                       },
                 child: loading
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Confirmar', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('Confirmar',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -225,310 +324,1134 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final loginBanner = _LoginBanner(
-      emailCtrl: _emailController,
-      passCtrl: _passwordController,
-      formKey: _formKey,
-      obscure: _obscurePassword,
-      onToggleObscure: () =>
-          setState(() => _obscurePassword = !_obscurePassword),
-      loading: _loginInProgress,
-      onLogin: _login,
-      onForgot: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const EmailVarificationScreeen())),
-      onRequestAccess: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const SolicitacaoAcessoScreen())),
-    );
+    final bool isNarrow = MediaQuery.sizeOf(context).width < 880;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [GridColors.secondary, GridColors.secondaryDark],
-          ),
-        ),
-        child: SafeArea(child: loginBanner),
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: SafeArea(
+        child: isNarrow
+            ? _buildMobileLayout(context)
+            : _buildDesktopLayout(context),
       ),
     );
   }
-}
 
-// -- Login Banner --
-class _LoginBanner extends StatelessWidget {
-  final TextEditingController emailCtrl, passCtrl;
-  final GlobalKey<FormState> formKey;
-  final bool obscure, loading;
-  final VoidCallback onToggleObscure, onLogin, onForgot, onRequestAccess;
-  const _LoginBanner(
-      {required this.emailCtrl,
-      required this.passCtrl,
-      required this.formKey,
-      required this.obscure,
-      required this.loading,
-      required this.onToggleObscure,
-      required this.onLogin,
-      required this.onForgot,
-      required this.onRequestAccess});
+  // ───────────────────────────────────────────────────────────────────────────
+  // Layout Desktop: Login no Topo Horizontal + Boxes no Topo + Carrossel Lateral
+  // ───────────────────────────────────────────────────────────────────────────
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Column(
+      children: [
+        // 1. Top Bar Horizontal de Login
+        _TopHorizontalLoginBar(
+          emailCtrl: _emailController,
+          passCtrl: _passwordController,
+          formKey: _formKey,
+          obscure: _obscurePassword,
+          loading: _loginInProgress,
+          onToggleObscure: () =>
+              setState(() => _obscurePassword = !_obscurePassword),
+          onLogin: _login,
+          onForgot: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const EmailVarificationScreeen())),
+          onRequestAccess: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const SolicitacaoAcessoScreen())),
+        ),
 
-  @override
-  Widget build(BuildContext context) {
-    final minHeight = MediaQuery.sizeOf(context).height -
-        MediaQuery.paddingOf(context).vertical;
+        // 2. Área Principal (Fit to Screen sem scroll no desktop):
+        // Coluna Esquerda: Boxes das Funcionalidades
+        // Coluna Direita (onde antes ficava o login): Carrossel de Notícias
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Boxes das Funcionalidades
+                const Expanded(
+                  flex: 6,
+                  child: _FuncionalidadesBoxes(),
+                ),
+                const SizedBox(width: 16),
+                // Carrossel com as últimas notícias
+                Expanded(
+                  flex: 4,
+                  child: _NoticiasCarousel(
+                    noticias: _noticias,
+                    loading: _loadingNoticias,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
 
-    return SizedBox.expand(
-      child: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: minHeight),
-          child: Center(
+        // 3. Rodapé sutil
+        const _CompactFooter(),
+      ],
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Layout Mobile / Compacto
+  // ───────────────────────────────────────────────────────────────────────────
+  Widget _buildMobileLayout(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header com Logo
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 2)),
+                ],
+              ),
+              child: _SafeLogoWidget(size: 70),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Center(
+            child: Text(
+              GridTexts.appTitle,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: GridColors.secondary,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Card de Login
+          Card(
+            elevation: 2,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Logo centralizado
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: _SafeLogoWidget(size: 100),
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Usuário ou E-mail',
+                        prefixIcon: Icon(Icons.person_outline, size: 20),
+                        border: OutlineInputBorder(),
+                        isDense: true,
                       ),
-                      const SizedBox(height: 20),
-
-                      // Nome da empresa
-                      const Text(
-                        GridTexts.appTitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Tagline
-                      Text(
-                        GridTexts.companyTagline,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Campo email
-                      _field(
-                        ctrl: emailCtrl,
-                        hint: GridTexts.loginUserHint,
-                        icon: Icons.person_outline,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.username],
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            FocusScope.of(context).nextFocus(),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? GridTexts.loginUserRequired
-                            : null,
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Campo senha
-                      _field(
-                        ctrl: passCtrl,
-                        hint: GridTexts.loginPasswordHint,
-                        icon: Icons.lock_outline,
-                        obscure: obscure,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) {
-                          if (!loading) onLogin();
-                        },
-                        suffix: IconButton(
-                          onPressed: onToggleObscure,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? GridTexts.loginUserRequired
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                        suffixIcon: IconButton(
                           icon: Icon(
-                            obscure ? Icons.visibility_off : Icons.visibility,
-                            color: GridColors.textMuted,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             size: 20,
                           ),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? GridTexts.loginPasswordRequired
-                            : null,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
                       ),
-                      const SizedBox(height: 22),
-
-                      // Botao Acessar
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GridColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor: GridColors.primary.withValues(alpha: 0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: loading ? null : onLogin,
-                          child: loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  GridTexts.loginAction,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? GridTexts.loginPasswordRequired
+                          : null,
+                      onFieldSubmitted: (_) => _login(),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: _loginInProgress ? null : _login,
+                      child: _loginInProgress
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text(GridTexts.loginAction,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const EmailVarificationScreeen())),
+                          child: const Text('Esqueceu a senha?',
+                              style: TextStyle(fontSize: 12)),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Links secundarios
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 6,
-                        runSpacing: 0,
-                        children: [
-                          TextButton(
-                            onPressed: onForgot,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                            ),
-                            child: Text(
-                              GridTexts.forgotPassword,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: onRequestAccess,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                            ),
-                            child: Text(
-                              GridTexts.requestAccess,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SolicitacaoAcessoScreen())),
+                          child: const Text('Solicitar acesso',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
+          const SizedBox(height: 16),
 
-  Widget _field(
-      {required TextEditingController ctrl,
-      required String hint,
-      required IconData icon,
-      bool obscure = false,
-      Widget? suffix,
-      TextInputType? keyboardType,
-      Iterable<String>? autofillHints,
-      TextInputAction? textInputAction,
-      ValueChanged<String>? onFieldSubmitted,
-      String? Function(String?)? validator}) {
-    return TextFormField(
-      controller: ctrl,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      autofillHints: autofillHints,
-      textInputAction: textInputAction,
-      onFieldSubmitted: onFieldSubmitted,
-      style: const TextStyle(color: GridColors.textSecondary, fontSize: 15),
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: GridColors.textMuted, fontSize: 14),
-        prefixIcon: Icon(icon, color: GridColors.secondary, size: 22),
-        suffixIcon: suffix,
-        isDense: false,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-                color: GridColors.divider, width: 1.5),
-            borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(
-                color: GridColors.secondary, width: 2),
-            borderRadius: BorderRadius.circular(12)),
-        errorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: GridColors.error, width: 1.5),
-            borderRadius: BorderRadius.circular(12)),
-        focusedErrorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: GridColors.error, width: 2),
-            borderRadius: BorderRadius.circular(12)),
-        errorStyle: const TextStyle(color: GridColors.error, fontSize: 11),
+          // Carrossel de Notícias
+          SizedBox(
+            height: 280,
+            child: _NoticiasCarousel(
+              noticias: _noticias,
+              loading: _loadingNoticias,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Boxes de Funcionalidades
+          const _FuncionalidadesBoxes(),
+          const SizedBox(height: 16),
+          const _CompactFooter(),
+        ],
       ),
     );
   }
 }
 
-/// Logo institucional com fallback gracioso para ícone
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Top Bar Horizontal de Login (Header Superior Compacto)
+// ─────────────────────────────────────────────────────────────────────────────
+class _TopHorizontalLoginBar extends StatelessWidget {
+  final TextEditingController emailCtrl, passCtrl;
+  final GlobalKey<FormState> formKey;
+  final bool obscure, loading;
+  final VoidCallback onToggleObscure, onLogin, onForgot, onRequestAccess;
+
+  const _TopHorizontalLoginBar({
+    required this.emailCtrl,
+    required this.passCtrl,
+    required this.formKey,
+    required this.obscure,
+    required this.loading,
+    required this.onToggleObscure,
+    required this.onLogin,
+    required this.onForgot,
+    required this.onRequestAccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: GridColors.secondary,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          // Logo e Título à Esquerda
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: _SafeLogoWidget(size: 38),
+          ),
+          const SizedBox(width: 10),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'ABRAÇO CONTABILIDADE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              Text(
+                'Portal do Cliente & Gestão',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(width: 16),
+
+          // Formulário Horizontal Flexível
+          Expanded(
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Campo Usuário
+                    SizedBox(
+                      width: 160,
+                      height: 36,
+                      child: TextFormField(
+                        controller: emailCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                        decoration: InputDecoration(
+                          hintText: 'Usuário / E-mail',
+                          hintStyle: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                          prefixIcon: const Icon(Icons.person_outline,
+                              color: Colors.white70, size: 16),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty) ? '' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+
+                    // Campo Senha
+                    SizedBox(
+                      width: 150,
+                      height: 36,
+                      child: TextFormField(
+                        controller: passCtrl,
+                        obscureText: obscure,
+                        style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                        decoration: InputDecoration(
+                          hintText: 'Senha',
+                          hintStyle: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: Colors.white70, size: 16),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscure ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.white70,
+                              size: 15,
+                            ),
+                            onPressed: onToggleObscure,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty) ? '' : null,
+                        onFieldSubmitted: (_) {
+                          if (!loading) onLogin();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Botão Acessar
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GridColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                        ),
+                        onPressed: loading ? null : onLogin,
+                        child: loading
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
+                            : const Text(
+                                'Acessar',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Links de Apoio
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: onForgot,
+                          child: const Text(
+                            'Esqueceu a senha?',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.5,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        InkWell(
+                          onTap: onRequestAccess,
+                          child: const Text(
+                            'Solicitar acesso',
+                            style: TextStyle(
+                              color: Color(0xFFFBD38D),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Boxes das Funcionalidades no Topo (Cards Compactos Fit-to-Screen)
+// ─────────────────────────────────────────────────────────────────────────────
+class _FuncionalidadesBoxes extends StatelessWidget {
+  const _FuncionalidadesBoxes();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: const [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header da Seção de Funcionalidades
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: GridColors.secondary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.grid_view_rounded,
+                    color: GridColors.secondary, size: 18),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Módulos & Recursos Integrados',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A202C),
+                      ),
+                    ),
+                    Text(
+                      'Ambiente unificado para clientes, contadores e parceiros',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: GridColors.successLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '100% Online',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.successDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+
+          // Grid dos 6 Módulos Principais
+          Expanded(
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                final cols = constraints.maxWidth < 450 ? 2 : 3;
+                return GridView.count(
+                  crossAxisCount: cols,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1.55,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: const [
+                    _ModuloCard(
+                      icon: Icons.forum_rounded,
+                      cor: GridColors.info,
+                      titulo: 'Chat & Atendimento',
+                      descricao:
+                          'Conversas setorizadas, protocolos e envio de anexos em tempo real.',
+                    ),
+                    _ModuloCard(
+                      icon: Icons.support_agent_rounded,
+                      cor: GridColors.primary,
+                      titulo: 'Chamados & Tickets',
+                      descricao:
+                          'Abertura de solicitações com controle de SLA e kanban visual.',
+                    ),
+                    _ModuloCard(
+                      icon: Icons.folder_shared_rounded,
+                      cor: GridColors.secondary,
+                      titulo: 'GED & Documentos',
+                      descricao:
+                          'Armazenamento em nuvem com retenção e busca inteligente por IA.',
+                    ),
+                    _ModuloCard(
+                      icon: Icons.event_available_rounded,
+                      cor: GridColors.warning,
+                      titulo: 'Calendário Fiscal',
+                      descricao:
+                          'Vencimento de tributos, guias DAS/FGTS e alertas automáticos.',
+                    ),
+                    _ModuloCard(
+                      icon: Icons.query_stats_rounded,
+                      cor: GridColors.successDark,
+                      titulo: 'Gestão Financeira',
+                      descricao:
+                          'Contas a pagar/receber, DRE, fluxo de caixa e evolução.',
+                    ),
+                    _ModuloCard(
+                      icon: Icons.account_balance_rounded,
+                      cor: GridColors.accent,
+                      titulo: 'Conciliação Bancária',
+                      descricao:
+                          'Importação de extratos OFX, ajuste de saldo e baixa automática.',
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          // Faixa de Módulos Opcionais / Ecossistema
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.extension_rounded,
+                        color: GridColors.secondary, size: 14),
+                    SizedBox(width: 4),
+                    Text(
+                      'Extensões:',
+                      style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2D3748)),
+                    ),
+                  ],
+                ),
+                _badgeModulo('NF-e Entrada / XML'),
+                _badgeModulo('NFS-e Nacional'),
+                _badgeModulo('NFC-e / PDV'),
+                _badgeModulo('SPED & Fiscal'),
+                _badgeModulo('Ponto Eletrônico'),
+                _badgeModulo('Trading & Sinais'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _badgeModulo(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFFCBD5E0)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A5568)),
+      ),
+    );
+  }
+}
+
+class _ModuloCard extends StatelessWidget {
+  final IconData icon;
+  final Color cor;
+  final String titulo;
+  final String descricao;
+
+  const _ModuloCard({
+    required this.icon,
+    required this.cor,
+    required this.titulo,
+    required this.descricao,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: cor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: cor, size: 16),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A202C),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Expanded(
+            child: Text(
+              descricao,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: Color(0xFF718096),
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Carrossel de Últimas Notícias (Coluna Lateral onde ficava o login)
+// ─────────────────────────────────────────────────────────────────────────────
+class _NoticiasCarousel extends StatefulWidget {
+  final List<Map<String, dynamic>> noticias;
+  final bool loading;
+
+  const _NoticiasCarousel({
+    required this.noticias,
+    required this.loading,
+  });
+
+  @override
+  State<_NoticiasCarousel> createState() => _NoticiasCarouselState();
+}
+
+class _NoticiasCarouselState extends State<_NoticiasCarousel> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoPlay();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NoticiasCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.noticias.length != oldWidget.noticias.length) {
+      _startAutoPlay();
+    }
+  }
+
+  void _startAutoPlay() {
+    _timer?.cancel();
+    if (widget.noticias.length <= 1) return;
+    _timer = Timer.periodic(const Duration(seconds: 6), (timer) {
+      if (!mounted || !_pageController.hasClients) return;
+      final nextPage = (_currentPage + 1) % widget.noticias.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _abrirDetalhes(Map<String, dynamic> noticia) {
+    showDialog(
+      context: context,
+      builder: (_) => _NewsDetailModal(noticia: noticia),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.loading) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    final itens = widget.noticias;
+    if (itens.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: const Center(
+          child: Text('Nenhuma notícia cadastrada no momento.',
+              style: TextStyle(color: Colors.grey, fontSize: 13)),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: const [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header do Carrossel
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: GridColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.campaign_rounded,
+                    color: GridColors.primary, size: 20),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Últimas Notícias & Avisos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A202C),
+                  ),
+                ),
+              ),
+              // Controles de Navegação Manual
+              IconButton(
+                icon: const Icon(Icons.chevron_left, size: 20),
+                onPressed: _currentPage > 0
+                    ? () => _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut)
+                    : null,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.chevron_right, size: 20),
+                onPressed: _currentPage < itens.length - 1
+                    ? () => _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut)
+                    : null,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+
+          // Slide do Carrossel
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: itens.length,
+              onPageChanged: (idx) => setState(() => _currentPage = idx),
+              itemBuilder: (context, index) {
+                final noticia = itens[index];
+                final titulo =
+                    noticia['titulo']?.toString() ?? 'Informativo';
+                final resumo = noticia['resumo']?.toString() ??
+                    noticia['conteudo']?.toString() ??
+                    '';
+                final categoria =
+                    noticia['categoria']?.toString() ?? 'Geral';
+                final dataRaw = noticia['dtNoticia']?.toString() ??
+                    noticia['dtImport']?.toString();
+
+                String dataStr = '';
+                if (dataRaw != null) {
+                  try {
+                    dataStr = DateFormat('dd/MM/yyyy')
+                        .format(DateTime.parse(dataRaw));
+                  } catch (_) {}
+                }
+
+                return InkWell(
+                  onTap: () => _abrirDetalhes(noticia),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tag de Categoria + Data
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color:
+                                    GridColors.secondary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                categoria.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: GridColors.secondary,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            if (dataStr.isNotEmpty)
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today,
+                                      size: 11, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    dataStr,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Título
+                        Text(
+                          titulo,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D3748),
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Resumo
+                        Expanded(
+                          child: Text(
+                            resumo,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF718096),
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+
+                        // Botão Ler Mais
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Ler notícia completa',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: GridColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded,
+                                size: 14, color: GridColors.primary),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Dots de Paginação
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              itens.length,
+              (idx) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _currentPage == idx ? 16 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _currentPage == idx
+                      ? GridColors.secondary
+                      : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal de Detalhes da Notícia
+// ─────────────────────────────────────────────────────────────────────────────
+class _NewsDetailModal extends StatelessWidget {
+  final Map<String, dynamic> noticia;
+  const _NewsDetailModal({required this.noticia});
+
+  @override
+  Widget build(BuildContext context) {
+    final titulo = noticia['titulo']?.toString() ?? 'Informativo';
+    final conteudo = noticia['conteudo']?.toString() ??
+        noticia['resumo']?.toString() ??
+        '';
+    final categoria = noticia['categoria']?.toString() ?? 'Comunicado';
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: GridColors.secondary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              categoria.toUpperCase(),
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.secondary),
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                titulo,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A202C),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Divider(),
+              const SizedBox(height: 14),
+              Text(
+                conteudo,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF4A5568),
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: GridColors.secondary,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Fechar'),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilitários de Logo e Footer
+// ─────────────────────────────────────────────────────────────────────────────
 class _SafeLogoWidget extends StatelessWidget {
   final double size;
-  const _SafeLogoWidget({required this.size});
+  const _SafeLogoWidget({this.size = 60});
 
   @override
   Widget build(BuildContext context) {
@@ -537,21 +1460,40 @@ class _SafeLogoWidget extends StatelessWidget {
       height: size,
       width: size,
       fit: BoxFit.contain,
-      errorBuilder: (_, error, __) {
-        debugPrint('[_SafeLogoWidget] Falha ao carregar logo asset: $error');
-        return SizedBox(
-          height: size,
-          width: size,
-          child: const Center(
-            child: Icon(Icons.business_center,
-                color: GridColors.secondary, size: 40),
-          ),
-        );
-      },
+      errorBuilder: (_, __, ___) => Icon(
+        Icons.business_rounded,
+        size: size * 0.7,
+        color: GridColors.secondary,
+      ),
     );
   }
 }
-/// Campo de senha reutilizável dentro do dialog de troca de senha.
+
+class _CompactFooter extends StatelessWidget {
+  const _CompactFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      color: Colors.white,
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '© 2026 Abraço Contabilidade. Todos os direitos reservados.',
+            style: TextStyle(fontSize: 11, color: Colors.black45),
+          ),
+          Text(
+            'Versão 2.4.0 (Build 2026.09)',
+            style: TextStyle(fontSize: 11, color: Colors.black45),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SenhaField extends StatelessWidget {
   final String label;
   final TextEditingController ctrl;
@@ -567,16 +1509,21 @@ class _SenhaField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextField(
       controller: ctrl,
       obscureText: obscure,
+      style: const TextStyle(fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 13),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        labelStyle: const TextStyle(fontSize: 12),
+        isDense: true,
+        border: const OutlineInputBorder(),
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 18),
+          icon: Icon(
+            obscure ? Icons.visibility_off : Icons.visibility,
+            size: 18,
+            color: Colors.grey,
+          ),
           onPressed: onToggle,
         ),
       ),
