@@ -331,16 +331,16 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (resp.statusCode == 200 && resp.body != null) {
-        // NetworkResponse._toMap já normaliza List do backend em {'data': [...]},
-        // então body é sempre Map e a lista sai de data/dados.
-        final body = resp.body ?? <String, dynamic>{};
-        final list = extractAnyList(body['data'] ?? body['dados'] ?? body);
-        final total = ((body['totalElements'] ??
-                body['total'] ??
-                (body['data'] is Map ? body['data']['totalElements'] : null) ??
-                (body['dados'] is Map
-                    ? body['dados']['totalElements']
-                    : null))) as int? ??
+        final body = resp.body;
+        final list = extractAnyList(body is Map ? (body['data'] ?? body['dados'] ?? body) : body);
+        final total = (body is Map
+                ? ((body['totalElements'] ??
+                    body['total'] ??
+                    (body['data'] is Map ? body['data']['totalElements'] : null) ??
+                    (body['dados'] is Map
+                        ? body['dados']['totalElements']
+                        : null)))
+                : null) as int? ??
             list.length;
 
         setState(() {

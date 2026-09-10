@@ -639,6 +639,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
   List<Map<String, dynamic>> _extractAnyList(dynamic body) {
     try {
+      if (body == null) return [];
       if (body is List) {
         return body
             .whereType<Map>()
@@ -655,6 +656,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               .toList();
         }
         if (inner is Map) return _extractAnyList(inner);
+        return [Map<String, dynamic>.from(body)];
       }
       if (body is String) return _extractAnyList(jsonDecode(body));
     } catch (e) {

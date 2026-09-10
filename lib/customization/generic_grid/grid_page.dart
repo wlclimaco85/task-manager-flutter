@@ -230,14 +230,16 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       L.d('[GridPage] GET $url');
       final resp = await getJson(url);
       if (resp.statusCode == 200 && resp.body != null) {
-        final body = resp.body ?? {};
-        final list = extractAnyList(body['data'] ?? body['dados'] ?? body);
-        final total = (body['totalElements'] ??
-                body['total'] ??
-                (body['data'] is Map ? body['data']['totalElements'] : null) ??
-                (body['dados'] is Map
-                    ? body['dados']['totalElements']
-                    : null)) as int? ??
+        final body = resp.body;
+        final list = extractAnyList(body is Map ? (body['data'] ?? body['dados'] ?? body) : body);
+        final total = (body is Map
+                ? (body['totalElements'] ??
+                    body['total'] ??
+                    (body['data'] is Map ? body['data']['totalElements'] : null) ??
+                    (body['dados'] is Map
+                        ? body['dados']['totalElements']
+                        : null))
+                : null) as int? ??
             list.length;
 
         setState(() {

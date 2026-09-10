@@ -509,11 +509,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     required List<String> labelKeys,
   }) async {
     final response = await NetworkCaller().getRequest(endpoint);
-    final raw = response.body?['data']?['dados'] ??
-        response.body?['data'] ??
-        response.body?['content'] ??
-        response.body;
-    if (!response.isSuccess || raw is! List) return [];
+    if (!response.isSuccess || response.body == null) return [];
+    final body = response.body;
+    final dynamic dataNode = (body is Map) ? body['data'] : body;
+    final raw = (dataNode is Map)
+        ? (dataNode['dados'] ?? dataNode['content'] ?? dataNode['items'] ?? dataNode)
+        : (dataNode ?? (body is Map ? (body['dados'] ?? body['content'] ?? body['items']) : null));
+    if (raw is! List) return [];
 
     return raw
         .whereType<Map>()
