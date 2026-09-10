@@ -5,6 +5,7 @@ import '../models/auth_utility.dart';
 import '../models/network_response.dart';
 import './network_caller.dart';
 import '../utils/api_links.dart';
+import '../utils/app_logger.dart';
 import '../models/conta_bancaria_model.dart';
 
 class ContaBancariaCaller {
@@ -83,9 +84,13 @@ class ContaBancariaCaller {
           if (saldoFinal != null) 'saldoFinal': saldoFinal,
         },
       );
+      if (!response.isSuccess) {
+        AppLogger.i.warn(
+            '[ContaBancaria] Erro ao ajustar saldo (conta $contaId, status ${response.statusCode})');
+      }
       return response.isSuccess;
-    } catch (e) {
-      debugPrint('Erro ao ajustar saldo da conta: $e');
+    } catch (e, st) {
+      AppLogger.i.error('[ContaBancaria] Erro ao ajustar saldo da conta $contaId: $e', st);
       return false;
     }
   }

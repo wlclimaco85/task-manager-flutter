@@ -3,7 +3,9 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_bancaria_model.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../widgets/finance/ajuste_saldo_conta_dialog.dart';
 import '../../../widgets/finance/extrato_operacional_dialog.dart';
+import '../../../services/conta_bancaria_caller.dart';
 
 class WindowsContaBancariaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -30,6 +32,12 @@ class WindowsContaBancariaGridScreen extends StatelessWidget {
       ],
       customActions: () => [
         CustomAction<ContaBancaria>(
+          icon: Icons.account_balance_wallet_outlined,
+          label: 'Ajustar Saldo',
+          isVisible: (item) => item.id != null,
+          onPressed: (context, item) => _showAjusteSaldoDialog(context, item),
+        ),
+        CustomAction<ContaBancaria>(
           icon: Icons.table_view,
           label: 'Extrato Operacional',
           isVisible: (item) => item.id != null,
@@ -40,6 +48,28 @@ class WindowsContaBancariaGridScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showAjusteSaldoDialog(
+      BuildContext context, ContaBancaria conta) async {
+    final caller = ContaBancariaCaller();
+    final sucesso = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => AjusteSaldoContaDialog(
+        conta: conta,
+        onSalvar: ({saldoInicial, saldoFinal}) => caller.ajustarSaldo(
+          contaId: conta.id!,
+          saldoInicial: saldoInicial,
+          saldoFinal: saldoFinal,
+        ),
+      ),
+    );
+
+    if (!context.mounted || sucesso != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Saldo ajustado com sucesso!')),
     );
   }
 }
