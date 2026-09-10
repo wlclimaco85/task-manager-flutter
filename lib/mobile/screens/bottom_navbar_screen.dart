@@ -53,6 +53,7 @@ import '../../widgets/user_banners.dart';
 import '../../widgets/alertas/alertas_manuais_screen.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
+import 'dashboard_financeiro_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -985,6 +986,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+        break;
+      case "Dashboard Financeiro":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardFinanceiroMobileScreen(),
+          ),
         );
         break;
       case "Trading":

@@ -105,4 +105,12 @@ class SistemaErrorReporter {
     _timerEnvio?.cancel();
     await _descarregarBuffer();
   }
+
+  @visibleForTesting
+  void reset() {
+    _timerEnvio?.cancel();
+    _timerEnvio = null;
+    _buffer.clear();
+    _recentes.clear();
+  }
 }
