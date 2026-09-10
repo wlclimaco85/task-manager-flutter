@@ -414,7 +414,8 @@ Future<dynamic> _fetchFinancialJson(String url) async {
 }
 
 class WindowsCalendarScreen extends StatefulWidget {
-  const WindowsCalendarScreen({super.key});
+  final bool showAppBar;
+  const WindowsCalendarScreen({super.key, this.showAppBar = false});
 
   @override
   State<WindowsCalendarScreen> createState() => _WindowsCalendarScreenState();
@@ -752,6 +753,30 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
+    for (final item in items.unknown) {
+      final dateStr = _dateKey(item);
+      if (dateStr.isEmpty) continue;
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) continue;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      if (_isTipo(item, 'RECEBER')) {
+        addMarker(
+          dateStr,
+          receber: !isBaixa,
+          recebido: isBaixa,
+          tributo: tributo,
+        );
+      } else {
+        addMarker(
+          dateStr,
+          pagar: !isBaixa,
+          pago: isBaixa,
+          tributo: tributo,
+        );
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       // Merge: preserva marcadores de outros meses já carregados
@@ -828,10 +853,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: const SimpleAppBar(
-        title: 'Calendário Financeiro',
-        icon: Icons.calendar_month_rounded,
-      ),
+      appBar: widget.showAppBar
+          ? const SimpleAppBar(
+              title: 'Calendário Financeiro',
+              icon: Icons.calendar_month_rounded,
+            )
+          : null,
       body: Column(
         children: [
           _buildToolbar(),

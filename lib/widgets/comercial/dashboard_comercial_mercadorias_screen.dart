@@ -187,12 +187,12 @@ class _DashboardComercialMercadoriasScreenState
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: GridColors.textPrimary,
+                  color: GridColors.textSecondary,
                 ),
               ),
               SizedBox(height: 3),
               Text(
-                'Entradas, saidas, estoque, giro e variacao de custo contra indices de mercado.',
+                'Entradas, saídas, estoque, giro e variação de custo contra índices de mercado.',
                 style: TextStyle(fontSize: 13, color: GridColors.textMuted),
               ),
             ],
@@ -700,7 +700,7 @@ class _MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: GridColors.textPrimary,
+                    color: GridColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),

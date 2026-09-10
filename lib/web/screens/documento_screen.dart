@@ -467,14 +467,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
-    for (final item in pagarList) {
-      final dateStr =
-          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+    final allPagar = [...pagarList, ...items.unknown.where((u) => !_isTipo(u, 'RECEBER'))];
+    for (final item in allPagar) {
+      final dateStr = _dateKey(item);
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isBaixa = item['status'] == 'BAIXADA';
-      final tributo = item['documentoFiscal'] == true;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
       addMarker(
         dateStr,
         pagar: !isBaixa,
@@ -483,14 +483,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       );
     }
 
-    for (final item in receberList) {
-      final dateStr =
-          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+    final allReceber = [...receberList, ...items.unknown.where((u) => _isTipo(u, 'RECEBER'))];
+    for (final item in allReceber) {
+      final dateStr = _dateKey(item);
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isBaixa = item['status'] == 'BAIXADA';
-      final tributo = item['documentoFiscal'] == true;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
       addMarker(
         dateStr,
         receber: !isBaixa,
@@ -547,19 +547,21 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
 
-    for (final item in pagarList) {
-      final v = (item['valor'] as num?)?.toDouble() ?? 0;
-      if (item['status'] == 'BAIXADA') {
+    final allPagar = [...pagarList, ...items.unknown.where((u) => !_isTipo(u, 'RECEBER'))];
+    for (final item in allPagar) {
+      final v = _moneyValue(item, 'valor');
+      if (_isBaixada(item)) {
         totalPago += v;
-      } else if (item['status'] != 'CANCELADA') {
+      } else if (!_isCancelada(item)) {
         totalPagar += v;
       }
     }
-    for (final item in receberList) {
-      final v = (item['valor'] as num?)?.toDouble() ?? 0;
-      if (item['status'] == 'BAIXADA') {
+    final allReceber = [...receberList, ...items.unknown.where((u) => _isTipo(u, 'RECEBER'))];
+    for (final item in allReceber) {
+      final v = _moneyValue(item, 'valor');
+      if (_isBaixada(item)) {
         totalRecebido += v;
-      } else if (item['status'] != 'CANCELADA') {
+      } else if (!_isCancelada(item)) {
         totalReceber += v;
       }
     }
@@ -584,9 +586,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               title: 'Calendário Financeiro',
               icon: Icons.calendar_month,
             )
-          : const UserBannerAppBar(
-              screenTitle: 'Calendário Financeiro',
-            ),
+          : null,
       body: Column(
         children: [
           _buildToolbar(),

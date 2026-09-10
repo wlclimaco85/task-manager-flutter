@@ -375,8 +375,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   String _getCompanyName() {
-    return AuthUtility.userInfo?.login?.empresa?.nome ??
-        AuthUtility.userInfo?.login?.parceiro?.nome ??
+    final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome?.trim();
+    if (parceiroNome != null && parceiroNome.isNotEmpty) {
+      return parceiroNome;
+    }
+    return AuthUtility.userInfo?.login?.empresa?.nome?.trim() ??
+        AuthUtility.userInfo?.data?.login?.empresa?.nome?.trim() ??
         '';
   }
 

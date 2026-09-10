@@ -235,9 +235,14 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   /// Nome da empresa ou parceiro do usuário logado.
+  /// Se o usuário for de um parceiro, prioriza o nome do parceiro.
   String _getCompanyName() {
-    return AuthUtility.userInfo?.login?.empresa?.nome ??
-        AuthUtility.userInfo?.login?.parceiro?.nome ??
+    final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome?.trim();
+    if (parceiroNome != null && parceiroNome.isNotEmpty) {
+      return parceiroNome;
+    }
+    return AuthUtility.userInfo?.login?.empresa?.nome?.trim() ??
+        AuthUtility.userInfo?.data?.login?.empresa?.nome?.trim() ??
         '';
   }
 
