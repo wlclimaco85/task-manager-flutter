@@ -5,7 +5,6 @@ import '../models/auth_utility.dart';
 import '../models/network_response.dart';
 import './network_caller.dart';
 import '../utils/api_links.dart';
-import '../utils/app_logger.dart';
 import '../models/conta_bancaria_model.dart';
 
 class ContaBancariaCaller {
@@ -66,31 +65,6 @@ class ContaBancariaCaller {
       return response.isSuccess;
     } catch (e) {
       debugPrint('Erro ao transferir saldo: $e');
-      return false;
-    }
-  }
-
-  /// Ajusta saldo inicial ou saldo final da conta.
-  Future<bool> ajustarSaldo({
-    required int contaId,
-    double? saldoInicial,
-    double? saldoFinal,
-  }) async {
-    try {
-      final NetworkResponse response = await NetworkCaller().postRequest(
-        '${ApiLinks.contasBancarias}/$contaId/ajustar-saldo',
-        {
-          if (saldoInicial != null) 'saldoInicial': saldoInicial,
-          if (saldoFinal != null) 'saldoFinal': saldoFinal,
-        },
-      );
-      if (!response.isSuccess) {
-        AppLogger.i.warn(
-            '[ContaBancaria] Erro ao ajustar saldo (conta $contaId, status ${response.statusCode})');
-      }
-      return response.isSuccess;
-    } catch (e, st) {
-      AppLogger.i.error('[ContaBancaria] Erro ao ajustar saldo da conta $contaId: $e', st);
       return false;
     }
   }

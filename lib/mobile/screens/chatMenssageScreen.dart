@@ -21,7 +21,6 @@ import '../../../widgets/chat/chat_transfer_dialog.dart';
 import '../../../widgets/chat/chat_add_participant_dialog.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../services/ai_assistant_service.dart';
-import '../../services/alerta_polling_service.dart';
 import '../../services/chat_caller.dart';
 import 'ticket_form_bottom_sheet.dart';
 
@@ -114,16 +113,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             _adoptRealChatIdIfNeeded(msg);
             if (!_isDuplicate(msg)) {
               if (mounted && !_disposed) setState(() => _messages.add(msg));
-              if (msg.sender.isNotEmpty && msg.sender != _loggedUserEmail) {
-                final remetente = msg.sender;
-                final preview = msg.content.isNotEmpty
-                    ? msg.content
-                    : (msg.fileName != null ? '📎 Arquivo: ${msg.fileName}' : 'Nova mensagem recebida');
-                AlertaPollingService.instance.notificarInstantaneo(
-                  titulo: '💬 Chat: $remetente',
-                  corpo: preview,
-                );
-              }
             }
             _scrollToBottom();
           } catch (_) {}

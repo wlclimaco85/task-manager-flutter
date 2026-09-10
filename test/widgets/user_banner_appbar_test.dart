@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
-import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
 
 Widget _wrap(Widget w) => MaterialApp(home: Scaffold(appBar: w as PreferredSizeWidget?));
@@ -117,24 +116,6 @@ void main() {
       ));
       await tester.pump();
       expect(find.text('w@test.com'), findsOneWidget);
-    });
-
-    testWidgets('exibe nome do parceiro quando parceiro for preenchido', (tester) async {
-      AuthUtility.userInfo = LoginModel(
-        token: 'tok',
-        login: Login(
-          nome: 'Tony Alves',
-          email: 'tony@test.com',
-          empresa: Empresa(id: 1, nome: 'Empresa Smoke Test'),
-          parceiro: Parceiro(id: 1802, nome: 'Tony Alves Moda Masculina'),
-        ),
-      );
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(appBar: UserBannerAppBar(screenTitle: 'Teste')),
-      ));
-      await tester.pump();
-      expect(find.text('Tony Alves Moda Masculina'), findsOneWidget);
-      expect(find.text('Empresa Smoke Test'), findsNothing);
     });
   });
 }

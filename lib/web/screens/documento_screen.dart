@@ -575,7 +575,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return Scaffold(
       backgroundColor: _grey,
       appBar: widget.useLightHeader
-          ? null
+          ? const SimpleAppBar(
+              title: 'Calendário Financeiro',
+              icon: Icons.calendar_month,
+            )
           : const UserBannerAppBar(
               screenTitle: 'Calendário Financeiro',
             ),

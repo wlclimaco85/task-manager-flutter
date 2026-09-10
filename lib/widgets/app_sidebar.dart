@@ -204,35 +204,10 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   /// Nome da empresa ou parceiro do usuário logado.
-  /// Se o usuário possui parceiro vinculado (parceiro != null), exibe o nome do parceiro.
-  /// Se parceiro for null (usuário interno/master), exibe o nome da empresa.
   String _getCompanyName() {
-    final login =
-        AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
-    final parceiro = login?.parceiro;
-    if (parceiro != null) {
-      if (parceiro.nome != null && parceiro.nome!.trim().isNotEmpty) {
-        return parceiro.nome!.trim();
-      }
-      if (parceiro.razaoSocial != null &&
-          parceiro.razaoSocial!.trim().isNotEmpty) {
-        return parceiro.razaoSocial!.trim();
-      }
-      if (login?.nome != null && login!.nome!.trim().isNotEmpty) {
-        return login.nome!.trim();
-      }
-    }
-    final empresa = login?.empresa;
-    if (empresa != null) {
-      if (empresa.nome != null && empresa.nome!.trim().isNotEmpty) {
-        return empresa.nome!.trim();
-      }
-      if (empresa.razaoSocial != null &&
-          empresa.razaoSocial!.trim().isNotEmpty) {
-        return empresa.razaoSocial!.trim();
-      }
-    }
-    return '';
+    return AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.nome ??
+        '';
   }
 
   /// Inicial para o avatar: usa o email (sempre disponível) em vez do nome.

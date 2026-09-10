@@ -8,7 +8,6 @@ import '../../features/agendamento/agendamento_module.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
-import '../../../services/alerta_polling_service.dart';
 import '../../../utils/security_matrix.dart';
 import '../../services/alert_caller.dart';
 import '../../../windows/screens/alimento_grid_screen.dart';
@@ -203,7 +202,6 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       _openInitialTab();
     });
     _startPeriodicFetch();
-    unawaited(AlertaPollingService.instance.iniciar());
   }
 
   // ── Gerenciamento de abas internas ───────────────────────────────────────

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
-import 'package:task_manager_flutter/services/alerta_polling_service.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
@@ -70,7 +69,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     _alertTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) _fetchAlerts();
     });
-    unawaited(AlertaPollingService.instance.iniciar());
   }
 
   @override
