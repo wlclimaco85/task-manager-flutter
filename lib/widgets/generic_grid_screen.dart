@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
+import '../utils/grid_user_preferences_key.dart';
 import '../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
@@ -51,10 +52,20 @@ enum FieldType {
 // quando o valor ainda e String/num (idempotente, nao mexe em quem ja
 // chega pronto como objeto).
 const entityRelationshipFields = [
-  'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
-  'parceiroDev', 'parceiroRec', 'clienteDev',
-  'contaBancaria', 'contaBaixa', 'nfe',
-  'setor', 'centroCusto', 'formaPagamento',
+  'empresa',
+  'parceiro',
+  'aplicativo',
+  'fornecedor',
+  'cliente',
+  'parceiroDev',
+  'parceiroRec',
+  'clienteDev',
+  'contaBancaria',
+  'contaBaixa',
+  'nfe',
+  'setor',
+  'centroCusto',
+  'formaPagamento',
 ];
 
 Map<String, dynamic> normalizeEntityRelationships(
@@ -762,8 +773,8 @@ class FieldFactory {
             ),
           ),
         ElevatedButton.icon(
-          onPressed: () =>
-              _selectFiles(config, controller, fileCache, context, onFileChanged),
+          onPressed: () => _selectFiles(
+              config, controller, fileCache, context, onFileChanged),
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
@@ -1045,10 +1056,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _loadColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = widget.storageKey;
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
+      final legacyKeys = [
+        GridUserPreferencesKey.storageOnlyLegacyBase(widget.storageKey),
+        GridUserPreferencesKey.legacyBase(
+          storageKey: widget.storageKey,
+          title: widget.title,
+        ),
+      ];
 
       for (final config in widget.fieldConfigs) {
-        final savedValue = prefs.getBool('$key${config.fieldName}');
+        bool? savedValue = prefs.getBool(
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
+        );
+        for (final legacyKey in legacyKeys) {
+          savedValue ??= prefs.getBool(
+            GridUserPreferencesKey.legacyColumnKey(
+              legacyKey,
+              config.fieldName,
+            ),
+          );
+        }
         if (savedValue != null) {
           _columnVisibility[config.fieldName] = savedValue;
         }
@@ -1063,11 +1094,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _saveColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = widget.storageKey;
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
 
       for (final config in widget.fieldConfigs) {
         await prefs.setBool(
-          '$key${config.fieldName}',
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
           _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
         );
       }
@@ -1856,7 +1890,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               setState(() => selectedRows.clear());
             },
             style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.error, foregroundColor: Colors.white),
+                backgroundColor: GridColors.error,
+                foregroundColor: Colors.white),
             child: const Text('Excluir'),
           ),
         ],

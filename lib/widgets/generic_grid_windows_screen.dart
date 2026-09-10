@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
+import '../utils/grid_user_preferences_key.dart';
 import '../utils/grid_texts.dart';
 
 import '../../../models/auth_utility.dart';
@@ -158,8 +159,8 @@ bool hasParceiroContextInExtraParams(Map<String, dynamic>? extraParams) {
 @visibleForTesting
 bool hasExplicitEmpresaOnlyScope(Map<String, dynamic>? extraParams) {
   if (extraParams == null) return false;
-  final hasEmpresaKey = extraParams.keys
-      .any((k) => _empresaScopeKeys.contains(k.toLowerCase()));
+  final hasEmpresaKey =
+      extraParams.keys.any((k) => _empresaScopeKeys.contains(k.toLowerCase()));
   return hasEmpresaKey && !hasParceiroContextInExtraParams(extraParams);
 }
 
@@ -2151,10 +2152,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _loadColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
+      final legacyKeys = [
+        GridUserPreferencesKey.legacyBase(
+          storageKey: widget.storageKey,
+          title: widget.title,
+        ),
+        GridUserPreferencesKey.storageOnlyLegacyBase(widget.storageKey),
+      ];
 
       for (final config in widget.FieldConfigWindowss) {
-        final savedValue = prefs.getBool('$key${config.fieldName}');
+        bool? savedValue = prefs.getBool(
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
+        );
+        for (final legacyKey in legacyKeys) {
+          savedValue ??= prefs.getBool(
+            GridUserPreferencesKey.legacyColumnKey(
+              legacyKey,
+              config.fieldName,
+            ),
+          );
+        }
         if (savedValue != null) {
           _columnVisibility[config.fieldName] = savedValue;
         }
@@ -2179,11 +2200,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _saveColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = GridUserPreferencesKey.base(
+        storageKey: widget.storageKey,
+        title: widget.title,
+      );
 
       for (final config in widget.FieldConfigWindowss) {
         await prefs.setBool(
-          '$key${config.fieldName}',
+          GridUserPreferencesKey.columnKey(key, config.fieldName),
           _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
         );
       }
@@ -4851,11 +4875,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                       // desatualizado do grid, dando a impressao de que
                       // nada foi salvo.
                       Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      widget.detailScreenBuilder!(item)))
-                          .then((_) {
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  widget.detailScreenBuilder!(item))).then((_) {
                         if (mounted) _loadItems(_currentPage, rowsPerPage);
                       });
                     } else if (value == '__delete__') {
@@ -5815,9 +5838,7 @@ class RemoteDropdownSearchDialogState
                             final o = _items[i];
                             final val = o[widget.valueField]?.toString();
                             final label =
-                                o[widget.displayField]?.toString() ??
-                                    val ??
-                                    '';
+                                o[widget.displayField]?.toString() ?? val ?? '';
                             final isSelected = val == widget.currentValue;
                             return ListTile(
                               dense: true,
