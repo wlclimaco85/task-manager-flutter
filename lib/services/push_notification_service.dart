@@ -6,7 +6,6 @@ import '../models/auth_utility.dart';
 import '../utils/api_links.dart';
 import '../utils/app_logger.dart';
 import 'network_caller.dart';
-import '../utils/tenant_context.dart';
 
 const String _firebaseAndroidApiKey =
     String.fromEnvironment('FIREBASE_ANDROID_API_KEY');
@@ -90,7 +89,7 @@ class PushNotificationService {
 
     final login =
         AuthUtility.userInfo?.login ?? (await AuthUtility.obterLogin())?.login;
-    final loginId = login?.id ?? TenantContext.userId;
+    final loginId = login?.id;
     if (loginId == null) {
       L.w('[Push] loginId ausente; token FCM nao registrado.');
       return;
@@ -107,10 +106,7 @@ class PushNotificationService {
       if (!_listenerRegistrado) {
         _listenerRegistrado = true;
         messaging.onTokenRefresh.listen((novoToken) {
-          final loginAtual = TenantContext.userId;
-          if (loginAtual != null) {
-            _enviarToken(loginAtual, novoToken);
-          }
+          _enviarToken(loginId, novoToken);
         });
       }
     } catch (e) {
