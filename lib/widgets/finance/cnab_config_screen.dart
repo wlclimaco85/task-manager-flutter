@@ -106,7 +106,7 @@ class _CnabConfigScreenState extends State<CnabConfigScreen> {
       if (res.isSuccess) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração salva com sucesso!')));
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: ${res.errorMessage}')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: ${res.statusCode}')));
       }
     } catch (e, stack) {
       AppLogger.i.error('Erro ao salvar config CNAB', stack);
