@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldType, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show SecurityCheck, FieldType, FieldConfigWindows;
 import '../../../services/network_caller.dart';
+import '../../../widgets/login_empresas_acesso_detail.dart';
 
 class WindowsLoginDetailScreen extends StatelessWidget {
   final Login item;
   final SecurityCheck hasPermission;
 
-  const WindowsLoginDetailScreen({super.key, required this.item, required this.hasPermission});
+  const WindowsLoginDetailScreen(
+      {super.key, required this.item, required this.hasPermission});
 
   /// Carrega roles disponíveis filtradas por parceiroId/empresaId
   Future<List<Map<String, dynamic>>> _loadRolesDisponiveis(
@@ -67,11 +70,22 @@ class WindowsLoginDetailScreen extends StatelessWidget {
       fieldOverrides: fieldOverrides,
       relatedTabs: [
         RelatedGridTab(
+          title: 'Empresas com acesso',
+          icon: Icons.business,
+          customWidget: LoginEmpresasAcessoDetail(
+            loginId: item.id,
+            loginTemParceiro: item.parceiro?.id != null,
+          ),
+        ),
+        RelatedGridTab(
           title: 'Roles',
           icon: Icons.security,
           telaNome: 'role',
-          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
-          // Usa endpoint com /boletobancos (extrai base do rolesDisponiveis)
+          extraParams: {
+            'loginId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
         ),
@@ -79,7 +93,11 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
-          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          extraParams: {
+            'loginId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
           deleteEndpointOverride:
               '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
         ),
@@ -87,7 +105,11 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {'usuarioAberturaId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          extraParams: {
+            'usuarioAberturaId': loginId,
+            'empresaId': empresaId,
+            'parceiroId': parceiroId
+          },
         ),
       ],
     );

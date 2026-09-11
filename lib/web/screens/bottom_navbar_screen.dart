@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../constants/custom_colors.dart';
 import '../../features/agendamento/agendamento_module.dart';
+import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
@@ -548,6 +549,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
       const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
+      const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
     ];
   }
 

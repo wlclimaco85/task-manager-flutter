@@ -19,6 +19,7 @@ import '../../auth_screens/login_screen.dart';
 import 'chatMessageListScreen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
+import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../features/agendamento/agendamento_module.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
@@ -1046,6 +1047,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const RolePermissaoMobileScreen()),
+        );
+        break;
+      case "Permissões Multi-Empresa":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoginEmpresaAcessoAprovacaoScreen(),
+          ),
         );
         break;
       case "Importar Extratos":
