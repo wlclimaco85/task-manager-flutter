@@ -150,6 +150,7 @@ import './historico_treino_screen.dart';
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
+import '../../widgets/sessoes_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -550,6 +551,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
       const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
       const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
+      const SessoesScreen(), // 186: Sessões
     ];
   }
 

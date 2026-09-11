@@ -98,6 +98,17 @@ class ApiLinks {
       '$_baseUrlNew/api/login-empresa-acesso/$id/aprovar';
   static String loginEmpresaAcessoNegar(int id) =>
       '$_baseUrlNew/api/login-empresa-acesso/$id/negar';
+
+  // Controle de Sessao (bug de producao 2026-09-11): Sistema > Sessoes --
+  // listar/matar sessoes ativas. Replicado igual em task_manager_admin_panel.
+  static String get sessoesAtivas => '$_baseUrlNew/api/sessoes';
+  static String matarSessao(int loginId) =>
+      '$_baseUrlNew/api/sessoes/$loginId/matar';
+  static String get matarTodasAsSessoes =>
+      '$_baseUrlNew/api/sessoes/matar-todas';
+  static String get matarSessoesOciosas =>
+      '$_baseUrlNew/api/sessoes/matar-ociosas';
+
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>

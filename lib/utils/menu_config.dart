@@ -627,6 +627,11 @@ class MenuConfig {
             label: 'Query Builder',
             icon: FontAwesomeIcons.database,
             screenIndex: 150),
+        MenuItem(
+            id: 'sessoes',
+            label: 'Sessões',
+            icon: FontAwesomeIcons.userClock,
+            screenIndex: 186),
       ],
     ),
     MenuGroup(
