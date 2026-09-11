@@ -509,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Top Horizontal Login Bar
+// Top Horizontal Login Bar (Header Branco, Bordas Verdes, Input Senha Maior)
 // ---------------------------------------------------------------------------
 class _TopHorizontalLoginBar extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -533,21 +533,30 @@ class _TopHorizontalLoginBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isCompact = screenWidth < 850;
+    final isCompact = screenWidth < 880;
 
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF03331C),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
         border: Border(
-          bottom: BorderSide(color: Color(0xFF0E5A35), width: 1.5),
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: isCompact
           ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildBrandHeader(),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 _buildLoginForm(context, isCompact: true),
               ],
             )
@@ -572,31 +581,32 @@ class _TopHorizontalLoginBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
             boxShadow: const [
               BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: Offset(0, 2),
+                color: Colors.black12,
+                blurRadius: 3,
+                offset: Offset(0, 1),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(3),
           child: Image.asset(
             AssetsUtils.logoJPG,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.business,
-              color: GridColors.secondary,
-              size: 28,
+              color: Color(0xFF074828),
+              size: 26,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -604,19 +614,19 @@ class _TopHorizontalLoginBar extends StatelessWidget {
             Text(
               'ABRAÇO CONTABILIDADE',
               style: TextStyle(
-                color: Colors.white,
+                color: Color(0xFF074828),
                 fontSize: 15,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
+                letterSpacing: 0.3,
               ),
             ),
             SizedBox(height: 1),
             Text(
               'Portal do Cliente & Gestão',
               style: TextStyle(
-                color: Colors.white70,
+                color: Color(0xFF64748B),
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -626,70 +636,72 @@ class _TopHorizontalLoginBar extends StatelessWidget {
   }
 
   Widget _buildLoginForm(BuildContext context, {required bool isCompact}) {
+    const greenBorder = Color(0xFF074828);
+
     return Form(
       key: formKey,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Usuario / Email Field
+          // Usuario / Email Field com Borda Verde
           SizedBox(
-            width: isCompact ? 160 : 200,
+            width: isCompact ? 160 : 210,
             height: 38,
             child: TextFormField(
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'Usuário / E-mail',
-                hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                 filled: true,
-                fillColor: const Color(0xFF064727),
+                fillColor: const Color(0xFFF8FAFC),
                 prefixIcon: const Icon(Icons.person_outline,
-                    color: Colors.white70, size: 17),
+                    color: greenBorder, size: 18),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFF0F6E3E)),
+                  borderSide: const BorderSide(color: greenBorder, width: 1.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFF0F6E3E)),
+                  borderSide: const BorderSide(color: greenBorder, width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Colors.white70),
+                  borderSide: const BorderSide(color: Color(0xFF15803D), width: 2),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 10),
 
-          // Senha Field
+          // Senha Field com Borda Verde e Maior (Largura ampliada)
           SizedBox(
-            width: isCompact ? 150 : 180,
+            width: isCompact ? 170 : 230,
             height: 38,
             child: TextFormField(
               controller: passwordController,
               obscureText: obscurePassword,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.w600),
               onFieldSubmitted: (_) => onLogin(),
               decoration: InputDecoration(
                 hintText: 'Senha',
-                hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                 filled: true,
-                fillColor: const Color(0xFF064727),
+                fillColor: const Color(0xFFF8FAFC),
                 prefixIcon: const Icon(Icons.lock_outline,
-                    color: Colors.white70, size: 17),
+                    color: greenBorder, size: 18),
                 suffixIcon: IconButton(
                   padding: EdgeInsets.zero,
-                  iconSize: 17,
+                  iconSize: 18,
                   icon: Icon(
                     obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: Colors.white70,
+                    color: const Color(0xFF64748B),
                   ),
                   onPressed: onTogglePassword,
                 ),
@@ -697,15 +709,15 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFF0F6E3E)),
+                  borderSide: const BorderSide(color: greenBorder, width: 1.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Color(0xFF0F6E3E)),
+                  borderSide: const BorderSide(color: greenBorder, width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(color: Colors.white70),
+                  borderSide: const BorderSide(color: Color(0xFF15803D), width: 2),
                 ),
               ),
             ),
@@ -721,7 +733,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                 backgroundColor: GridColors.primary,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -762,11 +774,11 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                 child: const Text(
                   'Esqueceu a senha?',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF334155),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     decoration: TextDecoration.underline,
-                    decorationColor: Colors.white70,
+                    decorationColor: Color(0xFF64748B),
                   ),
                 ),
               ),
@@ -780,11 +792,11 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                 child: const Text(
                   'Solicitar acesso',
                   style: TextStyle(
-                    color: Color(0xFFA5D6A7),
+                    color: Color(0xFF074828),
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     decoration: TextDecoration.underline,
-                    decorationColor: Color(0xFFA5D6A7),
+                    decorationColor: Color(0xFF074828),
                   ),
                 ),
               ),
@@ -797,7 +809,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// System Modules Showcase (Cards e Seções Exatas da Imagem 2)
+// System Modules Showcase (Banner de Preço em 1º com Borda Destacada, Cards Compactos)
 // ---------------------------------------------------------------------------
 class _SystemModulesShowcase extends StatelessWidget {
   @override
@@ -805,37 +817,37 @@ class _SystemModulesShowcase extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Seção 1: Já vem no sistema
+        // 1. Box de Módulos Contratados e Pacote Completo no Topo com Borda de Destaque
+        _PricingBanner(),
+
+        const SizedBox(height: 10),
+
+        // 2. Seção: Já vem no sistema
         const Text(
           'Já vem no sistema',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         _buildModuleGrid(_includedModules, isIncluded: true),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
-        // Banner de Preço e Demanda sob Medida
-        _PricingBanner(),
-
-        const SizedBox(height: 20),
-
-        // Seção 2: Módulos que podem ser contratados
+        // 3. Seção: Módulos que podem ser contratados
         const Text(
           'Módulos que podem ser contratados',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         _buildModuleGrid(_optionalModules, isIncluded: false),
       ],
     );
@@ -848,15 +860,16 @@ class _SystemModulesShowcase extends StatelessWidget {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          itemCount: list.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisExtent: 118,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 6,
+            childAspectRatio: crossAxisCount == 3 ? 3.3 : 2.7,
           ),
-          itemCount: list.length,
-          itemBuilder: (context, i) =>
-              _ModuleCard(module: list[i], isIncluded: isIncluded),
+          itemBuilder: (context, i) {
+            return _ModuleCard(module: list[i], isIncluded: isIncluded);
+          },
         );
       },
     );
@@ -866,12 +879,13 @@ class _SystemModulesShowcase extends StatelessWidget {
     _LoginModule(
       title: 'Chat com o escritório',
       description: 'Conversas por setor com histórico para cliente e equipe.',
-      icon: Icons.chat_bubble_outline,
+      icon: Icons.chat_outlined,
       badge: 'Incluso',
     ),
     _LoginModule(
       title: 'Abertura de chamados',
-      description: 'Solicitações do cliente por setor e acompanhamento interno.',
+      description:
+          'Solicitações do cliente por setor e acompanhamento interno.',
       icon: Icons.support_agent_outlined,
       badge: 'Incluso',
     ),
@@ -884,18 +898,20 @@ class _SystemModulesShowcase extends StatelessWidget {
     _LoginModule(
       title: 'Upload de extratos',
       description: 'Cliente envia extrato bancário direto pelo portal/app.',
-      icon: Icons.upload_file_outlined,
+      icon: Icons.file_upload_outlined,
       badge: 'Incluso',
     ),
     _LoginModule(
       title: 'GED e documentos',
-      description: 'Organização de arquivos, anexos e documentos do cliente.',
-      icon: Icons.snippet_folder_outlined,
+      description:
+          'Organização de arquivos, anexos e documentos do cliente.',
+      icon: Icons.folder_open_outlined,
       badge: 'Incluso',
     ),
     _LoginModule(
       title: 'Calendário financeiro',
-      description: 'Agenda de vencimentos, guias, tarefas e compromissos.',
+      description:
+          'Agenda de vencimentos, guias, tarefas e compromissos.',
       icon: Icons.calendar_month_outlined,
       badge: 'Incluso',
     ),
@@ -996,7 +1012,7 @@ class _ModuleCard extends StatelessWidget {
         isIncluded ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -1022,15 +1038,15 @@ class _ModuleCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(module.icon, color: badgeColor, size: 18),
+                child: Icon(module.icon, color: badgeColor, size: 15),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1041,7 +1057,7 @@ class _ModuleCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF1E293B),
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -1050,7 +1066,7 @@ class _ModuleCard extends StatelessWidget {
                       module.badge,
                       style: TextStyle(
                         color: badgeColor,
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1059,15 +1075,15 @@ class _ModuleCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             module.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF64748B),
-              fontSize: 11,
-              height: 1.22,
+              fontSize: 10,
+              height: 1.15,
             ),
           ),
         ],
@@ -1080,14 +1096,18 @@ class _PricingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFD97706),
+          width: 2,
+        ),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
+            color: Colors.black26,
+            blurRadius: 6,
             offset: Offset(0, 2),
           ),
         ],
@@ -1098,17 +1118,24 @@ class _PricingBanner extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildPriceOption(
-                  icon: Icons.store_outlined,
+                child: _buildPriceBox(
+                  icon: Icons.storefront_outlined,
+                  iconColor: GridColors.primary,
                   title: 'Módulo contratado',
                   value: 'R\$ 99,90',
                   detail: 'por módulo',
                 ),
               ),
-              const SizedBox(width: 16),
+              Container(
+                width: 1,
+                height: 32,
+                color: const Color(0xFFE2E8F0),
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+              ),
               Expanded(
-                child: _buildPriceOption(
+                child: _buildPriceBox(
                   icon: Icons.all_inclusive_outlined,
+                  iconColor: GridColors.primary,
                   title: 'Pacote completo',
                   value: 'R\$ 199,90',
                   detail: 'quantos módulos quiser usar',
@@ -1116,13 +1143,14 @@ class _PricingBanner extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(height: 18, color: Color(0xFFEEEEEE)),
+          const SizedBox(height: 4),
           const Text(
             'Se nenhuma opção atender sua demanda, fazemos um orçamento para criar a solução aqui mesmo dentro do nosso ambiente.',
             style: TextStyle(
-              color: Color(0xFF475569),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+              height: 1.15,
             ),
           ),
         ],
@@ -1130,8 +1158,9 @@ class _PricingBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceOption({
+  Widget _buildPriceBox({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String value,
     required String detail,
@@ -1139,15 +1168,15 @@ class _PricingBanner extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 36,
-          height: 36,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: const Color(0xFFFFEBEE),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, color: GridColors.primary, size: 20),
+          child: Icon(icon, color: iconColor, size: 16),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1158,7 +1187,7 @@ class _PricingBanner extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF1E293B),
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1170,7 +1199,7 @@ class _PricingBanner extends StatelessWidget {
                     value,
                     style: const TextStyle(
                       color: GridColors.primary,
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -1182,7 +1211,7 @@ class _PricingBanner extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF64748B),
-                        fontSize: 11,
+                        fontSize: 10.5,
                       ),
                     ),
                   ),
@@ -1197,7 +1226,7 @@ class _PricingBanner extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Flash News Lateral (Estilo Editorial Idêntico à Imagem 3)
+// Flash News Lateral (Estilo Editorial com Suporte a Imagens do Banco de Dados)
 // ---------------------------------------------------------------------------
 class _FlashNewsSidebar extends StatelessWidget {
   final bool loading;
@@ -1224,9 +1253,10 @@ class _FlashNewsSidebar extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.max,
         children: [
           // Header FLASH NEWS
           Row(
@@ -1261,9 +1291,9 @@ class _FlashNewsSidebar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
           if (loading)
             const Padding(
@@ -1291,7 +1321,7 @@ class _FlashNewsSidebar extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: noticias.length > 5 ? 5 : noticias.length,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                  const Divider(height: 14, color: Color(0xFFF1F5F9)),
               itemBuilder: (context, i) {
                 final n = noticias[i];
                 return _FlashNewsItem(
@@ -1301,9 +1331,9 @@ class _FlashNewsSidebar extends StatelessWidget {
               },
             ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Botao PlayStore no rodape da lateral
           const _PlayStoreButton(),
@@ -1334,16 +1364,16 @@ class _FlashNewsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = news['titulo']?.toString() ?? 'Comunicado importante';
+    final title = news['titulo']?.toString() ?? news['tituloResu']?.toString() ?? 'Comunicado importante';
     final dateStr = _formatDate(news['dtNoticia'] ?? news['dtImport']);
-    final imageUrl = news['imagem']?.toString() ?? news['urlImagem']?.toString();
+    final rawFoto = news['foto'] ?? news['imagem'] ?? news['urlImagem'] ?? news['fotoUrl'];
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       hoverColor: const Color(0xFFF8FAFC),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1358,47 +1388,73 @@ class _FlashNewsItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF0F172A),
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      height: 1.25,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     dateStr,
                     style: const TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
             // Thumbnail Image on Right
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               child: Container(
-                width: 62,
-                height: 62,
+                width: 54,
+                height: 54,
                 color: const Color(0xFFE2E8F0),
-                child: imageUrl != null && imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
-                        width: 62,
-                        height: 62,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildFallbackThumbnail(),
-                      )
-                    : _buildFallbackThumbnail(),
+                child: _buildNewsThumbnail(rawFoto),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildNewsThumbnail(dynamic rawFoto) {
+    if (rawFoto == null) return _buildFallbackThumbnail();
+    final str = rawFoto.toString().trim();
+    if (str.isEmpty || str == 'null') return _buildFallbackThumbnail();
+
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+      return Image.network(
+        str,
+        width: 54,
+        height: 54,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackThumbnail(),
+      );
+    }
+
+    if (str.startsWith('data:image')) {
+      try {
+        final commaIdx = str.indexOf(',');
+        final base64Str = commaIdx != -1 ? str.substring(commaIdx + 1) : str;
+        return Image.memory(
+          base64Decode(base64Str),
+          width: 54,
+          height: 54,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildFallbackThumbnail(),
+        );
+      } catch (_) {
+        return _buildFallbackThumbnail();
+      }
+    }
+
+    return _buildFallbackThumbnail();
   }
 
   Widget _buildFallbackThumbnail() {
@@ -1408,7 +1464,7 @@ class _FlashNewsItem extends StatelessWidget {
         child: Icon(
           Icons.article_outlined,
           color: Color(0xFF94A3B8),
-          size: 26,
+          size: 22,
         ),
       ),
     );
