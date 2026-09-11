@@ -51,6 +51,7 @@ echo ============================================
 echo.
 echo  [1] Subir backend + Abraco Contabilidade (Chrome)
 echo  [2] Reiniciar backend + Abraco (matar e subir)
+echo  [S] Subir SOMENTE backend (matar anterior e subir)
 echo  [3] Rodar testes Selenium
 echo  [4] Rodar testes Flutter HTTP
 echo  [5] Rodar todos os testes
@@ -84,6 +85,10 @@ if /i "%OP%"=="1" (
 )
 if /i "%OP%"=="2" (
     call :START_APP 1
+    goto END_MENU
+)
+if /i "%OP%"=="S" (
+    call :START_ONLY_BACKEND
     goto END_MENU
 )
 if /i "%OP%"=="3" (
@@ -213,6 +218,13 @@ if not exist "%SELENIUM_DIR%\run_selenium_tests.ps1" (
     echo [ERRO] Harness Selenium nao encontrado: %SELENIUM_DIR%
     exit /b 1
 )
+exit /b 0
+
+:PREPARE_BACKEND_ONLY_REPO
+call :CHOOSE_AND_UPDATE_REPO "Backend AppAcademia" "%BACKEND_REPO_DIR%"
+if errorlevel 1 exit /b 1
+call :RESOLVE_BACKEND_DIR
+if errorlevel 1 exit /b 1
 exit /b 0
 
 :PREPARE_START_APP_REPOS
@@ -465,6 +477,74 @@ echo.
 echo Backend: http://localhost:%BACKEND_PORT%
 echo Backend BlueStacks: %ANDROID_BACKEND_URL%
 echo Flutter: abrira no Chrome apos compilar
+exit /b 0
+
+:START_ONLY_BACKEND
+call :CHECK_PATHS
+if errorlevel 1 (
+    echo [ERRO] CHECK_PATHS falhou - veja acima qual pasta nao existe.
+    pause
+    exit /b 1
+)
+call :PREPARE_BACKEND_ONLY_REPO
+if errorlevel 1 (
+    echo [ERRO] Preparacao do repositorio backend falhou - veja acima.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Matando backend anterior na porta %BACKEND_PORT%...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$procIds = Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($procId in $procIds) { if ($procId -and $procId -ne 0) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $procId + ' encerrado') } }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'java|cmd') -and ($_.CommandLine -like '*AppAcademia*' -or $_.CommandLine -like '*boletobancos*') -and ($_.CommandLine -like '*server.port=%BACKEND_PORT%*' -or $_.CommandLine -like '*AppAcademia.jar*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
+timeout /t 2 /nobreak >nul
+
+echo.
+echo [DIAG] JAVA_HOME = %JAVA_HOME%
+echo [DIAG] Java:
+java -version
+echo [DIAG] Dir: %BACKEND_DIR%
+
+echo.
+echo [1/2] Compilando backend...
+cd /d "%BACKEND_DIR%"
+echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
+rmdir /s /q "target\generated-sources" 2>nul
+rmdir /s /q "target\classes" 2>nul
+call mvnw.cmd clean package -DskipTests
+if errorlevel 1 (
+    echo.
+    echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
+    pause
+    exit /b 1
+)
+echo Backend compilado com sucesso.
+call :RESOLVE_BACKEND_JAR
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+
+echo.
+echo [2/2] Iniciando backend na porta %BACKEND_PORT%...
+echo ATENCAO: o Spring Boot leva ~45 segundos para subir.
+echo Acompanhe o progresso na janela "AppAcademia-Backend" que vai abrir.
+echo Aguarde a mensagem: Started AppAcademiaApplication
+echo.
+
+start "AppAcademia-Backend" cmd /k "cd /d ""%BACKEND_DIR%"" && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar %BACKEND_JAR% --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
+
+echo.
+echo Aguardando backend ficar pronto (pode levar ate 2 minutos)...
+call :WAIT_BACKEND
+if errorlevel 1 (
+    echo [ERRO] Backend nao respondeu em tempo. Verifique a porta 9001.
+    exit /b 1
+)
+
+echo.
+echo Backend iniciado com sucesso: http://localhost:%BACKEND_PORT%
+echo Backend BlueStacks: %ANDROID_BACKEND_URL%
 exit /b 0
 
 :SET_FLUTTER_PROJECT
