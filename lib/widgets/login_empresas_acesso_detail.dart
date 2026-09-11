@@ -67,7 +67,7 @@ class _LoginEmpresasAcessoDetailState extends State<LoginEmpresasAcessoDetail> {
 
   Future<void> _carregar() async {
     final loginId = widget.loginId;
-    if (loginId == null || loginId <= 0 || widget.loginTemParceiro) {
+    if (loginId == null || loginId <= 0) {
       _acessos = [];
       _empresas = [];
       return;
@@ -132,11 +132,6 @@ class _LoginEmpresasAcessoDetailState extends State<LoginEmpresasAcessoDetail> {
         }
         if (widget.loginId == null || widget.loginId! <= 0) {
           return _emptyMessage('Salve o login antes de solicitar empresas.');
-        }
-        if (widget.loginTemParceiro) {
-          return _emptyMessage(
-            'Login com parceiro vinculado nao usa acesso multi-empresa.',
-          );
         }
 
         return ListView(

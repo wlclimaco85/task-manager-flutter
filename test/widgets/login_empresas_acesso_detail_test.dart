@@ -74,7 +74,7 @@ void main() {
     expect(chamadasDeCarga, 2);
   });
 
-  testWidgets('login com parceiro nao libera solicitacao multiempresa',
+  testWidgets('login com parceiro tambem acessa e solicita empresas multiempresa',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -82,6 +82,19 @@ void main() {
           body: LoginEmpresasAcessoDetail(
             loginId: 42,
             loginTemParceiro: true,
+            carregarAcessos: (loginId) async => [
+              const EmpresaAcesso(
+                loginId: 42,
+                empresaId: 1,
+                empresaNome: 'Empresa Principal',
+                status: 'APROVADO',
+                ativa: true,
+              ),
+            ],
+            carregarEmpresas: (loginId) async => [
+              {'value': 1, 'label': 'Empresa Principal'},
+              {'value': 2, 'label': 'Empresa Filial'},
+            ],
           ),
         ),
       ),
@@ -89,10 +102,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Login com parceiro vinculado nao usa acesso multi-empresa.'),
-      findsOneWidget,
-    );
-    expect(find.text('Solicitar acesso a outra empresa'), findsNothing);
+    expect(find.text('Empresas com acesso'), findsOneWidget);
+    expect(find.text('Empresa Principal'), findsOneWidget);
+    expect(find.text('Solicitar acesso a outra empresa'), findsOneWidget);
   });
 }
