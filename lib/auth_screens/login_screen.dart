@@ -638,13 +638,25 @@ class _TopHorizontalLoginBar extends StatelessWidget {
           // SVG assets/images/logo.svg) usava, sem eu ter verificado antes,
           // o logo generico do template original ("Rabbil") em vez do logo
           // real da Abraco Contabilidade -- volta pro JPG certo
-          // (logo_contabilidade.jpg), com FilterQuality.high explicito pra
-          // nao perder nitidez ao aumentar o tamanho (era 38x38, agora
-          // 52x52 -- pedido do usuario, tinha espaco sobrando no header).
+          // (logo_contabilidade.jpg).
+          //
+          // Ainda ficava desfocada: `filterQuality` so afeta o filtro de
+          // escala do Skia/CanvasKit, mas nao muda a RESOLUCAO em que a
+          // imagem e decodificada -- decodificar o JPG inteiro (3375x3375)
+          // e deixar o renderer (ou o navegador, no renderer HTML) reduzir
+          // pra ~50px em tempo real produz um resultado ruim/quadriculado
+          // em muitos casos. `cacheWidth`/`cacheHeight` forcam o Flutter a
+          // decodificar direto num bitmap pequeno e nitido (confirmado
+          // testando localmente: reduzir a imagem original com resample de
+          // qualidade pra 104x104 fica perfeitamente nitida -- a fonte nao
+          // e' o problema). 160px cobre ate' devicePixelRatio 3 num
+          // container de 52 logicos, com folga.
           child: Image.asset(
             AssetsUtils.logoJPG,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
+            cacheWidth: 160,
+            cacheHeight: 160,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.business,
               color: Color(0xFF074828),
