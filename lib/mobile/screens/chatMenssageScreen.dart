@@ -13,9 +13,11 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/chat_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/anexo_preview_dialog.dart';
+import '../../../widgets/chat/chat_message_payload.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/chat_transfer_dialog.dart';
 import '../../../widgets/chat/chat_add_participant_dialog.dart';
@@ -198,6 +200,23 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _uploadAndSendFile() async {
+    // Bug de producao: usuario reportou "nao esta dando certo fazer upload"
+    // sem nenhum erro visivel nem log -- este metodo so mostrava SnackBar,
+    // nunca chamava AppLogger (mesma classe de bug ja corrigida no download
+    // do GED, ver bottom_navbar_screen.dart._baixarArquivo). Alem disso, o
+    // envio so' checava _channel == null, nao _wsConnected -- se o usuario
+    // tentar anexar arquivo logo ao abrir um chat NOVO, antes do handshake
+    // do WebSocket terminar (que e' quando o chat recebe seu chatId real,
+    // ver _adoptRealChatIdIfNeeded), o upload pode ser enviado com
+    // chatId='0' (placeholder), que o backend rejeita.
+    if (!_wsConnected) {
+      AppLogger.i.warn(
+        'Upload de chat cancelado: WebSocket ainda nao conectado (chatId=$_effectiveChatId).',
+      );
+      _showSnack('Conexao do chat ainda nao esta pronta. Tente novamente.',
+          error: true);
+      return;
+    }
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
@@ -249,6 +268,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
       if (response.statusCode != 200) {
+        AppLogger.i.error(
+          'Falha no upload de chat (chatId=$_effectiveChatId, arquivo=${file.name}): '
+          'HTTP ${response.statusCode} — $responseBody',
+        );
         _showSnack('Falha no upload (${response.statusCode})', error: true);
         return;
       }
@@ -261,26 +284,37 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           (jsonResponse['fileUrl'] ?? jsonResponse['data']?['fileUrl'])
               ?.toString();
       if (fileId == null) {
+        AppLogger.i.error(
+          'Upload de chat concluido sem fileId (chatId=$_effectiveChatId, resposta=$responseBody)',
+        );
         _showSnack('Upload concluido, mas o arquivo voltou sem identificador',
             error: true);
         return;
       }
 
-      _channel!.sink.add(json.encode({
-        'sender': _loggedUserName,
-        'senderName': _loggedUserName,
-        'senderEmail': _loggedUserEmail,
-        'content': 'Arquivo: ${file.name}',
-        'sector': widget.sector,
-        'type': 'file',
-        'fileName': file.name,
-        'fileId': fileId,
-        'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
-        'timestamp': DateTime.now().toIso8601String(),
-        'chatId': _effectiveChatId,
-        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-      }));
-    } catch (e) {
+      _channel!.sink.add(json.encode(buildChatOutgoingPayload(
+        senderName: _loggedUserName,
+        senderEmail: _loggedUserEmail,
+        content: 'Arquivo: ${file.name}',
+        sector: widget.sector,
+        type: 'file',
+        chatId: _effectiveChatId,
+        empresaId: TenantContext.empresaId,
+        parceiroId: TenantContext.parceiroId,
+        aplicativoId: TenantContext.aplicativoId,
+        userId: TenantContext.userId,
+        fileName: file.name,
+        fileId: fileId,
+        fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
+      )));
+      AppLogger.i.info(
+        'Upload de chat concluido: fileId=$fileId, arquivo=${file.name}, chatId=$_effectiveChatId',
+      );
+    } catch (e, st) {
+      AppLogger.i.error(
+        'Erro no upload de chat (chatId=$_effectiveChatId): $e',
+        st,
+      );
       _showSnack('Erro no upload: $e', error: true);
     }
   }
@@ -414,6 +448,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
+    // Bug de producao: usuario reportou "nao esta dando certo... nem
+    // download do arquivo do chat" sem nenhum log -- este metodo tambem so
+    // mostrava SnackBar, nunca chamava AppLogger (mesma classe de bug ja
+    // corrigida no download do GED, ver bottom_navbar_screen.dart).
     try {
       final response = await http.get(
         Uri.parse(
@@ -428,12 +466,22 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         final uri = Uri.file(file.path);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          AppLogger.i.warn(
+            'Download de chat: arquivo salvo mas sem app instalado pra abrir '
+            '${file.path} (fileId=$fileId).',
+          );
         }
+        AppLogger.i.info('Download de chat concluido: fileId=$fileId -> ${file.path}');
         _showSnack('Arquivo salvo em: ${file.path}');
       } else {
+        AppLogger.i.error(
+          'Falha no download de chat (fileId=$fileId): HTTP ${response.statusCode} — ${response.body}',
+        );
         _showSnack('Falha ao baixar (${response.statusCode})', error: true);
       }
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.i.error('Erro no download de chat (fileId=$fileId): $e', st);
       _showSnack('Erro ao baixar: $e', error: true);
     }
   }

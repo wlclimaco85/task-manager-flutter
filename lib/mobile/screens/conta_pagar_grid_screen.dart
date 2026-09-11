@@ -12,6 +12,9 @@ import '../../../models/conta_pagar_model.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../screens/baixa_dialog.dart';
 import '../screens/desfazer_baixa_dialog.dart';
+import '../screens/parcelar_conta_dialog.dart';
+import '../screens/recorrencia_conta_dialog.dart';
+import '../screens/renegociacao_conta_dialog.dart';
 
 class ContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -107,6 +110,42 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
               label: 'Anexos',
               isVisible: (obj) => obj.id != null,
               onPressed: (context, object) => _showAnexos(context, object),
+            ),
+            // Pedido do usuario: mobile tem que ter as mesmas opcoes do web
+            // (ver web/screens/conta_pagar_grid_screen.dart) -- Parcelar,
+            // Recorrencia, Renegociar e Clonar so existiam no web/windows.
+            CustomAction<ContaPagar>(
+              icon: Icons.credit_card,
+              label: 'Parcelar',
+              onPressed: (context, object) => showDialog(
+                context: context,
+                builder: (_) => ParcelarContaDialog(conta: object),
+              ),
+              isVisible: (obj) => obj.status == StatusConta.ABERTA,
+            ),
+            CustomAction<ContaPagar>(
+              icon: Icons.repeat,
+              label: 'Recorrência',
+              onPressed: (context, object) => showDialog(
+                context: context,
+                builder: (_) => RecorrenciaContaDialog(conta: object),
+              ),
+              isVisible: (obj) => obj.status == StatusConta.ABERTA,
+            ),
+            CustomAction<ContaPagar>(
+              icon: Icons.swap_horiz,
+              label: 'Renegociar',
+              onPressed: (context, object) => showDialog(
+                context: context,
+                builder: (_) => RenegociacaoContaDialog(conta: object),
+              ),
+              isVisible: (obj) => obj.status == StatusConta.ABERTA,
+            ),
+            CustomAction<ContaPagar>(
+              icon: Icons.copy,
+              label: 'Clonar',
+              onPressed: (context, object) => _clonarLancamento(context, object.id),
+              isVisible: (_) => true,
             ),
           ],
           useUserBannerAppBar: true,
@@ -234,5 +273,43 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
         return BaixaDialog(conta: conta);
       },
     );
+  }
+
+  /// Clona um lançamento — mesma ação já existente no Web (ver
+  /// web/screens/conta_pagar_grid_screen.dart).
+  Future<void> _clonarLancamento(BuildContext context, int? id) async {
+    if (id == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clonar Lançamento'),
+        content: Text('Deseja clonar o lançamento #$id?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clonar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    try {
+      final response = await http.post(
+        Uri.parse(ApiLinks.clonarContaPagar('$id')),
+        headers: TenantContext.headers,
+      );
+      if (!context.mounted) return;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _snack('Lançamento #$id clonado com sucesso!');
+      } else {
+        _snack('Erro ao clonar: ${response.statusCode}', error: true);
+      }
+    } catch (e) {
+      if (mounted) _snack('Erro: $e', error: true);
+    }
   }
 }

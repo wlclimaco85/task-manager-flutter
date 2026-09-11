@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
@@ -21,6 +22,7 @@ import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/agendamento/agendamento_module.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
+import '../../services/ged_download_service.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
@@ -284,25 +286,48 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   /// Baixa o arquivo do GED (mobile) — mesma acao ja existente no Web.
+  ///
+  /// Bug de producao: quando `item['id']` nao dava pra converter pra int,
+  /// a funcao retornava na hora (`if (id == null) return;`) SEM nenhum
+  /// feedback -- nem SnackBar, nem log -- exatamente o "clica e nao
+  /// acontece nada" reportado. E mesmo os catches existentes so mostravam
+  /// SnackBar, sem chamar AppLogger -- entao um erro real de rede/download
+  /// tambem nunca aparecia no Console de Logs local nem no monitoramento
+  /// de producao (AppLogger.error/warn e' o que alimenta o
+  /// SistemaErrorReporter, ver app_logger.dart). Agora todo caminho de
+  /// falha loga E mostra feedback.
   Future<void> _baixarArquivo(
       BuildContext ctx, Map<String, dynamic> item) async {
-    final id = item['id'];
-    if (id == null) return;
-    try {
-      final response = await NetworkCaller().getRequest(
-        ApiLinks.downloadArquivo(id.toString()),
+    final id = int.tryParse('${item['id']}');
+    if (id == null) {
+      AppLogger.i.warn(
+        'Download de GED cancelado: item sem id valido (${item['id']}). item=$item',
       );
-      if (!ctx.mounted) return;
-      if (response.isSuccess) {
+      if (ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(
-          const SnackBar(content: Text('Download iniciado.')),
-        );
-      } else {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar arquivo: ${response.statusCode}')),
+          const SnackBar(
+            content: Text('Não foi possível identificar o arquivo para baixar.'),
+          ),
         );
       }
-    } catch (e) {
+      return;
+    }
+    final nome = (item['fileName'] ?? item['nome'] ?? 'arquivo_$id').toString();
+    try {
+      final caminho = await GedDownloadService().download(id, nome);
+      AppLogger.i.info('GED: arquivo $id ($nome) baixado e compartilhado -> $caminho');
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('Arquivo baixado com sucesso.')),
+      );
+    } on GedDownloadException catch (e, st) {
+      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(content: Text('Erro ao baixar arquivo: ${e.statusCode}')),
+      );
+    } catch (e, st) {
+      AppLogger.i.error('GED: falha ao baixar arquivo $id ($nome): $e', st);
       if (!ctx.mounted) return;
       ScaffoldMessenger.of(ctx)
           .showSnackBar(SnackBar(content: Text('Erro ao baixar arquivo: $e')));
@@ -1480,6 +1505,29 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   );
                 }),
                 const SizedBox(height: 8),
+                // Pedido do usuario: mostrar a versao instalada (mesma que
+                // sobe pro Google Play via fastlane -- versionName+versionCode
+                // do AndroidManifest, lidos em runtime via package_info_plus)
+                // pra facilitar confirmar se o app ja atualizou depois de um
+                // fix, sem precisar ir em Configuracoes do Android.
+                FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    final info = snapshot.data;
+                    if (info == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Versão ${info.version} (build ${info.buildNumber})',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
