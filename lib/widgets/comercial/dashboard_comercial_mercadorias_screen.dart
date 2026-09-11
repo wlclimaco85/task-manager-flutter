@@ -3,10 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/auth_utility.dart';
 import '../../models/dashboard_comercial_mercadorias_model.dart';
 import '../../services/dashboard_comercial_caller.dart';
 import '../../services/empresa_caller.dart';
+import '../../utils/dropdown_helpers.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/tenant_context.dart';
 import '../../utils/utils.dart';
 
 class DashboardComercialMercadoriasScreen extends StatefulWidget {
@@ -32,6 +35,7 @@ class _DashboardComercialMercadoriasScreenState
   DashboardComercialMercadoriasModel _dashboard =
       DashboardComercialMercadoriasModel.empty();
   List<Map<String, dynamic>> _empresas = [];
+  List<Map<String, dynamic>> _parceiros = [];
   int? _empresaId;
   int? _parceiroId;
   String _periodo = '90d';
@@ -49,10 +53,24 @@ class _DashboardComercialMercadoriasScreenState
     });
     try {
       _empresas = await EmpresaCaller.loadEmpresas();
-      _empresaId = pegarEmpresaLogada();
-      _parceiroId = pegarParceiroLogada();
+      _parceiros = await DropdownHelpers.parceiros();
+      _empresaId = pegarEmpresaLogada() ?? TenantContext.empresaId;
+      _parceiroId = pegarParceiroLogada() ?? TenantContext.parceiroId;
       if (_empresaId == null && _empresas.length == 1) {
         _empresaId = _empresas.first['value'] as int?;
+      }
+      final empNome = AuthUtility.userInfo?.login?.empresa?.nome ??
+          AuthUtility.userInfo?.login?.empresa?.razaoSocial ??
+          'Empresa Atual';
+      if (_empresaId != null && !_empresas.any((e) => e['value'] == _empresaId)) {
+        _empresas.insert(0, {'value': _empresaId, 'label': empNome});
+      }
+      final parcNome = AuthUtility.userInfo?.login?.parceiro?.nome ??
+          AuthUtility.userInfo?.login?.parceiro?.razaoSocial ??
+          AuthUtility.userInfo?.login?.nome ??
+          'Parceiro Atual';
+      if (_parceiroId != null && !_parceiros.any((p) => p['value'] == _parceiroId)) {
+        _parceiros.insert(0, {'value': _parceiroId, 'label': parcNome});
       }
       await _loadDashboard();
     } catch (_) {
@@ -218,7 +236,7 @@ class _DashboardComercialMercadoriasScreenState
         children: [
           if (_empresas.isNotEmpty)
             SizedBox(
-              width: wide ? 260 : double.infinity,
+              width: wide ? 240 : double.infinity,
               child: DropdownButtonFormField<int>(
                 value: _empresaId,
                 isExpanded: true,
@@ -232,12 +250,26 @@ class _DashboardComercialMercadoriasScreenState
                           ),
                         ))
                     .toList(),
-                onChanged: _parceiroId == null
-                    ? (value) {
-                        setState(() => _empresaId = value);
-                        _loadDashboard();
-                      }
-                    : null,
+                onChanged: null,
+              ),
+            ),
+          if (_parceiros.isNotEmpty)
+            SizedBox(
+              width: wide ? 240 : double.infinity,
+              child: DropdownButtonFormField<int>(
+                value: _parceiroId,
+                isExpanded: true,
+                decoration: _inputDecoration('Parceiro'),
+                items: _parceiros
+                    .map((p) => DropdownMenuItem<int>(
+                          value: p['value'] as int?,
+                          child: Text(
+                            p['label']?.toString() ?? p['nome']?.toString() ?? '',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: null,
               ),
             ),
           SegmentedButton<String>(

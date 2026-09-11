@@ -3,13 +3,16 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../services/dashboard_financeiro_caller.dart';
-import '../../services/conta_bancaria_caller.dart';
-import '../../services/empresa_caller.dart';
-import '../../utils/utils.dart';
+import '../../models/auth_utility.dart';
 import '../../models/saude_financeira_model.dart';
-import '../../widgets/finance/saude_financeira_section.dart';
+import '../../services/conta_bancaria_caller.dart';
+import '../../services/dashboard_financeiro_caller.dart';
+import '../../services/empresa_caller.dart';
+import '../../utils/dropdown_helpers.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/tenant_context.dart';
+import '../../utils/utils.dart';
+import '../../widgets/finance/saude_financeira_section.dart';
 
 class WindowsDashboardFinanceiroScreen extends StatefulWidget {
   final bool showAppBar;
@@ -33,6 +36,7 @@ class _WindowsDashboardFinanceiroScreenState
   String? _error;
 
   List<Map<String, dynamic>> _empresas = [];
+  List<Map<String, dynamic>> _parceiros = [];
   List<Map<String, dynamic>> _contasBancarias = [];
 
   int? _empresaId;
@@ -78,10 +82,26 @@ class _WindowsDashboardFinanceiroScreenState
 
   Future<void> _loadDropdowns() async {
     _empresas = await EmpresaCaller.loadEmpresas();
+    _parceiros = await DropdownHelpers.parceiros();
     _contasBancarias = await ContaBancariaCaller.loadContas();
-    _empresaId = pegarEmpresaLogada();
-    _parceiroId = pegarParceiroLogada();
-    if (_empresas.length == 1) _empresaId = _empresas.first['value'] as int?;
+    _empresaId = pegarEmpresaLogada() ?? TenantContext.empresaId;
+    _parceiroId = pegarParceiroLogada() ?? TenantContext.parceiroId;
+    if (_empresaId == null && _empresas.length == 1) {
+      _empresaId = _empresas.first['value'] as int?;
+    }
+    final empNome = AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.empresa?.razaoSocial ??
+        'Empresa Atual';
+    if (_empresaId != null && !_empresas.any((e) => e['value'] == _empresaId)) {
+      _empresas.insert(0, {'value': _empresaId, 'label': empNome});
+    }
+    final parcNome = AuthUtility.userInfo?.login?.parceiro?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ??
+        AuthUtility.userInfo?.login?.nome ??
+        'Parceiro Atual';
+    if (_parceiroId != null && !_parceiros.any((p) => p['value'] == _parceiroId)) {
+      _parceiros.insert(0, {'value': _parceiroId, 'label': parcNome});
+    }
     if (!mounted) return;
     setState(() {});
     await _loadDashboard();
@@ -445,8 +465,20 @@ class _WindowsDashboardFinanceiroScreenState
                   value: _empresaId,
                   items: _empresas,
                   hint: 'Empresa',
+                  enabled: false,
                   onChanged: (v) {
                     _empresaId = v;
+                    _loadDashboard();
+                  },
+                ),
+              if (_parceiros.isNotEmpty)
+                _dropdown(
+                  value: _parceiroId,
+                  items: _parceiros,
+                  hint: 'Parceiro',
+                  enabled: false,
+                  onChanged: (v) {
+                    _parceiroId = v;
                     _loadDashboard();
                   },
                 ),
@@ -543,6 +575,7 @@ class _WindowsDashboardFinanceiroScreenState
     required List<Map<String, dynamic>> items,
     required String hint,
     required ValueChanged<int?> onChanged,
+    bool enabled = true,
   }) {
     return SizedBox(
       width: 210,
@@ -554,7 +587,7 @@ class _WindowsDashboardFinanceiroScreenState
           labelStyle: const TextStyle(fontSize: 13, color: GridColors.textMuted),
           isDense: true,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: enabled ? Colors.white : GridColors.filterBackground,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: GridColors.divider),
@@ -572,20 +605,26 @@ class _WindowsDashboardFinanceiroScreenState
         items: [
           DropdownMenuItem<int>(
             value: null,
-            child: Text('Todas',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              hint == 'Conta Bancária'
+                  ? 'Todas'
+                  : (hint == 'Empresa'
+                      ? 'Todas as Empresas'
+                      : (hint == 'Parceiro' ? 'Todos os Parceiros' : 'Todos')),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           ...items.map((e) => DropdownMenuItem<int>(
                 value: e['value'] as int?,
                 child: Text(
-                  e['label']?.toString() ?? '',
+                  e['label']?.toString() ?? e['nome']?.toString() ?? '',
                   style: const TextStyle(fontSize: 13, color: GridColors.textSecondary),
                   overflow: TextOverflow.ellipsis,
                 ),
               )),
         ],
-        onChanged: onChanged,
+        onChanged: enabled ? onChanged : null,
       ),
     );
   }
