@@ -84,7 +84,7 @@ class DropdownHelpers {
   static Future<PaginaDropdown> parceirosBusca({
     String? busca,
     required int pagina,
-    int tamanho = 25,
+    int tamanho = 20,
     String? empresaId,
     String? tipoParceiro,
   }) async {
@@ -117,7 +117,7 @@ class DropdownHelpers {
   static String buildParceirosBuscaQuery({
     String? busca,
     required int pagina,
-    int tamanho = 25,
+    int tamanho = 20,
     String? empresaId,
     String? tipoParceiro,
   }) {
@@ -145,7 +145,7 @@ class DropdownHelpers {
   static Future<PaginaDropdown> empresasBusca({
     String? busca,
     required int pagina,
-    int tamanho = 25,
+    int tamanho = 20,
   }) async {
     final url =
         '${ApiLinks.allEmpresas}${buildEmpresasBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho)}';
@@ -167,7 +167,7 @@ class DropdownHelpers {
   static String buildEmpresasBuscaQuery({
     String? busca,
     required int pagina,
-    int tamanho = 25,
+    int tamanho = 20,
   }) {
     final termo = busca?.trim();
     final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho');

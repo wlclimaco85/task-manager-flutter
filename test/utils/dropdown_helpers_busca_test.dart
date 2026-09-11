@@ -22,7 +22,7 @@ void main() {
     test('inclui pagina e tamanho sempre, sem busca quando termo vazio', () {
       final query =
           DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
-      expect(query, '?pagina=0&tamanho=25');
+      expect(query, '?pagina=0&tamanho=20');
     });
 
     test('inclui busca quando ha termo digitado — nao fica so em memoria', () {
@@ -82,8 +82,8 @@ void main() {
           DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 0);
       final pagina1 =
           DropdownHelpers.buildParceirosBuscaQuery(busca: null, pagina: 1);
-      expect(pagina0, '?pagina=0&tamanho=25');
-      expect(pagina1, '?pagina=1&tamanho=25');
+      expect(pagina0, '?pagina=0&tamanho=20');
+      expect(pagina1, '?pagina=1&tamanho=20');
     });
   });
 
@@ -189,19 +189,19 @@ void main() {
     test('inclui pagina e tamanho sempre, sem nome quando termo vazio', () {
       final query =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
-      expect(query, '?pagina=0&tamanho=25');
+      expect(query, '?pagina=0&tamanho=20');
     });
 
     test('inclui nome quando ha termo digitado — nao fica so em memoria', () {
       final query =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: 'abraco', pagina: 0);
-      expect(query, '?pagina=0&tamanho=25&nome=abraco');
+      expect(query, '?pagina=0&tamanho=20&nome=abraco');
     });
 
     test('ignora termo so com espacos (trim)', () {
       final query =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: '   ', pagina: 0);
-      expect(query, '?pagina=0&tamanho=25');
+      expect(query, '?pagina=0&tamanho=20');
     });
 
     test('escapa caracteres especiais do termo de busca na URL', () {
@@ -255,7 +255,7 @@ void main() {
     test('inclui pagina e tamanho sempre, sem busca quando termo vazio', () {
       final query =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
-      expect(query, '?pagina=0&tamanho=25');
+      expect(query, '?pagina=0&tamanho=20');
     });
 
     test('inclui busca quando ha termo digitado', () {
@@ -275,8 +275,8 @@ void main() {
           DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 0);
       final pagina1 =
           DropdownHelpers.buildEmpresasBuscaQuery(busca: null, pagina: 1);
-      expect(pagina0, '?pagina=0&tamanho=25');
-      expect(pagina1, '?pagina=1&tamanho=25');
+      expect(pagina0, '?pagina=0&tamanho=20');
+      expect(pagina1, '?pagina=1&tamanho=20');
     });
   });
 }
