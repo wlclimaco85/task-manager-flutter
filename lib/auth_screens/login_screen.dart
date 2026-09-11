@@ -410,17 +410,28 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
         child: Column(
           children: [
-            // Top Horizontal Login Bar
-            _TopHorizontalLoginBar(
-              formKey: _formKey,
-              emailController: _emailController,
-              passwordController: _passwordController,
-              obscurePassword: _obscurePassword,
-              loginInProgress: _loginInProgress,
-              onTogglePassword: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              onLogin: _login,
-            ),
+            // Top Horizontal Login Bar -- SOMENTE desktop/web (>= 1000px).
+            //
+            // Pedido do usuario (2026-09-11): "o login apenas do mobile
+            // ficou muito desorganizada copiando a do web mais do mobile
+            // tem que ser diferente o login nao pode ser no header tem
+            // que ser como era os cards". Antes esta barra horizontal
+            // (pensada pra tela larga, com os campos em Row) era exibida
+            // tambem no mobile, deixando o login espremido/desorganizado.
+            // No mobile o login volta a ser um card vertical
+            // (_MobileLoginCard), montado dentro da area de conteudo
+            // abaixo, com a vitrine de modulos continuando logo depois.
+            if (isDesktop)
+              _TopHorizontalLoginBar(
+                formKey: _formKey,
+                emailController: _emailController,
+                passwordController: _passwordController,
+                obscurePassword: _obscurePassword,
+                loginInProgress: _loginInProgress,
+                onTogglePassword: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+                onLogin: _login,
+              ),
 
             // Main Content Area with Green Background
             //
@@ -479,19 +490,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Mobile/janela estreita: mantem scroll vertical normal
                       // (tela mais estreita nao tem o mesmo problema de sobra
                       // de espaco lateral relatado pelo usuario).
+                      //
+                      // Pedido do usuario (2026-09-11): mobile precisa ser
+                      // DIFERENTE do web -- login como card (nao no header),
+                      // com os cards do que tem no app logo abaixo do card
+                      // de login, e SEM o box de Flash News ("o box de
+                      // noticias nao precisa" no mobile).
                       : SingleChildScrollView(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 1400),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _FlashNewsSidebar(
-                                  loading: _loadingNoticias,
-                                  noticias: _noticias,
-                                  onSelectNews: _openNewsDetail,
-                                  stretchToFillHeight: false,
+                                _MobileLoginCard(
+                                  formKey: _formKey,
+                                  emailController: _emailController,
+                                  passwordController: _passwordController,
+                                  obscurePassword: _obscurePassword,
+                                  loginInProgress: _loginInProgress,
+                                  onTogglePassword: () => setState(
+                                      () => _obscurePassword = !_obscurePassword),
+                                  onLogin: _login,
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                                 _SystemModulesShowcase(),
                               ],
                             ),
@@ -860,6 +881,266 @@ class _TopHorizontalLoginBar extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mobile Login Card (card vertical -- login NAO fica no header no mobile)
+// ---------------------------------------------------------------------------
+//
+// Pedido do usuario (2026-09-11): no mobile o login tem que ser "como era",
+// um card, com os cards do que tem no app continuando abaixo do box de
+// login -- diferente do header horizontal usado no desktop/web
+// (_TopHorizontalLoginBar). Reaproveita as mesmas cores/estilo dos campos
+// do header (borda verde, botao "Acessar" vermelho) so' que empilhados em
+// coluna, ocupando a largura toda do card.
+class _MobileLoginCard extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final bool loginInProgress;
+  final VoidCallback onTogglePassword;
+  final VoidCallback onLogin;
+
+  const _MobileLoginCard({
+    required this.formKey,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.loginInProgress,
+    required this.onTogglePassword,
+    required this.onLogin,
+  });
+
+  static const _greenBorder = Color(0xFF074828);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                  ),
+                  padding: const EdgeInsets.all(3),
+                  child: Image.asset(
+                    AssetsUtils.logoJPG,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    cacheWidth: 160,
+                    cacheHeight: 160,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.business,
+                      color: _greenBorder,
+                      size: 26,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'ABRAÇO CONTABILIDADE',
+                        style: TextStyle(
+                          color: _greenBorder,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      Text(
+                        'Portal do Cliente & Gestão',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                hintText: 'Usuário / E-mail',
+                hintStyle:
+                    const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                prefixIcon:
+                    const Icon(Icons.person_outline, color: _greenBorder, size: 19),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: _greenBorder, width: 1.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: _greenBorder, width: 1.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: Color(0xFF15803D), width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: passwordController,
+              obscureText: obscurePassword,
+              style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600),
+              onFieldSubmitted: (_) => onLogin(),
+              decoration: InputDecoration(
+                hintText: 'Senha',
+                hintStyle:
+                    const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                prefixIcon:
+                    const Icon(Icons.lock_outline, color: _greenBorder, size: 19),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF64748B),
+                  ),
+                  onPressed: onTogglePassword,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: _greenBorder, width: 1.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: _greenBorder, width: 1.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: Color(0xFF15803D), width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: loginInProgress ? null : onLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  elevation: 2,
+                ),
+                child: loginInProgress
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Acessar',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const EmailVarificationScreeen()),
+                  ),
+                  child: const Text(
+                    'Esqueceu a senha?',
+                    style: TextStyle(
+                      color: Color(0xFF334155),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const SolicitacaoAcessoScreen()),
+                  ),
+                  child: const Text(
+                    'Solicitar acesso',
+                    style: TextStyle(
+                      color: _greenBorder,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      decoration: TextDecoration.underline,
+                      decorationColor: _greenBorder,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
