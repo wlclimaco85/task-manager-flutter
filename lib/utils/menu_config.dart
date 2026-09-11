@@ -340,6 +340,11 @@ class MenuConfig {
             label: 'DRE Gerencial',
             icon: FontAwesomeIcons.fileInvoiceDollar,
             screenIndex: 107),
+                MenuItem(
+            id: 'cnab_remessa',
+            label: 'Envio EDI (Remessa)',
+            icon: FontAwesomeIcons.fileExport,
+            screenIndex: 187),
         MenuItem(
             id: 'cobranca_automatica',
             label: 'Cobrança Automática',

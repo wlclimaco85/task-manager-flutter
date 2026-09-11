@@ -10,6 +10,7 @@ import '../comunicado_componente_screen.dart'
     show WebComunicadoGridComponentesScreen;
 import 'modulo_cobranca_screen.dart';
 
+import '../../../widgets/finance/cnab_config_screen.dart';
 class WebParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
@@ -280,6 +281,13 @@ class WebParceiroDetailScreen extends StatelessWidget {
                   nomeOrigem: parceiroNome,
                   empresaId: empresaIdInt,
                 )
+              : const Center(child: Text('ID do parceiro não disponível')),
+        ),
+              RelatedGridTab(
+          title: 'Configuração CNAB',
+          icon: Icons.account_balance,
+          customWidget: parceiroId > 0
+              ? CnabConfigScreen(parceiroId: parceiroId)
               : const Center(child: Text('ID do parceiro não disponível')),
         ),
       ],

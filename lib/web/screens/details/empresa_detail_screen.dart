@@ -10,6 +10,7 @@ import '../comunicado_componente_screen.dart'
     show WebComunicadoGridComponentesScreen;
 import 'empresa_modulos_tab.dart';
 
+import '../../../widgets/finance/cnab_config_screen.dart';
 class WebEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
@@ -277,6 +278,13 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
             empresaId: empresaId,
             onModulosChanged: (_) {},
           ),
+        ),
+              RelatedGridTab(
+          title: 'Configuração CNAB',
+          icon: Icons.account_balance,
+          customWidget: empresaId > 0
+              ? CnabConfigScreen(empresaId: empresaId)
+              : const Center(child: Text('ID da empresa não disponível')),
         ),
       ],
     );
