@@ -69,6 +69,18 @@ class _SessoesScreenState extends State<SessoesScreen> {
 
   Future<void> _matarSessao(Map<String, dynamic> sessao) async {
     final loginId = sessao['loginId'];
+    // Achado de code review (2026-09-11): antes fazia `loginId as int` direto
+    // no postRequest, sem validar -- um registro sem loginId (ou tipo
+    // inesperado) lancava TypeError capturado pelo catch generico, mas com
+    // mensagem pouco amigavel ("type 'Null' is not a subtype of type
+    // 'int'"). Valida antes e mostra feedback especifico.
+    if (loginId is! int) {
+      _mostrarSnack('Sessão sem identificador válido, não é possível matar.',
+          erro: true);
+      AppLogger.i.warn(
+          'SessoesScreen: tentativa de matar sessão com loginId inválido: $loginId');
+      return;
+    }
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -90,7 +102,7 @@ class _SessoesScreenState extends State<SessoesScreen> {
 
     try {
       final res =
-          await _caller.postRequest(ApiLinks.matarSessao(loginId as int), {});
+          await _caller.postRequest(ApiLinks.matarSessao(loginId), {});
       if (!mounted) return;
       if (res.isSuccess) {
         _mostrarSnack('Sessão encerrada.', erro: false);

@@ -69,6 +69,22 @@ class _AppSidebarState extends State<AppSidebar> {
       final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
+    // Achado de code review (2026-09-11): 'sessoes' (matar sessao de
+    // usuario) nao esta mapeado em PermissionService._getTelaNomeForMenuItem
+    // -- por isso canViewScreen('sessoes') sempre retorna false e a
+    // visibilidade cairia inteiramente no fallback legado de
+    // _allowedIds (MASTER/anti-lockout = mostra tudo; senao, catalogo
+    // dinamico do backend). O backend ja restringe os 4 endpoints de
+    // /api/sessoes a MASTER (@PreAuthorize isMaster()), mas o Flutter nao
+    // tinha barreira propria -- se o catalogo dinamico algum dia ganhar
+    // uma linha "Sessoes" pra outra role (seed, erro humano no Controle de
+    // Acesso), o item ficaria visivel/clicavel ate' o 403 no clique, sem
+    // feedback preventivo. Guard explicito aqui, no mesmo espirito do
+    // ownerOnly acima.
+    const masterOnly = {'sessoes'};
+    if (masterOnly.contains(item.id)) {
+      return SecurityMatrix.current().isMaster;
+    }
     // Primeiro: verificar permissões dinâmicas do backend via PermissionService
     if (PermissionService().canViewScreen(item.id)) {
       return true;

@@ -170,5 +170,43 @@ void main() {
 
       expect(find.text('Abraco Contabilidade'), findsOneWidget);
     });
+
+    // Achado de code review (2026-09-11): item 'sessoes' (Sistema > Sessões,
+    // usado pra matar sessao de usuario) nao tem telaNome mapeado em
+    // PermissionService -- sem guard proprio, dependeria 100% do backend
+    // (SessaoAdminController ja restringe a MASTER via @PreAuthorize) e do
+    // fallback legado de catalogo dinamico. Guard explicito garante que o
+    // item nunca aparece pra role nao-master no Flutter, mesmo que o
+    // catalogo dinamico venha a liberar por engano.
+    testWidgets(
+        'item "Sessões" NAO aparece pra usuario nao-master mesmo com permissao concedida no catalogo',
+        (tester) async {
+      allowMenuIds(['sessoes']); // tipoLogin APP_ABRACO (nao-master)
+
+      await tester.pumpWidget(buildSidebar());
+      await tester.enterText(find.byType(TextField), 'Sessões');
+      await tester.pumpAndSettle();
+
+      // 0 resultados -- so' o texto digitado no campo de busca (echo do
+      // TextField) aparece, nunca um item de menu "Sessões" de verdade.
+      expect(find.text('Nenhuma tela encontrada'), findsOneWidget);
+    });
+
+    testWidgets('item "Sessões" aparece pra usuario MASTER', (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, tipoLogin: LoginEnum.MASTER),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+      await tester.enterText(find.byType(TextField), 'Sessões');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nenhuma tela encontrada'), findsNothing);
+      // findsWidgets (nao findsOneWidget): o proprio TextField ecoa o texto
+      // digitado, alem do resultado de menu -- aqui so' interessa provar
+      // que o resultado de menu aparece (>= 1), nao a contagem exata.
+      expect(find.text('Sessões'), findsWidgets);
+    });
   });
 }
