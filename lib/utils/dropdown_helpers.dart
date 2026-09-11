@@ -51,6 +51,19 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> parceiros() =>
       load(ApiLinks.allParceiros, displayField: 'nome');
 
+  static Future<List<Map<String, dynamic>>> parceirosMatriz({dynamic empresaId}) async {
+    final list = await (empresaId != null
+        ? parceirosPorEmpresa(empresaId.toString())
+        : parceiros());
+    final matrizes = list.where((p) {
+      final tipo = (p['tipoEstabelecimento'] ?? p['tipo_estabelecimento'] ?? 'MATRIZ')
+          .toString()
+          .toUpperCase();
+      return tipo == 'MATRIZ';
+    }).toList();
+    return matrizes.isNotEmpty ? matrizes : list;
+  }
+
   static Future<List<Map<String, dynamic>>> regimesTributarios() =>
       load(ApiLinks.allRegimetributario, displayField: 'descricao');
 

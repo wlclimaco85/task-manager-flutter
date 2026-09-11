@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -423,46 +424,73 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
 
             // Main Content Area with Green Background
+            //
+            // Pedido do usuario (2026-09-11): a area precisa ocupar a altura
+            // disponivel da tela SEM scroll, com os card-boxes aumentando/
+            // diminuindo conforme a resolucao, e o painel de Flash News
+            // preenchendo ate embaixo (sem sobra de fundo verde vazio).
+            //
+            // Desktop/Web: o conteudo e' montado no seu tamanho "natural"
+            // numa largura de referencia fixa (1400, a mesma que ja era o
+            // maxWidth anterior) com altura livre -- FittedBox entao escala
+            // esse conjunto inteiro (cards, fontes, paineis) pra caber
+            // exatamente na altura/largura disponiveis, sem cortar nem
+            // precisar de scroll. IntrinsicHeight + stretch fazem o painel
+            // de Flash News esticar ate a mesma altura da vitrine de
+            // modulos, em vez de parar curto no meio da tela.
             Expanded(
-              child: SingleChildScrollView(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1400),
-                    child: isDesktop
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left/Center: System Modules (Included, Pricing, Optional)
-                              Expanded(
-                                flex: 7,
-                                child: _SystemModulesShowcase(),
+                  child: isDesktop
+                      ? FittedBox(
+                          fit: BoxFit.contain,
+                          child: SizedBox(
+                            width: 1400,
+                            child: IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Left/Center: System Modules (Included, Pricing, Optional)
+                                  Expanded(
+                                    flex: 7,
+                                    child: _SystemModulesShowcase(),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Right Side: Flash News List (Image 3 style)
+                                  SizedBox(
+                                    width: 360,
+                                    child: _FlashNewsSidebar(
+                                      loading: _loadingNoticias,
+                                      noticias: _noticias,
+                                      onSelectNews: _openNewsDetail,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 16),
-                              // Right Side: Flash News List (Image 3 style)
-                              SizedBox(
-                                width: 360,
-                                child: _FlashNewsSidebar(
+                            ),
+                          ),
+                        )
+                      // Mobile/janela estreita: mantem scroll vertical normal
+                      // (tela mais estreita nao tem o mesmo problema de sobra
+                      // de espaco lateral relatado pelo usuario).
+                      : SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1400),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _FlashNewsSidebar(
                                   loading: _loadingNoticias,
                                   noticias: _noticias,
                                   onSelectNews: _openNewsDetail,
                                 ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _FlashNewsSidebar(
-                                loading: _loadingNoticias,
-                                noticias: _noticias,
-                                onSelectNews: _openNewsDetail,
-                              ),
-                              const SizedBox(height: 24),
-                              _SystemModulesShowcase(),
-                            ],
+                                const SizedBox(height: 24),
+                                _SystemModulesShowcase(),
+                              ],
+                            ),
                           ),
-                  ),
+                        ),
                 ),
               ),
             ),
@@ -600,10 +628,14 @@ class _TopHorizontalLoginBar extends StatelessWidget {
             ],
           ),
           padding: const EdgeInsets.all(2),
-          child: Image.asset(
-            AssetsUtils.logoJPG,
+          // Pedido do usuario (2026-09-11): a logo em JPG (logo_contabilidade.jpg)
+          // ficava desfocada ao ser reduzida pra 38x38 no header. Troca pro
+          // SVG (assets/images/logo.svg, ja usado nas splash screens) --
+          // vetor nao perde nitidez em nenhum tamanho.
+          child: SvgPicture.asset(
+            AssetsUtils.logoSVG,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Icon(
+            placeholderBuilder: (_) => const Icon(
               Icons.business,
               color: Color(0xFF074828),
               size: 24,
@@ -1255,9 +1287,13 @@ class _FlashNewsSidebar extends StatelessWidget {
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      // Pedido do usuario (2026-09-11): antes usava MainAxisSize.min, entao
+      // o painel parava logo depois do botao da Play Store e sobrava fundo
+      // verde vazio embaixo dele quando a vitrine de modulos era mais alta.
+      // Agora estica ate a altura real do painel (dada pelo IntrinsicHeight
+      // no pai) e a lista de noticias ocupa o espaco extra via Expanded.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Header FLASH NEWS
           Row(
@@ -1296,42 +1332,40 @@ class _FlashNewsSidebar extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           const SizedBox(height: 4),
 
-          if (loading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: GridColors.secondary,
-                ),
-              ),
-            )
-          else if (noticias.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text(
-                  'Nenhuma notícia no momento.',
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
-                ),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: noticias.length > 5 ? 5 : noticias.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 8, color: Color(0xFFF1F5F9)),
-              itemBuilder: (context, i) {
-                final n = noticias[i];
-                return _FlashNewsItem(
-                  news: n,
-                  index: i,
-                  onTap: () => onSelectNews(n),
-                );
-              },
-            ),
+          // Ocupa o espaco vertical extra que sobrar (painel agora estica
+          // ate a altura da vitrine de modulos) -- lista rola internamente
+          // se houver mais noticias do que cabe, sem afetar o scroll da
+          // pagina toda.
+          Expanded(
+            child: loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: GridColors.secondary,
+                    ),
+                  )
+                : noticias.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Nenhuma notícia no momento.',
+                          style:
+                              TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: noticias.length > 8 ? 8 : noticias.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 8, color: Color(0xFFF1F5F9)),
+                        itemBuilder: (context, i) {
+                          final n = noticias[i];
+                          return _FlashNewsItem(
+                            news: n,
+                            index: i,
+                            onTap: () => onSelectNews(n),
+                          );
+                        },
+                      ),
+          ),
 
           const SizedBox(height: 6),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),

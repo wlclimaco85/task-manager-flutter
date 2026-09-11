@@ -143,6 +143,16 @@ class _LoginEmpresasAcessoDetailState extends State<LoginEmpresasAcessoDetail> {
                     fontWeight: FontWeight.w700,
                   ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              widget.loginTemParceiro
+                  ? 'Acesso multi-empresa restrito às filiais e matriz do parceiro.'
+                  : 'Acesso multi-empresa disponível para as empresas do sistema.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
             const SizedBox(height: 16),
             if (_acessos.isEmpty)
               const Text('Nenhuma empresa solicitada para este login.'),

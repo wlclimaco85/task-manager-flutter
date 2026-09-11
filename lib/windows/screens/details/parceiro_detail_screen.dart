@@ -104,6 +104,32 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           isInForm: true,
         ),
         const FieldConfigWindows(
+          label: 'Tipo Estabelecimento',
+          fieldName: 'tipoEstabelecimento',
+          icon: Icons.store,
+          fieldType: FieldType.dropdown,
+          dropdownOptions: [
+            {'value': 'MATRIZ', 'label': 'Matriz'},
+            {'value': 'FILIAL', 'label': 'Filial'},
+          ],
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
+        ),
+        FieldConfigWindows(
+          label: 'Matriz',
+          fieldName: 'matriz',
+          displayFieldName: 'matriz.nome',
+          icon: Icons.account_balance,
+          fieldType: FieldType.dropdown,
+          dropdownFutureBuilder: () => DropdownHelpers.parceirosMatriz(
+            empresaId: empresaIdInt,
+          ),
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'nome',
+          isInForm: true,
+        ),
+        const FieldConfigWindows(
           label: 'Módulo Serviços',
           fieldName: 'moduloServicos',
           icon: Icons.miscellaneous_services,
@@ -127,6 +153,12 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
         ),
       ],
       relatedTabs: [
+        RelatedGridTab(
+          title: 'Filiais',
+          icon: Icons.account_tree,
+          telaNome: 'parceiro',
+          extraParams: {'matrizId': id, 'empresaId': empresaId},
+        ),
         RelatedGridTab(
           title: 'Logins',
           icon: Icons.person,

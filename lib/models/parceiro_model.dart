@@ -10,6 +10,7 @@ import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../models/regime_tributario_model.dart';
+import '../utils/dropdown_helpers.dart';
 
 // FieldConfig do MOBILE (GenericMobileGridScreen / GenericGridCard)
 import '../../../customization/generic_grid_card.dart' as mobile_grid
@@ -114,6 +115,8 @@ class Parceiro {
   int? diaVencimentoMensalidade;
 
   String? observacao;
+  String? tipoEstabelecimento;
+  Parceiro? matriz;
 
   Parceiro({
     this.id,
@@ -133,6 +136,8 @@ class Parceiro {
     this.valorMensal,
     this.diaVencimentoMensalidade,
     this.observacao,
+    this.tipoEstabelecimento,
+    this.matriz,
   });
 
   Parceiro.fromJson(Map<String, dynamic> json) {
@@ -158,6 +163,12 @@ class Parceiro {
     diaVencimentoMensalidade =
         (json['diaVencimentoMensalidade'] as num?)?.toInt();
     observacao = json['observacao'];
+    tipoEstabelecimento = json['tipoEstabelecimento']?.toString() ??
+        json['tipo_estabelecimento']?.toString() ??
+        'MATRIZ';
+    matriz = json['matriz'] != null && json['matriz'] is Map<String, dynamic>
+        ? Parceiro.fromJson(json['matriz'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -180,6 +191,8 @@ class Parceiro {
     data['valorMensal'] = valorMensal;
     data['diaVencimentoMensalidade'] = diaVencimentoMensalidade;
     data['observacao'] = observacao;
+    data['tipoEstabelecimento'] = tipoEstabelecimento ?? 'MATRIZ';
+    if (matriz != null) data['matriz'] = matriz!.toJson();
     return data;
   }
 
@@ -418,6 +431,35 @@ class Parceiro {
       dropdownFutureBuilder: () async => await loadCategorias(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
+      isRequired: false,
+      isVisibleByDefault: false,
+    ),
+    const FieldConfigWindows(
+      label: "Tipo Estabelecimento",
+      fieldName: "tipoEstabelecimento",
+      icon: Icons.store,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: [
+        {'value': 'MATRIZ', 'label': 'Matriz'},
+        {'value': 'FILIAL', 'label': 'Filial'},
+      ],
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+    ),
+    FieldConfigWindows(
+      label: "Matriz",
+      fieldName: "matriz",
+      displayFieldName: "matriz.nome",
+      icon: Icons.account_balance,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () => DropdownHelpers.parceirosMatriz(),
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'nome',
       isRequired: false,
       isVisibleByDefault: false,
     ),
