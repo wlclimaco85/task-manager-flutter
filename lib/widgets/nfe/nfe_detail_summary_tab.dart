@@ -149,7 +149,7 @@ class NfeDetailSummaryTab extends StatelessWidget {
                 _buildRow('Razão Social', nfe.tomador.razaoSocial),
                 if (nfe.tomador.endereco != null) ...[
                   _buildRow('Endereço', nfe.tomador.endereco ?? ''),
-                  _buildRow('Cidade', nfe.tomador.cidade ?? ''),
+                  _buildRow('Cidade', nfe.tomador.municipio),
                   _buildRow('UF', nfe.tomador.uf ?? ''),
                 ],
               ],
