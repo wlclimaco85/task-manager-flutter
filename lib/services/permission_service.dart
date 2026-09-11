@@ -92,6 +92,7 @@ class PermissionService {
     'tabela_preco': 'TabelaPreco',
     'devolucoes': 'Devolucoes',
     'dashboard_comercial': 'DashboardComercial',
+    'certificado_digital': 'CertificadoDigital',
 
     // Fiscal / NFC-e
     'pdv_nfce': 'PdvNfce',
@@ -101,6 +102,7 @@ class PermissionService {
     'nfse': 'Nfse',
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
+    'agendamento_nfe': 'AgendamentoNFeRecorrente',
 
     // Financeiro
     'calendario': 'Calendario',
@@ -136,10 +138,12 @@ class PermissionService {
     'setores': 'Setores',
     'solicitar_ajuste': 'SolicitarAjuste',
     'dashboard_dp': 'DashboardDP',
+    'relatorio_dp_rh': 'RelatorioDpRh',
 
     // Suporte / Comunicação
     'chat': 'Chat',
     'comunicados': 'Comunicado',
+    'alertas': 'Comunicado',
     'chamados': 'Chamados',
     'diretorios': 'Diretorios',
     'ged': 'Arquivos',
@@ -166,6 +170,7 @@ class PermissionService {
     // Configurações
     'logins': 'Logins',
     'solicitacoes_acesso': 'SolicitacoesAcesso',
+    'permissoes_multi_empresa': 'PermissoesMultiEmpresa',
     'obrigacoes_fiscais': 'ObrigacoesFiscais',
     'regime_tributario': 'Regime',
     'roles': 'Permissoes', // Backend pode usar 'Permissoes' ou 'Roles'

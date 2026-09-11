@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
@@ -128,6 +130,45 @@ void main() {
       expect(find.text('Contas a Pagar'), findsOneWidget);
       expect(find.text('Fiscal / NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
+    });
+
+    // Bug de producao (2026-09-11): subtitulo abaixo do email mostrava o
+    // nome da empresa/tenant mesmo quando o login tinha parceiro vinculado
+    // (regra ja documentada em bugs.md/CLAUDE.md, regrediu nesta ordem).
+    testWidgets(
+        'exibe nome do PARCEIRO no subtitulo quando o login tem parceiro vinculado',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 1,
+          tipoLogin: LoginEnum.APP_ABRACO,
+          empresa: Empresa(id: 10, nome: 'Abraco Contabilidade'),
+          parceiro: Parceiro(id: 99, nome: 'Cliente XYZ Ltda'),
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(find.text('Cliente XYZ Ltda'), findsOneWidget);
+      expect(find.text('Abraco Contabilidade'), findsNothing);
+    });
+
+    testWidgets(
+        'exibe nome da EMPRESA no subtitulo quando o login nao tem parceiro (usuario interno/master)',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 1,
+          tipoLogin: LoginEnum.APP_ABRACO,
+          empresa: Empresa(id: 10, nome: 'Abraco Contabilidade'),
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar());
+
+      expect(find.text('Abraco Contabilidade'), findsOneWidget);
     });
   });
 }

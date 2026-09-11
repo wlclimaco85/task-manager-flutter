@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
+import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
 
 Widget _wrap(Widget w) => MaterialApp(home: Scaffold(appBar: w as PreferredSizeWidget?));
@@ -116,6 +117,28 @@ void main() {
       ));
       await tester.pump();
       expect(find.text('w@test.com'), findsOneWidget);
+    });
+
+    // Bug de producao (2026-09-11): subtitulo mostrava o nome da empresa/tenant
+    // mesmo quando o login tinha parceiro vinculado (regra ja documentada em
+    // bugs.md/CLAUDE.md, regrediu nesta ordem empresa->parceiro).
+    testWidgets('exibe nome do PARCEIRO quando login tem parceiro vinculado',
+        (tester) async {
+      AuthUtility.userInfo = LoginModel(
+        token: 'tok',
+        login: Login(
+          nome: 'Washington',
+          email: 'w@test.com',
+          empresa: Empresa(id: 1, nome: 'Escritório ABC'),
+          parceiro: Parceiro(id: 99, nome: 'Cliente XYZ Ltda'),
+        ),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(appBar: UserBannerAppBar(screenTitle: 'Teste')),
+      ));
+      await tester.pump();
+      expect(find.text('Cliente XYZ Ltda'), findsOneWidget);
+      expect(find.text('Escritório ABC'), findsNothing);
     });
   });
 }

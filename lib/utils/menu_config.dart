@@ -181,6 +181,11 @@ class MenuConfig {
             label: 'Dashboard Comercial',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
+        MenuItem(
+            id: 'certificado_digital',
+            label: 'Certificado Digital',
+            icon: FontAwesomeIcons.certificate,
+            screenIndex: 184),
       ],
     ),
     MenuGroup(
@@ -392,6 +397,11 @@ class MenuConfig {
             label: 'Dashboard DP',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 143),
+        MenuItem(
+            id: 'relatorio_dp_rh',
+            label: 'Relatórios DP/RH',
+            icon: FontAwesomeIcons.filePdf,
+            screenIndex: 144),
       ],
     ),
     MenuGroup(
@@ -409,6 +419,11 @@ class MenuConfig {
             label: 'Comunicados',
             icon: FontAwesomeIcons.newspaper,
             screenIndex: 0),
+        MenuItem(
+            id: 'alertas',
+            label: 'Alertas',
+            icon: FontAwesomeIcons.bell,
+            screenIndex: 41),
         MenuItem(
             id: 'chamados',
             label: 'Chamados',
@@ -530,6 +545,11 @@ class MenuConfig {
             label: 'Solicitações de Acesso',
             icon: FontAwesomeIcons.userCheck,
             screenIndex: 149),
+        MenuItem(
+            id: 'permissoes_multi_empresa',
+            label: 'Permissões Multi-Empresa',
+            icon: FontAwesomeIcons.buildingUser,
+            screenIndex: 185),
         MenuItem(
             id: 'obrigacoes_fiscais',
             label: 'Obrigações Fiscais',
