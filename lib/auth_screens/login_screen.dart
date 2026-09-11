@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -620,11 +619,11 @@ class _TopHorizontalLoginBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 38,
-          height: 38,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
             boxShadow: const [
               BoxShadow(
@@ -634,22 +633,26 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(2),
-          // Pedido do usuario (2026-09-11): a logo em JPG (logo_contabilidade.jpg)
-          // ficava desfocada ao ser reduzida pra 38x38 no header. Troca pro
-          // SVG (assets/images/logo.svg, ja usado nas splash screens) --
-          // vetor nao perde nitidez em nenhum tamanho.
-          child: SvgPicture.asset(
-            AssetsUtils.logoSVG,
+          padding: const EdgeInsets.all(3),
+          // Pedido do usuario (2026-09-11): a correcao anterior (troca pro
+          // SVG assets/images/logo.svg) usava, sem eu ter verificado antes,
+          // o logo generico do template original ("Rabbil") em vez do logo
+          // real da Abraco Contabilidade -- volta pro JPG certo
+          // (logo_contabilidade.jpg), com FilterQuality.high explicito pra
+          // nao perder nitidez ao aumentar o tamanho (era 38x38, agora
+          // 52x52 -- pedido do usuario, tinha espaco sobrando no header).
+          child: Image.asset(
+            AssetsUtils.logoJPG,
             fit: BoxFit.contain,
-            placeholderBuilder: (_) => const Icon(
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, __, ___) => const Icon(
               Icons.business,
               color: Color(0xFF074828),
-              size: 24,
+              size: 28,
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -658,7 +661,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               'ABRAÇO CONTABILIDADE',
               style: TextStyle(
                 color: Color(0xFF074828),
-                fontSize: 14,
+                fontSize: 18,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.3,
               ),
@@ -667,7 +670,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               'Portal do Cliente & Gestão',
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 10.5,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
