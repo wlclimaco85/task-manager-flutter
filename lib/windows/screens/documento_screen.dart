@@ -15,7 +15,6 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/boleto_viewer_widget.dart';
-import '../../../widgets/user_banners.dart';
 import './baixa_dialog.dart';
 import './baixa_dialog_receber.dart';
 
@@ -244,9 +243,17 @@ String _dateKey(Map<String, dynamic> item) {
   // Verifica primeiro se alguma chave de data é um array [ano,mes,dia]
   // (Jackson sem write-dates-as-timestamps=false serializa LocalDate assim)
   for (final key in const [
-    'dataVencimento', 'data_vencimento', 'dataPrevista', 'data_prevista',
-    'dataCompetencia', 'data_competencia', 'data', 'vencimento',
-    'dtVencimento', 'dt_vencimento', 'dueDate',
+    'dataVencimento',
+    'data_vencimento',
+    'dataPrevista',
+    'data_prevista',
+    'dataCompetencia',
+    'data_competencia',
+    'data',
+    'vencimento',
+    'dtVencimento',
+    'dt_vencimento',
+    'dueDate',
   ]) {
     final raw = item[key];
     if (raw == null) continue;
@@ -255,7 +262,8 @@ String _dateKey(Map<String, dynamic> item) {
       final m = raw[1];
       final d = raw[2];
       if (y is int && m is int && d is int) {
-        final isoStr = '${y.toString()}-${m.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}';
+        final isoStr =
+            '${y.toString()}-${m.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}';
         final parsed = DateTime.tryParse(isoStr);
         if (parsed != null) return DateFormat('yyyy-MM-dd').format(parsed);
       }
@@ -445,12 +453,124 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   void initState() {
     super.initState();
     _loadMonthMarkers(_currentMonth);
+    _loadYearSummariesAndMarkers(_currentMonth.year);
   }
 
   // ── API helpers ──────────────────────────────────────────────────────────
 
   String _dayParam(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
   String _monthParam(DateTime d) => DateFormat('yyyy-MM').format(d);
+
+  Future<void> _loadYearSummariesAndMarkers(int year) async {
+    final first = DateTime(year, 1, 1);
+    final last = DateTime(year, 12, 31);
+
+    _FinancialItems items;
+    try {
+      items = await _fetchContasCombined(
+        dataInicio: _dayParam(first),
+        dataFim: _dayParam(last),
+      );
+    } catch (_) {
+      return;
+    }
+    final pagarList = items.pagar;
+    final receberList = items.receber;
+
+    final newMarkers = Map<String, _DayMarkers>.from(_dayMarkers);
+
+    void addMarker(String key,
+        {bool pagar = false,
+        bool receber = false,
+        bool pago = false,
+        bool recebido = false,
+        bool tributo = false}) {
+      final old = newMarkers[key] ?? const _DayMarkers();
+      newMarkers[key] = _DayMarkers(
+        hasPagar: old.hasPagar || pagar,
+        hasReceber: old.hasReceber || receber,
+        hasPago: old.hasPago || pago,
+        hasRecebido: old.hasRecebido || recebido,
+        hasTributo: old.hasTributo || tributo,
+      );
+    }
+
+    final monthlyPagar = <int, double>{};
+    final monthlyPago = <int, double>{};
+    final monthlyReceber = <int, double>{};
+    final monthlyRecebido = <int, double>{};
+
+    for (final item in pagarList) {
+      final dateStr = _dateKey(item);
+      if (dateStr.isEmpty) continue;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        pagar: !isBaixa,
+        pago: isBaixa,
+        tributo: tributo,
+      );
+
+      final dt = _parseFinancialDate(dateStr);
+      if (dt != null && dt.year == year) {
+        final m = dt.month;
+        final v = _moneyValue(item, 'valor');
+        if (isBaixa) {
+          monthlyPago[m] = (monthlyPago[m] ?? 0) + v;
+        } else if (!_isCancelada(item)) {
+          monthlyPagar[m] = (monthlyPagar[m] ?? 0) + v;
+        }
+      }
+    }
+
+    for (final item in receberList) {
+      final dateStr = _dateKey(item);
+      if (dateStr.isEmpty) continue;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        receber: !isBaixa,
+        recebido: isBaixa,
+        tributo: tributo,
+      );
+
+      final dt = _parseFinancialDate(dateStr);
+      if (dt != null && dt.year == year) {
+        final m = dt.month;
+        final v = _moneyValue(item, 'valor');
+        if (isBaixa) {
+          monthlyRecebido[m] = (monthlyRecebido[m] ?? 0) + v;
+        } else if (!_isCancelada(item)) {
+          monthlyReceber[m] = (monthlyReceber[m] ?? 0) + v;
+        }
+      }
+    }
+
+    final newSummaries = Map<int, _MonthSummary>.from(_monthSummaries);
+    for (int m = 1; m <= 12; m++) {
+      final tp = monthlyPagar[m] ?? 0;
+      final tpg = monthlyPago[m] ?? 0;
+      final tr = monthlyReceber[m] ?? 0;
+      final trb = monthlyRecebido[m] ?? 0;
+      newSummaries[m] = _MonthSummary(
+        totalPagar: tp,
+        totalPago: tpg,
+        totalReceber: tr,
+        totalRecebido: trb,
+        saldoPagar: tpg - tp,
+        saldoReceber: trb - tr,
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _dayMarkers = newMarkers;
+      _monthSummaries.addAll(newSummaries);
+    });
+  }
+
 
   String _buildUrl(String base, Map<String, String> params) {
     final uri = Uri.parse(base);
@@ -601,7 +721,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // e mostra a linha digitavel (copiar) + baixar o PDF. Funciona em
   // Web/Windows (Dialog) e Mobile (bottom sheet), ver showBoletoViewerDialog/
   // showBoletoViewerBottomSheet em boleto_viewer_widget.dart.
-  Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
+  Future<void> _abrirBoletoViewer(Map<String, dynamic> item,
+      {required bool isPagar}) async {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
     final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
@@ -615,7 +736,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       if (anexos.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Nenhum anexo encontrado para este lançamento.')),
+            const SnackBar(
+                content: Text('Nenhum anexo encontrado para este lançamento.')),
           );
         }
         return;
@@ -807,10 +929,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: const SimpleAppBar(
-        title: 'Calendário Financeiro',
-        icon: Icons.calendar_month_rounded,
-      ),
       body: Column(
         children: [
           _buildToolbar(),
@@ -1403,9 +1521,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final parceiro = item['parceiro'] is Map
         ? (item['parceiro'] as Map).cast<String, dynamic>()
         : null;
-    final parceiroNome = parceiro?['nome'] as String? ??
-        item['parceiroNome'] as String? ??
-        '';
+    final parceiroNome =
+        parceiro?['nome'] as String? ?? item['parceiroNome'] as String? ?? '';
 
     final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
 
@@ -1837,7 +1954,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             padding: EdgeInsets.zero,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: 1.55,
+              childAspectRatio: 1.35,
               crossAxisSpacing: 2,
               mainAxisSpacing: 2,
             ),
@@ -1847,55 +1964,118 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               if (day < 1 || day > daysInMonth) {
                 return const SizedBox.shrink();
               }
+              final cellDate = DateTime(year, month, day);
+              final dateStr = _dayParam(cellDate);
+              final markers = _dayMarkers[dateStr] ?? const _DayMarkers();
               final isToday = isCurrentMonth && today.day == day;
-              final dateStr =
-                  '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-              final markers = _dayMarkers[dateStr];
-              final hasPagar = markers?.hasPagar == true;
-              final hasPago = markers?.hasPago == true;
-              final hasReceber = markers?.hasReceber == true;
-              final hasRecebido = markers?.hasRecebido == true;
 
-              return Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isToday
-                      ? GridColors.error.withValues(alpha: 0.12)
-                      : GridColors.card,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: isToday
-                        ? GridColors.error.withValues(alpha: 0.55)
-                        : GridColors.borderSubtle.withValues(alpha: 0.55),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$day',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: isToday ? FontWeight.w800 : FontWeight.w700,
-                        color: isToday
-                            ? GridColors.error
-                            : GridColors.textSecondary,
-                      ),
+              Color cellBg = GridColors.card;
+              Color borderCol = GridColors.borderSubtle.withValues(alpha: 0.55);
+              Color txtCol = GridColors.textMuted;
+
+              if (isToday) {
+                cellBg = GridColors.primary.withValues(alpha: 0.12);
+                borderCol = GridColors.primary.withValues(alpha: 0.55);
+                txtCol = GridColors.primary;
+              } else if (markers.hasPagar) {
+                cellBg = const Color(0xFFFFEBEE);
+                borderCol = const Color(0xFFFFCDD2);
+                txtCol = GridColors.primary;
+              } else if (markers.hasReceber) {
+                cellBg = const Color(0xFFE8F5E9);
+                borderCol = const Color(0xFFC8E6C9);
+                txtCol = GridColors.secondary;
+              } else if (markers.hasPago ||
+                  markers.hasRecebido ||
+                  markers.hasTributo) {
+                cellBg = const Color(0xFFF1F5F9);
+                borderCol = const Color(0xFFE2E8F0);
+                txtCol = const Color(0xFF475569);
+              }
+
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedDay = cellDate;
+                    _currentMonth = DateTime(year, month);
+                    _viewMode = 'day';
+                  });
+                  _loadMonthMarkers(DateTime(year, month));
+                  _loadDayData(cellDate);
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: cellBg,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: borderCol,
+                      width: isToday ? 1.5 : 0.8,
                     ),
-                    if (hasPagar || hasPago || hasReceber || hasRecebido)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (hasPagar) _dot(GridColors.error),
-                          if (hasPago)
-                            _dot(GridColors.error.withValues(alpha: 0.45)),
-                          if (hasReceber) _dot(GridColors.success),
-                          if (hasRecebido)
-                            _dot(GridColors.success.withValues(alpha: 0.45)),
-                        ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$day',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: (isToday ||
+                                  markers.hasPagar ||
+                                  markers.hasReceber)
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          color: txtCol,
+                        ),
                       ),
-                  ],
+                      if (markers.hasPagar ||
+                          markers.hasReceber ||
+                          markers.hasPago ||
+                          markers.hasRecebido)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (markers.hasPagar)
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 0.5),
+                                  decoration: const BoxDecoration(
+                                    color: GridColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              if (markers.hasReceber)
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 0.5),
+                                  decoration: const BoxDecoration(
+                                    color: GridColors.secondary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              if (markers.hasPago && !markers.hasPagar)
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 0.5),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.grey,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -2294,9 +2474,8 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
     final parceiro = item['parceiro'] is Map
         ? (item['parceiro'] as Map).cast<String, dynamic>()
         : null;
-    final parceiroNome = parceiro?['nome'] as String? ??
-        item['parceiroNome'] as String? ??
-        '';
+    final parceiroNome =
+        parceiro?['nome'] as String? ?? item['parceiroNome'] as String? ?? '';
     final vencStr = _dateKey(item);
     final dia = vencStr.length >= 10 ? vencStr.substring(8, 10) : '';
     final mes = vencStr.length >= 7 ? vencStr.substring(5, 7) : '';

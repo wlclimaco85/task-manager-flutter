@@ -1,3 +1,4 @@
+import '../../widgets/app_loading_overlay.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -38,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _loginInProgress = false;
   bool _obscurePassword = true;
+  String _loginStepMessage = 'Autenticando credenciais...';
   bool _loadingNoticias = true;
   List<Map<String, dynamic>> _noticias = [];
 
@@ -167,7 +169,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
       return;
     }
-    setState(() => _loginInProgress = true);
+    setState(() {
+      _loginInProgress = true;
+      _loginStepMessage = 'Autenticando credenciais...';
+    });
 
     NetworkResponse resp;
     try {
@@ -197,9 +202,16 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return;
       }
+      if (mounted) {
+        setState(() => _loginStepMessage = 'Carregando módulos e permissões...');
+      }
       await AuthUtility.setUserInfo(model);
       ModuloAccess.reset();
       await ModuloAccess.load();
+
+      if (mounted) {
+        setState(() => _loginStepMessage = 'Conectando serviços e notificações...');
+      }
 
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
@@ -393,7 +405,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: darkGreenBg,
-      body: SafeArea(
+      body: Stack(
+        children: [
+          SafeArea(
         child: Column(
           children: [
             // Top Horizontal Login Bar
@@ -479,6 +493,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
+          if (_loginInProgress)
+            Positioned.fill(
+              child: AppLoadingOverlay(
+                title: 'Iniciando Sessão',
+                message: _loginStepMessage,
+                isFullScreen: false,
+              ),
+            ),
+        ],
       ),
     );
   }
