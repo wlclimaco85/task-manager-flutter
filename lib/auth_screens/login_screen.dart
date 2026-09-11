@@ -425,7 +425,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // Main Content Area with Green Background
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1400),
@@ -438,7 +438,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 flex: 7,
                                 child: _SystemModulesShowcase(),
                               ),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 16),
                               // Right Side: Flash News List (Image 3 style)
                               SizedBox(
                                 width: 360,
@@ -509,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Top Horizontal Login Bar (Header Branco, Bordas Verdes, Input Senha Maior)
+// Top Horizontal Login Bar (Header Branco, Bordas Verdes, Email e Senha Maiores)
 // ---------------------------------------------------------------------------
 class _TopHorizontalLoginBar extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -533,17 +533,17 @@ class _TopHorizontalLoginBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isCompact = screenWidth < 880;
+    final isCompact = screenWidth < 980;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 5,
+            blurRadius: 4,
             offset: Offset(0, 2),
           ),
         ],
@@ -581,11 +581,11 @@ class _TopHorizontalLoginBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
             boxShadow: const [
               BoxShadow(
@@ -595,18 +595,18 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(2),
           child: Image.asset(
             AssetsUtils.logoJPG,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.business,
               color: Color(0xFF074828),
-              size: 26,
+              size: 24,
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -615,17 +615,16 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               'ABRAÇO CONTABILIDADE',
               style: TextStyle(
                 color: Color(0xFF074828),
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.3,
               ),
             ),
-            SizedBox(height: 1),
             Text(
               'Portal do Cliente & Gestão',
               style: TextStyle(
                 color: Color(0xFF64748B),
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -644,10 +643,10 @@ class _TopHorizontalLoginBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Usuario / Email Field com Borda Verde
+          // Usuario / Email Field com Borda Verde e Largura Bem Maior
           SizedBox(
-            width: isCompact ? 160 : 210,
-            height: 38,
+            width: isCompact ? 180 : 310,
+            height: 36,
             child: TextFormField(
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
@@ -658,7 +657,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 prefixIcon: const Icon(Icons.person_outline,
-                    color: greenBorder, size: 18),
+                    color: greenBorder, size: 17),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                 border: OutlineInputBorder(
@@ -676,12 +675,12 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
-          // Senha Field com Borda Verde e Maior (Largura ampliada)
+          // Senha Field com Borda Verde e Largura Bem Maior
           SizedBox(
-            width: isCompact ? 170 : 230,
-            height: 38,
+            width: isCompact ? 160 : 240,
+            height: 36,
             child: TextFormField(
               controller: passwordController,
               obscureText: obscurePassword,
@@ -693,10 +692,10 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 prefixIcon: const Icon(Icons.lock_outline,
-                    color: greenBorder, size: 18),
+                    color: greenBorder, size: 17),
                 suffixIcon: IconButton(
                   padding: EdgeInsets.zero,
-                  iconSize: 18,
+                  iconSize: 17,
                   icon: Icon(
                     obscurePassword
                         ? Icons.visibility_off_outlined
@@ -722,18 +721,18 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // Botao Acessar (Vermelho em Destaque)
           SizedBox(
-            height: 38,
+            height: 36,
             child: ElevatedButton(
               onPressed: loginInProgress ? null : onLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.primary,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -741,8 +740,8 @@ class _TopHorizontalLoginBar extends StatelessWidget {
               ),
               child: loginInProgress
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: 15,
+                      height: 15,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
@@ -751,14 +750,14 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                   : const Text(
                       'Acessar',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.3,
                       ),
                     ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
           // Links Auxiliares
           Column(
@@ -775,14 +774,14 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                   'Esqueceu a senha?',
                   style: TextStyle(
                     color: Color(0xFF334155),
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     decoration: TextDecoration.underline,
                     decorationColor: Color(0xFF64748B),
                   ),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               InkWell(
                 onTap: () => Navigator.push(
                   context,
@@ -793,7 +792,7 @@ class _TopHorizontalLoginBar extends StatelessWidget {
                   'Solicitar acesso',
                   style: TextStyle(
                     color: Color(0xFF074828),
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     decoration: TextDecoration.underline,
                     decorationColor: Color(0xFF074828),
@@ -809,45 +808,46 @@ class _TopHorizontalLoginBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// System Modules Showcase (Banner de Preço em 1º com Borda Destacada, Cards Compactos)
+// System Modules Showcase (Banner de Preço em 1º com Borda Destacada, Cards 4 Colunas Fit)
 // ---------------------------------------------------------------------------
 class _SystemModulesShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // 1. Box de Módulos Contratados e Pacote Completo no Topo com Borda de Destaque
         _PricingBanner(),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
 
         // 2. Seção: Já vem no sistema
         const Text(
           'Já vem no sistema',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 15,
+            fontSize: 13.5,
             fontWeight: FontWeight.w900,
-            letterSpacing: 0.3,
+            letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         _buildModuleGrid(_includedModules, isIncluded: true),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
 
         // 3. Seção: Módulos que podem ser contratados
         const Text(
           'Módulos que podem ser contratados',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 15,
+            fontSize: 13.5,
             fontWeight: FontWeight.w900,
-            letterSpacing: 0.3,
+            letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         _buildModuleGrid(_optionalModules, isIncluded: false),
       ],
     );
@@ -856,16 +856,16 @@ class _SystemModulesShowcase extends StatelessWidget {
   Widget _buildModuleGrid(List<_LoginModule> list, {required bool isIncluded}) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 720 ? 3 : 2;
+        final crossAxisCount = constraints.maxWidth >= 950 ? 4 : (constraints.maxWidth >= 650 ? 3 : 2);
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: list.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 6,
-            childAspectRatio: crossAxisCount == 3 ? 3.3 : 2.7,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 5,
+            childAspectRatio: crossAxisCount == 4 ? 3.0 : (crossAxisCount == 3 ? 3.4 : 2.8),
           ),
           itemBuilder: (context, i) {
             return _ModuleCard(module: list[i], isIncluded: isIncluded);
@@ -1012,61 +1012,62 @@ class _ModuleCard extends StatelessWidget {
         isIncluded ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isIncluded
               ? const Color(0xFFE0E0E0)
               : const Color(0xFFFFCDD2),
-          width: isIncluded ? 1 : 1.5,
+          width: isIncluded ? 1 : 1.3,
         ),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 3,
+            blurRadius: 2,
             offset: Offset(0, 1),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 26,
-                height: 26,
+                width: 22,
+                height: 22,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                child: Icon(module.icon, color: badgeColor, size: 15),
+                child: Icon(module.icon, color: badgeColor, size: 13),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      module.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF1E293B),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w900,
+                    Expanded(
+                      child: Text(
+                        module.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(width: 2),
                     Text(
                       module.badge,
                       style: TextStyle(
                         color: badgeColor,
-                        fontSize: 9.5,
+                        fontSize: 8.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1075,15 +1076,15 @@ class _ModuleCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             module.description,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF64748B),
-              fontSize: 10,
-              height: 1.15,
+              fontSize: 9.5,
+              height: 1.1,
             ),
           ),
         ],
@@ -1096,10 +1097,10 @@ class _PricingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: const Color(0xFFD97706),
           width: 2,
@@ -1107,7 +1108,7 @@ class _PricingBanner extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: Colors.black26,
-            blurRadius: 6,
+            blurRadius: 5,
             offset: Offset(0, 2),
           ),
         ],
@@ -1128,9 +1129,9 @@ class _PricingBanner extends StatelessWidget {
               ),
               Container(
                 width: 1,
-                height: 32,
+                height: 26,
                 color: const Color(0xFFE2E8F0),
-                margin: const EdgeInsets.symmetric(horizontal: 10),
+                margin: const EdgeInsets.symmetric(horizontal: 8),
               ),
               Expanded(
                 child: _buildPriceBox(
@@ -1143,14 +1144,15 @@ class _PricingBanner extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           const Text(
             'Se nenhuma opção atender sua demanda, fazemos um orçamento para criar a solução aqui mesmo dentro do nosso ambiente.',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: Color(0xFF64748B),
-              fontSize: 10.5,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
-              height: 1.15,
             ),
           ),
         ],
@@ -1168,18 +1170,18 @@ class _PricingBanner extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 28,
-          height: 28,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
             color: const Color(0xFFFFEBEE),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
           ),
-          child: Icon(icon, color: iconColor, size: 16),
+          child: Icon(icon, color: iconColor, size: 14),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 title,
@@ -1187,35 +1189,30 @@ class _PricingBanner extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF1E293B),
-                  fontSize: 11.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: GridColors.primary,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w900,
-                    ),
+              const SizedBox(width: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: GridColors.primary,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 9.5,
                   ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      detail,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 10.5,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -1244,60 +1241,60 @@ class _FlashNewsSidebar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: const [
           BoxShadow(
             color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 3),
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Header FLASH NEWS
           Row(
             children: [
-              const Icon(Icons.bolt, color: Color(0xFFD97706), size: 18),
+              const Icon(Icons.bolt, color: Color(0xFFD97706), size: 17),
               const SizedBox(width: 4),
               const Text(
                 'FLASH NEWS',
                 style: TextStyle(
                   color: Color(0xFF475569),
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1.1,
                 ),
               ),
               const Spacer(),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: const Text(
                   'NOTÍCIAS',
                   style: TextStyle(
                     color: Color(0xFF334155),
-                    fontSize: 9,
+                    fontSize: 8.5,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
           if (loading)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
+              padding: EdgeInsets.symmetric(vertical: 30),
               child: Center(
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
@@ -1307,11 +1304,11 @@ class _FlashNewsSidebar extends StatelessWidget {
             )
           else if (noticias.isEmpty)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
+              padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: Text(
                   'Nenhuma notícia no momento.',
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
                 ),
               ),
             )
@@ -1321,19 +1318,20 @@ class _FlashNewsSidebar extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: noticias.length > 5 ? 5 : noticias.length,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 14, color: Color(0xFFF1F5F9)),
+                  const Divider(height: 8, color: Color(0xFFF1F5F9)),
               itemBuilder: (context, i) {
                 final n = noticias[i];
                 return _FlashNewsItem(
                   news: n,
+                  index: i,
                   onTap: () => onSelectNews(n),
                 );
               },
             ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
           // Botao PlayStore no rodape da lateral
           const _PlayStoreButton(),
@@ -1345,10 +1343,12 @@ class _FlashNewsSidebar extends StatelessWidget {
 
 class _FlashNewsItem extends StatelessWidget {
   final Map<String, dynamic> news;
+  final int index;
   final VoidCallback onTap;
 
   const _FlashNewsItem({
     required this.news,
+    required this.index,
     required this.onTap,
   });
 
@@ -1362,18 +1362,28 @@ class _FlashNewsItem extends StatelessWidget {
     }
   }
 
+  static const List<String> _editorialThumbs = [
+    'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=150&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&auto=format&fit=crop&q=60',
+  ];
+
   @override
   Widget build(BuildContext context) {
     final title = news['titulo']?.toString() ?? news['tituloResu']?.toString() ?? 'Comunicado importante';
     final dateStr = _formatDate(news['dtNoticia'] ?? news['dtImport']);
     final rawFoto = news['foto'] ?? news['imagem'] ?? news['urlImagem'] ?? news['fotoUrl'];
+    final id = news['id'];
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(4),
       hoverColor: const Color(0xFFF8FAFC),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1388,17 +1398,17 @@ class _FlashNewsItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF0F172A),
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     dateStr,
                     style: const TextStyle(
                       color: Color(0xFF64748B),
-                      fontSize: 10.5,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -1409,12 +1419,12 @@ class _FlashNewsItem extends StatelessWidget {
 
             // Thumbnail Image on Right
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(4),
               child: Container(
-                width: 54,
-                height: 54,
+                width: 48,
+                height: 48,
                 color: const Color(0xFFE2E8F0),
-                child: _buildNewsThumbnail(rawFoto),
+                child: _buildNewsThumbnail(rawFoto, id, index),
               ),
             ),
           ],
@@ -1423,48 +1433,65 @@ class _FlashNewsItem extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsThumbnail(dynamic rawFoto) {
-    if (rawFoto == null) return _buildFallbackThumbnail();
-    final str = rawFoto.toString().trim();
-    if (str.isEmpty || str == 'null') return _buildFallbackThumbnail();
-
-    if (str.startsWith('http://') || str.startsWith('https://')) {
-      return Image.network(
-        str,
-        width: 54,
-        height: 54,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildFallbackThumbnail(),
-      );
-    }
-
-    if (str.startsWith('data:image')) {
-      try {
-        final commaIdx = str.indexOf(',');
-        final base64Str = commaIdx != -1 ? str.substring(commaIdx + 1) : str;
-        return Image.memory(
-          base64Decode(base64Str),
-          width: 54,
-          height: 54,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildFallbackThumbnail(),
-        );
-      } catch (_) {
-        return _buildFallbackThumbnail();
+  Widget _buildNewsThumbnail(dynamic rawFoto, dynamic id, int idx) {
+    if (rawFoto != null) {
+      final str = rawFoto.toString().trim();
+      if (str.isNotEmpty && str != 'null') {
+        if (str.startsWith('http://') || str.startsWith('https://')) {
+          return Image.network(
+            str,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildFallbackThumbnail(idx),
+          );
+        }
+        if (str.startsWith('data:image')) {
+          try {
+            final commaIdx = str.indexOf(',');
+            final base64Str = commaIdx != -1 ? str.substring(commaIdx + 1) : str;
+            return Image.memory(
+              base64Decode(base64Str),
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildFallbackThumbnail(idx),
+            );
+          } catch (_) {
+            return _buildFallbackThumbnail(idx);
+          }
+        }
       }
     }
 
-    return _buildFallbackThumbnail();
+    if (id != null && id.toString().isNotEmpty && id.toString() != '0') {
+      return Image.network(
+        '${ApiLinks.baseProdUrl}/api/public/noticias/foto/$id',
+        width: 48,
+        height: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackThumbnail(idx),
+      );
+    }
+
+    return _buildFallbackThumbnail(idx);
   }
 
-  Widget _buildFallbackThumbnail() {
-    return Container(
-      color: const Color(0xFFE2E8F0),
-      child: const Center(
-        child: Icon(
-          Icons.article_outlined,
-          color: Color(0xFF94A3B8),
-          size: 22,
+  Widget _buildFallbackThumbnail(int idx) {
+    final fallbackUrl = _editorialThumbs[idx % _editorialThumbs.length];
+    return Image.network(
+      fallbackUrl,
+      width: 48,
+      height: 48,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        color: const Color(0xFF074828).withValues(alpha: 0.15),
+        child: const Center(
+          child: Icon(
+            Icons.article_outlined,
+            color: Color(0xFF074828),
+            size: 20,
+          ),
         ),
       ),
     );
