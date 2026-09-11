@@ -47,7 +47,7 @@ class _CnabConfigScreenState extends State<CnabConfigScreen> {
         return;
       }
       
-      final res = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/conta-bancaria?$query');
+      final res = await NetworkCaller().getRequest('${ApiLinks.contasBancarias}?$query');
       if (res.isSuccess && res.body != null) {
         final data = res.body!['data'] ?? res.body!['content'] ?? res.body;
         if (data is List) {

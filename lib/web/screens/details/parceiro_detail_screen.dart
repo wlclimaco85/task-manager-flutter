@@ -9,6 +9,7 @@ import '../login_grid_screen.dart' show WebLoginGridScreen;
 import '../comunicado_componente_screen.dart'
     show WebComunicadoGridComponentesScreen;
 import 'modulo_cobranca_screen.dart';
+import 'filiais_parceiro_screen.dart';
 
 import '../../../widgets/finance/cnab_config_screen.dart';
 class WebParceiroDetailScreen extends StatelessWidget {
@@ -23,7 +24,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
     final id = item['id']?.toString() ?? '';
     final parceiroId = item['id'] as int? ?? 0;
     final parceiroNome = item['nome']?.toString() ??
-        item['razaoSocial']?.toString() ??
+        item['razao_social']?.toString() ??
         'Parceiro';
     final empresaId =
         (item['empresa'] is Map ? item['empresa']['id'] : item['empresa'])
@@ -32,7 +33,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
     final empresaIdInt = int.tryParse(empresaId);
     final empresaNome = item['empresa'] is Map
         ? (item['empresa']['nome']?.toString() ??
-            item['empresa']['razaoSocial']?.toString() ??
+            item['empresa']['razao_social']?.toString() ??
             '')
         : '';
 
@@ -55,15 +56,15 @@ class WebParceiroDetailScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           label: 'Razão Social',
-          fieldName: 'razaoSocial',
+          fieldName: 'razao_social',
           icon: Icons.apartment,
           fieldType: FieldType.text,
           isInForm: true,
         ),
         FieldConfigWindows(
           label: 'Regime Tributário',
-          fieldName: 'regime',
-          displayFieldName: 'regime.descricao',
+          fieldName: 'regime_tributario',
+          displayFieldName: 'regime_tributario.descricao',
           icon: Icons.business_center,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () => DropdownHelpers.regimesTributarios(),
@@ -93,7 +94,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
         ),
         FieldConfigWindows(
           label: 'Tipo Parceiros',
-          fieldName: 'tiposParceiro',
+          fieldName: 'tipo_parceiros',
           icon: Icons.people_outline,
           fieldType: FieldType.multiselect,
           dropdownFutureBuilder: () => DropdownHelpers.tiposParceiro(),
@@ -103,7 +104,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           label: 'Tipo Estabelecimento',
-          fieldName: 'tipoEstabelecimento',
+          fieldName: 'tipo_estabelecimento',
           icon: Icons.store,
           fieldType: FieldType.dropdown,
           dropdownOptions: [
@@ -116,8 +117,8 @@ class WebParceiroDetailScreen extends StatelessWidget {
         ),
         FieldConfigWindows(
           label: 'Matriz',
-          fieldName: 'matriz',
-          displayFieldName: 'matriz.nome',
+          fieldName: 'parceiro',
+          displayFieldName: 'parceiro.nome',
           icon: Icons.account_balance,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () => DropdownHelpers.parceirosMatriz(
@@ -129,33 +130,24 @@ class WebParceiroDetailScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           label: 'Módulo Serviços',
-          fieldName: 'moduloServicos',
+          fieldName: 'modulo_servicos',
           icon: Icons.miscellaneous_services,
           fieldType: FieldType.text,
           isInForm: true,
           enabled: false,
-        ),
-        const FieldConfigWindows(
-          label: 'Modulo Servicos 2',
-          fieldName: 'modulo_servicos',
-          isInForm: false,
-          isInGrid: false,
-          isVisibleByDefault: false,
-        ),
-        const FieldConfigWindows(
-          label: 'Modulo Servicos 3',
-          fieldName: 'modulosServico',
-          isInForm: false,
-          isInGrid: false,
-          isVisibleByDefault: false,
         ),
       ],
       relatedTabs: [
         RelatedGridTab(
           title: 'Filiais',
           icon: Icons.account_tree,
-          telaNome: 'parceiro',
-          extraParams: {'matrizId': id, 'empresaId': empresaId},
+          customWidget: parceiroId > 0
+              ? FiliaisParceiroScreen(
+                  matrizId: parceiroId,
+                  empresaId: empresaIdInt,
+                  hasPermission: hasPermission,
+                )
+              : const Center(child: Text('Salve o parceiro antes de ver as filiais.')),
         ),
         RelatedGridTab(
           title: 'Logins',
@@ -240,6 +232,12 @@ class WebParceiroDetailScreen extends StatelessWidget {
           extraParams: {'empId': empresaId, 'parceiroId': id},
           transformFormData:
               WebComunicadoGridComponentesScreen.transformFormData,
+        ),
+        RelatedGridTab(
+          title: 'POP/Mail',
+          icon: Icons.mail_outline,
+          telaNome: 'parceiro_email_pop',
+          extraParams: {'parceiroId': id},
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
         RelatedGridTab(
