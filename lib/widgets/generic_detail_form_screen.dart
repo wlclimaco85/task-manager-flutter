@@ -107,7 +107,8 @@ class GenericDetailFormScreen extends StatefulWidget {
   final List<RelatedGridTab>? relatedTabs;
 
   /// Callback após salvar o formulário principal.
-  final Future<void> Function(Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
+  final Future<void> Function(
+      Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
 
   const GenericDetailFormScreen({
     super.key,
@@ -133,6 +134,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _controllers = <String, TextEditingController>{};
   final _dropdownValues = <String, dynamic>{};
   final _multiValues = <String, List<dynamic>>{};
+  final _multiValueLabels = <String, Map<String, String>>{};
   final _checkboxValues = <String, bool>{};
   final _dropdownCache = <String, List<Map<String, dynamic>>>{};
   // Memoiza o Future em andamento por campo: evita recriar a requisição HTTP
@@ -218,20 +220,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           }
         }
       } else if (o.fieldType == FieldType.multiselect) {
-        if (!_multiValues.containsKey(fn)) {
-          if (val is List) {
-            _multiValues[fn] = val
-                .map((e) {
-                  if (e is Map)
-                    return (e['id'] ?? e[o.dropdownValueField])?.toString();
-                  return e?.toString();
-                })
-                .whereType<String>()
-                .toList();
-          } else {
-            _multiValues[fn] = [];
-          }
-        }
+        _initMultiValue(fn, val, o.dropdownValueField, o.dropdownDisplayField);
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -247,6 +236,35 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           val['id']?.toString() ??
           '';
     return val.toString();
+  }
+
+  void _initMultiValue(String fn, dynamic val, String dropdownValueField,
+      [String dropdownDisplayField = '']) {
+    if (_multiValues.containsKey(fn)) return;
+    final vf = dropdownValueField.isNotEmpty ? dropdownValueField : 'id';
+    final df = dropdownDisplayField.isNotEmpty ? dropdownDisplayField : 'nome';
+    if (val is List) {
+      final labels = <String, String>{};
+      _multiValues[fn] = val
+          .map((e) {
+            if (e is Map) {
+              final id = (e[vf] ?? e['id'])?.toString();
+              if (id != null) {
+                final label = e[df]?.toString() ??
+                    e['nome']?.toString() ??
+                    e['description']?.toString();
+                if (label != null && label.isNotEmpty) labels[id] = label;
+              }
+              return id;
+            }
+            return e?.toString();
+          })
+          .whereType<String>()
+          .toList();
+      if (labels.isNotEmpty) _multiValueLabels[fn] = labels;
+    } else {
+      _multiValues[fn] = [];
+    }
   }
 
   FieldType _telaType(TelaFieldType tft, String fieldName) {
@@ -305,14 +323,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao salvar: ${resp.statusCode}', style: const TextStyle(color: Colors.white)),
+              content: Text('Erro ao salvar: ${resp.statusCode}',
+                  style: const TextStyle(color: Colors.white)),
               backgroundColor: GridColors.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
+          SnackBar(
+              content:
+                  Text('Erro: $e', style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     } finally {
@@ -1225,8 +1247,7 @@ class _LazyTab extends StatefulWidget {
 
 typedef WidgetBuilder0 = Widget Function();
 
-class _LazyTabState extends State<_LazyTab>
-    with AutomaticKeepAliveClientMixin {
+class _LazyTabState extends State<_LazyTab> with AutomaticKeepAliveClientMixin {
   bool _activated = false;
 
   @override

@@ -571,7 +571,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
   }
 
-
   String _buildUrl(String base, Map<String, String> params) {
     final uri = Uri.parse(base);
     final query = Map<String, String>.from(uri.queryParameters)..addAll(params);
