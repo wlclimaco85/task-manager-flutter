@@ -452,9 +452,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   // Left/Center: System Modules (Included, Pricing, Optional)
+                                  // Largura conhecida em tempo de build:
+                                  // 1400 (canvas) - 16 (gap) - 360 (flash
+                                  // news) = 1024 -- unico filho flexivel do
+                                  // Row, entao ocupa 100% do espaco restante
+                                  // independente do valor de `flex`.
                                   Expanded(
                                     flex: 7,
-                                    child: _SystemModulesShowcase(),
+                                    child: _SystemModulesShowcase(
+                                        width: 1400.0 - 16 - 360),
                                   ),
                                   const SizedBox(width: 16),
                                   // Right Side: Flash News List (Image 3 style)
@@ -484,6 +490,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   loading: _loadingNoticias,
                                   noticias: _noticias,
                                   onSelectNews: _openNewsDetail,
+                                  stretchToFillHeight: false,
                                 ),
                                 const SizedBox(height: 24),
                                 _SystemModulesShowcase(),
@@ -847,6 +854,13 @@ class _TopHorizontalLoginBar extends StatelessWidget {
 // System Modules Showcase (Banner de Preço em 1º com Borda Destacada, Cards 4 Colunas Fit)
 // ---------------------------------------------------------------------------
 class _SystemModulesShowcase extends StatelessWidget {
+  /// Largura exata do conteudo, quando ja conhecida em tempo de build (usada
+  /// no desktop -- ver comentario em _buildModuleGrid). Quando null (mobile),
+  /// a largura e' descoberta em tempo real via LayoutBuilder.
+  final double? width;
+
+  const _SystemModulesShowcase({this.width});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -889,25 +903,47 @@ class _SystemModulesShowcase extends StatelessWidget {
     );
   }
 
+  // Bug de producao (2026-09-11): trocado de GridView.builder pra Wrap.
+  // GridView (mesmo com shrinkWrap:true) e' baseado em Viewport por baixo
+  // dos panos e NAO suporta calculo de altura intrinseca -- quebrava com
+  // "RenderBox was not laid out" assim que essa vitrine passou a ficar
+  // dentro de um IntrinsicHeight (necessario pro Flash News esticar ate a
+  // mesma altura da vitrine). Wrap e' um RenderBox comum, sem esse
+  // problema, e produz o mesmo grid visual de N colunas com wrap de linha.
+  //
+  // Quando `width` e' conhecida (desktop, ver `LoginScreen.build`), usa ela
+  // direto -- LayoutBuilder tambem NAO suporta calculo de altura intrinseca
+  // ("LayoutBuilder does not support returning intrinsic dimensions"), ento
+  // nao pode aparecer dentro do IntrinsicHeight do desktop. No mobile
+  // (fora do IntrinsicHeight) continua usando LayoutBuilder normalmente.
   Widget _buildModuleGrid(List<_LoginModule> list, {required bool isIncluded}) {
+    if (width != null) {
+      return _moduleWrap(list, isIncluded: isIncluded, maxWidth: width!);
+    }
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 950 ? 4 : (constraints.maxWidth >= 650 ? 3 : 2);
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: list.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 5,
-            childAspectRatio: crossAxisCount == 4 ? 3.0 : (crossAxisCount == 3 ? 3.4 : 2.8),
+      builder: (context, constraints) =>
+          _moduleWrap(list, isIncluded: isIncluded, maxWidth: constraints.maxWidth),
+    );
+  }
+
+  Widget _moduleWrap(List<_LoginModule> list,
+      {required bool isIncluded, required double maxWidth}) {
+    final crossAxisCount = maxWidth >= 950 ? 4 : (maxWidth >= 650 ? 3 : 2);
+    const crossAxisSpacing = 6.0;
+    const mainAxisSpacing = 5.0;
+    final itemWidth = (maxWidth - crossAxisSpacing * (crossAxisCount - 1)) / crossAxisCount;
+    final aspectRatio = crossAxisCount == 4 ? 3.0 : (crossAxisCount == 3 ? 3.4 : 2.8);
+    return Wrap(
+      spacing: crossAxisSpacing,
+      runSpacing: mainAxisSpacing,
+      children: [
+        for (final module in list)
+          SizedBox(
+            width: itemWidth,
+            height: itemWidth / aspectRatio,
+            child: _ModuleCard(module: module, isIncluded: isIncluded),
           ),
-          itemBuilder: (context, i) {
-            return _ModuleCard(module: list[i], isIncluded: isIncluded);
-          },
-        );
-      },
+      ],
     );
   }
 
@@ -1266,10 +1302,19 @@ class _FlashNewsSidebar extends StatelessWidget {
   final List<Map<String, dynamic>> noticias;
   final Function(Map<String, dynamic>) onSelectNews;
 
+  /// true (desktop): painel fica dentro de uma altura ja limitada (Row +
+  /// IntrinsicHeight), entao a lista de noticias usa Expanded pra esticar
+  /// e preencher o espaco extra. false (mobile): painel fica dentro de um
+  /// SingleChildScrollView (altura ilimitada) -- Expanded quebraria com
+  /// "RenderFlex children have non-zero flex but incoming height
+  /// constraints are unbounded", entao a lista usa altura natural (min).
+  final bool stretchToFillHeight;
+
   const _FlashNewsSidebar({
     required this.loading,
     required this.noticias,
     required this.onSelectNews,
+    this.stretchToFillHeight = true,
   });
 
   @override
@@ -1287,13 +1332,18 @@ class _FlashNewsSidebar extends StatelessWidget {
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      // Pedido do usuario (2026-09-11): antes usava MainAxisSize.min, entao
-      // o painel parava logo depois do botao da Play Store e sobrava fundo
-      // verde vazio embaixo dele quando a vitrine de modulos era mais alta.
-      // Agora estica ate a altura real do painel (dada pelo IntrinsicHeight
-      // no pai) e a lista de noticias ocupa o espaco extra via Expanded.
+      // Pedido do usuario (2026-09-11): no desktop (stretchToFillHeight),
+      // antes usava MainAxisSize.min e o painel parava logo depois do botao
+      // da Play Store, sobrando fundo verde vazio embaixo dele quando a
+      // vitrine de modulos era mais alta. Agora estica ate a altura real do
+      // painel (dada pelo IntrinsicHeight no pai) e a lista de noticias
+      // ocupa o espaco extra via Expanded. No mobile a altura vem de um
+      // SingleChildScrollView (ilimitada) -- mantem MainAxisSize.min, senao
+      // quebra ("incoming height constraints are unbounded").
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize:
+            stretchToFillHeight ? MainAxisSize.max : MainAxisSize.min,
         children: [
           // Header FLASH NEWS
           Row(
@@ -1332,40 +1382,25 @@ class _FlashNewsSidebar extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           const SizedBox(height: 4),
 
-          // Ocupa o espaco vertical extra que sobrar (painel agora estica
-          // ate a altura da vitrine de modulos) -- lista rola internamente
-          // se houver mais noticias do que cabe, sem afetar o scroll da
-          // pagina toda.
-          Expanded(
-            child: loading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: GridColors.secondary,
-                    ),
-                  )
-                : noticias.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Nenhuma notícia no momento.',
-                          style:
-                              TextStyle(color: Color(0xFF64748B), fontSize: 11),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: noticias.length > 8 ? 8 : noticias.length,
-                        separatorBuilder: (_, __) =>
-                            const Divider(height: 8, color: Color(0xFFF1F5F9)),
-                        itemBuilder: (context, i) {
-                          final n = noticias[i];
-                          return _FlashNewsItem(
-                            news: n,
-                            index: i,
-                            onTap: () => onSelectNews(n),
-                          );
-                        },
-                      ),
-          ),
+          // Conteudo da lista de noticias. Bug de producao (2026-09-11):
+          // usava ListView.separated aqui, mas QUALQUER scrollable
+          // (ListView/GridView/SingleChildScrollView) e' baseado em
+          // Viewport e nao suporta calculo de altura intrinseca -- quebrava
+          // com "RenderBox was not laid out" assim que este painel passou a
+          // ficar dentro do IntrinsicHeight do pai (desktop, usado pra
+          // igualar a altura com a vitrine de modulos). Trocado por uma
+          // Column comum (sem scroll interno, lista curta e fixa) -- um
+          // RenderBox normal, computa altura intrinseca sem problema.
+          //
+          // No desktop (stretchToFillHeight), envolve em Expanded pra
+          // ocupar o espaco vertical extra que sobrar (painel estica ate a
+          // altura da vitrine). No mobile, SEM Expanded -- a altura ali
+          // vem de um SingleChildScrollView (ilimitada) e Expanded quebraria
+          // com "incoming height constraints are unbounded".
+          if (stretchToFillHeight)
+            Expanded(child: _buildNewsListContent())
+          else
+            _buildNewsListContent(),
 
           const SizedBox(height: 6),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
@@ -1375,6 +1410,40 @@ class _FlashNewsSidebar extends StatelessWidget {
           const _PlayStoreButton(),
         ],
       ),
+    );
+  }
+
+  Widget _buildNewsListContent() {
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: GridColors.secondary,
+        ),
+      );
+    }
+    if (noticias.isEmpty) {
+      return const Center(
+        child: Text(
+          'Nenhuma notícia no momento.',
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+        ),
+      );
+    }
+    final quantidade = noticias.length > 8 ? 8 : noticias.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < quantidade; i++) ...[
+          if (i > 0) const Divider(height: 8, color: Color(0xFFF1F5F9)),
+          _FlashNewsItem(
+            news: noticias[i],
+            index: i,
+            onTap: () => onSelectNews(noticias[i]),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -49,4 +49,42 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  // Bug de producao (2026-09-11): FittedBox + IntrinsicHeight (usado pro
+  // painel de Flash News esticar ate a altura da vitrine de modulos e pra
+  // tudo caber sem scroll conforme a resolucao) quebrava com "RenderBox was
+  // not laid out" -- causa raiz era GridView/ListView/LayoutBuilder dentro
+  // do IntrinsicHeight (nenhum dos tres suporta calculo de altura
+  // intrinseca, "does not support returning intrinsic dimensions"). Este
+  // teste roda em resolucoes desktop bem diferentes (>=1000 largura, onde
+  // isDesktop==true e o FittedBox/IntrinsicHeight entram em jogo) sem
+  // nenhuma exception silenciosa.
+  //
+  // Larguras <1000 (fallback mobile, SingleChildScrollView) nao entram
+  // aqui: ha' um overflow pontual pre-existente nesse fallback em telas
+  // muito estreitas, sem relacao com esta correcao (confirmado rodando o
+  // codigo anterior a ela) -- fora de escopo deste fix.
+  testWidgets(
+      'LoginScreen (desktop) renderiza sem exceptions em resoluções bem diferentes',
+      (WidgetTester tester) async {
+    for (final size in [const Size(1920, 1080), const Size(1024, 700)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(tester.takeException(), isNull,
+          reason: 'LoginScreen nao deve lancar exception em $size');
+      expect(find.text('ABRAÇO CONTABILIDADE'), findsOneWidget);
+      expect(find.text('FLASH NEWS'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
 }
