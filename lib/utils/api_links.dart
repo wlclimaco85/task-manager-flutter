@@ -341,6 +341,7 @@ class ApiLinks {
   static String get createLogin => '$_baseUrlNew/api/logins';
   static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
   static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
+  static String get allTipoParceiros => '$_baseUrlNew/api/tipo_parceiro';
 
   // Importacao CSV
   static String get importacaoContaPagar =>

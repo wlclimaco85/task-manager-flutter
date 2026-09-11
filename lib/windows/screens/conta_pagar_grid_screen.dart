@@ -21,6 +21,7 @@ import '../../../windows/dialogs/parcelar_conta_dialog.dart';
 import '../../../windows/dialogs/recorrencia_conta_dialog.dart';
 import '../../../windows/dialogs/renegociacao_conta_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../services/baixa_caller.dart';
 import 'package:http/http.dart' as http;
 
 class WindowsContaPagarGridScreen extends StatefulWidget {
@@ -326,9 +327,10 @@ class _WindowsContaPagarGridScreenState
               // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros (quem devemos pagar)
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
+                  displayFieldName: 'parceiroDev.nome',
                   label: 'Fornecedor',
                   isInForm: true,
-                  isInGrid: false,
+                  isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
                   enabled: true,
@@ -339,9 +341,10 @@ class _WindowsContaPagarGridScreenState
               // Parceiro: locked no parceiro do login
               FieldConfigWindows(
                   fieldName: 'parceiro',
+                  displayFieldName: 'parceiro.nome',
                   label: 'Parceiro',
                   isInForm: true,
-                  isInGrid: false,
+                  isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
                   enabled: false,
@@ -358,6 +361,7 @@ class _WindowsContaPagarGridScreenState
               // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
+                  displayFieldName: 'parceiroRec.nome',
                   label: 'Parceiro Rec',
                   isInForm: TenantContext.hasParceiro,
                   isInGrid: false,
@@ -494,7 +498,60 @@ class _WindowsContaPagarGridScreenState
                 icon: Icons.price_check,
                 label: GridTexts.lower,
                 onPressed: (context, object) => _showBaixaDialog(context, object),
-                isVisible: (_) => true,
+                isVisible: (c) => c.status == StatusConta.ABERTA,
+              ),
+              CustomAction<ContaPagar>(
+                icon: Icons.undo,
+                label: 'Estornar',
+                onPressed: (context, object) async {
+                  if (object.id == null) return;
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.undo, color: GridColors.primary),
+                          SizedBox(width: 8),
+                          Text('Estornar Baixa',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      content: Text(
+                          'Deseja realmente estornar a baixa do título #${object.id} (${object.descricao ?? ''})? O saldo bancário e os movimentos correspondentes serão desfeitos.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Confirmar Estorno'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && context.mounted) {
+                    final res = await BaixaCaller.desfazerBaixa(
+                        tipo: 'pagar', id: object.id!);
+                    if (context.mounted) {
+                      if (res.isSuccess) {
+                        _snack('Baixa estornada com sucesso!');
+                        setState(() => _gridKey = UniqueKey());
+                      } else {
+                        _snack('Erro ao estornar baixa: ${res.statusCode}',
+                            error: true);
+                      }
+                    }
+                  }
+                },
+                isVisible: (c) => c.status == StatusConta.BAIXADA,
               ),
               if (!_isFinanceiroLimitado) ...[
                 CustomAction<ContaPagar>(

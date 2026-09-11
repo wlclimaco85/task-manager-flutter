@@ -185,6 +185,87 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     super.dispose();
   }
 
+  String _toCamelCase(String s) {
+    if (!s.contains('_')) return s;
+    final parts = s.split('_');
+    return parts.first +
+        parts
+            .skip(1)
+            .map((p) => p.isEmpty ? '' : p[0].toUpperCase() + p.substring(1))
+            .join();
+  }
+
+  String _toSnakeCase(String s) {
+    return s
+        .replaceAllMapped(
+            RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}')
+        .replaceFirst(RegExp(r'^_'), '');
+  }
+
+  dynamic _resolveItemValue(Map<String, dynamic> item, String fn) {
+    if (item.containsKey(fn) && item[fn] != null) return item[fn];
+
+    final camel = _toCamelCase(fn);
+    if (item.containsKey(camel) && item[camel] != null) return item[camel];
+
+    final snake = _toSnakeCase(fn);
+    if (item.containsKey(snake) && item[snake] != null) return item[snake];
+
+    // Aliases explícitos
+    if (fn == 'razaoSocial' || fn == 'razao_social') {
+      return item['razaoSocial'] ?? item['razao_social'];
+    }
+    if (fn == 'valorMensal' || fn == 'valor_mensal') {
+      return item['valorMensal'] ?? item['valor_mensal'];
+    }
+    if (fn == 'diaVencimentoMensalidade' || fn == 'dia_vencimento_mensalidade') {
+      return item['diaVencimentoMensalidade'] ??
+          item['dia_vencimento_mensalidade'];
+    }
+    if (fn == 'tiposParceiro' ||
+        fn == 'tipos_parceiro' ||
+        fn == 'tipo_parceiros' ||
+        fn == 'tipoParceiro') {
+      return item['tiposParceiro'] ??
+          item['tipos_parceiro'] ??
+          item['tipo_parceiros'] ??
+          item['tipoParceiro'];
+    }
+    if (fn == 'regime' ||
+        fn == 'regime_tributario' ||
+        fn == 'regimeTributario') {
+      return item['regime'] ??
+          item['regime_tributario'] ??
+          item['regimeTributario'];
+    }
+    if (fn == 'empresa' || fn == 'empresa_id' || fn == 'empId') {
+      return item['empresa'] ?? item['empresa_id'] ?? item['empId'];
+    }
+    if (fn == 'ambiente') {
+      return item['ambiente'];
+    }
+    if (fn == 'modulo_servicos' ||
+        fn == 'moduloServicos' ||
+        fn == 'modulosServico') {
+      return item['moduloServicos'] ??
+          item['modulo_servicos'] ??
+          item['modulosServico'];
+    }
+    if (fn == 'tipoCliente' || fn == 'tipo_cliente') {
+      return item['tipoCliente'] ?? item['tipo_cliente'];
+    }
+
+    // Endereço aninhado
+    if (item['endereco'] is Map) {
+      final end = item['endereco'] as Map;
+      if (end.containsKey(fn) && end[fn] != null) return end[fn];
+      if (end.containsKey(camel) && end[camel] != null) return end[camel];
+      if (end.containsKey(snake) && end[snake] != null) return end[snake];
+    }
+
+    return null;
+  }
+
   void _initControllers(TelaConfig tela) {
     final item = widget.item;
     for (final f in tela.fields) {
@@ -196,12 +277,25 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           fnL == 'dh_updated_at') {
         continue;
       }
-      final val = item[fn];
+      final val = _resolveItemValue(item, fn);
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
-      } else if (f.fieldType == TelaFieldType.dropdown ||
-          f.fieldType == TelaFieldType.multiselect) {
-        // handled below
+      } else if (f.fieldType == TelaFieldType.dropdown) {
+        if (!_dropdownValues.containsKey(fn)) {
+          if (val is Map) {
+            _dropdownValues[fn] = val['id']?.toString() ??
+                val['value']?.toString() ??
+                val['codigo']?.toString();
+          } else if (val != null) {
+            _dropdownValues[fn] = val.toString();
+          }
+        }
+      } else if (f.fieldType == TelaFieldType.multiselect) {
+        _initMultiValue(
+            fn,
+            val,
+            f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
+            f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome');
       } else {
         _controllers.putIfAbsent(
             fn, () => TextEditingController(text: _getValue(val)));
@@ -210,11 +304,13 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     // Init overrides
     for (final o in (widget.fieldOverrides ?? [])) {
       final fn = o.fieldName;
-      final val = item[fn];
+      final val = _resolveItemValue(item, fn);
       if (o.fieldType == FieldType.dropdown) {
-        if (!_dropdownValues.containsKey(fn)) {
+        if (!_dropdownValues.containsKey(fn) || _dropdownValues[fn] == null) {
           if (val is Map) {
-            _dropdownValues[fn] = val['id']?.toString();
+            _dropdownValues[fn] = val['id']?.toString() ??
+                val['value']?.toString() ??
+                val['codigo']?.toString();
           } else if (val != null) {
             _dropdownValues[fn] = val.toString();
           }
@@ -222,8 +318,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else if (o.fieldType == FieldType.multiselect) {
         _initMultiValue(fn, val, o.dropdownValueField, o.dropdownDisplayField);
       } else {
-        _controllers.putIfAbsent(
-            fn, () => TextEditingController(text: _getValue(val)));
+        if (!_controllers.containsKey(fn) || _controllers[fn]!.text.isEmpty) {
+          _controllers[fn] = TextEditingController(text: _getValue(val));
+        }
       }
     }
   }
@@ -288,16 +385,67 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (id != null) body['id'] = id;
 
       for (final entry in _controllers.entries) {
-        body[entry.key] = entry.value.text;
+        final key = entry.key;
+        final text = entry.value.text.trim();
+        if (key == 'valorMensal' || key == 'valor_mensal' || key == 'valor') {
+          final clean = text
+              .replaceAll('R\$', '')
+              .replaceAll(' ', '')
+              .replaceAll('.', '')
+              .replaceAll(',', '.');
+          final numVal = double.tryParse(clean);
+          body[key] = numVal ?? text;
+        } else if (key == 'diaVencimentoMensalidade' ||
+            key == 'dia_vencimento_mensalidade') {
+          body[key] = int.tryParse(text) ?? text;
+        } else {
+          body[key] = text;
+        }
       }
       for (final entry in _checkboxValues.entries) {
         body[entry.key] = entry.value;
       }
       for (final entry in _dropdownValues.entries) {
-        if (entry.value != null) body[entry.key] = {'id': entry.value};
+        if (entry.value == null) continue;
+        final key = entry.key;
+        final val = entry.value;
+        final valStr = val.toString();
+        final isScalar = key == 'ambiente' ||
+            key == 'status' ||
+            key == 'tipo' ||
+            key == 'tipoConta' ||
+            key == 'tipo_conta' ||
+            key == 'tipoCliente' ||
+            key == 'tipo_cliente' ||
+            key == 'diaVencimentoMensalidade' ||
+            key == 'dia_vencimento_mensalidade';
+        if (isScalar) {
+          body[key] = int.tryParse(valStr) ?? val;
+        } else {
+          final intVal = int.tryParse(valStr);
+          body[key] = {'id': intVal ?? val};
+        }
       }
       for (final entry in _multiValues.entries) {
-        body[entry.key] = entry.value.map((v) => {'id': v}).toList();
+        body[entry.key] = entry.value.map((v) {
+          final intVal = int.tryParse(v.toString());
+          return {'id': intVal ?? v};
+        }).toList();
+      }
+
+      // Sincroniza aliases comuns no payload para compatibilidade backend
+      if (body.containsKey('razaoSocial') && !body.containsKey('razao_social')) {
+        body['razao_social'] = body['razaoSocial'];
+      }
+      if (body.containsKey('valorMensal') && !body.containsKey('valor_mensal')) {
+        body['valor_mensal'] = body['valorMensal'];
+      }
+      if (body.containsKey('tiposParceiro') &&
+          !body.containsKey('tipos_parceiro')) {
+        body['tipos_parceiro'] = body['tiposParceiro'];
+      }
+      if (body.containsKey('regime') && !body.containsKey('regime_tributario')) {
+        body['regime_tributario'] = body['regime'];
       }
 
       final isCreate = id == null;
@@ -1004,12 +1152,36 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       return k != null && seen.add(k);
     }).toList();
     dynamic current = _dropdownValues[ef.fieldName];
-    if (!unique.any((o) => o[vf]?.toString() == current?.toString()))
-      current = null;
+    if (current != null) {
+      final currentStr = current.toString().trim();
+      if (!unique.any((o) => o[vf]?.toString() == currentStr)) {
+        if (ef.fieldName == 'ambiente') {
+          if (currentStr == '1' || currentStr.toUpperCase() == 'PRODUCAO') {
+            final match = unique.firstWhere(
+                (o) =>
+                    o[vf]?.toString() == 'PRODUCAO' ||
+                    o[vf]?.toString() == '1',
+                orElse: () => {});
+            if (match.isNotEmpty) current = match[vf];
+          } else if (currentStr == '2' ||
+              currentStr.toUpperCase() == 'HOMOLOGACAO') {
+            final match = unique.firstWhere(
+                (o) =>
+                    o[vf]?.toString() == 'HOMOLOGACAO' ||
+                    o[vf]?.toString() == '2',
+                orElse: () => {});
+            if (match.isNotEmpty) current = match[vf];
+          }
+        }
+      }
+      if (!unique.any((o) => o[vf]?.toString() == current?.toString())) {
+        current = null;
+      }
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<dynamic>(
-        initialValue: current,
+        value: current?.toString(),
         decoration: _dec(ef.label, req: ef.isRequired),
         isExpanded: true,
         menuMaxHeight: 300,
@@ -1591,3 +1763,36 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
     );
   }
 }
+
+/// Helper puro para resolução de visibilidade de campos com suporte a overrides.
+bool resolveFieldVisibility({
+  required bool backendIsInForm,
+  FieldConfigWindows? override,
+}) {
+  if (override != null) {
+    return override.isInForm;
+  }
+  return backendIsInForm;
+}
+
+/// Helper puro para resolução de rótulo em multiselect chips.
+String resolveMultiSelectChipLabel({
+  required String selectedId,
+  required List<Map<String, dynamic>> loadedOptions,
+  required String valueField,
+  required String displayField,
+  required Map<String, String> savedLabels,
+}) {
+  final match = loadedOptions.firstWhere(
+    (opt) => opt[valueField]?.toString() == selectedId,
+    orElse: () => <String, dynamic>{},
+  );
+  if (match.isNotEmpty && match[displayField] != null) {
+    return match[displayField].toString();
+  }
+  if (savedLabels.containsKey(selectedId)) {
+    return savedLabels[selectedId]!;
+  }
+  return '#$selectedId';
+}
+

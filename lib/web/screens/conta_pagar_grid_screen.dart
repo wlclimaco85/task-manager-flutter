@@ -24,6 +24,7 @@ import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/security_matrix.dart';
+import '../../../services/baixa_caller.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -366,9 +367,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros (quem devemos pagar)
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
+                  displayFieldName: 'parceiroDev.nome',
                   label: 'Fornecedor',
                   isInForm: true,
-                  isInGrid: false,
+                  isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
                   enabled: true,
@@ -379,9 +381,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               // Parceiro: locked no parceiro do login
               FieldConfigWindows(
                   fieldName: 'parceiro',
+                  displayFieldName: 'parceiro.nome',
                   label: 'Parceiro',
                   isInForm: true,
-                  isInGrid: false,
+                  isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
                   enabled: false,
@@ -398,6 +401,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
+                  displayFieldName: 'parceiroRec.nome',
                   label: 'Parceiro Rec',
                   isInForm: TenantContext.hasParceiro,
                   isInGrid: false,
@@ -565,7 +569,63 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                     }
                   });
                 },
-                isVisible: (_) => true,
+                isVisible: (m) =>
+                    ContaPagar.fromJson(m).status == StatusConta.ABERTA,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.undo,
+                label: 'Estornar',
+                onPressed: (context, object) async {
+                  final conta = ContaPagar.fromJson(object);
+                  if (conta.id == null) return;
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.undo, color: GridColors.primary),
+                          SizedBox(width: 8),
+                          Text('Estornar Baixa',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      content: Text(
+                          'Deseja realmente estornar a baixa do título #${conta.id} (${conta.descricao ?? ''})? O saldo bancário e os movimentos correspondentes serão desfeitos.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Confirmar Estorno'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && context.mounted) {
+                    final res = await BaixaCaller.desfazerBaixa(
+                        tipo: 'pagar', id: conta.id!);
+                    if (context.mounted) {
+                      if (res.isSuccess) {
+                        _snack('Baixa estornada com sucesso!');
+                        setState(() => _gridKey = UniqueKey());
+                      } else {
+                        _snack('Erro ao estornar baixa: ${res.statusCode}',
+                            error: true);
+                      }
+                    }
+                  }
+                },
+                isVisible: (m) =>
+                    ContaPagar.fromJson(m).status == StatusConta.BAIXADA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.credit_card,

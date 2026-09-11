@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../utils/dropdown_helpers.dart';
 import '../../../web/screens/login_grid_screen.dart' show WebLoginGridScreen;
 import '../../../web/screens/comunicado_componente_screen.dart'
     show WebComunicadoGridComponentesScreen;
@@ -41,16 +42,84 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
       item: item,
       telaNome: 'parceiro',
       hasPermission: hasPermission,
-      fieldOverrides: const [
+      fieldOverrides: [
         FieldConfigWindows(
-          label: 'Modulo Servicos',
+          label: 'Empresa',
+          fieldName: 'empresa',
+          displayFieldName: 'empresa.nome',
+          icon: Icons.business,
+          fieldType: FieldType.dropdown,
+          dropdownFutureBuilder: () => DropdownHelpers.empresas(),
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'nome',
+          isInForm: true,
+          isRequired: true,
+        ),
+        const FieldConfigWindows(
+          label: 'Razão Social',
+          fieldName: 'razaoSocial',
+          icon: Icons.apartment,
+          fieldType: FieldType.text,
+          isInForm: true,
+        ),
+        FieldConfigWindows(
+          label: 'Regime Tributário',
+          fieldName: 'regime',
+          displayFieldName: 'regime.descricao',
+          icon: Icons.business_center,
+          fieldType: FieldType.dropdown,
+          dropdownFutureBuilder: () => DropdownHelpers.regimesTributarios(),
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'descricao',
+          isInForm: true,
+        ),
+        const FieldConfigWindows(
+          label: 'Valor Mensal',
+          fieldName: 'valorMensal',
+          icon: Icons.attach_money,
+          fieldType: FieldType.currency,
+          isInForm: true,
+        ),
+        const FieldConfigWindows(
+          label: 'Ambiente',
+          fieldName: 'ambiente',
+          icon: Icons.cloud_outlined,
+          fieldType: FieldType.dropdown,
+          dropdownOptions: [
+            {'value': 'PRODUCAO', 'label': '1 - Produção'},
+            {'value': 'HOMOLOGACAO', 'label': '2 - Homologação'},
+          ],
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
+        ),
+        FieldConfigWindows(
+          label: 'Tipo Parceiros',
+          fieldName: 'tiposParceiro',
+          icon: Icons.people_outline,
+          fieldType: FieldType.multiselect,
+          dropdownFutureBuilder: () => DropdownHelpers.tiposParceiro(),
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'nome',
+          isInForm: true,
+        ),
+        const FieldConfigWindows(
+          label: 'Módulo Serviços',
+          fieldName: 'moduloServicos',
+          icon: Icons.miscellaneous_services,
+          fieldType: FieldType.text,
+          isInForm: true,
+          enabled: false,
+        ),
+        const FieldConfigWindows(
+          label: 'Modulo Servicos 2',
           fieldName: 'modulo_servicos',
           isInForm: false,
           isInGrid: false,
           isVisibleByDefault: false,
         ),
-        FieldConfigWindows(
-          label: 'Modulo Servicos',
+        const FieldConfigWindows(
+          label: 'Modulo Servicos 3',
           fieldName: 'modulosServico',
           isInForm: false,
           isInGrid: false,

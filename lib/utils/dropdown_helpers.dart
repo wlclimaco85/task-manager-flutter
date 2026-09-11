@@ -51,6 +51,12 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> parceiros() =>
       load(ApiLinks.allParceiros, displayField: 'nome');
 
+  static Future<List<Map<String, dynamic>>> regimesTributarios() =>
+      load(ApiLinks.allRegimetributario, displayField: 'descricao');
+
+  static Future<List<Map<String, dynamic>>> tiposParceiro() =>
+      load(ApiLinks.allTipoParceiros, displayField: 'nome');
+
   /// Carrega parceiros filtrados pela empresa fornecida.
   /// Se [empresaId] for nulo ou vazio, retorna todos os parceiros.
   static Future<List<Map<String, dynamic>>> parceirosPorEmpresa(

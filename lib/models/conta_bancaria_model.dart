@@ -33,6 +33,8 @@ class ContaBancaria {
   });
 
   factory ContaBancaria.fromJson(Map<String, dynamic> json) {
+    final saldoIni = (json['saldoInicial'] ?? json['saldo_inicial'] ?? 0).toDouble();
+    final saldoAtu = (json['saldoAtual'] ?? json['saldo_atual'] ?? json['saldoInicial'] ?? json['saldo_inicial'] ?? 0).toDouble();
     return ContaBancaria(
       id: json['id'],
       banco: json['banco'],
@@ -40,16 +42,21 @@ class ContaBancaria {
       numero: json['numero'],
       descricao: json['descricao'],
       tipo: json['tipo'] ?? 'CONTA_CORRENTE',
-      saldoInicial: (json['saldoInicial'] ?? 0).toDouble(),
+      saldoInicial: saldoIni,
       dataAbertura: json['dataAbertura'] != null
-          ? DateTime.parse(json['dataAbertura'])
-          : null,
-      saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
-      empresa: json['empresa'] != null ? Empresa.fromJson(json['empresa']) : Empresa(),
-      parceiro: json['parceiro'] != null
+          ? DateTime.tryParse(json['dataAbertura'].toString())
+          : (json['data_abertura'] != null ? DateTime.tryParse(json['data_abertura'].toString()) : null),
+      saldoAtual: saldoAtu,
+      empresa: json['empresa'] is Map
+          ? Empresa.fromJson(Map<String, dynamic>.from(json['empresa']))
+          : Empresa(
+              id: json['empresaId'] ?? json['empresa_id'] ?? (json['empresa'] is int ? json['empresa'] : null),
+              nome: json['empresaNome'] ?? json['empresa_nome'] ?? '',
+            ),
+      parceiro: json['parceiro'] is Map
           ? Parceiro.fromJson(Map<String, dynamic>.from(json['parceiro']))
-          : ((json['parceiroId'] != null)
-              ? Parceiro(id: json['parceiroId'])
+          : ((json['parceiroId'] != null || json['parceiro_id'] != null)
+              ? Parceiro(id: json['parceiroId'] ?? json['parceiro_id'])
               : null),
       ativo: json['ativo'] ?? true,
     );

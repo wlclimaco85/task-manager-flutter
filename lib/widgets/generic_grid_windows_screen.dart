@@ -4512,8 +4512,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               ElevatedButton(
                 onPressed: () {
                   _saveColumnPreferences();
-                  setState(() {});
                   Navigator.pop(ctx);
+                  this.setState(() {});
                   _applyFilters();
                 },
                 child: const Text('Aplicar'),
