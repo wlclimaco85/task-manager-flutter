@@ -39,20 +39,26 @@ class _LoginEmpresaAcessoAprovacaoScreenState
     final id = item.id;
     if (id == null) return;
     setState(() => _processando.add(id));
-    final ok = aprovar ? await _service.aprovar(id) : await _service.negar(id);
+    final resp = aprovar
+        ? await _service.aprovarResponse(id)
+        : await _service.negarResponse(id);
+    final ok = resp.isSuccess;
     if (!mounted) return;
     setState(() {
       _processando.remove(id);
       if (ok) _itens.removeWhere((e) => e.id == id);
     });
+    final erroMsg = resp.body != null
+        ? (resp.body!['message'] ?? resp.body!['erro'] ?? resp.body!['error'])?.toString()
+        : null;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: ok
             ? (aprovar ? GridColors.success : GridColors.neutral)
             : GridColors.error,
         content: Text(ok
-            ? (aprovar ? 'Acesso aprovado.' : 'Acesso negado.')
-            : 'Não foi possível processar a solicitação.'),
+            ? (aprovar ? 'Acesso aprovado com sucesso.' : 'Acesso negado com sucesso.')
+            : (erroMsg ?? 'Não foi possível processar a solicitação.')),
       ),
     );
   }

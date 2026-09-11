@@ -89,19 +89,27 @@ class LoginEmpresaAcessoService {
   }
 
   Future<bool> aprovar(int acessoId) async {
-    final response = await _networkCaller.putRequest(
-      ApiLinks.loginEmpresaAcessoAprovar(acessoId),
-      {},
-    );
+    final response = await aprovarResponse(acessoId);
     return response.isSuccess;
   }
 
+  Future<NetworkResponse> aprovarResponse(int acessoId) async {
+    return await _networkCaller.putRequest(
+      ApiLinks.loginEmpresaAcessoAprovar(acessoId),
+      {},
+    );
+  }
+
   Future<bool> negar(int acessoId) async {
-    final response = await _networkCaller.putRequest(
+    final response = await negarResponse(acessoId);
+    return response.isSuccess;
+  }
+
+  Future<NetworkResponse> negarResponse(int acessoId) async {
+    return await _networkCaller.putRequest(
       ApiLinks.loginEmpresaAcessoNegar(acessoId),
       {},
     );
-    return response.isSuccess;
   }
 
   List<EmpresaAcesso> _parseList(NetworkResponse response) {
