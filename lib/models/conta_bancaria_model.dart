@@ -55,8 +55,20 @@ class ContaBancaria {
             ),
       parceiro: json['parceiro'] is Map
           ? Parceiro.fromJson(Map<String, dynamic>.from(json['parceiro']))
-          : ((json['parceiroId'] != null || json['parceiro_id'] != null)
-              ? Parceiro(id: json['parceiroId'] ?? json['parceiro_id'])
+          : ((json['parceiroId'] != null ||
+                  json['parceiro_id'] != null ||
+                  json['parceiroNome'] != null ||
+                  json['parceiro_nome'] != null ||
+                  json['parceiro'] != null)
+              ? Parceiro(
+                  id: json['parceiroId'] ??
+                      json['parceiro_id'] ??
+                      (json['parceiro'] is int ? json['parceiro'] : null),
+                  nome: json['parceiroNome'] ??
+                      json['parceiro_nome'] ??
+                      (json['parceiro'] is String ? json['parceiro'] : null) ??
+                      '',
+                )
               : null),
       ativo: json['ativo'] ?? true,
     );
@@ -74,7 +86,16 @@ class ContaBancaria {
       'dataAbertura': dataAbertura?.toIso8601String(),
       'saldoAtual': saldoAtual,
       'empresa': empresa.toJson(),
-      if (parceiro != null) 'parceiro': parceiro!.toJson(),
+      'empresaNome': empresa.nome,
+      'empresaId': empresa.id,
+      if (parceiro != null)
+        'parceiro': {
+          'id': parceiro!.id,
+          'nome': parceiro!.nome ?? parceiro!.razaoSocial ?? '',
+        },
+      if (parceiro != null) 'parceiroId': parceiro!.id,
+      if (parceiro != null)
+        'parceiroNome': parceiro!.nome ?? parceiro!.razaoSocial ?? '',
       'ativo': ativo,
     };
   }
@@ -168,6 +189,27 @@ class ContaBancaria {
       fieldType: FieldType.currency,
     ),
     const FieldConfig(
+      label: "Empresa",
+      fieldName: "empresa",
+      displayFieldName: "empresa.nome",
+      icon: Icons.business,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      isRequired: true,
+      fieldType: FieldType.dropdown,
+    ),
+    const FieldConfig(
+      label: "Parceiro",
+      fieldName: "parceiro",
+      displayFieldName: "parceiro.nome",
+      icon: Icons.person,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      fieldType: FieldType.dropdown,
+    ),
+    const FieldConfig(
       label: "Ativo",
       fieldName: "ativo",
       icon: Icons.toggle_on,
@@ -178,3 +220,4 @@ class ContaBancaria {
     ),
   ];
 }
+

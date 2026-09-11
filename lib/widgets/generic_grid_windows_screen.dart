@@ -4909,6 +4909,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (val != null) {
       if (val is List) return val;
       if (val is Map) return _formatValue(val);
+      // Se val for numérico/ID simples e houver um campo Nome/nome (ex: parceiro: 1684 e parceiroNome: "ABC")
+      if (val is int || (val is String && int.tryParse(val) != null)) {
+        final nameVal = _tryGet(map, '${fieldName}Nome') ?? _tryGet(map, '${fieldName}_nome');
+        if (nameVal != null && nameVal.toString().trim().isNotEmpty) return nameVal;
+      }
       return val;
     }
 
@@ -4920,11 +4925,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       if (parent != null && parts.length > 1) {
         if (parent is Map) {
           final child = _tryGet(parent, parts[1]);
-          if (child != null) return child;
+          if (child != null && child.toString().trim().isNotEmpty) return child;
           return _formatValue(parent);
         }
         if (parent is List) return parent;
       }
+      // Fallback: se buscou 'parceiro.nome' ou 'empresa.nome', tenta 'parceiroNome' ou 'empresaNome'
+      final flatAlias = '${parts[0]}${parts[1][0].toUpperCase()}${parts[1].substring(1)}';
+      final flatVal = _tryGet(map, flatAlias);
+      if (flatVal != null && flatVal.toString().trim().isNotEmpty) return flatVal;
+      final flatSnakeAlias = '${parts[0]}_${parts[1]}';
+      final flatSnakeVal = _tryGet(map, flatSnakeAlias);
+      if (flatSnakeVal != null && flatSnakeVal.toString().trim().isNotEmpty) return flatSnakeVal;
     }
 
     return null;

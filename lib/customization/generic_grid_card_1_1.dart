@@ -802,7 +802,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (map == null) return null;
     if (!fieldName.contains('.')) {
       if (map is! Map) return null;
-      return map[fieldName];
+      final val = map[fieldName];
+      if (val != null && (val is int || (val is String && int.tryParse(val) != null))) {
+        final nameVal = map['${fieldName}Nome'] ?? map['${fieldName}_nome'];
+        if (nameVal != null && nameVal.toString().trim().isNotEmpty) return nameVal;
+      }
+      return val;
     }
     final parts = fieldName.split('.');
     dynamic v = map;
@@ -810,9 +815,21 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       if (v is Map && v.containsKey(p)) {
         v = v[p];
       } else {
-        return null;
+        v = null;
+        break;
       }
     }
+    if (v != null && v.toString().trim().isNotEmpty) return v;
+
+    if (map is Map && parts.length > 1) {
+      final camelAlias = '${parts[0]}${parts[1][0].toUpperCase()}${parts[1].substring(1)}';
+      final camelVal = map[camelAlias];
+      if (camelVal != null && camelVal.toString().trim().isNotEmpty) return camelVal;
+      final snakeAlias = '${parts[0]}_${parts[1]}';
+      final snakeVal = map[snakeAlias];
+      if (snakeVal != null && snakeVal.toString().trim().isNotEmpty) return snakeVal;
+    }
+
     return v;
   }
 
