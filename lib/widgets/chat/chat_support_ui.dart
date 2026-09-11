@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/chat_model.dart';
 import '../../utils/grid_colors.dart';
 
@@ -6,10 +9,13 @@ class ChatSupportPalette {
   ChatSupportPalette._();
 
   static const Color surface = GridColors.card;
-  static const Color page = Color(0xFFEAF5EE); // verde institucional suave (GridColors.secondarySoft)
+  static const Color page =
+      Color(0xFFEAF5EE); // verde institucional suave (GridColors.secondarySoft)
   static const Color subtle = Color(0xFFD4EAD8);
-  static const Color outbound = Color(0xFFCDE8D2); // minha mensagem — verde mais vivo
-  static const Color inbound = Color(0xFFF9FAFB); // mensagem recebida — off-white
+  static const Color outbound =
+      Color(0xFFCDE8D2); // minha mensagem — verde mais vivo
+  static const Color inbound =
+      Color(0xFFF9FAFB); // mensagem recebida — off-white
 }
 
 class ChatStatusPill extends StatelessWidget {
@@ -365,7 +371,7 @@ class ChatConversationHeader extends StatelessWidget {
   }
 }
 
-class ChatComposer extends StatelessWidget {
+class ChatComposer extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onAttach;
   final VoidCallback onTicket;
@@ -384,6 +390,30 @@ class ChatComposer extends StatelessWidget {
   });
 
   @override
+  State<ChatComposer> createState() => _ChatComposerState();
+}
+
+class _ChatComposerState extends State<ChatComposer> {
+  static const _duplicateSubmitWindow = Duration(milliseconds: 120);
+
+  DateTime? _lastShortcutSendAt;
+
+  void _sendFromShortcut() {
+    _lastShortcutSendAt = DateTime.now();
+    widget.onSend();
+  }
+
+  void _sendFromSubmitted() {
+    final lastShortcutSendAt = _lastShortcutSendAt;
+    if (lastShortcutSendAt != null &&
+        DateTime.now().difference(lastShortcutSendAt) <
+            _duplicateSubmitWindow) {
+      return;
+    }
+    widget.onSend();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
@@ -399,44 +429,50 @@ class ChatComposer extends StatelessWidget {
               tooltip: 'Anexar arquivo',
               icon: const Icon(Icons.attach_file),
               color: GridColors.secondary,
-              onPressed: onAttach,
+              onPressed: widget.onAttach,
             ),
             IconButton(
               tooltip: 'Abrir chamado',
               icon: const Icon(Icons.assignment_outlined),
               color: GridColors.primary,
-              onPressed: onTicket,
+              onPressed: widget.onTicket,
             ),
             Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
-                decoration: InputDecoration(
-                  hintText: 'Digite sua mensagem...',
-                  filled: true,
-                  fillColor: ChatSupportPalette.page,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: GridColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: GridColors.divider.withValues(alpha: 0.8),
+              child: CallbackShortcuts(
+                bindings: {
+                  const SingleActivator(LogicalKeyboardKey.enter):
+                      _sendFromShortcut,
+                },
+                child: TextField(
+                  controller: widget.controller,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendFromSubmitted(),
+                  decoration: InputDecoration(
+                    hintText: 'Digite sua mensagem...',
+                    filled: true,
+                    fillColor: ChatSupportPalette.page,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: GridColors.primary,
-                      width: 1.5,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: GridColors.divider.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: GridColors.primary,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -454,7 +490,7 @@ class ChatComposer extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: onSend,
+                onPressed: widget.onSend,
                 child: const Icon(Icons.send_rounded, size: 20),
               ),
             ),
@@ -500,7 +536,7 @@ class ChatMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            _Avatar(name: displayName, mine: false),
+            _Avatar(name: displayName, mine: false, foto: message.senderFoto),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -556,7 +592,7 @@ class ChatMessageBubble extends StatelessWidget {
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            _Avatar(name: displayName, mine: true),
+            _Avatar(name: displayName, mine: true, foto: message.senderFoto),
           ],
         ],
       ),
@@ -574,48 +610,142 @@ class _MessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final text =
         message.content.isNotEmpty ? message.content : (message.text ?? '');
-    if (message.type == 'file') {
-      return InkWell(
-        onTap: onOpenFile,
+
+    final isFile = message.type == 'file' ||
+        message.fileId != null ||
+        (message.fileName != null && message.fileName!.isNotEmpty) ||
+        text.startsWith('Arquivo:');
+
+    if (isFile) {
+      final fileName = message.fileName ??
+          (text.startsWith('Arquivo:')
+              ? text.replaceFirst('Arquivo:', '').trim()
+              : 'Arquivo anexado');
+
+      final ext = fileName.split('.').last.toLowerCase();
+      IconData fileIcon = Icons.insert_drive_file_outlined;
+      Color iconColor = GridColors.primary;
+      if (ext == 'pdf') {
+        fileIcon = Icons.picture_as_pdf_outlined;
+        iconColor = const Color(0xFFD32F2F);
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) {
+        fileIcon = Icons.image_outlined;
+        iconColor = GridColors.secondary;
+      } else if (['xlsx', 'xls', 'csv'].contains(ext)) {
+        fileIcon = Icons.table_chart_outlined;
+        iconColor = const Color(0xFF2E7D32);
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(top: 2, bottom: 2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: GridColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onOpenFile,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(fileIcon, color: iconColor, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: GridColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Clique para visualizar ou baixar',
+                          style: TextStyle(
+                            color: GridColors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: GridColors.secondary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.download_rounded,
+                      size: 18,
+                      color: GridColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (message.type == 'ticket' || text.contains('Chamado #') || text.contains('🎫 Chamado')) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: GridColors.secondary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: GridColors.secondary.withValues(alpha: 0.28)),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.attach_file, color: GridColors.primary, size: 18),
-            const SizedBox(width: 6),
+            const Icon(Icons.assignment_turned_in_outlined,
+                size: 20, color: GridColors.secondary),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
-                message.fileName ?? 'Arquivo anexado',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                text.isEmpty ? 'Chamado aberto com sucesso' : text,
                 style: const TextStyle(
-                  color: GridColors.primary,
-                  decoration: TextDecoration.underline,
+                  color: GridColors.textSecondary,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  height: 1.3,
                 ),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    if (message.type == 'ticket') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.assignment_turned_in_outlined,
-              size: 18, color: GridColors.secondary),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              text.isEmpty ? 'Chamado aberto com sucesso' : text,
-              style: const TextStyle(
-                color: GridColors.textSecondary,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ),
-        ],
       );
     }
 
@@ -633,25 +763,90 @@ class _MessageContent extends StatelessWidget {
 class _Avatar extends StatelessWidget {
   final String name;
   final bool mine;
+  // foto pode ser: data URI base64 (data:image/...) ou URL HTTP.
+  final String? foto;
 
-  const _Avatar({required this.name, required this.mine});
+  const _Avatar({required this.name, required this.mine, this.foto});
 
   @override
   Widget build(BuildContext context) {
     final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+    final bgColor = mine
+        ? GridColors.secondary
+        : GridColors.primary.withValues(alpha: 0.12);
+    final fgColor = mine ? Colors.white : GridColors.primary;
+
+    // Exibe foto do Login quando disponível; fallback na inicial do nome.
+    if (foto != null && foto!.isNotEmpty) {
+      return _FotoAvatar(
+          foto: foto!, initial: initial, bgColor: bgColor, fgColor: fgColor);
+    }
+
     return CircleAvatar(
       radius: 16,
-      backgroundColor: mine
-          ? GridColors.secondary
-          : GridColors.primary.withValues(alpha: 0.12),
+      backgroundColor: bgColor,
       child: Text(
         initial,
         style: TextStyle(
-          color: mine ? Colors.white : GridColors.primary,
+          color: fgColor,
           fontSize: 12,
           fontWeight: FontWeight.w800,
         ),
       ),
+    );
+  }
+}
+
+class _FotoAvatar extends StatelessWidget {
+  final String foto;
+  final String initial;
+  final Color bgColor;
+  final Color fgColor;
+
+  const _FotoAvatar({
+    required this.foto,
+    required this.initial,
+    required this.bgColor,
+    required this.fgColor,
+  });
+
+  ImageProvider? _buildProvider() {
+    if (foto.startsWith('data:image')) {
+      // base64 data URI: "data:image/jpeg;base64,/9j/..."
+      try {
+        final comma = foto.indexOf(',');
+        if (comma != -1) {
+          final bytes = base64Decode(foto.substring(comma + 1));
+          return MemoryImage(bytes);
+        }
+      } catch (_) {}
+      return null;
+    }
+    // URL HTTP/HTTPS
+    if (foto.startsWith('http')) {
+      return NetworkImage(foto);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = _buildProvider();
+    if (provider == null) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor: bgColor,
+        child: Text(initial,
+            style: TextStyle(
+                color: fgColor, fontSize: 12, fontWeight: FontWeight.w800)),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: bgColor,
+      backgroundImage: provider,
+      onBackgroundImageError: (_, __) {},
+      child: null,
     );
   }
 }
