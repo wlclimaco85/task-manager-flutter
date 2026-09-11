@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'cnab_remessa_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../constants/custom_colors.dart';
 import '../../features/agendamento/agendamento_module.dart';
@@ -567,7 +568,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 199
       const SizedBox.shrink(), // 200
       const SizedBox.shrink(), // 201
-      const CnabRemessaScreen(), // 202: Remessa EDI
+      CnabRemessaScreen(), // 202: Remessa EDI
     ];
   }
 

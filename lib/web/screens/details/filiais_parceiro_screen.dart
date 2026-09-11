@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/generic_grid_windows_screen.dart';
+import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/dropdown_helpers.dart';
-import '../../../services/custom_http_client.dart';
-import '../../../utils/api_links.dart';
-import 'dart:convert';
+import '../../../services/network_caller.dart';
 
 class FiliaisParceiroScreen extends StatefulWidget {
   final int matrizId;
@@ -22,7 +20,7 @@ class FiliaisParceiroScreen extends StatefulWidget {
 }
 
 class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
-  final _key = GlobalKey<GenericGridWindowsScreenState>();
+  Key _gridKey = UniqueKey();
 
   void _vincularFilial() {
     String? selectedParceiroId;
@@ -42,7 +40,7 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                     const Text('Selecione um parceiro para vincular como filial:'),
                     const SizedBox(height: 16),
                     FutureBuilder<List<Map<String, dynamic>>>(
-                      future: DropdownHelpers.parceiros(empresaId: widget.empresaId),
+                      future: DropdownHelpers.parceirosPorEmpresa(widget.empresaId?.toString()),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const CircularProgressIndicator();
@@ -82,20 +80,19 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                 if (selectedParceiroId == null) return;
                 
                 try {
-                  final getResp = await customHttpClient.get(Uri.parse('\/'));
-                  if (getResp.statusCode == 200) {
-                    final data = jsonDecode(utf8.decode(getResp.bodyBytes));
-                    data['matriz'] = {'id': widget.matrizId};
-                    
-                    final putResp = await customHttpClient.put(
-                      Uri.parse('\/'),
-                      headers: {'Content-Type': 'application/json'},
-                      body: jsonEncode(data),
+                  final getResp = await NetworkCaller().getRequest('/api/parceiros/${selectedParceiroId!}');
+                  if (getResp.isSuccess && getResp.body != null) {
+                    final parceiroData = getResp.body!;
+                    parceiroData['matriz'] = {'id': widget.matrizId};
+
+                    final putResp = await NetworkCaller().putRequest(
+                      '/api/parceiros/${selectedParceiroId!}',
+                      parceiroData,
                     );
                     
                     if (putResp.statusCode == 200 || putResp.statusCode == 201) {
                       if (mounted) Navigator.of(ctx).pop();
-                      _key.currentState?.refreshData();
+                      setState(() { _gridKey = UniqueKey(); });
                     } else {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao vincular filial.')));
@@ -118,12 +115,13 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GenericGridWindowsScreen(
-      key: _key,
+    return DynamicGridWindowsScreen(
+      key: _gridKey,
       telaNome: 'parceiro',
       hasPermission: widget.hasPermission,
       extraParams: {'matrizId': widget.matrizId, if (widget.empresaId != null) 'empresaId': widget.empresaId},
-      hideAddButton: true,
+      fromJson: (json) => json,
+toJson: (item) => item,
       headerActions: [
         ElevatedButton.icon(
           onPressed: _vincularFilial,
