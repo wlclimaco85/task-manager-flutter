@@ -3,6 +3,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
+import 'empresa_acesso_model.dart';
+import 'empresa_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -31,6 +33,10 @@ bool _isJwtExpired(String token) {
 
 class AuthUtility {
   static LoginModel? userInfo;
+
+  /// Empresas de acesso do login (troca de empresa ativa) — populado por
+  /// `LoginEmpresaAcessoService.listarMeusAcessos()`.
+  static List<EmpresaAcesso> empresasAcesso = [];
 
   static Map<String, dynamic> _persistableSessionJson(LoginModel model) {
     final json = model.toJson();
@@ -117,6 +123,20 @@ class AuthUtility {
         L.w('[AuthUtility] falha ao persistir sessao minima: $fallbackError');
       }
     }
+  }
+
+  /// Atualiza a empresa ativa na sessão corrente (troca de empresa) e
+  /// repersiste a sessão. Usado por `LoginEmpresaAcessoService.trocarEmpresaAtiva`.
+  static Future<void> atualizarEmpresaAtiva(Empresa empresa) async {
+    final model = userInfo;
+    if (model == null) return;
+    if (model.login != null) {
+      model.login!.empresa = empresa;
+    }
+    if (model.data?.login != null) {
+      model.data!.login!.empresa = empresa;
+    }
+    await setUserInfo(model);
   }
 
   static Future<LoginModel?> getUserInfo() async {

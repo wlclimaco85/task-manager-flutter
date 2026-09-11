@@ -82,4 +82,33 @@ void main() {
   test('isUserLoggedIn retorna false quando não há dados', () async {
     expect(await AuthUtility.isUserLoggedIn(), isFalse);
   });
+
+  // Card empresa-acesso: `atualizarEmpresaAtiva` foi apagado por acidente
+  // num commit de restauracao de layout de login (da750a15) e reintroduzido
+  // nesta correcao -- cobre o caso de sucesso (login top-level e data.login)
+  // e o caso sem sessao (no-op).
+  test('atualizarEmpresaAtiva atualiza empresa no login e persiste sessao',
+      () async {
+    final model = LoginModel(
+      token: 'token-test',
+      login: Login(id: 1, email: 'user@test.com', empresa: Empresa(id: 5)),
+      data: Data(id: 99, login: Login(id: 1, empresa: Empresa(id: 5))),
+    );
+    await AuthUtility.setUserInfo(model);
+
+    await AuthUtility.atualizarEmpresaAtiva(Empresa(id: 42, nome: 'Nova Empresa'));
+
+    expect(AuthUtility.userInfo?.login?.empresa?.id, equals(42));
+    expect(AuthUtility.userInfo?.data?.login?.empresa?.id, equals(42));
+
+    final restored = await AuthUtility.getUserInfo();
+    expect(restored?.login?.empresa?.id, equals(42));
+  });
+
+  test('atualizarEmpresaAtiva nao lanca erro quando nao ha sessao ativa',
+      () async {
+    AuthUtility.userInfo = null;
+    await AuthUtility.atualizarEmpresaAtiva(Empresa(id: 1));
+    expect(AuthUtility.userInfo, isNull);
+  });
 }
