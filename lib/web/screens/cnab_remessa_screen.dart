@@ -49,7 +49,13 @@ class _CnabRemessaScreenState extends State<CnabRemessaScreen> {
     
     setState(() => _loading = true);
     try {
-      final token = NetworkCaller().accessToken;
+      // Achado ao mergear pra main (2026-09-11): `NetworkCaller().accessToken`
+      // nao existe (getter nunca foi definido) -- quebrava a compilacao. A
+      // variavel nunca era usada na URL/download abaixo mesmo antes, entao
+      // removida sem mudanca de comportamento. Se o endpoint exigir
+      // autenticacao, quem estiver com o card de CNAB precisa anexar o
+      // token de outra forma (o download via <a> nao envia header
+      // Authorization).
       final url = '${ApiLinks.baseUrl}/api/edi/remessa/gerar/$_selectedContaId';
       
       html.AnchorElement anchorElement = html.AnchorElement(href: url);
