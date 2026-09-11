@@ -148,6 +148,7 @@ import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
+import '../../widgets/importacao_fiscal_automacao_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -546,6 +547,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
       DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
       const AgendamentoModuleScreen(), // 183: Agendamento NFe Recorrente
+      const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
     ];
   }
 

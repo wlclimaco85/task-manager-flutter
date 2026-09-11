@@ -583,6 +583,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.tableColumns,
             screenIndex: 52),
         MenuItem(
+            id: 'importacao_fiscal_automacao',
+            label: 'Importação Fiscal / Automação',
+            icon: FontAwesomeIcons.folderTree,
+            screenIndex: 184),
+        MenuItem(
             id: 'empresas',
             label: 'Empresas',
             icon: FontAwesomeIcons.buildingUser,

@@ -242,6 +242,9 @@ class PermissionService {
     'condicao_pagamento': 'CondicaoPagamento',
     'proposta_comercial': 'PropostaComercial',
 
+    // Sistema
+    'importacao_fiscal_automacao': 'ImportacaoFiscalAutomacao',
+
     // Soltos
     'dashboard': 'Dashboard',
     'mensalidades': 'Mensalidades',
@@ -254,6 +257,16 @@ class PermissionService {
   static String? _getTelaNomeForMenuItem(String menuItemId) {
     return _menuIdToTelaNome[menuItemId];
   }
+
+  /// Versao publica de [_getTelaNomeForMenuItem] -- usada por
+  /// `RolePermissionCatalog.groups()` (matriz de Permissoes) pra montar a
+  /// lista de telas a partir de `MenuConfig.groups`. Erro pre-existente
+  /// (nao causado por mim) achado em 2026-09-10: o catalogo chamava esse
+  /// metodo publico que nunca existiu, so a versao privada -- quebrava a
+  /// compilacao de `role_permission_catalog.dart` e, em cascata, da tela de
+  /// Permissoes inteira.
+  static String? telaNomeForMenuItem(String menuItemId) =>
+      _getTelaNomeForMenuItem(menuItemId);
 
   /// Limpar cache (logout)
   void clear() {
