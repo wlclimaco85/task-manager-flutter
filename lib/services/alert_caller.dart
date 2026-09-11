@@ -128,7 +128,7 @@ class AlertCaller {
         '${ApiLinks.baseUrl}/api/notificacoes/marcar-lida',
         {'notificacaoChave': '${n.status}:${n.id}'},
       );
-      if (response.statusCode == 200) return true;
+      if (response.statusCode == 200 || response.statusCode == 204) return true;
       L.d('Erro: falha ao marcar notificação como lida (status ${response.statusCode})');
       return false;
     } catch (e) {
@@ -152,7 +152,7 @@ class AlertCaller {
         '${ApiLinks.baseUrl}/api/notificacoes/marcar-todas-lidas$query',
         {},
       );
-      if (response.statusCode == 200) return true;
+      if (response.statusCode == 200 || response.statusCode == 204) return true;
       L.d('Erro: falha ao marcar todas as notificações como lidas (status ${response.statusCode})');
       return false;
     } catch (e) {

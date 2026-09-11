@@ -474,13 +474,17 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '© ${DateTime.now().year} Abraço Contabilidade. Todos os direitos reservados.',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
+                  Flexible(
+                    child: Text(
+                      '© ${DateTime.now().year} Abraço Contabilidade. Todos os direitos reservados.',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const Text(
                     'Versão 2.4.0 (Build 2026.09)',
                     style: TextStyle(

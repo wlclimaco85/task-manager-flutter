@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/widgets/user_banners.dart';
@@ -77,6 +78,15 @@ void main() {
       await tester.pumpWidget(_wrap(const AppBarActions()));
       expect(find.byIcon(Icons.notifications), findsOneWidget);
       expect(find.byIcon(Icons.logout), findsOneWidget);
+    });
+  });
+
+  group('Notificacoes', () {
+    test('mantem acao de limpar tudo no painel do sino', () {
+      final source = File('lib/widgets/user_banners.dart').readAsStringSync();
+      expect(source, contains("const Key('notificacoes_limpar_tudo_btn')"));
+      expect(source, contains("'Limpar tudo'"));
+      expect(source, contains('marcarTodasNotificacoesLidas()'));
     });
   });
 }

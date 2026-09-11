@@ -721,13 +721,14 @@ class _NotificationPanel extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton.icon(
+            key: const Key('notificacoes_limpar_tudo_btn'),
             onPressed: onMarcarTodas,
-            icon:
-                const Icon(Icons.done_all, size: 16, color: GridColors.success),
+            icon: const Icon(Icons.delete_sweep_outlined,
+                size: 16, color: GridColors.error),
             label: const Text(
-              'Marcar todas como lidas',
+              'Limpar tudo',
               style: TextStyle(
-                color: GridColors.success,
+                color: GridColors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -969,7 +970,8 @@ class _AppBarActionsState extends State<AppBarActions> {
     }
   }
 
-  void _markAll() {
+  Future<void> _markAll() async {
+    await AlertCaller().marcarTodasNotificacoesLidas();
     if (mounted && !_disposed) {
       setState(() {
         _alerts.clear();
