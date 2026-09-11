@@ -552,6 +552,22 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
       const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
       const SessoesScreen(), // 186: Sessões
+      const SizedBox.shrink(), // 187
+      const SizedBox.shrink(), // 188
+      const SizedBox.shrink(), // 189
+      const SizedBox.shrink(), // 190
+      const SizedBox.shrink(), // 191
+      const SizedBox.shrink(), // 192
+      const SizedBox.shrink(), // 193
+      const SizedBox.shrink(), // 194
+      const SizedBox.shrink(), // 195
+      const SizedBox.shrink(), // 196
+      const SizedBox.shrink(), // 197
+      const SizedBox.shrink(), // 198
+      const SizedBox.shrink(), // 199
+      const SizedBox.shrink(), // 200
+      const SizedBox.shrink(), // 201
+      const CnabRemessaScreen(), // 202: Remessa EDI
     ];
   }
 
