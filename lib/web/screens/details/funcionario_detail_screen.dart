@@ -25,8 +25,8 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
   @override
   void initState() {
     super.initState();
-    // H5-21: 4 abas — Dados, Ponto, Acerto, GED
-    _tabController = TabController(length: 4, vsync: this);
+    // 6 abas — Dados, Ponto, Acerto, Dependentes, Afastamentos, GED
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -50,10 +50,13 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
           indicatorColor: GridColors.success,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
+          isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.person, size: 16), text: 'Dados'),
             Tab(icon: Icon(Icons.access_time, size: 16), text: 'Ponto'),
             Tab(icon: Icon(Icons.calculate, size: 16), text: 'Acerto'),
+            Tab(icon: Icon(Icons.family_restroom, size: 16), text: 'Dependentes'),
+            Tab(icon: Icon(Icons.medical_services, size: 16), text: 'Afastamentos'),
             Tab(icon: Icon(Icons.folder_open, size: 16), text: 'GED'),
           ],
         ),
@@ -71,7 +74,11 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
           _PontoTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? '')),
           // ── Tab 3: Acerto de Ponto ────────────────────────────────────
           _AcertoTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? ''), nomeFuncionario: nome),
-          // ── Tab 4: GED — documentos do funcionário (H5-21) ───────────
+          // ── Tab 4: Dependentes ────────────────────────────────────────
+          _DependentesTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? '')),
+          // ── Tab 5: Afastamentos ───────────────────────────────────────
+          _AfastamentosTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? '')),
+          // ── Tab 6: GED — documentos do funcionário (H5-21) ───────────
           GedArquivosScreen(
             moduloOrigem: 'funcionario',
             idOrigem: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? ''),
@@ -514,6 +521,409 @@ class _DateButton extends StatelessWidget {
           border: Border.all(color: Colors.white12),
         ),
         child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB DEPENDENTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DependentesTab extends StatefulWidget {
+  final int? funcionarioId;
+  const _DependentesTab({required this.funcionarioId});
+
+  @override
+  State<_DependentesTab> createState() => _DependentesTabState();
+}
+
+class _DependentesTabState extends State<_DependentesTab> {
+  List<dynamic> _dependentes = [];
+  bool _loading = false;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregar();
+  }
+
+  Future<void> _carregar() async {
+    if (widget.funcionarioId == null) return;
+    setState(() { _loading = true; _erro = null; });
+    try {
+      final token = AuthUtility.userInfo?.token;
+      final url = '${ApiLinks.dpDependentes}?funcionarioId=${widget.funcionarioId}';
+      final resp = await http.get(Uri.parse(url), headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      });
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(utf8.decode(resp.bodyBytes));
+        final data = body is Map ? (body['data']?['dados'] ?? body['data']) : body;
+        setState(() { _dependentes = data is List ? data : []; });
+      } else {
+        setState(() { _erro = 'Erro ao carregar dependentes (${resp.statusCode})'; });
+      }
+    } catch (e) {
+      setState(() { _erro = e.toString(); });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _abrirDialogForm([Map<String, dynamic>? item]) {
+    final nomeCtrl = TextEditingController(text: item?['nome']?.toString() ?? '');
+    final cpfCtrl = TextEditingController(text: item?['cpf']?.toString() ?? '');
+    String parentesco = item?['parentesco']?.toString() ?? 'FILHO';
+    bool depIrrf = item?['depIrrf'] == true || item == null;
+    bool depSalFamilia = item?['depSalarioFamilia'] == true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1D27),
+          title: Text(item == null ? 'Novo Dependente' : 'Editar Dependente', style: const TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Nome Completo', labelStyle: TextStyle(color: Colors.white70)),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: cpfCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'CPF', labelStyle: TextStyle(color: Colors.white70)),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: parentesco,
+                  dropdownColor: const Color(0xFF1A1D27),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Parentesco', labelStyle: TextStyle(color: Colors.white70)),
+                  items: const [
+                    DropdownMenuItem(value: 'FILHO', child: Text('Filho(a)')),
+                    DropdownMenuItem(value: 'CONJUGE', child: Text('Cônjuge')),
+                    DropdownMenuItem(value: 'ENTEADO', child: Text('Enteado(a)')),
+                    DropdownMenuItem(value: 'PAI_MAE', child: Text('Pai / Mãe')),
+                    DropdownMenuItem(value: 'OUTRO', child: Text('Outro')),
+                  ],
+                  onChanged: (v) => setDState(() => parentesco = v ?? 'FILHO'),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  title: const Text('Deduzir IRRF?', style: TextStyle(color: Colors.white, fontSize: 13)),
+                  value: depIrrf,
+                  activeColor: GridColors.success,
+                  onChanged: (v) => setDState(() => depIrrf = v),
+                ),
+                SwitchListTile(
+                  title: const Text('Salário Família?', style: TextStyle(color: Colors.white, fontSize: 13)),
+                  value: depSalFamilia,
+                  activeColor: GridColors.success,
+                  onChanged: (v) => setDState(() => depSalFamilia = v),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
+              onPressed: () async {
+                final token = AuthUtility.userInfo?.token;
+                final payload = {
+                  'funcionario': {'id': widget.funcionarioId},
+                  'nome': nomeCtrl.text.trim(),
+                  'cpf': cpfCtrl.text.trim(),
+                  'parentesco': parentesco,
+                  'depIrrf': depIrrf,
+                  'depSalarioFamilia': depSalFamilia,
+                  'ativo': true,
+                };
+                if (item != null) payload['id'] = item['id'];
+
+                final url = item == null ? ApiLinks.dpDependentes : '${ApiLinks.dpDependentes}/${item['id']}';
+                final mth = item == null ? http.post : http.put;
+                await mth(
+                  Uri.parse(url),
+                  headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+                  body: jsonEncode(payload),
+                );
+                Navigator.pop(ctx);
+                _carregar();
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_erro != null) return Center(child: Text(_erro!, style: const TextStyle(color: Colors.red)));
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Dependentes Vinculados (IRRF e Salário Família)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                onPressed: () => _abrirDialogForm(),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Novo Dependente'),
+                style: ElevatedButton.styleFrom(backgroundColor: GridColors.success, foregroundColor: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _dependentes.isEmpty
+                ? const Center(child: Text('Nenhum dependente cadastrado.', style: TextStyle(color: Colors.white38)))
+                : ListView.builder(
+                    itemCount: _dependentes.length,
+                    itemBuilder: (ctx, i) {
+                      final dep = _dependentes[i];
+                      return Card(
+                        color: const Color(0xFF1A1D27),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const CircleAvatar(backgroundColor: Color(0xFF2A2D3A), child: Icon(Icons.person, color: Colors.white)),
+                          title: Text(dep['nome'] ?? '---', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text('CPF: ${dep['cpf'] ?? '---'} | Parentesco: ${dep['parentesco'] ?? '---'} | Deduz IRRF: ${dep['depIrrf'] == true ? 'SIM' : 'NÃO'}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(icon: const Icon(Icons.edit, color: Colors.blueAccent, size: 18), onPressed: () => _abrirDialogForm(dep)),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                                onPressed: () async {
+                                  final token = AuthUtility.userInfo?.token;
+                                  await http.delete(Uri.parse('${ApiLinks.dpDependentes}/${dep['id']}'), headers: {'Authorization': 'Bearer $token'});
+                                  _carregar();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB AFASTAMENTOS (S-2230)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AfastamentosTab extends StatefulWidget {
+  final int? funcionarioId;
+  const _AfastamentosTab({required this.funcionarioId});
+
+  @override
+  State<_AfastamentosTab> createState() => _AfastamentosTabState();
+}
+
+class _AfastamentosTabState extends State<_AfastamentosTab> {
+  List<dynamic> _afastamentos = [];
+  bool _loading = false;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregar();
+  }
+
+  Future<void> _carregar() async {
+    if (widget.funcionarioId == null) return;
+    setState(() { _loading = true; _erro = null; });
+    try {
+      final token = AuthUtility.userInfo?.token;
+      final url = '${ApiLinks.dpAfastamentos}?funcionarioId=${widget.funcionarioId}';
+      final resp = await http.get(Uri.parse(url), headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      });
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(utf8.decode(resp.bodyBytes));
+        final data = body is Map ? (body['data']?['dados'] ?? body['data']) : body;
+        setState(() { _afastamentos = data is List ? data : []; });
+      } else {
+        setState(() { _erro = 'Erro ao carregar afastamentos (${resp.statusCode})'; });
+      }
+    } catch (e) {
+      setState(() { _erro = e.toString(); });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _abrirDialogForm([Map<String, dynamic>? item]) {
+    final tipoCtrl = TextEditingController(text: item?['tipo']?.toString() ?? 'DOENCA');
+    final cidCtrl = TextEditingController(text: item?['cid']?.toString() ?? '');
+    final crmCtrl = TextEditingController(text: item?['crmMedico']?.toString() ?? '');
+    final dtIniCtrl = TextEditingController(text: item?['dataInicio']?.toString() ?? DateTime.now().toString().substring(0, 10));
+    final dtFimCtrl = TextEditingController(text: item?['dataFim']?.toString() ?? '');
+    final diasCtrl = TextEditingController(text: item?['dias']?.toString() ?? '1');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1D27),
+        title: Text(item == null ? 'Registrar Afastamento' : 'Editar Afastamento', style: const TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tipoCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Tipo (DOENCA, ACIDENTE, MATERNIDADE, GALA)', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: cidCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'CID-10', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: crmCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'CRM do Médico / UF', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dtIniCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Data Início (AAAA-MM-DD)', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dtFimCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Data Término (opcional)', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: diasCtrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Dias de Afastamento', labelStyle: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
+            onPressed: () async {
+              final token = AuthUtility.userInfo?.token;
+              final dias = int.tryParse(diasCtrl.text) ?? 1;
+              final payload = {
+                'funcionario': {'id': widget.funcionarioId},
+                'tipo': tipoCtrl.text.trim(),
+                'cid': cidCtrl.text.trim(),
+                'crmMedico': crmCtrl.text.trim(),
+                'dataInicio': dtIniCtrl.text.trim(),
+                'dataFim': dtFimCtrl.text.trim().isEmpty ? null : dtFimCtrl.text.trim(),
+                'dias': dias,
+                'inssAcima15Dias': dias > 15,
+                'status': 'EM_ANDAMENTO',
+              };
+              if (item != null) payload['id'] = item['id'];
+
+              final url = item == null ? ApiLinks.dpAfastamentos : '${ApiLinks.dpAfastamentos}/${item['id']}';
+              final mth = item == null ? http.post : http.put;
+              await mth(
+                Uri.parse(url),
+                headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+                body: jsonEncode(payload),
+              );
+              Navigator.pop(ctx);
+              _carregar();
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_erro != null) return Center(child: Text(_erro!, style: const TextStyle(color: Colors.red)));
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Afastamentos e Atestados Médicos (S-2230)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                onPressed: () => _abrirDialogForm(),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Registrar Afastamento'),
+                style: ElevatedButton.styleFrom(backgroundColor: GridColors.success, foregroundColor: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _afastamentos.isEmpty
+                ? const Center(child: Text('Nenhum afastamento registrado.', style: TextStyle(color: Colors.white38)))
+                : ListView.builder(
+                    itemCount: _afastamentos.length,
+                    itemBuilder: (ctx, i) {
+                      final af = _afastamentos[i];
+                      final acima15 = (af['dias'] as num? ?? 0) > 15 || af['inssAcima15Dias'] == true;
+                      return Card(
+                        color: const Color(0xFF1A1D27),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: acima15 ? Colors.orange.shade800 : const Color(0xFF2A2D3A),
+                            child: Icon(Icons.medical_services, color: acima15 ? Colors.white : Colors.white70),
+                          ),
+                          title: Text('${af['tipo'] ?? 'DOENCA'} - ${af['dias'] ?? 1} dias', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text('Início: ${af['dataInicio'] ?? '---'} | CID: ${af['cid'] ?? '---'} | CRM: ${af['crmMedico'] ?? '---'}${acima15 ? ' | [ENCAMINHAMENTO INSS > 15 DIAS]' : ''}', style: TextStyle(color: acima15 ? Colors.orangeAccent : Colors.white54, fontSize: 12)),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                            onPressed: () async {
+                              final token = AuthUtility.userInfo?.token;
+                              await http.delete(Uri.parse('${ApiLinks.dpAfastamentos}/${af['id']}'), headers: {'Authorization': 'Bearer $token'});
+                              _carregar();
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

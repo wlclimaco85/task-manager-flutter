@@ -1207,12 +1207,25 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/carteira/corretoras/movimento';
   // Departamento Pessoal profissional
   static String get dpDashboard => '$_baseUrlNew/api/dp/dashboard';
+  static String get dpDashboardKpi => '$_baseUrlNew/api/dp/dashboard/kpi';
   static String get dpRelatorioResumo =>
       '$_baseUrlNew/api/dp/relatorios/resumo';
   static String dpExportDominio(String competencia) =>
       '$_baseUrlNew/api/dp/export/dominio?competencia=${Uri.encodeComponent(competencia)}';
   static String dpPortal(String funcionarioId) =>
       '$_baseUrlNew/api/dp/portal/$funcionarioId';
+  static String get dpEsocialImportar => '$_baseUrlNew/api/dp/esocial/importar';
+  static String get dpFolhaCompetencias => '$_baseUrlNew/api/dp/folha/competencias';
+  static String dpFolhaProcessar(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/processar';
+  static String dpFolhaHolerites(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/holerites';
+  static String dpFolhaHoleritePdf(int id) => '$_baseUrlNew/api/dp/folha/holerite/$id/pdf';
+  static String dpFolhaCnab240(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/cnab240';
+  static String get dpPontoAfdImportar => '$_baseUrlNew/api/dp/ponto/afd/importar';
+  static String dpPontoEspelhoPdf(int funcId, String inicio, String fim) =>
+      '$_baseUrlNew/api/dp/ponto/espelho/pdf?funcionarioId=$funcId&dataInicio=$inicio&dataFim=$fim';
+  static String get dpDependentes => '$_baseUrlNew/api/dp/dependentes';
+  static String get dpAfastamentos => '$_baseUrlNew/api/dp/afastamentos';
+  static String get dpHistoricos => '$_baseUrlNew/api/dp/historicos';
 
   static String get tradingBrokerConfig =>
       '$_baseUrlNew/api/trading/broker-config';

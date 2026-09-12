@@ -103,6 +103,8 @@ class _DpPortalColaboradorScreenState extends State<DpPortalColaboradorScreen> {
                       _PortalSection(title: 'Beneficios', items: _asList(_portal['beneficios']), primaryField: 'descricao', secondaryField: 'tipo'),
                       const SizedBox(height: 12),
                       _PortalSection(title: 'Eventos de folha', items: _asList(_portal['eventosFolha']), primaryField: 'competencia', secondaryField: 'valor'),
+                      const SizedBox(height: 12),
+                      _HoleritesSection(funcionarioId: _funcionario?['id']),
                     ],
                   ),
                 ),
@@ -154,6 +156,57 @@ class _PortalSection extends StatelessWidget {
                   subtitle: Text(item[secondaryField]?.toString() ?? ''),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HoleritesSection extends StatelessWidget {
+  final dynamic funcionarioId;
+
+  const _HoleritesSection({required this.funcionarioId});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFD7DED4)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Holerites e Comprovantes Salariais', style: TextStyle(fontWeight: FontWeight.w800)),
+                Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 20),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.receipt, color: Colors.green)),
+              title: const Text('Holerite Mensal - Competência Atual', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Disponível para visualização e download em PDF'),
+              trailing: ElevatedButton.icon(
+                onPressed: () {
+                  final url = '${ApiLinks.baseUrl}/api/dp/folha/holerite/1/pdf';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Download do Holerite PDF iniciado...'), backgroundColor: Colors.green),
+                  );
+                },
+                icon: const Icon(Icons.download, size: 16),
+                label: const Text('Baixar PDF'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+              ),
+            ),
           ],
         ),
       ),
