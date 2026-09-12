@@ -63,6 +63,8 @@ enum AppScreen {
   aiDashboard, aiAssistente,
   // Módulo Contábil
   lancamentoContabil, balancete, fechamentoPeriodo,
+  // Alvarás
+  alvaras,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -161,6 +163,7 @@ const _escritorioScreens = {
   AppScreen.chatKanban: _all,
   AppScreen.perfil:     _all,
   AppScreen.boletoImportacaoLote: _allFinanceiro,
+  AppScreen.alvaras:    _all,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -303,16 +306,25 @@ class SecurityMatrix {
     if (resolved == UserProfile.semAcesso && tipoLogin != null) resolved = UserProfile.escritorio;
 
     // Constrói mapa de permissões do backend (consolidado por tela — OR entre roles)
+    // Indexado tanto pelo nome original quanto em minúsculas para matching case-insensitive
     final backendPerms = <String, Set<AppAction>>{};
     if (userInfo.permissoes != null && userInfo.permissoes!.isNotEmpty) {
       for (final p in userInfo.permissoes!) {
-        final existing = backendPerms[p.telaNome] ?? <AppAction>{};
-        if (p.podeVer)      existing.add(AppAction.view);
-        if (p.podeInserir)  existing.add(AppAction.insert);
-        if (p.podeEditar)   existing.add(AppAction.update);
-        if (p.podeDeletar)  existing.add(AppAction.delete);
-        if (p.podeBaixar)   existing.add(AppAction.baixar);
-        backendPerms[p.telaNome] = existing;
+        final actions = <AppAction>{};
+        if (p.podeVer)      actions.add(AppAction.view);
+        if (p.podeInserir)  actions.add(AppAction.insert);
+        if (p.podeEditar)   actions.add(AppAction.update);
+        if (p.podeDeletar)  actions.add(AppAction.delete);
+        if (p.podeBaixar)   actions.add(AppAction.baixar);
+
+        final origExisting = backendPerms[p.telaNome] ?? <AppAction>{};
+        origExisting.addAll(actions);
+        backendPerms[p.telaNome] = origExisting;
+
+        final lowerKey = p.telaNome.toLowerCase();
+        final lowerExisting = backendPerms[lowerKey] ?? <AppAction>{};
+        lowerExisting.addAll(actions);
+        backendPerms[lowerKey] = lowerExisting;
       }
     }
 
@@ -325,6 +337,100 @@ class SecurityMatrix {
   }
 
   factory SecurityMatrix.current() => SecurityMatrix.of(AuthUtility.userInfo);
+
+  /// Mapeamento de aliases entre AppScreen e nomes de telas usados pelo backend
+  static const Map<AppScreen, List<String>> _screenAliases = {
+    AppScreen.calendario: ['calendario', 'calendarioguias'],
+    AppScreen.chat: ['chat'],
+    AppScreen.chatKanban: ['chatkanban', 'kanbanchat'],
+    AppScreen.comunicados: ['comunicado', 'comunicados', 'alertas'],
+    AppScreen.chamados: ['chamados', 'chamado'],
+    AppScreen.kanbanChamados: ['kanbanchamados', 'kanban'],
+    AppScreen.ged: ['arquivos', 'ged', 'diretorios', 'arquivo'],
+    AppScreen.arquivos: ['arquivos', 'ged', 'diretorios', 'arquivo'],
+    AppScreen.diretorios: ['diretorios', 'arquivos', 'ged'],
+    AppScreen.contasPagar: ['contaspagar', 'contas_pagar'],
+    AppScreen.contasReceber: ['contasreceber', 'contas_receber'],
+    AppScreen.parceiros: ['parceiros', 'parceiro'],
+    AppScreen.dashboard: ['dashboard'],
+    AppScreen.contasBancarias: ['contabancaria', 'contasbancarias', 'conta_bancaria'],
+    AppScreen.contaBancaria: ['contabancaria', 'contasbancarias', 'conta_bancaria'],
+    AppScreen.ponto: ['ponto', 'pontoweb'],
+    AppScreen.pontoWeb: ['pontoweb', 'ponto'],
+    AppScreen.solicitacaoAjustePonto: ['solicitacaoajusteponto', 'solicitarajuste'],
+    AppScreen.ajustePonto: ['ajusteponto'],
+    AppScreen.funcionarios: ['funcionarios', 'funcionario'],
+    AppScreen.feriados: ['feriados', 'feriado'],
+    AppScreen.alvaras: ['alvaras', 'alvara'],
+    AppScreen.mensalidades: ['mensalidades', 'mensalidade'],
+    AppScreen.logins: ['logins', 'login'],
+    AppScreen.roles: ['roles', 'permissoes'],
+    AppScreen.rolesPermissoes: ['rolespermissoes', 'permissoes', 'roles'],
+    AppScreen.formasPagamento: ['formaspagamento', 'formas_pagamento'],
+    AppScreen.setores: ['setores', 'setor'],
+    AppScreen.empresas: ['empresas', 'empresa', 'cadastroempresa'],
+    AppScreen.regimeTributario: ['regimetributario', 'regime'],
+    AppScreen.obrigacoesFiscais: ['obrigacoesfiscais', 'obrigacoes_fiscais'],
+    AppScreen.pedidos: ['pedidos', 'pedidosvenda', 'pedidoscompra'],
+    AppScreen.configuracoesAdmin: ['configuracoesadmin', 'configadmin'],
+    AppScreen.configSistema: ['configsistema'],
+    AppScreen.nfeEntrada: ['nfeentrada', 'nfe_entrada', 'nfeimportxml', 'nfeimportcsv'],
+    AppScreen.nfeSaida: ['nfesaida', 'nfe_saida'],
+    AppScreen.nfeSerie: ['nfeserie', 'nfe_serie'],
+    AppScreen.pdvNfce: ['pdvnfce', 'pdv_nfce'],
+    AppScreen.configFiscal: ['configfiscal', 'config_fiscal'],
+    AppScreen.nfse: ['nfse'],
+    AppScreen.nfseLista: ['nfse', 'nfselista'],
+    AppScreen.nfseSerie: ['nfseserie', 'nfse_serie'],
+    AppScreen.nfseServico: ['nfseservico', 'nfse_servico'],
+    AppScreen.produto: ['produtos', 'produto'],
+    AppScreen.unidadeMedida: ['unidademedida', 'unidade_medida'],
+    AppScreen.catalogoProduto: ['catalogoproduto', 'catalagoproduto'],
+    AppScreen.importarExtrato: ['importarextrato', 'importar_extrato'],
+    AppScreen.conciliacaoBancaria: ['conciliacaobancaria', 'conciliacao_bancaria'],
+    AppScreen.lancamentosFinanceiros: ['lancamentosfinanceiros', 'lancamentos_financeiros'],
+    AppScreen.integracoesFinanceiras: ['integracoesfinanceiras', 'integracoes_financeiras'],
+    AppScreen.cobranca: ['cobranca', 'cobrancaautomatica'],
+    AppScreen.dreGerencial: ['dre', 'dregerencial'],
+    AppScreen.tipoParceiro: ['tipoparceiro', 'tipo_parceiro'],
+    AppScreen.servicoContratado: ['servicocontratado', 'servicoscontratados'],
+    AppScreen.moduloServico: ['moduloservico', 'modulosservicos'],
+    AppScreen.trading: ['trading', 'tradingpainel'],
+    AppScreen.noticias: ['noticias'],
+    AppScreen.perfil: ['perfil'],
+    AppScreen.boletoImportacaoLote: ['importarboletoslote', 'boletoimportacaolote'],
+    AppScreen.dashFinanceiroArea: ['dashboardfinanceiro', 'dashfinanceiroarea'],
+    AppScreen.dashComercialArea: ['dashboardcomercial', 'dashcomercialarea'],
+    AppScreen.dashFiscalArea: ['dashboardfiscal', 'dashfiscalarea'],
+    AppScreen.dashDpArea: ['dashboarddp', 'dashdparea'],
+    AppScreen.dashAtendimentoArea: ['dashboardatendimento', 'dashatendimentoarea'],
+    AppScreen.dashMensalidadeArea: ['dashboardmensalidades', 'dashmensalidadearea'],
+  };
+
+  /// Procura permissões de uma tela considerando nome direto, lowercase e aliases
+  Set<AppAction>? _findPerms(AppScreen screen) {
+    if (_backendPerms.isEmpty) return null;
+    if (_backendPerms.containsKey(screen.name)) {
+      return _backendPerms[screen.name];
+    }
+    final lower = screen.name.toLowerCase();
+    if (_backendPerms.containsKey(lower)) {
+      return _backendPerms[lower];
+    }
+    final aliases = _screenAliases[screen];
+    if (aliases != null) {
+      for (final alias in aliases) {
+        if (_backendPerms.containsKey(alias)) {
+          return _backendPerms[alias];
+        }
+        final lowerAlias = alias.toLowerCase();
+        if (_backendPerms.containsKey(lowerAlias)) {
+          return _backendPerms[lowerAlias];
+        }
+      }
+    }
+    return null;
+  }
 
   bool _can(AppScreen screen, AppAction action) {
     // MASTER/SYSTEM: acesso total
@@ -344,7 +450,7 @@ class SecurityMatrix {
     // ModuloAccess só filtra quando módulos estão efetivamente configurados;
     // se a API retornou lista vazia, a permissão RBAC prevalece.
     if (_backendPerms.isNotEmpty) {
-      final perms = _backendPerms[screen.name];
+      final perms = _findPerms(screen);
       if (perms == null) return false;
       if (!perms.contains(action)) return false;
       return !ModuloAccess.hasModulosConfigurados || ModuloAccess.isScreenAllowed(screen);
@@ -378,7 +484,7 @@ class SecurityMatrix {
     _backendPerms.forEach((tela, actions) {
       if (!actions.contains(AppAction.view)) return;
       if (ModuloAccess.hasModulosConfigurados) {
-        final screen = AppScreen.values.where((s) => s.name == tela).firstOrNull;
+        final screen = AppScreen.values.where((s) => s.name.toLowerCase() == tela.toLowerCase()).firstOrNull;
         if (screen != null && !ModuloAccess.isScreenAllowed(screen)) return;
       }
       result.add(tela);
@@ -397,15 +503,21 @@ class SecurityMatrix {
       // Usa a matrix fallback para determinar telas visiveis
       final fallbackViewable = <String>{};
       for (final id in allKnownIds) {
-        final screen = AppScreen.values.where((s) => s.name == id).firstOrNull;
+        final screen = AppScreen.values.where((s) => s.name.toLowerCase() == id.toLowerCase()).firstOrNull;
         if (screen != null && canView(screen)) {
           fallbackViewable.add(id);
         }
       }
       return fallbackViewable;
     }
-    final viewable = viewableTelaIds.intersection(allKnownIds);
-    return viewable;
+    final viewableLower = viewableTelaIds.map((t) => t.toLowerCase()).toSet();
+    final allowed = <String>{};
+    for (final id in allKnownIds) {
+      if (viewableLower.contains(id.toLowerCase())) {
+        allowed.add(id);
+      }
+    }
+    return allowed;
   }
 
   bool hasRoleKey(String roleKey) {
@@ -424,7 +536,7 @@ class SecurityMatrix {
 
   bool hasAnyAccess(AppScreen screen) {
     if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
-    if (_backendPerms.isNotEmpty) return (_backendPerms[screen.name]?.isNotEmpty) ?? false;
+    if (_backendPerms.isNotEmpty) return (_findPerms(screen)?.isNotEmpty) ?? false;
     return (_fallbackMatrix[profile]?[screen]?.isNotEmpty) ?? false;
   }
 

@@ -162,4 +162,72 @@ void main() {
       expect(matrix.canView(AppScreen.dashComercialArea), isFalse);
     });
   });
+
+  // ── Normalização de Case e Aliases do Backend (ROLE_GERENTE / Mobile) ───────
+
+  group('Normalização de Case e Aliases do Backend', () {
+    RolePermissaoItem permView(String tela) => RolePermissaoItem(
+          telaNome: tela,
+          podeVer: true,
+          podeInserir: false,
+          podeEditar: false,
+          podeDeletar: false,
+          podeBaixar: false,
+        );
+
+    test('reconhece permissões vindas com PascalCase do banco (ex: Calendario, Chat, Comunicado, Arquivos)', () {
+      final info = buildCliente(
+        modulosContratados: [], // Sem módulos configurados: RBAC prevalece
+        permissoes: [
+          permView('Calendario'),
+          permView('Chat'),
+          permView('Comunicado'),
+          permView('Arquivos'),
+          permView('Chamados'),
+          permView('ContasPagar'),
+          permView('ContasReceber'),
+          permView('ContaBancaria'),
+          permView('ImportarExtrato'),
+          permView('Parceiros'),
+          permView('Dashboard'),
+          permView('DashboardFinanceiro'),
+          permView('DashboardComercial'),
+          permView('Alvaras'),
+          permView('Produtos'),
+        ],
+      );
+      final matrix = SecurityMatrix.of(info);
+
+      expect(matrix.canView(AppScreen.calendario), isTrue);
+      expect(matrix.canView(AppScreen.chat), isTrue);
+      expect(matrix.canView(AppScreen.comunicados), isTrue);
+      expect(matrix.canView(AppScreen.ged), isTrue);
+      expect(matrix.canView(AppScreen.chamados), isTrue);
+      expect(matrix.canView(AppScreen.contasPagar), isTrue);
+      expect(matrix.canView(AppScreen.contasReceber), isTrue);
+      expect(matrix.canView(AppScreen.contasBancarias), isTrue);
+      expect(matrix.canView(AppScreen.importarExtrato), isTrue);
+      expect(matrix.canView(AppScreen.parceiros), isTrue);
+      expect(matrix.canView(AppScreen.dashboard), isTrue);
+      expect(matrix.canView(AppScreen.dashFinanceiroArea), isTrue);
+      expect(matrix.canView(AppScreen.dashComercialArea), isTrue);
+      expect(matrix.canView(AppScreen.alvaras), isTrue);
+      expect(matrix.canView(AppScreen.produto), isTrue);
+    });
+
+    test('allowedTelaIds faz matching case-insensitive com ids do menu', () {
+      final info = buildCliente(
+        modulosContratados: [],
+        permissoes: [
+          permView('Calendario'),
+          permView('ContasPagar'),
+        ],
+      );
+      final matrix = SecurityMatrix.of(info);
+      final allowed = matrix.allowedTelaIds({'calendario', 'contasPagar', 'outraTela'});
+      expect(allowed, contains('calendario'));
+      expect(allowed, contains('contasPagar'));
+      expect(allowed, isNot(contains('outraTela')));
+    });
+  });
 }

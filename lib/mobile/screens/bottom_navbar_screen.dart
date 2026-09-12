@@ -51,6 +51,7 @@ import '../../widgets/user_banners.dart';
 import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
 import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
+import 'dashboard_financeiro_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -238,9 +239,49 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return items;
   }
 
-  /// Placeholder para slots sem permissão (evita IndexedStack quebrar).
+  /// Placeholder para slots sem permissão (evita IndexedStack quebrar e tela totalmente em branco).
   Widget _buildGatedPlaceholder(String msg) {
-    return const SizedBox.shrink();
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.lock_outline,
+                size: 48,
+                color: Colors.grey.shade500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              msg,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: GridColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Você não possui permissão para acessar esta tela.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
@@ -960,6 +1001,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         );
         break;
+      case "Dashboard Financeiro":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardFinanceiroMobileScreen(),
+          ),
+        );
+        break;
       case "Trading":
         nav = Navigator.push(
           context,
@@ -1299,7 +1348,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 Icons.account_balance_wallet, 'Dashboard Financeiro'),
           if (sec.canView(AppScreen.contasReceber))
             _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
-          if (sec.canView(AppScreen.contasBancarias))
+          if (sec.canView(AppScreen.importarExtrato) || sec.canView(AppScreen.contasBancarias))
             _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
         ],
       ),
@@ -1410,7 +1459,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
           if (sec.canView(AppScreen.logins))
             _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
-          _MoreMenuAction(Icons.verified_user, 'Alvarás'),
+          if (sec.canView(AppScreen.alvaras))
+            _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))
             _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
