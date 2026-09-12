@@ -26,13 +26,31 @@ class _DayMarkers {
   final bool hasPago;
   final bool hasRecebido;
   final bool hasTributo;
+  // Pedido do usuario (2026-09-11): status de pagamento do lancamento no dia,
+  // pra colorir o calendario por SITUACAO (paga=verde, vencida/atrasada e
+  // nao paga=amarela, em aberto e ainda no prazo=vermelha) em vez de so por
+  // tipo (pagar/receber).
+  final bool hasAtrasada;
   const _DayMarkers({
     this.hasPagar = false,
     this.hasReceber = false,
     this.hasPago = false,
     this.hasRecebido = false,
     this.hasTributo = false,
+    this.hasAtrasada = false,
   });
+}
+
+/// Pedido do usuario (2026-09-11): "quando ja foram pagas na cor verde
+/// quando nao for e estiver atrazada na amarela e quando ainda estiver pra
+/// vencer em aberta vermelha". `hoje` e' passado explicitamente pra facilitar
+/// teste (sem depender de DateTime.now() direto na funcao).
+bool _isVencida(Map<String, dynamic> item, DateTime hoje) {
+  if (_isBaixada(item) || _isCancelada(item)) return false;
+  final dt = _parseFinancialDate(_dateKey(item));
+  if (dt == null) return false;
+  final hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+  return dt.isBefore(hojeSemHora);
 }
 
 class _MonthSummary {
@@ -479,12 +497,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     final newMarkers = Map<String, _DayMarkers>.from(_dayMarkers);
 
+    final hoje = DateTime.now();
+
     void addMarker(String key,
         {bool pagar = false,
         bool receber = false,
         bool pago = false,
         bool recebido = false,
-        bool tributo = false}) {
+        bool tributo = false,
+        bool atrasada = false}) {
       final old = newMarkers[key] ?? const _DayMarkers();
       newMarkers[key] = _DayMarkers(
         hasPagar: old.hasPagar || pagar,
@@ -492,6 +513,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         hasPago: old.hasPago || pago,
         hasRecebido: old.hasRecebido || recebido,
         hasTributo: old.hasTributo || tributo,
+        hasAtrasada: old.hasAtrasada || atrasada,
       );
     }
 
@@ -510,6 +532,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         pagar: !isBaixa,
         pago: isBaixa,
         tributo: tributo,
+        atrasada: _isVencida(item, hoje),
       );
 
       final dt = _parseFinancialDate(dateStr);
@@ -534,6 +557,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         receber: !isBaixa,
         recebido: isBaixa,
         tributo: tributo,
+        atrasada: _isVencida(item, hoje),
       );
 
       final dt = _parseFinancialDate(dateStr);
@@ -799,13 +823,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
 
     final newMarkers = <String, _DayMarkers>{};
+    final hoje = DateTime.now();
 
     void addMarker(String key,
         {bool pagar = false,
         bool receber = false,
         bool pago = false,
         bool recebido = false,
-        bool tributo = false}) {
+        bool tributo = false,
+        bool atrasada = false}) {
       final old = newMarkers[key] ?? const _DayMarkers();
       newMarkers[key] = _DayMarkers(
         hasPagar: old.hasPagar || pagar,
@@ -813,6 +839,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         hasPago: old.hasPago || pago,
         hasRecebido: old.hasRecebido || recebido,
         hasTributo: old.hasTributo || tributo,
+        hasAtrasada: old.hasAtrasada || atrasada,
       );
     }
 
@@ -831,6 +858,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         pagar: !isBaixa,
         pago: isBaixa,
         tributo: tributo,
+        atrasada: _isVencida(item, hoje),
       );
     }
 
@@ -849,6 +877,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         receber: !isBaixa,
         recebido: isBaixa,
         tributo: tributo,
+        atrasada: _isVencida(item, hoje),
       );
     }
 
@@ -1976,17 +2005,19 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 cellBg = GridColors.primary.withValues(alpha: 0.12);
                 borderCol = GridColors.primary.withValues(alpha: 0.55);
                 txtCol = GridColors.primary;
-              } else if (markers.hasPagar) {
-                cellBg = const Color(0xFFFFEBEE);
+              } else if (markers.hasAtrasada) {
+                cellBg = const Color(0xFFFFF9C4); // AMARELA (atrasada)
+                borderCol = const Color(0xFFFFF59D);
+                txtCol = const Color(0xFFF57F17);
+              } else if (markers.hasPagar || markers.hasReceber) {
+                cellBg = const Color(0xFFFFEBEE); // VERMELHA (aberta/pra vencer)
                 borderCol = const Color(0xFFFFCDD2);
-                txtCol = GridColors.primary;
-              } else if (markers.hasReceber) {
-                cellBg = const Color(0xFFE8F5E9);
+                txtCol = GridColors.error;
+              } else if (markers.hasPago || markers.hasRecebido) {
+                cellBg = const Color(0xFFE8F5E9); // VERDE (paga)
                 borderCol = const Color(0xFFC8E6C9);
-                txtCol = GridColors.secondary;
-              } else if (markers.hasPago ||
-                  markers.hasRecebido ||
-                  markers.hasTributo) {
+                txtCol = GridColors.success;
+              } else if (markers.hasTributo) {
                 cellBg = const Color(0xFFF1F5F9);
                 borderCol = const Color(0xFFE2E8F0);
                 txtCol = const Color(0xFF475569);
