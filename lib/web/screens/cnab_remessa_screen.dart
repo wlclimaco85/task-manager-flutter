@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 import '../../utils/app_logger.dart';
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher.dart';
 
 class CnabRemessaScreen extends StatefulWidget {
   const CnabRemessaScreen({super.key});
@@ -58,10 +58,12 @@ class _CnabRemessaScreenState extends State<CnabRemessaScreen> {
       // Authorization).
       final url = '${ApiLinks.baseUrl}/api/edi/remessa/gerar/$_selectedContaId';
       
-      html.AnchorElement anchorElement = html.AnchorElement(href: url);
-      anchorElement.download = "remessa.rem";
-      anchorElement.target = '_blank';
-      anchorElement.click();
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('Não foi possível abrir o link de download');
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Download da remessa iniciado!')));
     } catch (e, stack) {
