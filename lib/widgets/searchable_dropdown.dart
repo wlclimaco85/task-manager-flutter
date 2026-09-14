@@ -1,15 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
-
-/// Modelo de pagina retornada por loaders de dropdown paginados/remotos.
-class PaginaDropdown {
-  final List<Map<String, dynamic>> items;
-  final int total;
-  final String? erro;
-
-  const PaginaDropdown(this.items, this.total, {this.erro});
-}
+import 'generic_grid_windows_screen.dart' show PaginaDropdown;
+export 'generic_grid_windows_screen.dart' show PaginaDropdown;
 
 /// Reusable searchable dropdown widget.
 ///

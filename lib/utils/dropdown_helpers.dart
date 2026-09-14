@@ -268,6 +268,81 @@ class DropdownHelpers {
     return raw['email']?.toString();
   }
 
+  /// Busca paginada + server-side (nome ou codigo, via GET /api/produto-contabil?nome=...) do
+  /// dropdown de Produto — lazy loading de 20 em 20 com busca por LIKE, filtrado
+  /// por empresa e parceiro do tenant para seguranca de dados.
+  static Future<PaginaDropdown> produtosContabeisBusca({
+    String? busca,
+    required int pagina,
+    int tamanho = 20,
+    String? empresaId,
+    String? parceiroId,
+  }) async {
+    final url =
+        '${ApiLinks.baseUrl}/api/produto-contabil${buildProdutosContabeisBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho, empresaId: empresaId, parceiroId: parceiroId)}';
+    try {
+      final resp = await NetworkCaller().getRequest(url);
+      if (!resp.isSuccess || resp.body == null) {
+        return PaginaDropdown([], 0,
+            erro: 'Erro ao buscar produtos (status ${resp.statusCode}).');
+      }
+      return parsePaginaDropdown(resp.body);
+    } catch (e) {
+      return PaginaDropdown([], 0, erro: 'Erro ao buscar produtos: $e');
+    }
+  }
+
+  /// Monta a query string (`?pagina=...&tamanho=...[&nome=...][&empId=...][&parceiroId=...]&isServico=false`)
+  /// de [produtosContabeisBusca] — extraído em função pura para poder ser testado sem rede.
+  static String buildProdutosContabeisBuscaQuery({
+    String? busca,
+    required int pagina,
+    int tamanho = 20,
+    String? empresaId,
+    String? parceiroId,
+  }) {
+    final termo = busca?.trim();
+    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho&isServico=false');
+    if (termo != null && termo.isNotEmpty) {
+      query.write('&nome=${Uri.encodeQueryComponent(termo)}');
+    }
+    if (empresaId != null && empresaId.isNotEmpty) {
+      query.write('&empId=${Uri.encodeQueryComponent(empresaId)}');
+    }
+    if (parceiroId != null && parceiroId.isNotEmpty) {
+      query.write('&parceiroId=${Uri.encodeQueryComponent(parceiroId)}');
+    }
+    return query.toString();
+  }
+
+  /// Resolve o rótulo de exibição de um produto pelo id.
+  static Future<String?> produtoContabilLabelPorId(String id) async {
+    try {
+      final resp =
+          await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/produto-contabil/$id');
+      if (!resp.isSuccess || resp.body == null) return null;
+      return parseProdutoLabel(resp.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrai o rótulo de exibição (nome ou codigo) de um produto.
+  static String? parseProdutoLabel(dynamic raw) {
+    if (raw is! Map) return null;
+    final data = raw['data'] is Map ? raw['data'] : raw;
+    if (data is! Map) return null;
+    final nome = data['nome']?.toString();
+    final codigo = data['codigo']?.toString();
+    if (nome != null && nome.isNotEmpty) {
+      if (codigo != null && codigo.isNotEmpty && !nome.startsWith(codigo)) {
+        return '$codigo - $nome';
+      }
+      return nome;
+    }
+    return codigo;
+  }
+
   static Future<List<Map<String, dynamic>>> aplicativos() =>
       load('${ApiLinks.baseUrl}/api/aplicativo', displayField: 'nome');
 

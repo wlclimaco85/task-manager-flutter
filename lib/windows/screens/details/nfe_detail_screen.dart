@@ -12,6 +12,7 @@ import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_texts.dart';
 import '../produto_grid_screen.dart';
 
@@ -1317,119 +1318,148 @@ class _State extends State<NfeSankhyaDetailScreen> {
     return SingleChildScrollView(
         padding: const EdgeInsets.all(10),
         child: Column(children: [
-          // Produto dropdown — ao selecionar, preenche NCM, CFOP, Unidade, Vl. Unitário
-          _ddObjItem('Produto', prodId, _produtos, 'nome', (v) {
-            final prod = _produtos.firstWhere((p) => p['id']?.toString() == v,
-                orElse: () => {});
-            setState(() {
-              item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
-              if (prod.isNotEmpty) {
-                item['x_prod'] = prod['nome']?.toString() ?? '';
-                item['xProd'] = item['x_prod'];
-                item['ncm'] = prod['ncm']?.toString() ?? '';
-                item['cfop'] = prod['cfop']?.toString() ?? '';
-                item['u_com'] = prod['unidade']?.toString() ?? '';
-                item['uCom'] = item['u_com'];
-                item['v_un_com'] = prod['preco']?.toString() ?? '0.00';
-                item['vUnCom'] = item['v_un_com'];
-                item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1.00';
-                item['qCom'] = item['q_com'];
+          // Produto SearchableDropdownField — busca paginada no backend filtrada por tenant (empresa e parceiro)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Builder(builder: (context) {
+              final login = AuthUtility.userInfo?.login;
+              final parcId = login?.parceiro?.id?.toString() ?? _parceiroId;
+              final empId = login?.empresa?.id?.toString() ?? _empresaId;
+              return SearchableDropdownField(
+                label: 'Produto',
+                value: prodId,
+                items: _produtos,
+                valueField: 'id',
+                displayField: 'nome',
+                nullable: true,
+                nullLabel: '— Selecione —',
+                loadPage: ({String? busca, required int pagina}) =>
+                    DropdownHelpers.produtosContabeisBusca(
+                  busca: busca,
+                  pagina: pagina,
+                  tamanho: 20,
+                  empresaId: empId,
+                  parceiroId: parcId,
+                ),
+                labelResolver: DropdownHelpers.produtoContabilLabelPorId,
+                onChanged: (v) {
+                  setState(() {
+                    item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
+                  });
+                },
+                onItemSelected: (selected) {
+                  if (selected == null) return;
+                  final v = selected['id']?.toString();
+                  setState(() {
+                    item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
+                    item['x_prod'] = selected['nome']?.toString() ?? '';
+                    item['xProd'] = item['x_prod'];
+                    item['ncm'] = selected['ncm']?.toString() ?? '';
+                    item['cfop'] = selected['cfop']?.toString() ?? '';
+                    item['u_com'] = selected['unidade']?.toString() ?? '';
+                    item['uCom'] = item['u_com'];
+                    item['v_un_com'] = selected['preco']?.toString() ?? '0.00';
+                    item['vUnCom'] = item['v_un_com'];
+                    item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1.00';
+                    item['qCom'] = item['q_com'];
 
-                // Tributos diretos do produto
-                if (prod['cst_csosn'] != null || prod['cstCsosn'] != null) {
-                  item['cst_icms'] = (prod['cst_csosn'] ?? prod['cstCsosn']).toString();
-                  item['cstIcms'] = item['cst_icms'];
-                }
-                if (prod['aliquota_icms'] != null || prod['aliquotaIcms'] != null) {
-                  item['aliq_icms'] = (prod['aliquota_icms'] ?? prod['aliquotaIcms']).toString();
-                  item['aliqIcms'] = item['aliq_icms'];
-                }
-                if (prod['cst_ibs_cbs'] != null || prod['cstIbsCbs'] != null) {
-                  item['cst_ibs_cbs'] = (prod['cst_ibs_cbs'] ?? prod['cstIbsCbs']).toString();
-                  item['cstIbsCbs'] = item['cst_ibs_cbs'];
-                }
-                if (prod['aliquota_cbs'] != null || prod['aliquotaCbs'] != null) {
-                  item['p_cbs'] = (prod['aliquota_cbs'] ?? prod['aliquotaCbs']).toString();
-                  item['pCbs'] = item['p_cbs'];
-                }
-                if (prod['aliquota_ibs_uf'] != null || prod['aliquotaIbsUf'] != null) {
-                  item['p_ibs_uf'] = (prod['aliquota_ibs_uf'] ?? prod['aliquotaIbsUf']).toString();
-                  item['pIbsUf'] = item['p_ibs_uf'];
-                }
-                if (prod['aliquota_ibs_mun'] != null || prod['aliquotaIbsMun'] != null) {
-                  item['p_ibs_mun'] = (prod['aliquota_ibs_mun'] ?? prod['aliquotaIbsMun']).toString();
-                  item['pIbsMun'] = item['p_ibs_mun'];
-                }
+                    // Tributos diretos do produto
+                    if (selected['cst_csosn'] != null || selected['cstCsosn'] != null) {
+                      item['cst_icms'] = (selected['cst_csosn'] ?? selected['cstCsosn']).toString();
+                      item['cstIcms'] = item['cst_icms'];
+                    }
+                    if (selected['aliquota_icms'] != null || selected['aliquotaIcms'] != null) {
+                      item['aliq_icms'] = (selected['aliquota_icms'] ?? selected['aliquotaIcms']).toString();
+                      item['aliqIcms'] = item['aliq_icms'];
+                    }
+                    if (selected['cst_ibs_cbs'] != null || selected['cstIbsCbs'] != null) {
+                      item['cst_ibs_cbs'] = (selected['cst_ibs_cbs'] ?? selected['cstIbsCbs']).toString();
+                      item['cstIbsCbs'] = item['cst_ibs_cbs'];
+                    }
+                    if (selected['aliquota_cbs'] != null || selected['aliquotaCbs'] != null) {
+                      item['p_cbs'] = (selected['aliquota_cbs'] ?? selected['aliquotaCbs']).toString();
+                      item['pCbs'] = item['p_cbs'];
+                    }
+                    if (selected['aliquota_ibs_uf'] != null || selected['aliquotaIbsUf'] != null) {
+                      item['p_ibs_uf'] = (selected['aliquota_ibs_uf'] ?? selected['aliquotaIbsUf']).toString();
+                      item['pIbsUf'] = item['p_ibs_uf'];
+                    }
+                    if (selected['aliquota_ibs_mun'] != null || selected['aliquotaIbsMun'] != null) {
+                      item['p_ibs_mun'] = (selected['aliquota_ibs_mun'] ?? selected['aliquotaIbsMun']).toString();
+                      item['pIbsMun'] = item['p_ibs_mun'];
+                    }
 
-                _recalcularTotalItem(item);
+                    _recalcularTotalItem(item);
 
-                // Busca impostos detalhados por UF (PIS, COFINS, IPI, etc.) se houver
-                if (v != null && v.toString().isNotEmpty) {
-                  TenantContext.get('${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$v').then((r) {
-                    if (r.statusCode == 200) {
-                      try {
-                        final list = jsonDecode(r.body);
-                        if (list is List && list.isNotEmpty) {
-                          final imp = list.first as Map<String, dynamic>;
-                          setState(() {
-                            if (imp['cstCsosn'] != null) {
-                              item['cst_icms'] = imp['cstCsosn'].toString();
-                              item['cstIcms'] = item['cst_icms'];
+                    // Busca impostos detalhados por UF (PIS, COFINS, IPI, etc.) se houver
+                    if (v != null && v.toString().isNotEmpty) {
+                      TenantContext.get('${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$v').then((r) {
+                        if (r.statusCode == 200) {
+                          try {
+                            final list = jsonDecode(r.body);
+                            if (list is List && list.isNotEmpty) {
+                              final imp = list.first as Map<String, dynamic>;
+                              setState(() {
+                                if (imp['cstCsosn'] != null) {
+                                  item['cst_icms'] = imp['cstCsosn'].toString();
+                                  item['cstIcms'] = item['cst_icms'];
+                                }
+                                if (imp['aliquotaIcms'] != null) {
+                                  item['aliq_icms'] = imp['aliquotaIcms'].toString();
+                                  item['aliqIcms'] = item['aliq_icms'];
+                                }
+                                if (imp['cstPis'] != null) {
+                                  item['cst_pis'] = imp['cstPis'].toString();
+                                  item['cstPis'] = item['cst_pis'];
+                                }
+                                if (imp['pPis'] != null) {
+                                  item['p_pis'] = imp['pPis'].toString();
+                                  item['pPis'] = item['p_pis'];
+                                }
+                                if (imp['cstCofins'] != null) {
+                                  item['cst_cofins'] = imp['cstCofins'].toString();
+                                  item['cstCofins'] = item['cst_cofins'];
+                                }
+                                if (imp['pCofins'] != null) {
+                                  item['p_cofins'] = imp['pCofins'].toString();
+                                  item['pCofins'] = item['p_cofins'];
+                                }
+                                if (imp['cstIpi'] != null) {
+                                  item['cst_ipi'] = imp['cstIpi'].toString();
+                                  item['cstIpi'] = item['cst_ipi'];
+                                }
+                                if (imp['aliqIpi'] != null) {
+                                  item['aliq_ipi'] = imp['aliqIpi'].toString();
+                                  item['aliqIpi'] = item['aliq_ipi'];
+                                }
+                                if (imp['cstIbsCbs'] != null) {
+                                  item['cst_ibs_cbs'] = imp['cstIbsCbs'].toString();
+                                  item['cstIbsCbs'] = item['cst_ibs_cbs'];
+                                }
+                                if (imp['pCbs'] != null) {
+                                  item['p_cbs'] = imp['pCbs'].toString();
+                                  item['pCbs'] = item['p_cbs'];
+                                }
+                                if (imp['pIbsUf'] != null) {
+                                  item['p_ibs_uf'] = imp['pIbsUf'].toString();
+                                  item['pIbsUf'] = item['p_ibs_uf'];
+                                }
+                                if (imp['pIbsMun'] != null) {
+                                  item['p_ibs_mun'] = imp['pIbsMun'].toString();
+                                  item['pIbsMun'] = item['p_ibs_mun'];
+                                }
+                                _recalcularTotalItem(item);
+                              });
                             }
-                            if (imp['aliquotaIcms'] != null) {
-                              item['aliq_icms'] = imp['aliquotaIcms'].toString();
-                              item['aliqIcms'] = item['aliq_icms'];
-                            }
-                            if (imp['cstPis'] != null) {
-                              item['cst_pis'] = imp['cstPis'].toString();
-                              item['cstPis'] = item['cst_pis'];
-                            }
-                            if (imp['pPis'] != null) {
-                              item['p_pis'] = imp['pPis'].toString();
-                              item['pPis'] = item['p_pis'];
-                            }
-                            if (imp['cstCofins'] != null) {
-                              item['cst_cofins'] = imp['cstCofins'].toString();
-                              item['cstCofins'] = item['cst_cofins'];
-                            }
-                            if (imp['pCofins'] != null) {
-                              item['p_cofins'] = imp['pCofins'].toString();
-                              item['pCofins'] = item['p_cofins'];
-                            }
-                            if (imp['cstIpi'] != null) {
-                              item['cst_ipi'] = imp['cstIpi'].toString();
-                              item['cstIpi'] = item['cst_ipi'];
-                            }
-                            if (imp['aliqIpi'] != null) {
-                              item['aliq_ipi'] = imp['aliqIpi'].toString();
-                              item['aliqIpi'] = item['aliq_ipi'];
-                            }
-                            if (imp['cstIbsCbs'] != null) {
-                              item['cst_ibs_cbs'] = imp['cstIbsCbs'].toString();
-                              item['cstIbsCbs'] = item['cst_ibs_cbs'];
-                            }
-                            if (imp['pCbs'] != null) {
-                              item['p_cbs'] = imp['pCbs'].toString();
-                              item['pCbs'] = item['p_cbs'];
-                            }
-                            if (imp['pIbsUf'] != null) {
-                              item['p_ibs_uf'] = imp['pIbsUf'].toString();
-                              item['pIbsUf'] = item['p_ibs_uf'];
-                            }
-                            if (imp['pIbsMun'] != null) {
-                              item['p_ibs_mun'] = imp['pIbsMun'].toString();
-                              item['pIbsMun'] = item['p_ibs_mun'];
-                            }
-                            _recalcularTotalItem(item);
-                          });
+                          } catch (_) {}
                         }
-                      } catch (_) {}
+                      });
                     }
                   });
-                }
-              }
-            });
-          }),
+                },
+              );
+            }),
+          ),
           // Estado vazio do lookup de Produto: oferece cadastro de novo produto
           if (_produtos.isEmpty)
             Padding(
@@ -1631,6 +1661,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
                   item['v_prod'] = _valorMonetario(quantidade * valorUnitario);
                   item['vProd'] = item['v_prod'];
                 }
+                _recalcularTotalItem(item);
                 setState(() {});
               }
             },

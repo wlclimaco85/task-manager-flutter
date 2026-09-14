@@ -279,4 +279,64 @@ void main() {
       expect(pagina1, '?pagina=1&tamanho=20');
     });
   });
+
+  group('DropdownHelpers.buildProdutosContabeisBuscaQuery', () {
+    test('inclui pagina, tamanho e isServico=false sempre', () {
+      final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
+          busca: null, pagina: 0);
+      expect(query, '?pagina=0&tamanho=20&isServico=false');
+    });
+
+    test('inclui termo de busca codificado', () {
+      final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
+          busca: 'arroz & feijao', pagina: 0);
+      expect(query, contains('&nome=arroz+%26+feijao'));
+    });
+
+    test('inclui empresaId e parceiroId quando fornecidos', () {
+      final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
+          busca: 'arroz', pagina: 1, empresaId: '10', parceiroId: '20');
+      expect(query, contains('&empId=10'));
+      expect(query, contains('&parceiroId=20'));
+      expect(query, contains('&nome=arroz'));
+      expect(query, contains('pagina=1'));
+    });
+
+    test('ignora busca vazia ou so com espacos', () {
+      final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
+          busca: '   ', pagina: 0);
+      expect(query, isNot(contains('&nome=')));
+    });
+  });
+
+  group('DropdownHelpers.parseProdutoLabel', () {
+    test('retorna nome quando codigo nulo ou vazio', () {
+      final label = DropdownHelpers.parseProdutoLabel({'nome': 'Arroz'});
+      expect(label, 'Arroz');
+    });
+
+    test('retorna codigo - nome quando ambos presentes', () {
+      final label = DropdownHelpers.parseProdutoLabel(
+          {'codigo': 'PRD01', 'nome': 'Arroz Branco'});
+      expect(label, 'PRD01 - Arroz Branco');
+    });
+
+    test('nao duplica codigo se nome ja comeca com ele', () {
+      final label = DropdownHelpers.parseProdutoLabel(
+          {'codigo': 'PRD01', 'nome': 'PRD01 - Arroz'});
+      expect(label, 'PRD01 - Arroz');
+    });
+
+    test('extrai de envelope data', () {
+      final label = DropdownHelpers.parseProdutoLabel({
+        'data': {'codigo': '10', 'nome': 'Feijao'}
+      });
+      expect(label, '10 - Feijao');
+    });
+
+    test('corpo malformado retorna null', () {
+      expect(DropdownHelpers.parseProdutoLabel(null), isNull);
+      expect(DropdownHelpers.parseProdutoLabel('invalido'), isNull);
+    });
+  });
 }
