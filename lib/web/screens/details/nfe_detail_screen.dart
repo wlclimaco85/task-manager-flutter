@@ -1436,7 +1436,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
       setState(() {
         for (final r in results) {
           if (r.statusCode == 200) {
-            import 'dart:convert';
             final calculated = jsonDecode(r.body);
             final data = calculated is Map ? (calculated['data'] ?? calculated) : calculated;
             
@@ -1449,7 +1448,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
             
             for (final f in fields) {
               if (data[f] != null) {
-                String snake = f.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0).toLowerCase());
+                String snake = f.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0)!.toLowerCase());
                 if (f == 'vBcIcms') snake = 'v_bc_icms';
                 if (f == 'vBcIcmsSt') snake = 'v_bc_icms_st';
                 if (f == 'vIcmsSt') snake = 'v_icms_st';
