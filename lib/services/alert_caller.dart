@@ -7,8 +7,8 @@ import '../../services/network_caller.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/tenant_context.dart';
 
-
 import 'package:task_manager_flutter/utils/app_logger.dart';
+
 class AlertCaller {
   Future<List<Alert>> fetchAllAlerts(BuildContext context) async {
     List<Alert>? model = [];
@@ -85,7 +85,11 @@ class AlertCaller {
         final List raw = body is List
             ? body
             : (body is Map
-                ? (body['data'] ?? body['dados'] ?? body['content'] ?? body['items'] ?? [])
+                ? (body['data'] ??
+                    body['dados'] ??
+                    body['content'] ??
+                    body['items'] ??
+                    [])
                 : []);
 
         model = raw.whereType<Map>().map((item) {

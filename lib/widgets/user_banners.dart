@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/alert_model.dart';
@@ -234,7 +235,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     // FilterActionBar ou customBottom) em vez de reimplementar a conta —
     // evitava desalinhar o dropdown quando customBottom tem altura diferente
     // de 52 (ex.: 44 no Calendário Financeiro).
-    final hasBottomBar = widget.customBottom != null || widget.showFilterButton == true;
+    final hasBottomBar =
+        widget.customBottom != null || widget.showFilterButton == true;
     final topOffset = widget.preferredSize.height + (hasBottomBar ? 16 : 12);
 
     notificationOverlay = OverlayEntry(
@@ -537,7 +539,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             Text(
                               _getCompanyName(),
                               style: TextStyle(
-                                color: GridColors.textPrimary.withValues(alpha: 0.75),
+                                color: GridColors.textPrimary
+                                    .withValues(alpha: 0.75),
                                 fontSize: 11,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1002,7 +1005,8 @@ class _AppBarActionsState extends State<AppBarActions> {
   }
 
   Future<void> _markAll() async {
-    await AlertCaller().marcarTodasNotificacoesLidas();
+    final sucesso = await AlertCaller().marcarTodasNotificacoesLidas();
+    if (!sucesso) return;
     if (mounted && !_disposed) {
       setState(() {
         _alerts.clear();
