@@ -1920,21 +1920,37 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             const SizedBox(height: 6),
             if (summary != null) ...[
               Text(
-                'Pagar: ${_currencyFmt.format(summary.totalPagar)}',
+                summary.totalPagar > 0
+                    ? (summary.totalPago > 0
+                        ? 'Pagar: ${_currencyFmt.format(summary.totalPagar)} (Pago: ${_currencyFmt.format(summary.totalPago)})'
+                        : 'Pagar: ${_currencyFmt.format(summary.totalPagar)}')
+                    : (summary.totalPago > 0
+                        ? 'Pago: ${_currencyFmt.format(summary.totalPago)}'
+                        : 'Pagar: ${_currencyFmt.format(0)}'),
                 style: const TextStyle(fontSize: 10, color: GridColors.error),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                'Receber: ${_currencyFmt.format(summary.totalReceber)}',
+                summary.totalReceber > 0
+                    ? (summary.totalRecebido > 0
+                        ? 'Receber: ${_currencyFmt.format(summary.totalReceber)} (Rec: ${_currencyFmt.format(summary.totalRecebido)})'
+                        : 'Receber: ${_currencyFmt.format(summary.totalReceber)}')
+                    : (summary.totalRecebido > 0
+                        ? 'Recebido: ${_currencyFmt.format(summary.totalRecebido)}'
+                        : 'Receber: ${_currencyFmt.format(0)}'),
                 style: const TextStyle(fontSize: 10, color: GridColors.success),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                'Saldo: ${_currencyFmt.format(summary.saldoReceber - summary.saldoPagar.abs())}',
+                'Saldo: ${_currencyFmt.format((summary.totalRecebido + summary.totalReceber) - (summary.totalPago + summary.totalPagar))}',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: saldo >= 0 ? GridColors.success : GridColors.error,
+                  color: ((summary.totalRecebido + summary.totalReceber) -
+                              (summary.totalPago + summary.totalPagar)) >=
+                          0
+                      ? GridColors.success
+                      : GridColors.error,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -2097,7 +2113,18 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 0.5),
                                   decoration: const BoxDecoration(
-                                    color: Colors.grey,
+                                    color: Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              if (markers.hasRecebido && !markers.hasReceber)
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 0.5),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
                                     shape: BoxShape.circle,
                                   ),
                                 ),

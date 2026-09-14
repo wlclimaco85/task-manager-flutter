@@ -129,18 +129,26 @@ class _WindowsDashboardFinanceiroScreenState
     });
 
     try {
+      DateTime? effectiveDataInicio = _dataInicio;
+      DateTime? effectiveDataFim = _dataFim;
+      final dias = _getDiasFromPeriodo();
+      if (effectiveDataInicio == null && dias != null && dias > 0) {
+        effectiveDataFim = effectiveDataFim ?? DateTime.now();
+        effectiveDataInicio = effectiveDataFim.subtract(Duration(days: dias));
+      }
+
       final results = await Future.wait([
         DashboardFinanceiroCaller().obterDashboard(
           empresaId: _empresaId,
           parceiroId: _parceiroId,
           contaBancariaId: _contaBancariaId,
-          dataInicio: _dataInicio?.toIso8601String().split('T').first,
-          dataFim: _dataFim?.toIso8601String().split('T').first,
+          dataInicio: effectiveDataInicio?.toIso8601String().split('T').first,
+          dataFim: effectiveDataFim?.toIso8601String().split('T').first,
         ),
         DashboardFinanceiroCaller().obterKpis(
           empresaId: _empresaId,
           parceiroId: _parceiroId,
-          dias: _getDiasFromPeriodo(),
+          dias: dias,
         ),
       ]);
 
@@ -172,9 +180,20 @@ class _WindowsDashboardFinanceiroScreenState
         _totalVencido =
             _toDouble(body['totalVencido'] ?? body['vencido'] ?? 0);
 
-        _kpiSaldo = _toDouble(kpisData['saldoAtual'] ?? _saldoProjetado);
-        _kpiEntradas = _toDouble(kpisData['totalEntradas'] ?? 0);
-        _kpiSaidas = _toDouble(kpisData['totalSaidas'] ?? 0);
+        _kpiSaldo = _toDouble(kpisData['saldoAtual'] ??
+            kpisData['saldoProjetado'] ??
+            body['saldoAtual'] ??
+            _saldoProjetado);
+        _kpiEntradas = _toDouble(kpisData['totalEntradas'] ??
+            kpisData['totalRecebido'] ??
+            body['totalRecebido'] ??
+            body['totalEntradas'] ??
+            0);
+        _kpiSaidas = _toDouble(kpisData['totalSaidas'] ??
+            kpisData['totalPago'] ??
+            body['totalPago'] ??
+            body['totalSaidas'] ??
+            0);
         _kpiInadimplencia = _toDouble(kpisData['inadimplencia'] ?? 0);
 
         _fluxo = _parseFluxo(body['fluxoCaixaProjetado'] ?? body['fluxo'] ?? []);
