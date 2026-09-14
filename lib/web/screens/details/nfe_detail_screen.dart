@@ -1407,35 +1407,79 @@ class _State extends State<NfeSankhyaDetailScreen> {
         if (item['id'] != null) 'id': item['id'],
         'cstIcms': item['cst_icms'] ?? item['cstIcms'],
         'aliqIcms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+        'cstPis': item['cst_pis'] ?? item['cstPis'],
+        'pPis': _asDouble(item['p_pis'] ?? item['pPis']),
+        'cstCofins': item['cst_cofins'] ?? item['cstCofins'],
+        'pCofins': _asDouble(item['p_cofins'] ?? item['pCofins']),
+        'cstIpi': item['cst_ipi'] ?? item['cstIpi'],
+        'aliqIpi': _asDouble(item['aliq_ipi'] ?? item['aliqIpi']),
+        'cstIbsCbs': item['cst_ibs_cbs'] ?? item['cstIbsCbs'],
+        'pCbs': _asDouble(item['p_cbs'] ?? item['pCbs']),
+        'pIbsUf': _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']),
+        'pIbsMun': _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']),
         'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
         'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
         'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
       };
-      final r = await TenantContext.post(
-          '${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body);
+
+      final futures = [
+        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body),
+        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-pis-cofins', body),
+        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-ipi', body),
+        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-ibs-cbs', body),
+      ];
+
+      final results = await Future.wait(futures);
       if (!mounted) return;
-      if (r.statusCode == 200) {
-        final calculated = jsonDecode(r.body);
-        final data =
-            calculated is Map ? (calculated['data'] ?? calculated) : calculated;
-        setState(() {
-          item['v_bc_icms'] =
-              (data['vBcIcms'] ?? data['v_bc_icms'] ?? 0).toString();
-          item['vBcIcms'] = item['v_bc_icms'];
-          item['v_icms'] = (data['vIcms'] ?? data['v_icms'] ?? 0).toString();
-          item['vIcms'] = item['v_icms'];
-        });
+
+      bool error = false;
+      setState(() {
+        for (final r in results) {
+          if (r.statusCode == 200) {
+            import 'dart:convert';
+            final calculated = jsonDecode(r.body);
+            final data = calculated is Map ? (calculated['data'] ?? calculated) : calculated;
+            
+            final fields = [
+              'vBcIcms', 'vIcms', 'vBcIcmsSt', 'vIcmsSt', 'vFcp',
+              'vBcPis', 'vPis', 'vBcCofins', 'vCofins',
+              'vBcIpi', 'vIpi',
+              'vBcIbsCbs', 'vIbs', 'vCbs'
+            ];
+            
+            for (final f in fields) {
+              if (data[f] != null) {
+                String snake = f.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0).toLowerCase());
+                if (f == 'vBcIcms') snake = 'v_bc_icms';
+                if (f == 'vBcIcmsSt') snake = 'v_bc_icms_st';
+                if (f == 'vIcmsSt') snake = 'v_icms_st';
+                if (f == 'vBcPis') snake = 'v_bc_pis';
+                if (f == 'vBcCofins') snake = 'v_bc_cofins';
+                if (f == 'vBcIpi') snake = 'v_bc_ipi';
+                if (f == 'vBcIbsCbs') snake = 'v_bc_ibs_cbs';
+
+                item[f] = data[f].toString();
+                item[snake] = data[f].toString();
+              }
+            }
+          } else {
+            error = true;
+          }
+        }
+      });
+
+      if (!error) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('ICMS calculado!'), backgroundColor: _green));
+            content: Text('Impostos calculados!'), backgroundColor: Color(0xFF4CAF50)));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Alguns impostos falharam no cálculo.'), backgroundColor: Color(0xFFF44336)));
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ao processar. Tente novamente.'),
-            backgroundColor: _red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Erro ao processar. Tente novamente.'), backgroundColor: Color(0xFFF44336)));
+      }
     }
   }
 
@@ -1733,10 +1777,39 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ]));
   }
 
-  Widget _impostosTab() => const Padding(
-      padding: EdgeInsets.all(10),
-      child: Text('Impostos calculados a partir dos itens.',
-          style: TextStyle(color: _grey, fontSize: 12)));
+  Widget _impostosTab() {
+    final i = widget.item;
+    String f(String k1, String k2) {
+      final val = _asDouble(i[k1] ?? i[k2]);
+      return val != null ? val.toStringAsFixed(2) : '0.00';
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(10),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          _card('BC ICMS', f('vBcIcms', 'v_bc_icms')),
+          _card('Vl. ICMS', f('vIcms', 'v_icms')),
+          _card('BC ICMS ST', f('vBcIcmsSt', 'v_bc_icms_st')),
+          _card('Vl. ICMS ST', f('vIcmsSt', 'v_icms_st')),
+          _card('Vl. FCP', f('vFcp', 'v_fcp')),
+          _card('BC IPI', f('vBcIpi', 'v_bc_ipi')),
+          _card('Vl. IPI', f('vIpi', 'v_ipi')),
+          _card('BC PIS', f('vBcPis', 'v_bc_pis')),
+          _card('Vl. PIS', f('vPis', 'v_pis')),
+          _card('BC COFINS', f('vBcCofins', 'v_bc_cofins')),
+          _card('Vl. COFINS', f('vCofins', 'v_cofins')),
+          _card('Vl. ISS', f('vIss', 'v_iss')),
+          _card('Vl. II', f('vIi', 'v_ii')),
+          _card('BC IBS/CBS', f('vBcIbsCbs', 'v_bc_ibs_cbs')),
+          _card('Vl. IBS', f('vIbs', 'v_ibs')),
+          _card('Vl. CBS', f('vCbs', 'v_cbs')),
+          _card('Tot. Tributos', f('vTotTrib', 'v_tot_trib')),
+        ],
+      ),
+    );
+  }
 
   // Financeiro com DynamicGridWindowsScreen no modo grid + form customizado
   Widget _financeiroTab() {
@@ -2161,3 +2234,82 @@ class _State extends State<NfeSankhyaDetailScreen> {
       style: const TextStyle(
           fontSize: 12, fontWeight: FontWeight.bold, color: _dark));
 }
+
+class _ReactiveTextField extends StatefulWidget {
+  final String label;
+  final Map<String, dynamic> dataMap;
+  final String key1;
+  final String? key2;
+  final Function(String)? onChanged;
+  final bool readOnly;
+
+  const _ReactiveTextField({
+    super.key,
+    required this.label,
+    required this.dataMap,
+    required this.key1,
+    this.key2,
+    this.onChanged,
+    this.readOnly = false,
+  });
+
+  @override
+  State<_ReactiveTextField> createState() => _ReactiveTextFieldState();
+}
+
+class _ReactiveTextFieldState extends State<_ReactiveTextField> {
+  late TextEditingController _ctrl;
+
+  String _getVal() =>
+      widget.dataMap[widget.key1]?.toString() ??
+      (widget.key2 != null ? widget.dataMap[widget.key2!]?.toString() : null) ??
+      '';
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: _getVal());
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReactiveTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newVal = _getVal();
+    if (_ctrl.text != newVal) {
+      _ctrl.text = newVal;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextFormField(
+        controller: _ctrl,
+        readOnly: widget.readOnly,
+        onChanged: (v) {
+          widget.dataMap[widget.key1] = v;
+          if (widget.key2 != null) widget.dataMap[widget.key2!] = v;
+          if (widget.onChanged != null) widget.onChanged!(v);
+        },
+        style: const TextStyle(fontSize: 12, color: Color(0xFF333333)),
+        decoration: InputDecoration(
+          labelText: widget.label,
+          labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+      ),
+    );
+  }
+}
+
