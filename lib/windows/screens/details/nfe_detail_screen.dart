@@ -1330,11 +1330,103 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 item['cfop'] = prod['cfop']?.toString() ?? '';
                 item['u_com'] = prod['unidade']?.toString() ?? '';
                 item['uCom'] = item['u_com'];
-                item['v_un_com'] = prod['preco']?.toString() ?? '';
+                item['v_un_com'] = prod['preco']?.toString() ?? '0.00';
                 item['vUnCom'] = item['v_un_com'];
-                item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1';
+                item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1.00';
                 item['qCom'] = item['q_com'];
+
+                // Tributos diretos do produto
+                if (prod['cst_csosn'] != null || prod['cstCsosn'] != null) {
+                  item['cst_icms'] = (prod['cst_csosn'] ?? prod['cstCsosn']).toString();
+                  item['cstIcms'] = item['cst_icms'];
+                }
+                if (prod['aliquota_icms'] != null || prod['aliquotaIcms'] != null) {
+                  item['aliq_icms'] = (prod['aliquota_icms'] ?? prod['aliquotaIcms']).toString();
+                  item['aliqIcms'] = item['aliq_icms'];
+                }
+                if (prod['cst_ibs_cbs'] != null || prod['cstIbsCbs'] != null) {
+                  item['cst_ibs_cbs'] = (prod['cst_ibs_cbs'] ?? prod['cstIbsCbs']).toString();
+                  item['cstIbsCbs'] = item['cst_ibs_cbs'];
+                }
+                if (prod['aliquota_cbs'] != null || prod['aliquotaCbs'] != null) {
+                  item['p_cbs'] = (prod['aliquota_cbs'] ?? prod['aliquotaCbs']).toString();
+                  item['pCbs'] = item['p_cbs'];
+                }
+                if (prod['aliquota_ibs_uf'] != null || prod['aliquotaIbsUf'] != null) {
+                  item['p_ibs_uf'] = (prod['aliquota_ibs_uf'] ?? prod['aliquotaIbsUf']).toString();
+                  item['pIbsUf'] = item['p_ibs_uf'];
+                }
+                if (prod['aliquota_ibs_mun'] != null || prod['aliquotaIbsMun'] != null) {
+                  item['p_ibs_mun'] = (prod['aliquota_ibs_mun'] ?? prod['aliquotaIbsMun']).toString();
+                  item['pIbsMun'] = item['p_ibs_mun'];
+                }
+
                 _recalcularTotalItem(item);
+
+                // Busca impostos detalhados por UF (PIS, COFINS, IPI, etc.) se houver
+                if (v != null && v.toString().isNotEmpty) {
+                  TenantContext.get('${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$v').then((r) {
+                    if (r.statusCode == 200) {
+                      try {
+                        final list = jsonDecode(r.body);
+                        if (list is List && list.isNotEmpty) {
+                          final imp = list.first as Map<String, dynamic>;
+                          setState(() {
+                            if (imp['cstCsosn'] != null) {
+                              item['cst_icms'] = imp['cstCsosn'].toString();
+                              item['cstIcms'] = item['cst_icms'];
+                            }
+                            if (imp['aliquotaIcms'] != null) {
+                              item['aliq_icms'] = imp['aliquotaIcms'].toString();
+                              item['aliqIcms'] = item['aliq_icms'];
+                            }
+                            if (imp['cstPis'] != null) {
+                              item['cst_pis'] = imp['cstPis'].toString();
+                              item['cstPis'] = item['cst_pis'];
+                            }
+                            if (imp['pPis'] != null) {
+                              item['p_pis'] = imp['pPis'].toString();
+                              item['pPis'] = item['p_pis'];
+                            }
+                            if (imp['cstCofins'] != null) {
+                              item['cst_cofins'] = imp['cstCofins'].toString();
+                              item['cstCofins'] = item['cst_cofins'];
+                            }
+                            if (imp['pCofins'] != null) {
+                              item['p_cofins'] = imp['pCofins'].toString();
+                              item['pCofins'] = item['p_cofins'];
+                            }
+                            if (imp['cstIpi'] != null) {
+                              item['cst_ipi'] = imp['cstIpi'].toString();
+                              item['cstIpi'] = item['cst_ipi'];
+                            }
+                            if (imp['aliqIpi'] != null) {
+                              item['aliq_ipi'] = imp['aliqIpi'].toString();
+                              item['aliqIpi'] = item['aliq_ipi'];
+                            }
+                            if (imp['cstIbsCbs'] != null) {
+                              item['cst_ibs_cbs'] = imp['cstIbsCbs'].toString();
+                              item['cstIbsCbs'] = item['cst_ibs_cbs'];
+                            }
+                            if (imp['pCbs'] != null) {
+                              item['p_cbs'] = imp['pCbs'].toString();
+                              item['pCbs'] = item['p_cbs'];
+                            }
+                            if (imp['pIbsUf'] != null) {
+                              item['p_ibs_uf'] = imp['pIbsUf'].toString();
+                              item['pIbsUf'] = item['p_ibs_uf'];
+                            }
+                            if (imp['pIbsMun'] != null) {
+                              item['p_ibs_mun'] = imp['pIbsMun'].toString();
+                              item['pIbsMun'] = item['p_ibs_mun'];
+                            }
+                            _recalcularTotalItem(item);
+                          });
+                        }
+                      } catch (_) {}
+                    }
+                  });
+                }
               }
             });
           }),
@@ -1372,10 +1464,41 @@ class _State extends State<NfeSankhyaDetailScreen> {
           _iInp('Quantidade', item, 'q_com', 'qCom'),
           _iInp('Vl. Unitário', item, 'v_un_com', 'vUnCom'),
           _iInp('Vl. Total', item, 'v_prod', 'vProd'),
+          // ICMS
           _iInp('CST ICMS', item, 'cst_icms', 'cstIcms'),
-          _iInp('Alíq. ICMS', item, 'aliq_icms', 'aliqIcms'),
+          _iInp('Alíq. ICMS (%)', item, 'aliq_icms', 'aliqIcms'),
           _iInp('BC ICMS', item, 'v_bc_icms', 'vBcIcms'),
           _iInp('Vl. ICMS', item, 'v_icms', 'vIcms'),
+
+          // PIS
+          _iInp('CST PIS', item, 'cst_pis', 'cstPis'),
+          _iInp('Alíq. PIS (%)', item, 'p_pis', 'pPis'),
+          _iInp('BC PIS', item, 'v_bc_pis', 'vBcPis'),
+          _iInp('Vl. PIS', item, 'v_pis', 'vPis'),
+
+          // COFINS
+          _iInp('CST COFINS', item, 'cst_cofins', 'cstCofins'),
+          _iInp('Alíq. COFINS (%)', item, 'p_cofins', 'pCofins'),
+          _iInp('BC COFINS', item, 'v_bc_cofins', 'vBcCofins'),
+          _iInp('Vl. COFINS', item, 'v_cofins', 'vCofins'),
+
+          // IPI
+          _iInp('CST IPI', item, 'cst_ipi', 'cstIpi'),
+          _iInp('Alíq. IPI (%)', item, 'aliq_ipi', 'aliqIpi'),
+          _iInp('BC IPI', item, 'v_bc_ipi', 'vBcIpi'),
+          _iInp('Vl. IPI', item, 'v_ipi', 'vIpi'),
+
+          // IBS / CBS
+          _iInp('CST IBS/CBS', item, 'cst_ibs_cbs', 'cstIbsCbs'),
+          _iInp('Alíq. CBS (%)', item, 'p_cbs', 'pCbs'),
+          _iInp('Alíq. IBS UF (%)', item, 'p_ibs_uf', 'pIbsUf'),
+          _iInp('Alíq. IBS Mun (%)', item, 'p_ibs_mun', 'pIbsMun'),
+          _iInp('BC IBS/CBS', item, 'v_bc_ibs_cbs', 'vBcIbsCbs'),
+          _iInp('Vl. CBS', item, 'v_cbs', 'vCbs'),
+          _iInp('Vl. IBS', item, 'v_ibs', 'vIbs'),
+
+          // Total Tributos
+          _iInp('Tot. Tributos', item, 'v_tot_trib', 'vTotTrib'),
           // NF03: Botão Calcular Impostos
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -1620,6 +1743,58 @@ class _State extends State<NfeSankhyaDetailScreen> {
     item['vUnCom'] = item['v_un_com'];
     item['v_prod'] = _valorMonetario(total);
     item['vProd'] = item['v_prod'];
+
+    final baseCalculo = total;
+
+    // ICMS
+    final aliqIcms = _asDouble(item['aliq_icms'] ?? item['aliqIcms']) ?? 0;
+    item['v_bc_icms'] = _valorMonetario(baseCalculo);
+    item['vBcIcms'] = item['v_bc_icms'];
+    item['v_icms'] = _valorMonetario(baseCalculo * (aliqIcms / 100));
+    item['vIcms'] = item['v_icms'];
+
+    // PIS
+    final pPis = _asDouble(item['p_pis'] ?? item['pPis']) ?? 0;
+    item['v_bc_pis'] = _valorMonetario(baseCalculo);
+    item['vBcPis'] = item['v_bc_pis'];
+    item['v_pis'] = _valorMonetario(baseCalculo * (pPis / 100));
+    item['vPis'] = item['v_pis'];
+
+    // COFINS
+    final pCofins = _asDouble(item['p_cofins'] ?? item['pCofins']) ?? 0;
+    item['v_bc_cofins'] = _valorMonetario(baseCalculo);
+    item['vBcCofins'] = item['v_bc_cofins'];
+    item['v_cofins'] = _valorMonetario(baseCalculo * (pCofins / 100));
+    item['vCofins'] = item['v_cofins'];
+
+    // IPI
+    final aliqIpi = _asDouble(item['aliq_ipi'] ?? item['aliqIpi']) ?? 0;
+    item['v_bc_ipi'] = _valorMonetario(baseCalculo);
+    item['vBcIpi'] = item['v_bc_ipi'];
+    item['v_ipi'] = _valorMonetario(baseCalculo * (aliqIpi / 100));
+    item['vIpi'] = item['v_ipi'];
+
+    // IBS / CBS
+    final pCbs = _asDouble(item['p_cbs'] ?? item['pCbs']) ?? 0;
+    final pIbsUf = _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']) ?? 0;
+    final pIbsMun = _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']) ?? 0;
+    item['v_bc_ibs_cbs'] = _valorMonetario(baseCalculo);
+    item['vBcIbsCbs'] = item['v_bc_ibs_cbs'];
+    item['v_cbs'] = _valorMonetario(baseCalculo * (pCbs / 100));
+    item['vCbs'] = item['v_cbs'];
+    item['v_ibs'] = _valorMonetario(baseCalculo * ((pIbsUf + pIbsMun) / 100));
+    item['vIbs'] = item['v_ibs'];
+
+    // Total Tributos
+    final vIcms = _asDouble(item['v_icms']) ?? 0;
+    final vPis = _asDouble(item['v_pis']) ?? 0;
+    final vCofins = _asDouble(item['v_cofins']) ?? 0;
+    final vIpi = _asDouble(item['v_ipi']) ?? 0;
+    final vCbs = _asDouble(item['v_cbs']) ?? 0;
+    final vIbs = _asDouble(item['v_ibs']) ?? 0;
+    final totTrib = vIcms + vPis + vCofins + vIpi + vCbs + vIbs;
+    item['v_tot_trib'] = _valorMonetario(totTrib);
+    item['vTotTrib'] = item['v_tot_trib'];
   }
 
   void _prepararItemFiscal(Map<String, dynamic> item) {
