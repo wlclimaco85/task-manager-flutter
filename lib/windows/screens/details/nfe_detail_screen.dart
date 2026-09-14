@@ -1179,6 +1179,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
         'nfeTipoOperacao': {
           'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
         },
+      if (_empresaId != null) 'empresaId': int.tryParse(_empresaId!) ?? _empresaId,
+      if (_parceiroId != null) 'parceiroId': int.tryParse(_parceiroId!) ?? _parceiroId,
+      if (_destinatarioId != null) 'destinatarioId': int.tryParse(_destinatarioId!) ?? _destinatarioId,
+      if (_formaPagId != null) 'formaPagamentoId': int.tryParse(_formaPagId!) ?? _formaPagId,
+      if (_finalidadeId != null) 'nfeFinalidadeId': int.tryParse(_finalidadeId!) ?? _finalidadeId,
+      if (_tipoOperacaoId != null) 'nfeTipoOperacaoId': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
     };
     try {
       final r = _isNovo
@@ -1286,10 +1292,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
           // Form: usa o form customizado com dropdowns
           Expanded(
               child: _itensGrid
-                  ? _gridSemHeader(
-                      telaNome: 'nfe_item',
-                      extraParams: {'nfeId': _nfeId, 'nfe_id': _nfeId},
-                    )
+                  ? ((_nfeId.isEmpty || _nfeId == '0' || int.tryParse(_nfeId) == null || int.tryParse(_nfeId)! <= 0)
+                      ? const Center(
+                          child: Text('Nenhum item cadastrado',
+                              style: TextStyle(color: _grey)))
+                      : _gridSemHeader(
+                          telaNome: 'nfe_item',
+                          extraParams: {'nfeId': _nfeId, 'nfe_id': _nfeId},
+                        ))
                   : (_itens.isEmpty
                       ? const Center(
                           child: Text('Nenhum item',
