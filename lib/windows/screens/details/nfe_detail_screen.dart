@@ -1356,7 +1356,13 @@ class _State extends State<NfeSankhyaDetailScreen> {
                     item['xProd'] = item['x_prod'];
                     item['ncm'] = selected['ncm']?.toString() ?? '';
                     item['cfop'] = selected['cfop']?.toString() ?? '';
-                    item['u_com'] = selected['unidade']?.toString() ?? '';
+                    final u = (selected['unidadeComercial'] ??
+                            selected['unidade_comercial'] ??
+                            selected['unidade'])
+                        ?.toString()
+                        .trim();
+                    item['u_com'] =
+                        u != null && u.isNotEmpty ? u.toUpperCase() : '';
                     item['uCom'] = item['u_com'];
                     item['v_un_com'] = selected['preco']?.toString() ?? '0.00';
                     item['vUnCom'] = item['v_un_com'];
@@ -1484,7 +1490,21 @@ class _State extends State<NfeSankhyaDetailScreen> {
           _ddObjItem(
               'Unidade',
               item['u_com']?.toString() ?? item['uCom']?.toString(),
-              _unidades.isNotEmpty ? _unidades : _unidadesFallback(),
+              _unidades.isNotEmpty
+                  ? _unidades.map((u) {
+                      final sigla = (u['nome'] ?? u['sigla'] ?? u['id'])
+                              ?.toString()
+                              .trim() ??
+                          '';
+                      final desc = u['descricao']?.toString().trim();
+                      return <String, dynamic>{
+                        'id': sigla,
+                        'nome': (desc != null && desc.isNotEmpty && desc != sigla)
+                            ? '$sigla - $desc'
+                            : sigla,
+                      };
+                    }).toList()
+                  : _unidadesFallback(),
               'nome', (v) {
             setState(() {
               item['u_com'] = v;
@@ -1645,36 +1665,25 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Widget _iInp(String label, Map<String, dynamic> item, String k1, String k2) {
-    return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: TextFormField(
-            key: ValueKey('${_selItem}_$k1'),
-            initialValue: item[k1]?.toString() ?? item[k2]?.toString() ?? '',
-            onChanged: (v) {
-              item[k1] = v;
-              item[k2] = v;
-              if (k1 == 'q_com' || k1 == 'v_un_com') {
-                final quantidade = _asDouble(item['q_com'] ?? item['qCom']);
-                final valorUnitario =
-                    _asDouble(item['v_un_com'] ?? item['vUnCom']);
-                if (quantidade != null && valorUnitario != null) {
-                  item['v_prod'] = _valorMonetario(quantidade * valorUnitario);
-                  item['vProd'] = item['v_prod'];
-                }
-                _recalcularTotalItem(item);
-                setState(() {});
-              }
-            },
-            style: const TextStyle(fontSize: 12, color: _dark),
-            decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(fontSize: 11, color: _grey),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    borderSide: const BorderSide(color: _bord)),
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
+    return _ReactiveTextField(
+      key: ValueKey('${_selItem}_$k1'),
+      label: label,
+      dataMap: item,
+      key1: k1,
+      key2: k2,
+      onChanged: (v) {
+        if (k1 == 'q_com' || k1 == 'v_un_com') {
+          final quantidade = _asDouble(item['q_com'] ?? item['qCom']);
+          final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']);
+          if (quantidade != null && valorUnitario != null) {
+            item['v_prod'] = _valorMonetario(quantidade * valorUnitario);
+            item['vProd'] = item['v_prod'];
+          }
+          _recalcularTotalItem(item);
+          setState(() {});
+        }
+      },
+    );
   }
 
   // Dropdown de série para NF-e SAÍDA — ao selecionar, busca próximo número
@@ -1721,11 +1730,23 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts,
       String df, void Function(String?) cb) {
+    final vStr = val?.trim();
+    final match = opts.where((o) {
+      final oid = o['id']?.toString().trim();
+      final onome = o[df]?.toString().trim();
+      return (oid != null &&
+              oid.isNotEmpty &&
+              oid.toUpperCase() == vStr?.toUpperCase()) ||
+          (onome != null &&
+              onome.isNotEmpty &&
+              onome.toUpperCase() == vStr?.toUpperCase());
+    }).firstOrNull;
+    final selectedVal = match != null ? match['id']?.toString() : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: label,
-        value: opts.any((o) => o['id']?.toString() == val) ? val : null,
+        value: selectedVal,
         items: opts
             .map((o) => <String, dynamic>{
                   'id': o['id']?.toString() ?? '',
