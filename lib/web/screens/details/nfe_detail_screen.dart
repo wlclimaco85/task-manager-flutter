@@ -14,6 +14,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../utils/nfe_tax_aliases.dart';
 import '../produto_grid_screen.dart';
 
 const _red = GridColors.primary;
@@ -250,6 +251,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
               .toList();
           _atualizarTotaisNfe();
         });
+        await _aplicarImpostosNosItensCarregados();
       }
     } catch (_) {}
   }
@@ -1238,12 +1240,18 @@ class _State extends State<NfeSankhyaDetailScreen> {
         'nfeTipoOperacao': {
           'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId
         },
-      if (_empresaId != null) 'empresaId': int.tryParse(_empresaId!) ?? _empresaId,
-      if (_parceiroId != null) 'parceiroId': int.tryParse(_parceiroId!) ?? _parceiroId,
-      if (_destinatarioId != null) 'destinatarioId': int.tryParse(_destinatarioId!) ?? _destinatarioId,
-      if (_formaPagId != null) 'formaPagamentoId': int.tryParse(_formaPagId!) ?? _formaPagId,
-      if (_finalidadeId != null) 'nfeFinalidadeId': int.tryParse(_finalidadeId!) ?? _finalidadeId,
-      if (_tipoOperacaoId != null) 'nfeTipoOperacaoId': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
+      if (_empresaId != null)
+        'empresaId': int.tryParse(_empresaId!) ?? _empresaId,
+      if (_parceiroId != null)
+        'parceiroId': int.tryParse(_parceiroId!) ?? _parceiroId,
+      if (_destinatarioId != null)
+        'destinatarioId': int.tryParse(_destinatarioId!) ?? _destinatarioId,
+      if (_formaPagId != null)
+        'formaPagamentoId': int.tryParse(_formaPagId!) ?? _formaPagId,
+      if (_finalidadeId != null)
+        'nfeFinalidadeId': int.tryParse(_finalidadeId!) ?? _finalidadeId,
+      if (_tipoOperacaoId != null)
+        'nfeTipoOperacaoId': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
     };
     try {
       final r = _isNovo
@@ -1351,7 +1359,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
           // Form: usa o form customizado com dropdowns
           Expanded(
               child: _itensGrid
-                  ? ((_nfeId.isEmpty || _nfeId == '0' || int.tryParse(_nfeId) == null || int.tryParse(_nfeId)! <= 0)
+                  ? ((_nfeId.isEmpty ||
+                          _nfeId == '0' ||
+                          int.tryParse(_nfeId) == null ||
+                          int.tryParse(_nfeId)! <= 0)
                       ? const Center(
                           child: Text('Nenhum item cadastrado',
                               style: TextStyle(color: _grey)))
@@ -1428,36 +1439,57 @@ class _State extends State<NfeSankhyaDetailScreen> {
                     item['qCom'] = item['q_com'];
 
                     // Tributos diretos do produto
-                    if (selected['cst_csosn'] != null || selected['cstCsosn'] != null) {
-                      item['cst_icms'] = (selected['cst_csosn'] ?? selected['cstCsosn']).toString();
+                    if (selected['cst_csosn'] != null ||
+                        selected['cstCsosn'] != null) {
+                      item['cst_icms'] =
+                          (selected['cst_csosn'] ?? selected['cstCsosn'])
+                              .toString();
                       item['cstIcms'] = item['cst_icms'];
                     }
-                    if (selected['aliquota_icms'] != null || selected['aliquotaIcms'] != null) {
-                      item['aliq_icms'] = (selected['aliquota_icms'] ?? selected['aliquotaIcms']).toString();
+                    if (selected['aliquota_icms'] != null ||
+                        selected['aliquotaIcms'] != null) {
+                      item['aliq_icms'] = (selected['aliquota_icms'] ??
+                              selected['aliquotaIcms'])
+                          .toString();
                       item['aliqIcms'] = item['aliq_icms'];
                     }
-                    if (selected['cst_ibs_cbs'] != null || selected['cstIbsCbs'] != null) {
-                      item['cst_ibs_cbs'] = (selected['cst_ibs_cbs'] ?? selected['cstIbsCbs']).toString();
+                    if (selected['cst_ibs_cbs'] != null ||
+                        selected['cstIbsCbs'] != null) {
+                      item['cst_ibs_cbs'] =
+                          (selected['cst_ibs_cbs'] ?? selected['cstIbsCbs'])
+                              .toString();
                       item['cstIbsCbs'] = item['cst_ibs_cbs'];
                     }
-                    if (selected['aliquota_cbs'] != null || selected['aliquotaCbs'] != null) {
-                      item['p_cbs'] = (selected['aliquota_cbs'] ?? selected['aliquotaCbs']).toString();
+                    if (selected['aliquota_cbs'] != null ||
+                        selected['aliquotaCbs'] != null) {
+                      item['p_cbs'] =
+                          (selected['aliquota_cbs'] ?? selected['aliquotaCbs'])
+                              .toString();
                       item['pCbs'] = item['p_cbs'];
                     }
-                    if (selected['aliquota_ibs_uf'] != null || selected['aliquotaIbsUf'] != null) {
-                      item['p_ibs_uf'] = (selected['aliquota_ibs_uf'] ?? selected['aliquotaIbsUf']).toString();
+                    if (selected['aliquota_ibs_uf'] != null ||
+                        selected['aliquotaIbsUf'] != null) {
+                      item['p_ibs_uf'] = (selected['aliquota_ibs_uf'] ??
+                              selected['aliquotaIbsUf'])
+                          .toString();
                       item['pIbsUf'] = item['p_ibs_uf'];
                     }
-                    if (selected['aliquota_ibs_mun'] != null || selected['aliquotaIbsMun'] != null) {
-                      item['p_ibs_mun'] = (selected['aliquota_ibs_mun'] ?? selected['aliquotaIbsMun']).toString();
+                    if (selected['aliquota_ibs_mun'] != null ||
+                        selected['aliquotaIbsMun'] != null) {
+                      item['p_ibs_mun'] = (selected['aliquota_ibs_mun'] ??
+                              selected['aliquotaIbsMun'])
+                          .toString();
                       item['pIbsMun'] = item['p_ibs_mun'];
                     }
+                    NfeTaxAliases.applyProdutoSelecionado(item, selected);
 
                     _recalcularTotalItem(item);
 
                     // Busca impostos detalhados por UF (PIS, COFINS, IPI, etc.) se houver
                     if (v != null && v.toString().isNotEmpty) {
-                      TenantContext.get('${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$v').then((r) {
+                      TenantContext.get(
+                              '${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$v')
+                          .then((r) {
                         if (r.statusCode == 200) {
                           try {
                             final list = jsonDecode(r.body);
@@ -1469,7 +1501,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
                                   item['cstIcms'] = item['cst_icms'];
                                 }
                                 if (imp['aliquotaIcms'] != null) {
-                                  item['aliq_icms'] = imp['aliquotaIcms'].toString();
+                                  item['aliq_icms'] =
+                                      imp['aliquotaIcms'].toString();
                                   item['aliqIcms'] = item['aliq_icms'];
                                 }
                                 if (imp['cstPis'] != null) {
@@ -1481,7 +1514,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
                                   item['pPis'] = item['p_pis'];
                                 }
                                 if (imp['cstCofins'] != null) {
-                                  item['cst_cofins'] = imp['cstCofins'].toString();
+                                  item['cst_cofins'] =
+                                      imp['cstCofins'].toString();
                                   item['cstCofins'] = item['cst_cofins'];
                                 }
                                 if (imp['pCofins'] != null) {
@@ -1497,7 +1531,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
                                   item['aliqIpi'] = item['aliq_ipi'];
                                 }
                                 if (imp['cstIbsCbs'] != null) {
-                                  item['cst_ibs_cbs'] = imp['cstIbsCbs'].toString();
+                                  item['cst_ibs_cbs'] =
+                                      imp['cstIbsCbs'].toString();
                                   item['cstIbsCbs'] = item['cst_ibs_cbs'];
                                 }
                                 if (imp['pCbs'] != null) {
@@ -1512,6 +1547,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
                                   item['p_ibs_mun'] = imp['pIbsMun'].toString();
                                   item['pIbsMun'] = item['p_ibs_mun'];
                                 }
+                                NfeTaxAliases.applyProdutoImpostoUf(item, imp);
                                 _recalcularTotalItem(item);
                               });
                             }
@@ -1557,9 +1593,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
                       final desc = u['descricao']?.toString().trim();
                       return <String, dynamic>{
                         'id': sigla,
-                        'nome': (desc != null && desc.isNotEmpty && desc != sigla)
-                            ? '$sigla - $desc'
-                            : sigla,
+                        'nome':
+                            (desc != null && desc.isNotEmpty && desc != sigla)
+                                ? '$sigla - $desc'
+                                : sigla,
                       };
                     }).toList()
                   : _unidadesFallback(),
@@ -1668,10 +1705,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
       };
 
       final futures = [
-        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body),
-        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-pis-cofins', body),
-        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-ipi', body),
-        TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-ibs-cbs', body),
+        TenantContext.post(
+            '${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body),
+        TenantContext.post(
+            '${ApiLinks.baseUrl}/api/nfe_item/calcular-pis-cofins', body),
+        TenantContext.post(
+            '${ApiLinks.baseUrl}/api/nfe_item/calcular-ipi', body),
+        TenantContext.post(
+            '${ApiLinks.baseUrl}/api/nfe_item/calcular-ibs-cbs', body),
       ];
 
       final results = await Future.wait(futures);
@@ -1682,18 +1723,31 @@ class _State extends State<NfeSankhyaDetailScreen> {
         for (final r in results) {
           if (r.statusCode == 200) {
             final calculated = jsonDecode(r.body);
-            final data = calculated is Map ? (calculated['data'] ?? calculated) : calculated;
-            
+            final data = calculated is Map
+                ? (calculated['data'] ?? calculated)
+                : calculated;
+
             final fields = [
-              'vBcIcms', 'vIcms', 'vBcIcmsSt', 'vIcmsSt', 'vFcp',
-              'vBcPis', 'vPis', 'vBcCofins', 'vCofins',
-              'vBcIpi', 'vIpi',
-              'vBcIbsCbs', 'vIbs', 'vCbs'
+              'vBcIcms',
+              'vIcms',
+              'vBcIcmsSt',
+              'vIcmsSt',
+              'vFcp',
+              'vBcPis',
+              'vPis',
+              'vBcCofins',
+              'vCofins',
+              'vBcIpi',
+              'vIpi',
+              'vBcIbsCbs',
+              'vIbs',
+              'vCbs'
             ];
-            
+
             for (final f in fields) {
               if (data[f] != null) {
-                String snake = f.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0)!.toLowerCase());
+                String snake = f.replaceAllMapped(
+                    RegExp(r'[A-Z]'), (m) => '_' + m.group(0)!.toLowerCase());
                 if (f == 'vBcIcms') snake = 'v_bc_icms';
                 if (f == 'vBcIcmsSt') snake = 'v_bc_icms_st';
                 if (f == 'vIcmsSt') snake = 'v_icms_st';
@@ -1727,15 +1781,18 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
       if (!error) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Impostos calculados!'), backgroundColor: Color(0xFF4CAF50)));
+            content: Text('Impostos calculados!'),
+            backgroundColor: Color(0xFF4CAF50)));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Alguns impostos falharam no cálculo.'), backgroundColor: Color(0xFFF44336)));
+            content: Text('Alguns impostos falharam no cálculo.'),
+            backgroundColor: Color(0xFFF44336)));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Erro ao processar. Tente novamente.'), backgroundColor: Color(0xFFF44336)));
+            content: Text('Erro ao processar. Tente novamente.'),
+            backgroundColor: Color(0xFFF44336)));
       }
     }
   }
@@ -1935,6 +1992,38 @@ class _State extends State<NfeSankhyaDetailScreen> {
     item['u_com'] = (item['u_com'] ?? item['uCom'] ?? '').toString();
     item['uCom'] = item['u_com'];
     _recalcularTotalItem(item);
+  }
+
+  Future<void> _aplicarImpostosNosItensCarregados() async {
+    var alterou = false;
+    for (final item in _itens) {
+      final produtoId = _produtoIdDoItem(item);
+      if (produtoId == null) continue;
+      try {
+        final r = await TenantContext.get(
+            '${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$produtoId');
+        if (r.statusCode != 200) continue;
+        final list = jsonDecode(r.body);
+        if (list is! List || list.isEmpty || list.first is! Map) continue;
+        NfeTaxAliases.applyProdutoImpostoUf(
+            item, Map<String, dynamic>.from(list.first as Map));
+        _recalcularTotalItem(item);
+        alterou = true;
+      } catch (_) {}
+    }
+    if (alterou && mounted) {
+      setState(_atualizarTotaisNfe);
+    }
+  }
+
+  int? _produtoIdDoItem(Map<String, dynamic> item) {
+    final direto = item['produto_id'] ?? item['produtoId'];
+    if (direto != null) return int.tryParse(direto.toString());
+    final produto = item['produto'];
+    if (produto is Map && produto['id'] != null) {
+      return int.tryParse(produto['id'].toString());
+    }
+    return null;
   }
 
   void _atualizarTotaisNfe() {
@@ -2168,6 +2257,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final val = _asDouble(i[k1] ?? i[k2]);
       return val != null ? val.toStringAsFixed(2) : '0.00';
     }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(10),
       child: Wrap(
@@ -2691,10 +2781,10 @@ class _ReactiveTextFieldState extends State<_ReactiveTextField> {
               borderRadius: BorderRadius.circular(4),
               borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         ),
       ),
     );
   }
 }
-

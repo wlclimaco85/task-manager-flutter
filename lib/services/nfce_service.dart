@@ -7,6 +7,7 @@ import '../models/auth_utility.dart';
 import '../models/nfce/nfce_resultado_model.dart';
 import '../models/nfce/nfce_status_model.dart';
 import '../utils/api_links.dart';
+import '../utils/api_response_helpers.dart';
 import '../utils/tenant_context.dart';
 
 /// Serviço responsável pelas chamadas HTTP relacionadas a NFC-e.
@@ -106,6 +107,36 @@ class NfceService {
     );
   }
 
+  Future<void> reenviarContingencia(int nfceId) async {
+    final url = ApiLinks.reenviarContingenciaNfce(nfceId);
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(url)),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode({'empresaId': TenantContext.empresaId ?? 0}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw NfceException(
+        _extractErrorMessage(response, 'Falha ao reenviar NFC-e em contingência'),
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Future<void> enviarEmail(int nfceId, String destinatario) async {
+    final url = ApiLinks.enviarEmailNfce(nfceId);
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(url)),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode({'destinatario': destinatario}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw NfceException(
+        _extractErrorMessage(response, 'Falha ao enviar email da NFC-e'),
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
   Future<void> cancelarNfce(
     int nfceId,
     String justificativa, {
@@ -156,9 +187,8 @@ class NfceService {
     }
 
     final ufNormalizada = uf.trim().toUpperCase();
-    final ambienteNormalizado = ambiente.trim().isEmpty
-        ? 'HOMOLOGACAO'
-        : ambiente.trim().toUpperCase();
+    final ambienteNormalizado =
+        ambiente.trim().isEmpty ? 'HOMOLOGACAO' : ambiente.trim().toUpperCase();
     final url = ApiLinks.nfceHealth(
       empresaId,
       ufNormalizada,
@@ -204,6 +234,7 @@ class NfceService {
     required String fileName,
     required String senha,
     required int empresaId,
+    int? parceiroId,
     required String uf,
     String ambiente = 'HOMOLOGACAO',
   }) async {
@@ -215,6 +246,7 @@ class NfceService {
       fields: {
         'senha': senha,
         'empresaId': empresaId.toString(),
+        if (parceiroId != null) 'parceiroId': parceiroId.toString(),
         'uf': uf.trim().toUpperCase(),
         'ambiente': ambiente.trim().isEmpty
             ? 'HOMOLOGACAO'
@@ -229,8 +261,11 @@ class NfceService {
     }
   }
 
-  Future<Map<String, dynamic>> buscarConfigFiscal(int empresaId) async {
-    final url = ApiLinks.configFiscal(empresaId);
+  Future<Map<String, dynamic>> buscarConfigFiscal(
+    int empresaId, {
+    int? parceiroId,
+  }) async {
+    final url = ApiLinks.configFiscal(empresaId, parceiroId: parceiroId);
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
@@ -260,24 +295,44 @@ class NfceService {
     }
   }
 
+  Future<Map<String, dynamic>> criarConfigFiscal(
+    Map<String, dynamic> config,
+  ) async {
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.createConfigFiscal())),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode(config),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw NfceException(
+      _extractErrorMessage(response, 'Falha ao criar configuração fiscal'),
+      statusCode: response.statusCode,
+    );
+  }
+
   Future<List<Map<String, dynamic>>> buscarProdutos({
     required String query,
     required int empresaId,
+    int tamanho = 20,
   }) async {
+    // Bug de producao: GET /api/produto ignora os parametros nome/empresa
+    // (ProdutoController.listarProdutos() nao os declara) e, pior, o
+    // create/list desse recurso mapeia para a entidade CatalogoProduto
+    // (dominio de negociacao agricola, campos nome/preco sempre null),
+    // nao para a entidade Produto real usada pelo catalogo fiscal. O
+    // endpoint correto, que filtra por nome/empresa e usa a entidade
+    // Produto (nome, preco, ncm, gtin, codigo), e /api/produto_contabil.
     final url =
-        '${ApiLinks.baseUrl}/api/produto?nome=${Uri.encodeComponent(query)}&empresa=$empresaId';
+        '${ApiLinks.baseUrl}/api/produto_contabil?nome=${Uri.encodeComponent(query)}&empresa=$empresaId&tamanho=$tamanho';
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
     );
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body is List) {
-        return body.cast<Map<String, dynamic>>();
-      }
-      if (body is Map && body['content'] is List) {
-        return (body['content'] as List).cast<Map<String, dynamic>>();
-      }
+      return extrairListaPaginada(jsonDecode(response.body))
+          .cast<Map<String, dynamic>>();
     }
     return [];
   }

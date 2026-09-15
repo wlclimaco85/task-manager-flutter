@@ -10,6 +10,7 @@ class NfceConfigFiscalCacheModel {
   final String idCsc;
   final String csc;
   final String serieNfce;
+  final bool contingenciaHabilitada;
   final bool temCertificado;
   final DateTime cacheadoEm;
 
@@ -23,6 +24,7 @@ class NfceConfigFiscalCacheModel {
     required this.idCsc,
     required this.csc,
     required this.serieNfce,
+    this.contingenciaHabilitada = false,
     this.temCertificado = false,
     required this.cacheadoEm,
   });
@@ -44,6 +46,7 @@ class NfceConfigFiscalCacheModel {
       idCsc: json['idCsc']?.toString() ?? '',
       csc: json['csc']?.toString() ?? '',
       serieNfce: json['serieNfce']?.toString() ?? '001',
+      contingenciaHabilitada: json['contingenciaHabilitada'] == true,
       temCertificado: json['temCertificado'] == true,
       cacheadoEm: DateTime.tryParse(json['cacheadoEm']?.toString() ?? '') ??
           DateTime.now(),
@@ -60,6 +63,7 @@ class NfceConfigFiscalCacheModel {
         'idCsc': idCsc,
         'csc': csc,
         'serieNfce': serieNfce,
+        'contingenciaHabilitada': contingenciaHabilitada,
         'temCertificado': temCertificado,
         'cacheadoEm': cacheadoEm.toIso8601String(),
       };

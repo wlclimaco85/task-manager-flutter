@@ -1161,6 +1161,10 @@ class ApiLinks {
       '$_baseUrlNew/api/v1/nfce/$nfceId/qrcode.png?size=$size';
   static String cancelarNfce(int nfceId) =>
       '$_baseUrlNew/api/v1/nfce/$nfceId/cancelar';
+  static String reenviarContingenciaNfce(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/reenviar-contingencia';
+  static String enviarEmailNfce(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/enviar-email';
   static String inutilizarNfce() => '$_baseUrlNew/api/v1/nfce/inutilizar';
   static String statusSefaz(String uf, {String ambiente = 'HOMOLOGACAO'}) =>
       '$_baseUrlNew/api/v1/fiscal/sefaz/status?uf=$uf&ambiente=$ambiente';

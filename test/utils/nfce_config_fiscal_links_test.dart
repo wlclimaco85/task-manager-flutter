@@ -28,7 +28,7 @@ void main() {
       );
     });
 
-    test('cache preserva temCertificado no round-trip json', () {
+    test('cache preserva temCertificado e contingencia no round-trip json', () {
       final modelo = NfceConfigFiscalCacheModel(
         configId: 10,
         empresaId: 1,
@@ -38,6 +38,7 @@ void main() {
         idCsc: 'abc123',
         csc: 'segredo',
         serieNfce: '001',
+        contingenciaHabilitada: true,
         temCertificado: true,
         cacheadoEm: DateTime(2026, 1, 1),
       );
@@ -45,9 +46,10 @@ void main() {
       final restaurado = NfceConfigFiscalCacheModel.fromJson(modelo.toJson());
 
       expect(restaurado.temCertificado, isTrue);
+      expect(restaurado.contingenciaHabilitada, isTrue);
     });
 
-    test('cache antigo sem temCertificado assume false (compat retroativa)',
+    test('cache antigo sem flags booleanas assume false (compat retroativa)',
         () {
       final jsonAntigo = {
         'configId': 10,
@@ -64,6 +66,7 @@ void main() {
       final restaurado = NfceConfigFiscalCacheModel.fromJson(jsonAntigo);
 
       expect(restaurado.temCertificado, isFalse);
+      expect(restaurado.contingenciaHabilitada, isFalse);
     });
   });
 }
