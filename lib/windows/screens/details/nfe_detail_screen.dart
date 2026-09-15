@@ -242,10 +242,13 @@ class _State extends State<NfeSankhyaDetailScreen> {
         final b = jsonDecode(r.body);
         final d =
             b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _itens = (d as List? ?? [])
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList());
+        setState(() {
+          _itens = (d as List? ?? [])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+          _atualizarTotaisNfe();
+        });
       }
     } catch (_) {}
   }
@@ -1112,17 +1115,68 @@ class _State extends State<NfeSankhyaDetailScreen> {
     final body = <String, dynamic>{
       if (!isNew) 'id': item['id'],
       'nfeId': item['nfe_id'] ?? int.tryParse(_nfeId),
+      'nfe_id': item['nfe_id'] ?? int.tryParse(_nfeId),
       if (item['produto'] != null) 'produto': item['produto'],
       'xProd': item['x_prod'] ?? item['xProd'] ?? '',
+      'x_prod': item['x_prod'] ?? item['xProd'] ?? '',
       'ncm': item['ncm'] ?? '',
       'cfop': item['cfop'] ?? '',
       'uCom': item['u_com'] ?? item['uCom'] ?? '',
+      'u_com': item['u_com'] ?? item['uCom'] ?? '',
       'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
+      'q_com': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
       'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
+      'v_un_com': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
       'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
+      'v_prod': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
       'cstIcms': item['cst_icms'] ?? item['cstIcms'] ?? '',
+      'cst_icms': item['cst_icms'] ?? item['cstIcms'] ?? '',
       'aliqIcms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+      'aliq_icms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+      'vBcIcms': _asDouble(item['v_bc_icms'] ?? item['vBcIcms']),
+      'v_bc_icms': _asDouble(item['v_bc_icms'] ?? item['vBcIcms']),
       'vIcms': _asDouble(item['v_icms'] ?? item['vIcms']),
+      'v_icms': _asDouble(item['v_icms'] ?? item['vIcms']),
+      'cstPis': item['cst_pis'] ?? item['cstPis'],
+      'cst_pis': item['cst_pis'] ?? item['cstPis'],
+      'pPis': _asDouble(item['p_pis'] ?? item['pPis']),
+      'p_pis': _asDouble(item['p_pis'] ?? item['pPis']),
+      'vBcPis': _asDouble(item['v_bc_pis'] ?? item['vBcPis']),
+      'v_bc_pis': _asDouble(item['v_bc_pis'] ?? item['vBcPis']),
+      'vPis': _asDouble(item['v_pis'] ?? item['vPis']),
+      'v_pis': _asDouble(item['v_pis'] ?? item['vPis']),
+      'cstCofins': item['cst_cofins'] ?? item['cstCofins'],
+      'cst_cofins': item['cst_cofins'] ?? item['cstCofins'],
+      'pCofins': _asDouble(item['p_cofins'] ?? item['pCofins']),
+      'p_cofins': _asDouble(item['p_cofins'] ?? item['pCofins']),
+      'vBcCofins': _asDouble(item['v_bc_cofins'] ?? item['vBcCofins']),
+      'v_bc_cofins': _asDouble(item['v_bc_cofins'] ?? item['vBcCofins']),
+      'vCofins': _asDouble(item['v_cofins'] ?? item['vCofins']),
+      'v_cofins': _asDouble(item['v_cofins'] ?? item['vCofins']),
+      'cstIpi': item['cst_ipi'] ?? item['cstIpi'],
+      'cst_ipi': item['cst_ipi'] ?? item['cstIpi'],
+      'aliqIpi': _asDouble(item['aliq_ipi'] ?? item['aliqIpi']),
+      'aliq_ipi': _asDouble(item['aliq_ipi'] ?? item['aliqIpi']),
+      'vBcIpi': _asDouble(item['v_bc_ipi'] ?? item['vBcIpi']),
+      'v_bc_ipi': _asDouble(item['v_bc_ipi'] ?? item['vBcIpi']),
+      'vIpi': _asDouble(item['v_ipi'] ?? item['vIpi']),
+      'v_ipi': _asDouble(item['v_ipi'] ?? item['vIpi']),
+      'cstIbsCbs': item['cst_ibs_cbs'] ?? item['cstIbsCbs'],
+      'cst_ibs_cbs': item['cst_ibs_cbs'] ?? item['cstIbsCbs'],
+      'pCbs': _asDouble(item['p_cbs'] ?? item['pCbs']),
+      'p_cbs': _asDouble(item['p_cbs'] ?? item['pCbs']),
+      'pIbsUf': _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']),
+      'p_ibs_uf': _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']),
+      'pIbsMun': _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']),
+      'p_ibs_mun': _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']),
+      'vBcIbsCbs': _asDouble(item['v_bc_ibs_cbs'] ?? item['vBcIbsCbs']),
+      'v_bc_ibs_cbs': _asDouble(item['v_bc_ibs_cbs'] ?? item['vBcIbsCbs']),
+      'vCbs': _asDouble(item['v_cbs'] ?? item['vCbs']),
+      'v_cbs': _asDouble(item['v_cbs'] ?? item['vCbs']),
+      'vIbs': _asDouble(item['v_ibs'] ?? item['vIbs']),
+      'v_ibs': _asDouble(item['v_ibs'] ?? item['vIbs']),
+      'vTotTrib': _asDouble(item['v_tot_trib'] ?? item['vTotTrib']),
+      'v_tot_trib': _asDouble(item['v_tot_trib'] ?? item['vTotTrib']),
     };
     try {
       final r = isNew
@@ -1140,6 +1194,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             if (newId != null) setState(() => item['id'] = newId);
           } catch (_) {}
         }
+        setState(() {
+          _atualizarTotaisNfe();
+        });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Item salvo!'), backgroundColor: _green));
       } else {
@@ -1647,6 +1704,19 @@ class _State extends State<NfeSankhyaDetailScreen> {
             error = true;
           }
         }
+
+        // Calcula total de tributos do item e atualiza totais da NF-e
+        final vIcms = _asDouble(item['v_icms'] ?? item['vIcms']) ?? 0;
+        final vPis = _asDouble(item['v_pis'] ?? item['vPis']) ?? 0;
+        final vCofins = _asDouble(item['v_cofins'] ?? item['vCofins']) ?? 0;
+        final vIpi = _asDouble(item['v_ipi'] ?? item['vIpi']) ?? 0;
+        final vCbs = _asDouble(item['v_cbs'] ?? item['vCbs']) ?? 0;
+        final vIbs = _asDouble(item['v_ibs'] ?? item['vIbs']) ?? 0;
+        final totTrib = vIcms + vPis + vCofins + vIpi + vCbs + vIbs;
+        item['v_tot_trib'] = _valorMonetario(totTrib);
+        item['vTotTrib'] = item['v_tot_trib'];
+
+        _atualizarTotaisNfe();
       });
 
       if (!error) {
@@ -1680,7 +1750,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             item['vProd'] = item['v_prod'];
           }
           _recalcularTotalItem(item);
-          setState(() {});
+          setState(() {
+            _atualizarTotaisNfe();
+          });
         }
       },
     );
@@ -1855,6 +1927,78 @@ class _State extends State<NfeSankhyaDetailScreen> {
     item['u_com'] = (item['u_com'] ?? item['uCom'] ?? '').toString();
     item['uCom'] = item['u_com'];
     _recalcularTotalItem(item);
+  }
+
+  void _atualizarTotaisNfe() {
+    double totalProd = 0.0;
+    double bcIcms = 0.0;
+    double vIcms = 0.0;
+    double bcIcmsSt = 0.0;
+    double vIcmsSt = 0.0;
+    double vFcp = 0.0;
+    double bcIpi = 0.0;
+    double vIpi = 0.0;
+    double bcPis = 0.0;
+    double vPis = 0.0;
+    double bcCofins = 0.0;
+    double vCofins = 0.0;
+    double bcIbsCbs = 0.0;
+    double vIbs = 0.0;
+    double vCbs = 0.0;
+    double totTrib = 0.0;
+
+    for (final it in _itens) {
+      totalProd += _asDouble(it['v_prod'] ?? it['vProd']) ?? 0.0;
+      bcIcms += _asDouble(it['v_bc_icms'] ?? it['vBcIcms']) ?? 0.0;
+      vIcms += _asDouble(it['v_icms'] ?? it['vIcms']) ?? 0.0;
+      bcIcmsSt += _asDouble(it['v_bc_icms_st'] ?? it['vBcIcmsSt']) ?? 0.0;
+      vIcmsSt += _asDouble(it['v_icms_st'] ?? it['vIcmsSt']) ?? 0.0;
+      vFcp += _asDouble(it['v_fcp'] ?? it['vFcp']) ?? 0.0;
+      bcIpi += _asDouble(it['v_bc_ipi'] ?? it['vBcIpi']) ?? 0.0;
+      vIpi += _asDouble(it['v_ipi'] ?? it['vIpi']) ?? 0.0;
+      bcPis += _asDouble(it['v_bc_pis'] ?? it['vBcPis']) ?? 0.0;
+      vPis += _asDouble(it['v_pis'] ?? it['vPis']) ?? 0.0;
+      bcCofins += _asDouble(it['v_bc_cofins'] ?? it['vBcCofins']) ?? 0.0;
+      vCofins += _asDouble(it['v_cofins'] ?? it['vCofins']) ?? 0.0;
+      bcIbsCbs += _asDouble(it['v_bc_ibs_cbs'] ?? it['vBcIbsCbs']) ?? 0.0;
+      vIbs += _asDouble(it['v_ibs'] ?? it['vIbs']) ?? 0.0;
+      vCbs += _asDouble(it['v_cbs'] ?? it['vCbs']) ?? 0.0;
+      totTrib += _asDouble(it['v_tot_trib'] ?? it['vTotTrib']) ?? 0.0;
+    }
+
+    final nfe = widget.item;
+    nfe['valorTotal'] = totalProd.toStringAsFixed(2);
+    nfe['valor_total'] = nfe['valorTotal'];
+    nfe['vBcIcms'] = bcIcms.toStringAsFixed(2);
+    nfe['v_bc_icms'] = nfe['vBcIcms'];
+    nfe['vIcms'] = vIcms.toStringAsFixed(2);
+    nfe['v_icms'] = nfe['vIcms'];
+    nfe['vBcIcmsSt'] = bcIcmsSt.toStringAsFixed(2);
+    nfe['v_bc_icms_st'] = nfe['vBcIcmsSt'];
+    nfe['vIcmsSt'] = vIcmsSt.toStringAsFixed(2);
+    nfe['v_icms_st'] = nfe['vIcmsSt'];
+    nfe['vFcp'] = vFcp.toStringAsFixed(2);
+    nfe['v_fcp'] = nfe['vFcp'];
+    nfe['vBcIpi'] = bcIpi.toStringAsFixed(2);
+    nfe['v_bc_ipi'] = nfe['vBcIpi'];
+    nfe['vIpi'] = vIpi.toStringAsFixed(2);
+    nfe['v_ipi'] = nfe['vIpi'];
+    nfe['vBcPis'] = bcPis.toStringAsFixed(2);
+    nfe['v_bc_pis'] = nfe['vBcPis'];
+    nfe['vPis'] = vPis.toStringAsFixed(2);
+    nfe['v_pis'] = nfe['vPis'];
+    nfe['vBcCofins'] = bcCofins.toStringAsFixed(2);
+    nfe['v_bc_cofins'] = nfe['vBcCofins'];
+    nfe['vCofins'] = vCofins.toStringAsFixed(2);
+    nfe['v_cofins'] = nfe['vCofins'];
+    nfe['vBcIbsCbs'] = bcIbsCbs.toStringAsFixed(2);
+    nfe['v_bc_ibs_cbs'] = nfe['vBcIbsCbs'];
+    nfe['vIbs'] = vIbs.toStringAsFixed(2);
+    nfe['v_ibs'] = nfe['vIbs'];
+    nfe['vCbs'] = vCbs.toStringAsFixed(2);
+    nfe['v_cbs'] = nfe['vCbs'];
+    nfe['vTotTrib'] = totTrib.toStringAsFixed(2);
+    nfe['v_tot_trib'] = nfe['vTotTrib'];
   }
 
   void _novoItem() => setState(() {

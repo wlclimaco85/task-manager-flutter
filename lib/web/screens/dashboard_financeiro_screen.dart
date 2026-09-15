@@ -222,8 +222,22 @@ class _WebDashboardFinanceiroScreenState
     if (raw is! List) return [];
     return raw.map((e) {
       if (e is! Map) return _FluxoItem('', 0, 0);
+      String label = e['semana']?.toString() ?? e['label']?.toString() ?? '';
+      if (label.isEmpty && e['data'] != null) {
+        final dStr = e['data'].toString();
+        if (dStr.length >= 10) {
+          final parts = dStr.substring(0, 10).split('-');
+          if (parts.length == 3) {
+            label = '${parts[2]}/${parts[1]}';
+          } else {
+            label = dStr;
+          }
+        } else {
+          label = dStr;
+        }
+      }
       return _FluxoItem(
-        e['semana']?.toString() ?? e['label']?.toString() ?? '',
+        label,
         _toDouble(e['entrada'] ?? e['receber'] ?? 0),
         _toDouble(e['saida'] ?? e['pagar'] ?? 0),
       );
