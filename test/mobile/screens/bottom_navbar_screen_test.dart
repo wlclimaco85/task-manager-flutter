@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:task_manager_flutter/mobile/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
@@ -15,6 +16,18 @@ import 'package:task_manager_flutter/utils/security_matrix.dart';
 // afetava as outras 4 abas gateadas (Calendario/Chat/Comunicados/Chamados),
 // nao so GED.
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('pt_BR');
+  });
+
+  RolePermissaoItem permView(String telaNome) => RolePermissaoItem(
+        telaNome: telaNome,
+        podeVer: true,
+        podeInserir: false,
+        podeEditar: false,
+        podeDeletar: false,
+      );
+
   tearDown(() {
     AuthUtility.userInfo = null;
     ModuloAccess.reset();
@@ -36,6 +49,7 @@ void main() {
         permissoes: const [],
       );
       PermissionService().setPermissoes(const []);
+      ModuloAccess.setContratadosParaTeste(const ['Chat']);
 
       await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
       await tester.pump();
@@ -45,11 +59,12 @@ void main() {
       await tester.tap(find.text('GED'));
       await tester.pump();
 
-      expect(find.text('GED indisponível'), findsOneWidget);
+      expect(find.textContaining('GED indispon'), findsOneWidget);
       expect(
-        find.textContaining('solicitar acesso'),
+        find.textContaining('não possui permissão'),
         findsOneWidget,
       );
+      await tester.pump(const Duration(seconds: 2));
 
       // BottomNavBarScreen dispara AppLogger.i.initCapture() (via widget
       // descendente) que reatribui debugPrint e FlutterError.onError pra
@@ -139,7 +154,7 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Mais'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('GME'), findsNothing);
       expect(find.text('Service Desk'), findsNothing);
@@ -168,13 +183,118 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Mais'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('GME'), findsOneWidget);
       // Os outros 3 continuam escondidos -- so' GME foi contratado.
       expect(find.text('Service Desk'), findsNothing);
       expect(find.text('Projetos'), findsNothing);
       expect(find.text('Precificação'), findsNothing);
+
+      debugPrint = originalDebugPrint;
+      FlutterError.onError = originalOnError;
+    },
+  );
+
+  testWidgets(
+    'menu Mais esconde atalhos pagos quando ha permissao mas nao ha modulo contratado',
+    (tester) async {
+      final originalDebugPrint = debugPrint;
+      final originalOnError = FlutterError.onError;
+
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, tipoLogin: LoginEnum.APP_ABRACO, roles: const []),
+        permissoes: const [],
+      );
+      PermissionService().setPermissoes([
+        permView('PdvNfce'),
+        permView('Produtos'),
+        permView('Parceiros'),
+        permView('DashboardComercial'),
+        permView('ContasPagar'),
+        permView('ContasReceber'),
+        permView('ContaBancaria'),
+        permView('Dashboard'),
+        permView('DashboardFinanceiro'),
+        permView('Nfse'),
+        permView('NfseSerie'),
+        permView('NfseServico'),
+        permView('ConfigFiscal'),
+        permView('DashboardFiscal'),
+      ]);
+      ModuloAccess.setContratadosParaTeste(const []);
+
+      await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
+      await tester.pump();
+
+      await tester.tap(find.text('Mais'));
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(find.text('PDV'), findsNothing);
+      expect(find.text('Produtos'), findsNothing);
+      expect(find.text('NFS-e'), findsNothing);
+      expect(find.text('Config ISS'), findsNothing);
+      expect(find.text('Régua de Cobrança'), findsNothing);
+      expect(find.text('Agendar NFe Recorrente'), findsNothing);
+      expect(find.text('Config Fiscal'), findsNothing);
+
+      expect(find.text('Parceiros'), findsWidgets);
+      expect(find.text('Dashboard Comercial'), findsOneWidget);
+      expect(find.text('Contas Pagar'), findsOneWidget);
+      expect(find.text('Contas Receber'), findsOneWidget);
+      expect(find.text('Contas Bancarias'), findsOneWidget);
+      expect(find.text('Dashboard Fiscal'), findsOneWidget);
+
+      debugPrint = originalDebugPrint;
+      FlutterError.onError = originalOnError;
+    },
+  );
+
+  testWidgets(
+    'menu Mais mostra atalhos pagos quando os modulos correspondentes estao contratados',
+    (tester) async {
+      final originalDebugPrint = debugPrint;
+      final originalOnError = FlutterError.onError;
+
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, tipoLogin: LoginEnum.APP_ABRACO, roles: const []),
+        permissoes: const [],
+      );
+      PermissionService().setPermissoes([
+        permView('PdvNfce'),
+        permView('Produtos'),
+        permView('Parceiros'),
+        permView('DashboardComercial'),
+        permView('ContasReceber'),
+        permView('Nfse'),
+        permView('NfseSerie'),
+        permView('NfseServico'),
+        permView('ConfigFiscal'),
+        permView('DashboardFiscal'),
+      ]);
+      ModuloAccess.setContratadosParaTeste(const [
+        'Comercial',
+        'Financeiro',
+        'NFC-e',
+        'NFS-e',
+        'Financeiro avançado',
+      ]);
+
+      await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
+      await tester.pump();
+
+      await tester.tap(find.text('Mais'));
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(find.text('PDV'), findsOneWidget);
+      expect(find.text('Produtos'), findsOneWidget);
+      expect(find.text('NFS-e'), findsOneWidget);
+      expect(find.text('Config ISS'), findsOneWidget);
+      expect(find.text('Régua de Cobrança'), findsOneWidget);
+      expect(find.text('Agendar NFe Recorrente'), findsOneWidget);
+      expect(find.text('Config Fiscal'), findsOneWidget);
 
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;

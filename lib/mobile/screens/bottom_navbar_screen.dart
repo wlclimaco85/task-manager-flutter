@@ -1314,6 +1314,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   void _showMenuOptions(BuildContext context, SecurityMatrix sec) {
     final contratados = ModuloAccess.modulosContratados;
+    final temComercial = _temModuloContratado(contratados, const ['Comercial']);
+    final temNfce = _temModuloContratado(contratados, const [
+      'NFC-e',
+      'Fiscal / NFC-e',
+      'Fiscal e NF-e',
+      'Notas Fiscais',
+    ]);
+    final temNfse = _temModuloContratado(contratados, const ['NFS-e']);
+    final temFinanceiroAvancado = _temModuloContratado(contratados, const [
+      'Financeiro avançado',
+      'Financeiro avancado',
+    ]);
+    final podeVerConfigIss =
+        sec.canView(AppScreen.configFiscal) || sec.canView(AppScreen.nfse);
 
     // Define os grupos de módulos com seus itens (gateados por permissão)
     final modulos = <_ModuloGroup>[
@@ -1321,9 +1335,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         'Comercial',
         Icons.business,
         [
-          if (sec.canView(AppScreen.pdvNfce))
+          if (temNfce && sec.canView(AppScreen.pdvNfce))
             _MoreMenuAction(Icons.point_of_sale, 'PDV'),
-          if (sec.canView(AppScreen.produto))
+          if (temComercial && sec.canView(AppScreen.produto))
             _MoreMenuAction(Icons.inventory, 'Produtos'),
           if (sec.canView(AppScreen.parceiros))
             _MoreMenuAction(Icons.people, 'Parceiros'),
@@ -1346,7 +1360,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           if (sec.canView(AppScreen.dashFinanceiroArea))
             _MoreMenuAction(
                 Icons.account_balance_wallet, 'Dashboard Financeiro'),
-          if (sec.canView(AppScreen.contasReceber))
+          if (temFinanceiroAvancado && sec.canView(AppScreen.contasReceber))
             _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
           if (sec.canView(AppScreen.importarExtrato) || sec.canView(AppScreen.contasBancarias))
             _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
@@ -1368,13 +1382,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         'NFS-e',
         Icons.description,
         [
-          if (sec.canView(AppScreen.nfseLista))
+          if (temNfse && sec.canView(AppScreen.nfseLista))
             _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
-          if (sec.canView(AppScreen.nfseSerie))
+          if (temNfse && sec.canView(AppScreen.nfseSerie))
             _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
-          if (sec.canView(AppScreen.nfseServico))
+          if (temNfse && sec.canView(AppScreen.nfseServico))
             _MoreMenuAction(Icons.work, 'Serviços NFS-e'),
-          if (sec.canView(AppScreen.configFiscal))
+          if (temNfse && podeVerConfigIss)
             _MoreMenuAction(Icons.settings, 'Config ISS'),
         ],
       ),
@@ -1384,7 +1398,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         [
           if (sec.canView(AppScreen.dashFiscalArea))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
-          _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
+          if (temNfce)
+            _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
         ],
       ),
       _ModuloGroup(
@@ -1464,7 +1479,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))
             _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
-          _MoreMenuAction(Icons.settings, 'Config Fiscal'),
+          if (temNfce) _MoreMenuAction(Icons.settings, 'Config Fiscal'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
       ),
@@ -1609,6 +1624,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
       },
     );
+  }
+
+  bool _temModuloContratado(List<String> contratados, List<String> aliases) {
+    return aliases.any(contratados.contains);
   }
 
   Widget _buildModuloGroup(
