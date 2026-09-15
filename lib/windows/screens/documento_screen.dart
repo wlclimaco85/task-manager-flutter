@@ -257,6 +257,23 @@ Map<String, dynamic>? _mapValue(Map<String, dynamic> item, List<String> keys) {
   return null;
 }
 
+int? _intValue(dynamic value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+int? _empresaIdValue(Map<String, dynamic> item) {
+  final direct = _intValue(item['empresaId'] ?? item['empresa_id'] ?? item['empId']);
+  if (direct != null) return direct;
+
+  final empresa = item['empresa'];
+  if (empresa is Map) {
+    return _intValue(empresa['id']);
+  }
+  return null;
+}
+
 String _dateKey(Map<String, dynamic> item) {
   // Verifica primeiro se alguma chave de data é um array [ano,mes,dia]
   // (Jackson sem write-dates-as-timestamps=false serializa LocalDate assim)
@@ -718,8 +735,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   void _abrirAnexosConta(Map<String, dynamic> item, {required bool isPagar}) {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
-    final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
-        (item['empresaId'] as num?)?.toInt();
+    final empresaId = _empresaIdValue(item);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -748,8 +764,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       {required bool isPagar}) async {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
-    final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
-        (item['empresaId'] as num?)?.toInt();
+    final empresaId = _empresaIdValue(item);
     try {
       final anexos = await AnexoFinanceiroService().listar(
         id,
