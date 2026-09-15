@@ -22,6 +22,7 @@ import '../../../windows/dialogs/recorrencia_conta_dialog.dart';
 import '../../../windows/dialogs/renegociacao_conta_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../services/baixa_caller.dart';
+import '../../../widgets/finance/financeiro_parceiro_field_rules.dart';
 import 'package:http/http.dart' as http;
 
 class WindowsContaPagarGridScreen extends StatefulWidget {
@@ -63,8 +64,10 @@ class _WindowsContaPagarGridScreenState
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
     if (_statusFilter != GridTexts.all) params['status'] = _statusFilter;
-    if (_dataInicio != null) params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
-    if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
+    if (_dataInicio != null)
+      params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
+    if (_dataFim != null)
+      params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != GridTexts.all) params['tipo'] = _tipoFilter;
     return params;
@@ -155,8 +158,10 @@ class _WindowsContaPagarGridScreenState
     );
     if (picked != null) {
       setState(() {
-        if (isInicio) _dataInicio = picked;
-        else _dataFim = picked;
+        if (isInicio)
+          _dataInicio = picked;
+        else
+          _dataFim = picked;
       });
     }
   }
@@ -173,7 +178,8 @@ class _WindowsContaPagarGridScreenState
           spacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text(GridTexts.statusLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.statusLabel,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 140,
               height: 36,
@@ -181,25 +187,37 @@ class _WindowsContaPagarGridScreenState
                 value: _statusFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                items: _statusOptions
+                    .map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s, style: const TextStyle(fontSize: 13))))
+                    .toList(),
                 onChanged: (v) => setState(() => _statusFilter = v!),
               ),
             ),
             const SizedBox(width: 12),
-            const Text(GridTexts.periodLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.periodLabel,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             InkWell(
               onTap: () => _pickDate(isInicio: true),
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: GridColors.divider),
+                    borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : GridTexts.start, style: const TextStyle(fontSize: 13)),
+                  Text(
+                      _dataInicio != null
+                          ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}'
+                          : GridTexts.start,
+                      style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
@@ -209,16 +227,23 @@ class _WindowsContaPagarGridScreenState
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: GridColors.divider),
+                    borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : GridTexts.end, style: const TextStyle(fontSize: 13)),
+                  Text(
+                      _dataFim != null
+                          ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}'
+                          : GridTexts.end,
+                      style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
             const SizedBox(width: 12),
-            const Text(GridTexts.typeLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.typeLabel,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 130,
               height: 36,
@@ -226,10 +251,15 @@ class _WindowsContaPagarGridScreenState
                 value: _tipoFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _tipoOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
+                items: _tipoOptions
+                    .map((t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t, style: const TextStyle(fontSize: 13))))
+                    .toList(),
                 onChanged: (v) => setState(() => _tipoFilter = v!),
               ),
             ),
@@ -239,7 +269,8 @@ class _WindowsContaPagarGridScreenState
               child: ElevatedButton.icon(
                 onPressed: _applyFilters,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text(GridTexts.filter, style: TextStyle(fontSize: 13)),
+                label: const Text(GridTexts.filter,
+                    style: TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
@@ -253,7 +284,8 @@ class _WindowsContaPagarGridScreenState
               child: OutlinedButton.icon(
                 onPressed: _clearFilters,
                 icon: const Icon(Icons.clear, size: 18),
-                label: const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
+                label:
+                    const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
@@ -296,8 +328,10 @@ class _WindowsContaPagarGridScreenState
   // Em modo limitado, bloqueia create/edit/delete no DynamicGridWindowsScreen
   bool _checkPermission(String permission) {
     if (_isFinanceiroLimitado) {
-      if (permission == 'create' || permission == 'edit' ||
-          permission == 'delete' || permission == 'deleteMultiple') {
+      if (permission == 'create' ||
+          permission == 'edit' ||
+          permission == 'delete' ||
+          permission == 'deleteMultiple') {
         return false;
       }
     }
@@ -306,6 +340,19 @@ class _WindowsContaPagarGridScreenState
 
   @override
   Widget build(BuildContext context) {
+    final parceiroIdContexto =
+        FinanceiroParceiroFieldRules.normalizarParceiroId(
+      TenantContext.parceiroId,
+    );
+    final parceiroSelecionado = parceiroIdContexto?.toString();
+    final parceiroHabilitado = FinanceiroParceiroFieldRules.parceiroHabilitado(
+      parceiroId: parceiroIdContexto,
+    );
+    final fornecedorHabilitado =
+        FinanceiroParceiroFieldRules.fornecedorHabilitado(
+      parceiroId: parceiroIdContexto,
+    );
+
     return Column(
       children: [
         if (_isFinanceiroLimitado) _buildBannerLimitado(),
@@ -333,12 +380,13 @@ class _WindowsContaPagarGridScreenState
                   isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: true,
+                  enabled: fornecedorHabilitado,
                   fieldOrder: 11,
-                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
-              // Parceiro: locked no parceiro do login
+              // Parceiro: travado apenas quando existe parceiro no login.
               FieldConfigWindows(
                   fieldName: 'parceiro',
                   displayFieldName: 'parceiro.nome',
@@ -347,15 +395,11 @@ class _WindowsContaPagarGridScreenState
                   isInGrid: true,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: false,
+                  enabled: parceiroHabilitado,
                   fieldOrder: 12,
-                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
-                  dropdownFutureBuilder: () async {
-                    final id = TenantContext.parceiroId;
-                    if (id == null) return <Map<String, dynamic>>[];
-                    final all = await DropdownHelpers.parceiros();
-                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
-                  },
+                  dropdownSelectedValue: parceiroSelecionado,
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
@@ -369,8 +413,9 @@ class _WindowsContaPagarGridScreenState
                   fieldType: FieldType.dropdown,
                   enabled: true,
                   fieldOrder: 13,
-                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
-                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownSelectedValue: parceiroSelecionado,
+                  dropdownRemoteSearch: DropdownHelpers.parceirosBusca,
+                  dropdownResolveLabel: DropdownHelpers.parceiroLabelPorId,
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string
@@ -393,12 +438,16 @@ class _WindowsContaPagarGridScreenState
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List
+                          ? decoded
+                          : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list.map<Map<String, dynamic>>((e) => {
-                        'value': e['descricao'] ?? e['nome'] ?? '',
-                        'label': e['descricao'] ?? e['nome'] ?? '',
-                      }).toList();
+                      return list
+                          .map<Map<String, dynamic>>((e) => {
+                                'value': e['descricao'] ?? e['nome'] ?? '',
+                                'label': e['descricao'] ?? e['nome'] ?? '',
+                              })
+                          .toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -419,17 +468,23 @@ class _WindowsContaPagarGridScreenState
                   dropdownFutureBuilder: () async {
                     final token = AuthUtility.userInfo?.token;
                     final resp = await http.get(
-                      Uri.parse('${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
+                      Uri.parse(
+                          '${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
                       headers: {'Authorization': 'Bearer $token'},
                     );
                     if (resp.statusCode == 200) {
                       final decoded = jsonDecode(resp.body);
-                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final raw = decoded is List
+                          ? decoded
+                          : (decoded is Map ? decoded['data'] : null);
                       final list = (raw is List) ? raw : <dynamic>[];
-                      return list.map<Map<String, dynamic>>((e) => {
-                        'value': e['value'] ?? e,
-                        'label': e['label'] ?? e['value'] ?? e.toString(),
-                      }).toList();
+                      return list
+                          .map<Map<String, dynamic>>((e) => {
+                                'value': e['value'] ?? e,
+                                'label':
+                                    e['label'] ?? e['value'] ?? e.toString(),
+                              })
+                          .toList();
                     }
                     return <Map<String, dynamic>>[];
                   },
@@ -486,10 +541,11 @@ class _WindowsContaPagarGridScreenState
                   label: const Text(GridTexts.importBoleto),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: GridColors.secondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
                     side: const BorderSide(color: GridColors.divider),
-                    shape:
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
                   ),
                 ),
             ],
@@ -497,7 +553,8 @@ class _WindowsContaPagarGridScreenState
               CustomAction<ContaPagar>(
                 icon: Icons.price_check,
                 label: GridTexts.lower,
-                onPressed: (context, object) => _showBaixaDialog(context, object),
+                onPressed: (context, object) =>
+                    _showBaixaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaPagar>(
@@ -557,19 +614,22 @@ class _WindowsContaPagarGridScreenState
                 CustomAction<ContaPagar>(
                   icon: Icons.credit_card,
                   label: GridTexts.installment,
-                  onPressed: (context, object) => _showParcelarDialog(context, object),
+                  onPressed: (context, object) =>
+                      _showParcelarDialog(context, object),
                   isVisible: (c) => c.status == StatusConta.ABERTA,
                 ),
                 CustomAction<ContaPagar>(
                   icon: Icons.repeat,
                   label: GridTexts.recurrence,
-                  onPressed: (context, object) => _showRecorrenciaDialog(context, object),
+                  onPressed: (context, object) =>
+                      _showRecorrenciaDialog(context, object),
                   isVisible: (c) => c.status == StatusConta.ABERTA,
                 ),
                 CustomAction<ContaPagar>(
                   icon: Icons.swap_horiz,
                   label: GridTexts.renegotiate,
-                  onPressed: (context, object) => _showRenegociacaoDialog(context, object),
+                  onPressed: (context, object) =>
+                      _showRenegociacaoDialog(context, object),
                   isVisible: (c) => c.status == StatusConta.ABERTA,
                 ),
               ],
@@ -577,13 +637,15 @@ class _WindowsContaPagarGridScreenState
                 icon: Icons.attach_file,
                 label: GridTexts.attachments,
                 badgeCount: (obj) => obj.qtdAnexos,
-                onPressed: (context, object) => _showAnexosDialog(context, object),
+                onPressed: (context, object) =>
+                    _showAnexosDialog(context, object),
                 isVisible: (obj) => obj.id != null,
               ),
               CustomAction<ContaPagar>(
                 icon: Icons.receipt,
                 label: GridTexts.billingTicket,
-                onPressed: (context, object) => _showBoletoDialog(context, object),
+                onPressed: (context, object) =>
+                    _showBoletoDialog(context, object),
                 isVisible: (obj) => obj.id != null,
               ),
             ],
@@ -622,13 +684,15 @@ class _WindowsContaPagarGridScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       color: GridColors.primary,
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.attach_file, color: GridColors.textPrimary, size: 20),
+                        const Icon(Icons.attach_file,
+                            color: GridColors.textPrimary, size: 20),
                         const SizedBox(width: 10),
                         const Expanded(
                           child: Text(
@@ -642,9 +706,11 @@ class _WindowsContaPagarGridScreenState
                         ),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+                          icon: const Icon(Icons.close,
+                              color: GridColors.textPrimaryMuted, size: 20),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                          constraints:
+                              const BoxConstraints(minWidth: 28, minHeight: 28),
                         ),
                       ],
                     ),

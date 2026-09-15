@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
 import 'package:task_manager_flutter/widgets/finance/financeiro_parceiro_field_rules.dart';
 
 void main() {
@@ -38,5 +39,22 @@ void main() {
       expect(FinanceiroParceiroFieldRules.fornecedorHabilitado(parcId: '42'),
           isTrue);
     });
+  });
+
+  group('Telas financeiras usam regra de parceiro do contexto', () {
+    for (final path in [
+      'lib/web/screens/conta_pagar_grid_screen.dart',
+      'lib/windows/screens/conta_pagar_grid_screen.dart',
+      'lib/web/screens/conta_receber_grid_screen.dart',
+      'lib/windows/screens/conta_receber_grid_screen.dart',
+    ]) {
+      test('$path habilita Parceiro quando login nao tem parceiro', () {
+        final source = File(path).readAsStringSync();
+
+        expect(source, contains('FinanceiroParceiroFieldRules'));
+        expect(source, contains('enabled: parceiroHabilitado'));
+        expect(source, contains('enabled: fornecedorHabilitado'));
+      });
+    }
   });
 }
