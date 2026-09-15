@@ -1658,6 +1658,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
         'pIbsUf': _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']),
         'pIbsMun': _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']),
         'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
+        'vBcIcms': _asDouble(item['v_bc_icms'] ?? item['vBcIcms']),
+        'vBcPis': _asDouble(item['v_bc_pis'] ?? item['vBcPis']),
+        'vBcCofins': _asDouble(item['v_bc_cofins'] ?? item['vBcCofins']),
+        'vBcIpi': _asDouble(item['v_bc_ipi'] ?? item['vBcIpi']),
+        'vBcIbsCbs': _asDouble(item['v_bc_ibs_cbs'] ?? item['vBcIbsCbs']),
         'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
         'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
       };
