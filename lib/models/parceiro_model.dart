@@ -117,6 +117,15 @@ class Parceiro {
   String? observacao;
   String? tipoEstabelecimento;
   Parceiro? matriz;
+  String? ie;
+  String? ambiente;
+  String? rua;
+  String? bairro;
+  String? cidade;
+  String? estado;
+  String? cep;
+  String? numero;
+  String? complemento;
 
   Parceiro({
     this.id,
@@ -138,6 +147,15 @@ class Parceiro {
     this.observacao,
     this.tipoEstabelecimento,
     this.matriz,
+    this.ie,
+    this.ambiente,
+    this.rua,
+    this.bairro,
+    this.cidade,
+    this.estado,
+    this.cep,
+    this.numero,
+    this.complemento,
   });
 
   Parceiro.fromJson(Map<String, dynamic> json) {
@@ -169,6 +187,15 @@ class Parceiro {
     matriz = json['matriz'] != null && json['matriz'] is Map<String, dynamic>
         ? Parceiro.fromJson(json['matriz'])
         : null;
+    ie = json['ie'];
+    ambiente = json['ambiente']?.toString();
+    rua = json['rua'];
+    bairro = json['bairro'];
+    cidade = json['cidade'];
+    estado = json['estado'];
+    cep = json['cep'];
+    numero = json['numero'];
+    complemento = json['complemento'];
   }
 
   Map<String, dynamic> toJson() {
@@ -187,12 +214,20 @@ class Parceiro {
     if (endereco != null) data['endereco'] = endereco!.toJson();
     if (empresa != null) data['empresa'] = empresa!.toJson();
     if (regime != null) data['regime'] = regime!.toJson();
-    data['regime'] = regime;
     data['valorMensal'] = valorMensal;
     data['diaVencimentoMensalidade'] = diaVencimentoMensalidade;
     data['observacao'] = observacao;
     data['tipoEstabelecimento'] = tipoEstabelecimento ?? 'MATRIZ';
     if (matriz != null) data['matriz'] = matriz!.toJson();
+    data['ie'] = ie;
+    data['ambiente'] = ambiente;
+    data['rua'] = rua;
+    data['bairro'] = bairro;
+    data['cidade'] = cidade;
+    data['estado'] = estado;
+    data['cep'] = cep;
+    data['numero'] = numero;
+    data['complemento'] = complemento;
     return data;
   }
 
@@ -225,8 +260,7 @@ class Parceiro {
   /// não configurado), 1-30 = dia fixo do mês.
   static List<Map<String, dynamic>> get diaVencimentoOptions => [
         {'value': 0, 'label': '5º Dia Útil'},
-        for (var dia = 1; dia <= 30; dia++)
-          {'value': dia, 'label': 'Dia $dia'},
+        for (var dia = 1; dia <= 30; dia++) {'value': dia, 'label': 'Dia $dia'},
       ];
 
   // ==========================================================
@@ -242,6 +276,7 @@ class Parceiro {
       isVisibleByDefault: true,
       isFixed: true,
       fieldType: FieldType.text,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "CPF/CNPJ",
@@ -252,6 +287,7 @@ class Parceiro {
       isVisibleByDefault: true,
       isFixed: true,
       fieldType: FieldType.cpfCnpj,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "Email",
@@ -279,6 +315,33 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.text,
+      isRequired: true,
+    ),
+    const FieldConfigWindows(
+      label: "IE",
+      fieldName: "ie",
+      icon: Icons.receipt_long,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.text,
+      isRequired: true,
+    ),
+    const FieldConfigWindows(
+      label: "Ambiente",
+      fieldName: "ambiente",
+      icon: Icons.shield,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: [
+        {'value': 'HOMOLOGACAO', 'label': 'Homologação'},
+        {'value': 'PRODUCAO', 'label': 'Produção'},
+      ],
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "CEP",
@@ -288,6 +351,7 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.cep,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "Rua",
@@ -297,6 +361,17 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.text,
+      isRequired: true,
+    ),
+    const FieldConfigWindows(
+      label: "Número",
+      fieldName: "numero",
+      icon: Icons.pin,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.text,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "Bairro",
@@ -306,6 +381,7 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.text,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "Cidade",
@@ -315,11 +391,22 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.text,
+      isRequired: true,
     ),
     const FieldConfigWindows(
       label: "Estado",
       fieldName: "estado",
       icon: Icons.map_outlined,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.text,
+      isRequired: true,
+    ),
+    const FieldConfigWindows(
+      label: "Complemento",
+      fieldName: "complemento",
+      icon: Icons.add_location_alt,
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
@@ -431,7 +518,7 @@ class Parceiro {
       dropdownFutureBuilder: () async => await loadCategorias(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
-      isRequired: false,
+      isRequired: true,
       isVisibleByDefault: false,
     ),
     const FieldConfigWindows(
@@ -486,6 +573,7 @@ class Parceiro {
         dropdownFutureBuilder: fw.dropdownFutureBuilder,
         dropdownValueField: fw.dropdownValueField,
         dropdownDisplayField: fw.dropdownDisplayField,
+        isRequired: fw.isRequired,
       );
     }).toList();
   }

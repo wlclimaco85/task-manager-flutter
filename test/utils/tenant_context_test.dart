@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
 
 void main() {
@@ -59,6 +60,27 @@ void main() {
       expect(uri.queryParameters['clienteId'], equals('17'));
       expect(uri.queryParameters['userId'], equals('99'));
       expect(uri.queryParameters['userLogadoId'], equals('99'));
+    });
+
+    test('applyToUrl adiciona parceiroId na URL de transmissao da NF-e', () {
+      AuthUtility.userInfo = LoginModel(
+        login: Login(
+          id: 970,
+          empresa: Empresa(id: 1),
+          parceiro: Parceiro(id: 1756),
+          aplicativo: Aplicativo(id: 7),
+        ),
+      );
+
+      final uri =
+          Uri.parse(TenantContext.applyToUrl(ApiLinks.emitirNfe('1077')));
+
+      expect(uri.path, contains('/api/nfe/1077/emitir'));
+      expect(uri.queryParameters['empId'], equals('1'));
+      expect(uri.queryParameters['parceiroId'], equals('1756'));
+      expect(uri.queryParameters['parcId'], equals('1756'));
+      expect(uri.queryParameters['clienteId'], equals('1756'));
+      expect(uri.queryParameters['userId'], equals('970'));
     });
 
     test('applyToBody injeta empresa, parceiro e aplicativo quando ausentes',
