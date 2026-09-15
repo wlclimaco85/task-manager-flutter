@@ -65,6 +65,8 @@ enum AppScreen {
   lancamentoContabil, balancete, fechamentoPeriodo,
   // Alvarás
   alvaras,
+  // NFC-e Cupons (grid de cupons fiscais eletrônicos)
+  nfceGrid,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,6 +166,7 @@ const _escritorioScreens = {
   AppScreen.perfil:     _all,
   AppScreen.boletoImportacaoLote: _allFinanceiro,
   AppScreen.alvaras:    _all,
+  AppScreen.nfceGrid:   _all,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -405,6 +408,7 @@ class SecurityMatrix {
     AppScreen.dashDpArea: ['dashboarddp', 'dashdparea'],
     AppScreen.dashAtendimentoArea: ['dashboardatendimento', 'dashatendimentoarea'],
     AppScreen.dashMensalidadeArea: ['dashboardmensalidades', 'dashmensalidadearea'],
+    AppScreen.nfceGrid: ['nfce_grid', 'nfcegrid', 'nfce_cupom', 'nfce cupons'],
   };
 
   /// Procura permissões de uma tela considerando nome direto, lowercase e aliases
@@ -625,7 +629,8 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.dashMensalidadeArea,
   },
   'Notas Fiscais': {
-    AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
+    AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.nfceGrid,
+    AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
     AppScreen.dashFiscalArea,
   },

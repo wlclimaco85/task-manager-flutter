@@ -83,6 +83,7 @@ import './nfe_finalidade_grid_screen.dart';
 import './nfe_serie_grid_screen.dart';
 import './nfe_tipo_operacao_grid_screen.dart';
 import './nfe_grid_screen.dart';
+import './nfce_grid_screen.dart';
 import './nfe_import_screen.dart';
 import './nfe_import_xml_screen.dart';
 import './consulta_dfe_screen.dart';
@@ -326,6 +327,23 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     }
   }
 
+  /// hasPermission real para o grid de NFC-e Cupons — controla botões de ação
+  /// dentro da tela com base na SecurityMatrix (espelha as permissões do backend).
+  bool _nfceHasPermission(String permission) {
+    final matrix = SecurityMatrix.current();
+    switch (permission) {
+      case 'create':
+        return matrix.canInsert(AppScreen.nfceGrid);
+      case 'edit':
+        return matrix.canUpdate(AppScreen.nfceGrid);
+      case 'delete':
+      case 'deleteMultiple':
+        return matrix.canDelete(AppScreen.nfceGrid);
+      default:
+        return matrix.canView(AppScreen.nfceGrid);
+    }
+  }
+
   List<Widget> _buildScreensList() {
     final userInfo = AuthUtility.userInfo?.data;
     final loginInfo = AuthUtility.userInfo?.login;
@@ -553,7 +571,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
       const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
       const SessoesScreen(), // 186: Sessões
-      const SizedBox.shrink(), // 187
+      WebNfceGridScreen(hasPermission: _nfceHasPermission), // 187: NFC-e Cupons
       const SizedBox.shrink(), // 188
       const SizedBox.shrink(), // 189
       const SizedBox.shrink(), // 190

@@ -186,6 +186,11 @@ class MenuConfig {
             label: 'Certificado Digital',
             icon: FontAwesomeIcons.certificate,
             screenIndex: 184),
+        MenuItem(
+            id: 'nfce_grid',
+            label: 'NFC-e (Cupons)',
+            icon: FontAwesomeIcons.receipt,
+            screenIndex: 187),
       ],
     ),
     MenuGroup(
@@ -344,7 +349,7 @@ class MenuConfig {
             id: 'cnab_remessa',
             label: 'Envio EDI (Remessa)',
             icon: FontAwesomeIcons.fileExport,
-            screenIndex: 187),
+            screenIndex: 202),
         MenuItem(
             id: 'cobranca_automatica',
             label: 'Cobrança Automática',
