@@ -12,7 +12,7 @@ Widget _wrap(Widget child) {
 void main() {
   group('SolicitacaoAcessoScreen', () {
     // TEST 1: Renderiza campos obrigatórios
-    testWidgets('renderiza nome, cpf, email, senha, confirmarSenha',
+    testWidgets('renderiza nome, cpf solicitante, documento da empresa, email, senha, confirmarSenha',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(const SolicitacaoAcessoScreen()));
       await tester.pumpAndSettle();
@@ -25,6 +25,7 @@ void main() {
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Senha'), findsOneWidget);
       expect(find.text('Confirmar senha'), findsOneWidget);
+      expect(find.text('Seu CPF'), findsOneWidget);
       expect(find.text('CPF ou CNPJ'), findsOneWidget);
 
       // Verifica botão de envio
@@ -72,6 +73,9 @@ void main() {
           find.widgetWithText(TextFormField, 'Confirmar senha').first,
           'Senha123');
       await tester.enterText(
+          find.widgetWithText(TextFormField, 'Seu CPF').first,
+          '12345678901');
+      await tester.enterText(
           find.widgetWithText(TextFormField, 'CPF ou CNPJ').first,
           '12345678901');
       await tester.pumpAndSettle();
@@ -85,6 +89,34 @@ void main() {
       final ElevatedButton button =
           tester.widget<ElevatedButton>(buttonWidget);
       expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('exige CPF pessoal separado do documento da empresa',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const SolicitacaoAcessoScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Nome completo').first,
+          'Joao Silva');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Email').first,
+          'joao@test.com');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Senha').first,
+          'Senha123');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Confirmar senha').first,
+          'Senha123');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'CPF ou CNPJ').first,
+          '11222333000181');
+
+      await tester.ensureVisible(find.byType(ElevatedButton).last);
+      await tester.tap(find.byType(ElevatedButton).last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('CPF é obrigatório'), findsOneWidget);
     });
 
     // TEST 4: Senhas não coincidem — mostram erro
