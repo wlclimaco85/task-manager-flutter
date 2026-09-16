@@ -154,7 +154,21 @@ class WebParceiroDetailScreen extends StatelessWidget {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'parcId': id, 'empresaId': empresaId},
-          additionalFormData: WebLoginGridScreen.additionalFormData,
+          // Fix (2026-09-16): "Tipo Login" e' obrigatorio no backend
+          // (LoginController rejeita com 400 "Tipo Login e obrigatorio"
+          // desde o hotfix de seguranca que impediu o default silencioso
+          // pra MASTER -- ver bugs.md). O campo fica isInForm: false
+          // (loginHiddenFields, herdado de WebLoginGridScreen.fieldOverrides)
+          // porque ninguem deve escolher isso na UI aqui dentro de Parceiro
+          // -- todo login criado por esta aba e' de um CLIENTE vinculado a
+          // este parceiro, entao o tipo e' sempre APP_ABRACO (id 6, o
+          // mesmo tipo usado em todo o app pra login de cliente com
+          // parceiro -- MASTER/APP_CONTABILIDADE sao exclusivos de login
+          // interno da contabilidade, nunca criados por esta tela).
+          additionalFormData: {
+            ...WebLoginGridScreen.additionalFormData,
+            'tipoLogin': 6,
+          },
           // Fix card #427 (reincidencia): faltavam os overrides de Foto
           // (FieldType.file) e Roles (multiselect) que a tela direta
           // WebLoginGridScreen ja usa via fieldOverrides(). Sem eles o
