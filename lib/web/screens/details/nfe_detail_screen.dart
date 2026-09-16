@@ -1725,6 +1725,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
         'vBcIbsCbs': _asDouble(item['v_bc_ibs_cbs'] ?? item['vBcIbsCbs']),
         'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
         'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
+        'produtoId': item['produto_id'] ?? item['produtoId'],
+        'temIcms': item['tem_icms'] ?? item['temIcms'],
+        'temIpi': item['tem_ipi'] ?? item['temIpi'],
+        'temPis': item['tem_pis'] ?? item['temPis'],
+        'temCofins': item['tem_cofins'] ?? item['temCofins'],
+        'temIbsCbs': item['tem_ibs_cbs'] ?? item['temIbsCbs'],
       };
 
       final futures = [

@@ -12,6 +12,8 @@ class NfeTaxAliases {
     item['vProd'] = item['v_prod'];
 
     final baseCalculo = total;
+
+    // ICMS — sempre calcula (flag temIcms tratada no backend)
     _setValor(item, 'v_bc_icms', 'vBcIcms', baseCalculo);
     _setValor(
         item,
@@ -20,32 +22,57 @@ class NfeTaxAliases {
         baseCalculo *
             ((_asDouble(item['aliq_icms'] ?? item['aliqIcms']) ?? 0) / 100));
 
-    _setValor(item, 'v_bc_pis', 'vBcPis', baseCalculo);
-    _setValor(item, 'v_pis', 'vPis',
-        baseCalculo * ((_asDouble(item['p_pis'] ?? item['pPis']) ?? 0) / 100));
+    // PIS — respeita flag tem_pis
+    if (_flagFalse(item, 'tem_pis', 'temPis')) {
+      _setValor(item, 'v_bc_pis', 'vBcPis', 0);
+      _setValor(item, 'v_pis', 'vPis', 0);
+    } else {
+      _setValor(item, 'v_bc_pis', 'vBcPis', baseCalculo);
+      _setValor(item, 'v_pis', 'vPis',
+          baseCalculo * ((_asDouble(item['p_pis'] ?? item['pPis']) ?? 0) / 100));
+    }
 
-    _setValor(item, 'v_bc_cofins', 'vBcCofins', baseCalculo);
-    _setValor(
-        item,
-        'v_cofins',
-        'vCofins',
-        baseCalculo *
-            ((_asDouble(item['p_cofins'] ?? item['pCofins']) ?? 0) / 100));
+    // COFINS — respeita flag tem_cofins
+    if (_flagFalse(item, 'tem_cofins', 'temCofins')) {
+      _setValor(item, 'v_bc_cofins', 'vBcCofins', 0);
+      _setValor(item, 'v_cofins', 'vCofins', 0);
+    } else {
+      _setValor(item, 'v_bc_cofins', 'vBcCofins', baseCalculo);
+      _setValor(
+          item,
+          'v_cofins',
+          'vCofins',
+          baseCalculo *
+              ((_asDouble(item['p_cofins'] ?? item['pCofins']) ?? 0) / 100));
+    }
 
-    _setValor(item, 'v_bc_ipi', 'vBcIpi', baseCalculo);
-    _setValor(
-        item,
-        'v_ipi',
-        'vIpi',
-        baseCalculo *
-            ((_asDouble(item['aliq_ipi'] ?? item['aliqIpi']) ?? 0) / 100));
+    // IPI — respeita flag tem_ipi
+    if (_flagFalse(item, 'tem_ipi', 'temIpi')) {
+      _setValor(item, 'v_bc_ipi', 'vBcIpi', 0);
+      _setValor(item, 'v_ipi', 'vIpi', 0);
+    } else {
+      _setValor(item, 'v_bc_ipi', 'vBcIpi', baseCalculo);
+      _setValor(
+          item,
+          'v_ipi',
+          'vIpi',
+          baseCalculo *
+              ((_asDouble(item['aliq_ipi'] ?? item['aliqIpi']) ?? 0) / 100));
+    }
 
-    final pCbs = _asDouble(item['p_cbs'] ?? item['pCbs']) ?? 0;
-    final pIbsUf = _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']) ?? 0;
-    final pIbsMun = _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']) ?? 0;
-    _setValor(item, 'v_bc_ibs_cbs', 'vBcIbsCbs', baseCalculo);
-    _setValor(item, 'v_cbs', 'vCbs', baseCalculo * (pCbs / 100));
-    _setValor(item, 'v_ibs', 'vIbs', baseCalculo * ((pIbsUf + pIbsMun) / 100));
+    // IBS/CBS — respeita flag tem_ibs_cbs
+    if (_flagFalse(item, 'tem_ibs_cbs', 'temIbsCbs')) {
+      _setValor(item, 'v_bc_ibs_cbs', 'vBcIbsCbs', 0);
+      _setValor(item, 'v_cbs', 'vCbs', 0);
+      _setValor(item, 'v_ibs', 'vIbs', 0);
+    } else {
+      final pCbs = _asDouble(item['p_cbs'] ?? item['pCbs']) ?? 0;
+      final pIbsUf = _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']) ?? 0;
+      final pIbsMun = _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']) ?? 0;
+      _setValor(item, 'v_bc_ibs_cbs', 'vBcIbsCbs', baseCalculo);
+      _setValor(item, 'v_cbs', 'vCbs', baseCalculo * (pCbs / 100));
+      _setValor(item, 'v_ibs', 'vIbs', baseCalculo * ((pIbsUf + pIbsMun) / 100));
+    }
 
     final totTrib = (_asDouble(item['v_icms'] ?? item['vIcms']) ?? 0) +
         (_asDouble(item['v_pis'] ?? item['vPis']) ?? 0) +
@@ -244,5 +271,12 @@ class NfeTaxAliases {
     final normalized = value.toString();
     item[snakeKey] = normalized;
     item[camelKey] = normalized;
+  }
+
+  /// Retorna true se a flag do produto indica que o imposto NÃO se aplica.
+  static bool _flagFalse(
+      Map<String, dynamic> item, String snake, String camel) {
+    final v = item[snake] ?? item[camel];
+    return v == false || v == 'false';
   }
 }
