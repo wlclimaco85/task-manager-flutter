@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../services/network_caller.dart';
 
@@ -53,11 +54,23 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                             .toList();
                         
                         return DropdownButtonFormField<String>(
+                          // Fix (2026-09-16): sem isExpanded o valor
+                          // selecionado (nome/razao social longos, ex.
+                          // "Lanna Comercio de Cereais Importacao e
+                          // Exportacao LTDA") nao quebra nem trunca e
+                          // estoura a largura do dialog (overflow reportado
+                          // pelo usuario). isExpanded + ellipsis no item
+                          // resolvem sem mudar o layout do dialog.
+                          isExpanded: true,
                           decoration: const InputDecoration(border: OutlineInputBorder()),
                           value: selectedParceiroId,
                           items: options.map((e) => DropdownMenuItem(
                             value: e['id']?.toString(),
-                            child: Text(e['nome']?.toString() ?? e['razaoSocial']?.toString() ?? ''),
+                            child: Text(
+                              e['nome']?.toString() ?? e['razaoSocial']?.toString() ?? '',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           )).toList(),
                           onChanged: (val) {
                             setState(() => selectedParceiroId = val);
@@ -78,18 +91,29 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (selectedParceiroId == null) return;
-                
+
+                // Fix (2026-09-16): URL antiga era relativa e usava
+                // "/api/parceiros" (plural, endpoint inexistente --
+                // ParceiroController mapeia "/api/parceiro", singular).
+                // Sem host nem porta, o navegador resolvia a chamada contra
+                // a origem da propria pagina (o dev-server do Flutter Web),
+                // que devolvia 200 com o index.html no lugar do JSON do
+                // parceiro -- por isso a requisicao "nao dava em nada":
+                // getResp.isSuccess vinha false (jsonDecode falhava dentro
+                // de NetworkCaller.getRequest), o bloco de PUT nunca era
+                // executado, o popup nao fechava e a grid nao atualizava.
                 try {
-                  final getResp = await NetworkCaller().getRequest('/api/parceiros/${selectedParceiroId!}');
+                  final getResp = await NetworkCaller()
+                      .getRequest('${ApiLinks.allParceiros}/$selectedParceiroId');
                   if (getResp.isSuccess && getResp.body != null) {
                     final parceiroData = getResp.body!;
                     parceiroData['matriz'] = {'id': widget.matrizId};
 
                     final putResp = await NetworkCaller().putRequest(
-                      '/api/parceiros/${selectedParceiroId!}',
+                      ApiLinks.updateParceiro(selectedParceiroId!),
                       parceiroData,
                     );
-                    
+
                     if (putResp.statusCode == 200 || putResp.statusCode == 201) {
                       if (mounted) Navigator.of(ctx).pop();
                       setState(() { _gridKey = UniqueKey(); });
@@ -98,10 +122,14 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao vincular filial.')));
                       }
                     }
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            'Erro ao buscar parceiro selecionado (status ${getResp.statusCode}).')));
                   }
                 } catch (e) {
                    if (mounted) {
-                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ')));
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao vincular filial: $e')));
                    }
                 }
               },

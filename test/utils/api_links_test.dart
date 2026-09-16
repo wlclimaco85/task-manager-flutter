@@ -192,4 +192,38 @@ void main() {
       expect(ApiLinks.sendReminder, contains('/api/crm/reminders'));
     });
   });
+
+  // Fix (2026-09-16): "Vincular Filial Existente" (filiais_parceiro_screen.dart)
+  // usava URL RELATIVA hardcoded "/api/parceiros/{id}" (plural, sem host e
+  // sem match no backend -- ParceiroController mapeia "/api/parceiro",
+  // singular). Sem host, o navegador resolvia a chamada contra a propria
+  // origem da pagina Flutter Web (o dev-server), que devolvia 200 com o
+  // index.html no lugar do JSON do parceiro -- getResp.isSuccess ficava
+  // false (jsonDecode falhava), o PUT nunca era chamado, o popup nao
+  // fechava e a grid nao atualizava. Fix usa os helpers ja existentes e
+  // testados do ApiLinks (allParceiros/updateParceiro), que sempre incluem
+  // o host ($_baseUrlNew) e o path singular correto.
+  group('ApiLinks — Parceiro (fix Vincular Filial Existente)', () {
+    test('allParceiros usa /api/parceiro (singular) e inclui o host', () {
+      expect(ApiLinks.allParceiros, contains('/api/parceiro'));
+      expect(ApiLinks.allParceiros, isNot(contains('/api/parceiros')));
+      expect(Uri.parse(ApiLinks.allParceiros).hasAuthority, isTrue);
+    });
+
+    test('updateParceiro usa /api/parceiro/update/{id} e inclui o host', () {
+      final url = ApiLinks.updateParceiro('1755');
+      expect(url, contains('/api/parceiro/update/1755'));
+      expect(url, isNot(contains('/api/parceiros')));
+      expect(Uri.parse(url).hasAuthority, isTrue);
+    });
+
+    test('GET de parceiro por id (allParceiros + "/id") continua singular e absoluto',
+        () {
+      const id = '1755';
+      final url = '${ApiLinks.allParceiros}/$id';
+      expect(url, contains('/api/parceiro/1755'));
+      expect(url, isNot(contains('/api/parceiros')));
+      expect(Uri.parse(url).hasAuthority, isTrue);
+    });
+  });
 }
