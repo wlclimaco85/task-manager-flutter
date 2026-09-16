@@ -59,6 +59,29 @@ void main() {
     expect(telas, contains('Agendar NFe Recorrente'));
   });
 
+  // Bug de producao (2026-09-16, ver bugs.md): "NFC-e (Cupons)" e "Envio EDI
+  // (Remessa)" foram criadas e ganharam permissao manual via INSERT direto
+  // em role_permissao pra 2 roles especificas (nao dinamico, nao aparecia
+  // em Controle de Acesso pras demais roles) -- faltava a entrada em
+  // PermissionService._menuIdToTelaNome, unico requisito real pra uma tela
+  // aparecer na grade dinamica de Permissoes (RolePermissionCatalog).
+  test('catalogo de permissoes mostra NFC-e (Cupons) e Envio EDI (Remessa)',
+      () {
+    final todasAsTelas = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    final nfceGrid =
+        todasAsTelas.firstWhere((tela) => tela.menuItemId == 'nfce_grid');
+    expect(nfceGrid.label, 'NFC-e (Cupons)');
+    expect(nfceGrid.telaNome, 'nfce_grid');
+
+    final cnabRemessa =
+        todasAsTelas.firstWhere((tela) => tela.menuItemId == 'cnab_remessa');
+    expect(cnabRemessa.label, 'Envio EDI (Remessa)');
+    expect(cnabRemessa.telaNome, 'cnab_remessa');
+  });
+
   test('catalogo de permissoes mostra telas de aprovacao de acesso', () {
     final porAcesso = RolePermissionCatalog.groups(query: 'acesso')
         .expand((grupo) => grupo.entries)

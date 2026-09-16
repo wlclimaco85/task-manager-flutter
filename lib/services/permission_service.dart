@@ -103,6 +103,15 @@ class PermissionService {
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
     'agendamento_nfe': 'AgendamentoNFeRecorrente',
+    // Bug de producao (2026-09-16, ver bugs.md): telas criadas sem entrada
+    // aqui nunca aparecem em Controle de Acesso (RolePermissionCatalog
+    // descarta qualquer MenuItem sem telaNome) -- so' tinham sido dadas
+    // permissao manual via INSERT direto em role_permissao pra 2 roles
+    // especificas, sem aparecer na grade dinamica pras demais roles.
+    // tela_nome no banco (role_permissao) ja usa o proprio id do menu, sem
+    // conversao de caixa -- mantido assim aqui tambem.
+    'nfce_grid': 'nfce_grid',
+    'cnab_remessa': 'cnab_remessa',
 
     // Financeiro
     'calendario': 'Calendario',
@@ -249,6 +258,13 @@ class PermissionService {
 
     // Sistema
     'importacao_fiscal_automacao': 'ImportacaoFiscalAutomacao',
+    // Achado durante o fix de 2026-09-16 (mesmo bug: tela nova sem entrada
+    // aqui nunca aparece em Controle de Acesso). 'sessoes' e' master-only
+    // (gateado direto por SecurityMatrix.isMaster() em app_sidebar.dart,
+    // nao por role_permissao), mas ainda precisa aparecer no catalogo pra
+    // nao ficar invisivel/inconsistente com a regra de "toda tela nova
+    // aparece em Permissoes".
+    'sessoes': 'sessoes',
 
     // Soltos
     'dashboard': 'Dashboard',
