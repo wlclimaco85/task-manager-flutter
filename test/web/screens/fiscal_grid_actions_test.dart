@@ -99,4 +99,19 @@ void main() {
       ]),
     );
   });
+
+  test('NF-e historico normaliza cancelamento e carta de correcao', () {
+    final eventos = nfeHistoricoEventos({
+      'cancelamentos': [
+        {'protocolo': '123', 'motivo': 'Cancelamento homologado'}
+      ],
+      'cartasCorrecao': [
+        {'protocoloEvento': '456', 'correcao': 'Texto da correcao'}
+      ],
+    });
+
+    expect(eventos, hasLength(2));
+    expect(eventos.first['tipo'], 'Cancelamento');
+    expect(eventos.last['tipo'], 'Carta de Correção');
+  });
 }

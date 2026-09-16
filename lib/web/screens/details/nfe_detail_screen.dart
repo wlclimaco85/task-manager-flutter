@@ -13,6 +13,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../utils/fiscal_error_message.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/nfe_tax_aliases.dart';
 import '../produto_grid_screen.dart';
@@ -635,19 +636,19 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.emitirNfe(_nfeId), {});
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
-        setState(() => _statusVal = 'AUTORIZADA');
+        try {
+          final decoded = jsonDecode(r.body);
+          if (decoded is Map<String, dynamic>) {
+            _aplicarCabecalhoAtualizado(decoded);
+          }
+        } catch (_) {}
+        await _recarregarCabecalhoNfe();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('NF-e emitida com sucesso! XML gerado e assinado.'),
             backgroundColor: _green));
       } else {
-        String msg = 'Erro ${r.statusCode}';
-        try {
-          final body = jsonDecode(r.body);
-          msg = body['message']?.toString() ??
-              body['mensagem']?.toString() ??
-              body['error']?.toString() ??
-              msg;
-        } catch (_) {}
+        final msg = fiscalErrorMessage(r.statusCode, r.body);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
       }
@@ -657,6 +658,26 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('Erro ao processar. Tente novamente.'),
             backgroundColor: _red));
     }
+  }
+
+  Future<void> _recarregarCabecalhoNfe() async {
+    if (_nfeId.isEmpty) return;
+    try {
+      final r = await TenantContext.get(ApiLinks.nfeById(_nfeId));
+      if (r.statusCode != 200) return;
+      final decoded = jsonDecode(r.body);
+      if (decoded is Map<String, dynamic>) {
+        _aplicarCabecalhoAtualizado(decoded);
+      }
+    } catch (_) {}
+  }
+
+  void _aplicarCabecalhoAtualizado(Map<String, dynamic> dados) {
+    final data = dados['data'];
+    final atualizado = data is Map<String, dynamic> ? data : dados;
+    widget.item.addAll(atualizado);
+    if (!mounted) return;
+    setState(_initCabecalho);
   }
 
   Future<void> _cancelar() async {
@@ -735,7 +756,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('DANFE baixado!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text(fiscalErrorMessage(r.statusCode, r.body)),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
@@ -759,7 +781,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
             content: Text('XML baixado!'), backgroundColor: _green));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+            content: Text(fiscalErrorMessage(r.statusCode, r.body)),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted)
@@ -1922,68 +1945,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   String _valorMonetario(double value) => value.toStringAsFixed(2);
 
   void _recalcularTotalItem(Map<String, dynamic> item) {
-    final quantidade = _asDouble(item['q_com'] ?? item['qCom']) ?? 1;
-    final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0;
-    final total = quantidade * valorUnitario;
-    item['q_com'] = _valorDecimal(item['q_com'] ?? item['qCom'] ?? quantidade);
-    item['qCom'] = item['q_com'];
-    item['v_un_com'] =
-        _valorDecimal(item['v_un_com'] ?? item['vUnCom'] ?? valorUnitario);
-    item['vUnCom'] = item['v_un_com'];
-    item['v_prod'] = _valorMonetario(total);
-    item['vProd'] = item['v_prod'];
-
-    final baseCalculo = total;
-
-    // ICMS
-    final aliqIcms = _asDouble(item['aliq_icms'] ?? item['aliqIcms']) ?? 0;
-    item['v_bc_icms'] = _valorMonetario(baseCalculo);
-    item['vBcIcms'] = item['v_bc_icms'];
-    item['v_icms'] = _valorMonetario(baseCalculo * (aliqIcms / 100));
-    item['vIcms'] = item['v_icms'];
-
-    // PIS
-    final pPis = _asDouble(item['p_pis'] ?? item['pPis']) ?? 0;
-    item['v_bc_pis'] = _valorMonetario(baseCalculo);
-    item['vBcPis'] = item['v_bc_pis'];
-    item['v_pis'] = _valorMonetario(baseCalculo * (pPis / 100));
-    item['vPis'] = item['v_pis'];
-
-    // COFINS
-    final pCofins = _asDouble(item['p_cofins'] ?? item['pCofins']) ?? 0;
-    item['v_bc_cofins'] = _valorMonetario(baseCalculo);
-    item['vBcCofins'] = item['v_bc_cofins'];
-    item['v_cofins'] = _valorMonetario(baseCalculo * (pCofins / 100));
-    item['vCofins'] = item['v_cofins'];
-
-    // IPI
-    final aliqIpi = _asDouble(item['aliq_ipi'] ?? item['aliqIpi']) ?? 0;
-    item['v_bc_ipi'] = _valorMonetario(baseCalculo);
-    item['vBcIpi'] = item['v_bc_ipi'];
-    item['v_ipi'] = _valorMonetario(baseCalculo * (aliqIpi / 100));
-    item['vIpi'] = item['v_ipi'];
-
-    // IBS / CBS
-    final pCbs = _asDouble(item['p_cbs'] ?? item['pCbs']) ?? 0;
-    final pIbsUf = _asDouble(item['p_ibs_uf'] ?? item['pIbsUf']) ?? 0;
-    final pIbsMun = _asDouble(item['p_ibs_mun'] ?? item['pIbsMun']) ?? 0;
-    item['v_bc_ibs_cbs'] = _valorMonetario(baseCalculo);
-    item['vBcIbsCbs'] = item['v_bc_ibs_cbs'];
-    item['v_cbs'] = _valorMonetario(baseCalculo * (pCbs / 100));
-    item['vCbs'] = item['v_cbs'];
-    item['v_ibs'] = _valorMonetario(baseCalculo * ((pIbsUf + pIbsMun) / 100));
-    item['vIbs'] = item['v_ibs'];
-
-    // Total Tributos
-    final vIcms = _asDouble(item['v_icms']) ?? 0;
-    final vPis = _asDouble(item['v_pis']) ?? 0;
-    final vCofins = _asDouble(item['v_cofins']) ?? 0;
-    final vIpi = _asDouble(item['v_ipi']) ?? 0;
-    final vCbs = _asDouble(item['v_cbs']) ?? 0;
-    final vIbs = _asDouble(item['v_ibs']) ?? 0;
-    final totTrib = vIcms + vPis + vCofins + vIpi + vCbs + vIbs;
-    item['v_tot_trib'] = _valorMonetario(totTrib);
-    item['vTotTrib'] = item['v_tot_trib'];
+    NfeTaxAliases.recalcularItem(item);
   }
 
   void _prepararItemFiscal(Map<String, dynamic> item) {

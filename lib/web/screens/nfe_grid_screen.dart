@@ -5,6 +5,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/fiscal_error_message.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
@@ -18,6 +19,22 @@ class WebNfeGridScreen extends StatefulWidget {
   const WebNfeGridScreen({super.key, required this.entrada});
   @override
   State<WebNfeGridScreen> createState() => _WebNfeGridScreenState();
+}
+
+List<Map<String, dynamic>> nfeHistoricoEventos(Map<String, dynamic> data) {
+  final eventos = <Map<String, dynamic>>[];
+  for (final key in const ['cancelamentos', 'cartasCorrecao', 'eventos']) {
+    final raw = data[key];
+    if (raw is! List) continue;
+    for (final item in raw) {
+      if (item is! Map) continue;
+      eventos.add({
+        'tipo': key == 'cartasCorrecao' ? 'Carta de Correção' : 'Cancelamento',
+        ...Map<String, dynamic>.from(item),
+      });
+    }
+  }
+  return eventos;
 }
 
 class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
@@ -390,7 +407,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
             backgroundColor: GridColors.success));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'),
+            content: Text(fiscalErrorMessage(r.statusCode, r.body)),
             backgroundColor: GridColors.error));
       }
     } catch (e) {
@@ -417,7 +434,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
             backgroundColor: GridColors.success));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'),
+            content: Text(fiscalErrorMessage(r.statusCode, r.body)),
             backgroundColor: GridColors.error));
       }
     } catch (e) {
@@ -498,7 +515,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       if (!context.mounted) return;
       if (r.statusCode == 200) {
         final body = jsonDecode(r.body);
-        _showDataDialog(
+        _showHistoricoEventosDialog(
           context,
           'Histórico de eventos NF-e',
           body is Map<String, dynamic> ? body : {'eventos': body.toString()},
@@ -978,6 +995,108 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Fechar'),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showHistoricoEventosDialog(
+    BuildContext context,
+    String title,
+    Map<String, dynamic> data,
+  ) {
+    final eventos = nfeHistoricoEventos(data);
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: 560,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (eventos.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7FAF8),
+                      border: Border.all(color: GridColors.divider),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Nenhum evento registrado para esta NF-e.',
+                      style: TextStyle(color: GridColors.textSecondary),
+                    ),
+                  )
+                else
+                  ...eventos.map(_eventTile),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _eventTile(Map<String, dynamic> evento) {
+    String firstOf(List<String> keys) {
+      for (final key in keys) {
+        final value = evento[key];
+        if (value != null && value.toString().trim().isNotEmpty) {
+          return value.toString();
+        }
+      }
+      return '-';
+    }
+
+    final tipo = firstOf(['tipo', 'evento', 'descricao']);
+    final data = firstOf(['dataEvento', 'data', 'createdAt', 'dhEvento']);
+    final protocolo = firstOf(['protocolo', 'protocoloEvento', 'nProt']);
+    final motivo =
+        firstOf(['motivo', 'justificativa', 'correcao', 'xCorrecao']);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: GridColors.divider),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.history, size: 16, color: GridColors.secondary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(tipo,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: GridColors.textPrimary)),
+            ),
+            Text(data,
+                style: const TextStyle(
+                    fontSize: 12, color: GridColors.textSecondary)),
+          ]),
+          const SizedBox(height: 6),
+          Text('Protocolo: $protocolo',
+              style: const TextStyle(
+                  fontSize: 12, color: GridColors.textSecondary)),
+          if (motivo != '-')
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(motivo, style: const TextStyle(fontSize: 12)),
+            ),
         ],
       ),
     );
