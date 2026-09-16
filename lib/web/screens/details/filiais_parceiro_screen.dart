@@ -104,6 +104,26 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                               ),
                             );
                           }).toList(),
+                          // Fix (2026-09-16): sem selectedItemBuilder, o
+                          // item de 2 linhas (nome + cpf/cnpj) tambem era
+                          // usado dentro do proprio campo fechado, que so
+                          // reserva altura pra 1 linha -- "BOTTOM OVERFLOWED
+                          // BY 25 PIXELS". O campo fechado mostra so o nome
+                          // (1 linha); a lista aberta continua com nome +
+                          // cpf/cnpj embaixo.
+                          selectedItemBuilder: (context) => options.map((e) {
+                            final nome = e['nome']?.toString() ??
+                                e['razaoSocial']?.toString() ??
+                                '';
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                nome,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            );
+                          }).toList(),
                           onChanged: (val) {
                             setState(() => selectedParceiroId = val);
                           },
