@@ -5,6 +5,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/nfce_model.dart';
 import '../../../services/nfce_service.dart';
 import '../../../services/print_service_nfce.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/app_snackbar.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
@@ -18,6 +19,8 @@ class WebNfceGridScreen extends StatelessWidget {
     return DynamicGridWindowsScreen<NfceModel>(
       telaNome: 'nfce',
       tituloOverride: 'NFC-e / Cupons',
+      fetchEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
+      createEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
       hasPermission: hasPermission,
       fromJson: (json) => NfceModel.fromJson(json),
       toJson: (a) => a.toJson(),
