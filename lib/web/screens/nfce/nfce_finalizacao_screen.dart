@@ -57,7 +57,8 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
 
     if (resultado == null) {
       // Erro ao emitir
-      _navegarParaContingencia(motivo: widget.provider.erro ?? 'Erro ao emitir.');
+      _navegarParaContingencia(
+          motivo: widget.provider.erro ?? 'Erro ao emitir.');
       return;
     }
 
@@ -89,8 +90,7 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
   }
 
   void _iniciarPolling() {
-    _pollingTimer =
-        Timer.periodic(_pollingInterval, (_) => _consultarStatus());
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) => _consultarStatus());
   }
 
   void _iniciarTimeout() {
@@ -135,7 +135,8 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
         _pollingTimer?.cancel();
         _timeoutTimer?.cancel();
         _navegarParaContingencia(
-          motivo: status.mensagem ?? status.motivoRejeicao ?? 'SEFAZ indisponível.',
+          motivo:
+              status.mensagem ?? status.motivoRejeicao ?? 'SEFAZ indisponível.',
           persistirVendaAtual: false,
         );
       }
@@ -148,9 +149,9 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => NfceAutorizadaScreen(
+        builder: (routeContext) => NfceAutorizadaScreen(
           resultado: resultado,
-          onNovaVenda: _voltarParaPdv,
+          onNovaVenda: () => _voltarParaPdv(routeContext),
         ),
       ),
     );
@@ -160,13 +161,16 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => NfceRejeicaoScreen(
-          motivo: resultado.motivoRejeicao ?? resultado.xMotivo ?? 'Rejeição sem mensagem.',
+        builder: (routeContext) => NfceRejeicaoScreen(
+          motivo: resultado.motivoRejeicao ??
+              resultado.xMotivo ??
+              'Rejeição sem mensagem.',
           codigoRetorno: resultado.codigoRetorno,
           chaveAcesso: resultado.chaveAcessoFormatada,
           xMotivo: resultado.xMotivo,
-          onTentarNovamente: _voltarParaPdv,
-          onCancelar: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onTentarNovamente: () => _voltarParaPdv(routeContext),
+          onCancelar: () =>
+              Navigator.of(routeContext).popUntil((r) => r.isFirst),
         ),
       ),
     );
@@ -176,12 +180,16 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => NfceRejeicaoScreen(
-          motivo: status.motivoRejeicao ?? status.mensagem ?? status.xMotivo ?? 'Rejeição sem mensagem.',
+        builder: (routeContext) => NfceRejeicaoScreen(
+          motivo: status.motivoRejeicao ??
+              status.mensagem ??
+              status.xMotivo ??
+              'Rejeição sem mensagem.',
           codigoRetorno: status.codigoRetorno,
           xMotivo: status.xMotivo,
-          onTentarNovamente: _voltarParaPdv,
-          onCancelar: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onTentarNovamente: () => _voltarParaPdv(routeContext),
+          onCancelar: () =>
+              Navigator.of(routeContext).popUntil((r) => r.isFirst),
         ),
       ),
     );
@@ -194,19 +202,19 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => NfceContingenciaScreen(
+        builder: (routeContext) => NfceContingenciaScreen(
           motivo: motivo,
           provider: widget.provider,
-          onNovaVenda: _voltarParaPdv,
+          onNovaVenda: () => _voltarParaPdv(routeContext),
           persistirVendaAtual: persistirVendaAtual,
         ),
       ),
     );
   }
 
-  void _voltarParaPdv() {
+  void _voltarParaPdv(BuildContext navigationContext) {
     widget.provider.limparCarrinho();
-    if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+    Navigator.of(navigationContext).popUntil((r) => r.isFirst);
   }
 
   @override
@@ -226,7 +234,8 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
               const SizedBox(height: 32),
               Text(
                 _mensagem,
-                style: const TextStyle(fontSize: 18, color: GridColors.secondary),
+                style:
+                    const TextStyle(fontSize: 18, color: GridColors.secondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
