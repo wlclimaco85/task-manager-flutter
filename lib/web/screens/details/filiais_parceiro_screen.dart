@@ -62,16 +62,48 @@ class _FiliaisParceiroScreenState extends State<FiliaisParceiroScreen> {
                           // pelo usuario). isExpanded + ellipsis no item
                           // resolvem sem mudar o layout do dialog.
                           isExpanded: true,
+                          // itemHeight: null -- pedido do usuario (2026-09-16)
+                          // "coloque o cnpj embaixo do nome" precisa de 2
+                          // linhas por item; itemHeight fixo do Material
+                          // DropdownButton nao comporta isso, entao usamos
+                          // altura variavel (suportado desde o Flutter que
+                          // este projeto usa).
+                          itemHeight: null,
                           decoration: const InputDecoration(border: OutlineInputBorder()),
                           value: selectedParceiroId,
-                          items: options.map((e) => DropdownMenuItem(
-                            value: e['id']?.toString(),
-                            child: Text(
-                              e['nome']?.toString() ?? e['razaoSocial']?.toString() ?? '',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          )).toList(),
+                          items: options.map((e) {
+                            final nome = e['nome']?.toString() ??
+                                e['razaoSocial']?.toString() ??
+                                '';
+                            final cpfCnpj = e['cpf']?.toString().trim() ?? '';
+                            return DropdownMenuItem(
+                              value: e['id']?.toString(),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      nome,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                    if (cpfCnpj.isNotEmpty)
+                                      Text(
+                                        cpfCnpj,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                           onChanged: (val) {
                             setState(() => selectedParceiroId = val);
                           },
