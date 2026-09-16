@@ -154,6 +154,7 @@ import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
+import 'certificado_empresa_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -528,6 +529,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
         const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
         const SessoesScreen(), // 186: Sessões
+        const SizedBox.shrink(), // 187: reservado
+        const MeuCertificadoDigitalScreen(), // 188: Certificado Digital
       ];
 
   String get userName {

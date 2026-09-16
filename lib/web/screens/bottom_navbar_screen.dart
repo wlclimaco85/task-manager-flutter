@@ -153,6 +153,7 @@ import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
+import 'certificado_empresa_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -572,7 +573,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
       const SessoesScreen(), // 186: Sessões
       WebNfceGridScreen(hasPermission: _nfceHasPermission), // 187: NFC-e Cupons
-      const SizedBox.shrink(), // 188
+      const MeuCertificadoDigitalScreen(), // 188: Certificado Digital
       const SizedBox.shrink(), // 189
       const SizedBox.shrink(), // 190
       const SizedBox.shrink(), // 191

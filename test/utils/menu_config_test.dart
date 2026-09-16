@@ -36,5 +36,30 @@ void main() {
     test('groupOf retorna null para item inexistente', () {
       expect(MenuConfig.groupOf('nao_existe'), isNull);
     });
+
+    test('certificado_digital esta no grupo sistema com screenIndex 188', () {
+      final group = MenuConfig.groupOf('certificado_digital');
+      expect(group, isNotNull);
+      expect(group?.id, equals('sistema'),
+          reason: 'Certificado Digital deve estar no grupo Sistema');
+
+      final item = group?.items.firstWhere((i) => i.id == 'certificado_digital');
+      expect(item?.screenIndex, equals(188),
+          reason: 'Certificado Digital deve apontar para a tela MeuCertificadoDigitalScreen (188)');
+
+      final comercialGroup = MenuConfig.groups.firstWhere((g) => g.id == 'comercial');
+      expect(comercialGroup.items.any((i) => i.id == 'certificado_digital'), isFalse,
+          reason: 'Certificado Digital nao deve estar no grupo Comercial');
+    });
+
+    test('importacao_fiscal_automacao esta no grupo sistema com screenIndex 184', () {
+      final group = MenuConfig.groupOf('importacao_fiscal_automacao');
+      expect(group, isNotNull);
+      expect(group?.id, equals('sistema'));
+
+      final item = group?.items.firstWhere((i) => i.id == 'importacao_fiscal_automacao');
+      expect(item?.screenIndex, equals(184),
+          reason: 'Importacao Fiscal / Automacao deve apontar para screenIndex 184');
+    });
   });
 }

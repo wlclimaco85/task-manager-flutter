@@ -182,11 +182,6 @@ class MenuConfig {
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
         MenuItem(
-            id: 'certificado_digital',
-            label: 'Certificado Digital',
-            icon: FontAwesomeIcons.certificate,
-            screenIndex: 184),
-        MenuItem(
             id: 'nfce_grid',
             label: 'NFC-e (Cupons)',
             icon: FontAwesomeIcons.receipt,
@@ -617,6 +612,11 @@ class MenuConfig {
             label: 'Importação Fiscal / Automação',
             icon: FontAwesomeIcons.folderTree,
             screenIndex: 184),
+        MenuItem(
+            id: 'certificado_digital',
+            label: 'Certificado Digital',
+            icon: FontAwesomeIcons.certificate,
+            screenIndex: 188),
         MenuItem(
             id: 'empresas',
             label: 'Empresas',
