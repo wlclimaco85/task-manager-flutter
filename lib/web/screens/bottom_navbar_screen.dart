@@ -81,6 +81,7 @@ import './unidade_medida_grid_screen.dart';
 import './catalago_produto_grid_screen.dart';
 import './nfe_finalidade_grid_screen.dart';
 import './nfe_serie_grid_screen.dart';
+import './nfse_serie_grid_screen.dart';
 import './nfe_tipo_operacao_grid_screen.dart';
 import './nfe_grid_screen.dart';
 import './nfce_grid_screen.dart';
@@ -588,6 +589,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 200
       const SizedBox.shrink(), // 201
       CnabRemessaScreen(), // 202: Remessa EDI
+      WebNfseSerieGridScreen(hasPermission: (p) => true), // 203: NfseSerie
     ];
   }
 

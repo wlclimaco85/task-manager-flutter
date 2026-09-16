@@ -218,6 +218,18 @@ class MenuConfig {
             label: 'NFSe',
             icon: FontAwesomeIcons.fileInvoice,
             screenIndex: 99),
+        // Bug de producao (2026-09-16, ver bugs.md): nfse_serie ja existia
+        // no backend (entity/repository/controller/tela_fields, tela
+        // dinamica id 6347, mesma estrutura de 'nfe_serie') e ja tinha tela
+        // propria no Mobile (NfseSerieScreen), mas nunca teve tela no
+        // Web/Windows -- o dropdown "Serie" ao emitir NFSe busca em
+        // /api/nfse-serie (tabela separada de nfe_serie), sempre vazio
+        // porque nao havia onde cadastrar essa serie fora do mobile.
+        MenuItem(
+            id: 'nfse_serie',
+            label: 'Séries NFS-e',
+            icon: FontAwesomeIcons.hashtag,
+            screenIndex: 203),
         MenuItem(
             id: 'cancelamento_cce',
             label: 'Cancelamento e CC-e',

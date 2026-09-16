@@ -82,6 +82,20 @@ void main() {
     expect(cnabRemessa.telaNome, 'cnab_remessa');
   });
 
+  // Bug de producao (2026-09-16, ver bugs.md): o dropdown "Serie" ao emitir
+  // NFSe buscava em /api/nfse-serie (tabela separada de nfe_serie), sempre
+  // vazio porque nao havia tela Web/Windows pra cadastrar essa serie -- so'
+  // o Mobile tinha. Nova tela 'nfse_serie' criada (Web/Windows), reaproveita
+  // a tela dinamica ja existente no backend (mesma estrutura de nfe_serie).
+  test('catalogo de permissoes mostra Séries NFS-e', () {
+    final nfseSerie = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .firstWhere((tela) => tela.menuItemId == 'nfse_serie');
+
+    expect(nfseSerie.label, 'Séries NFS-e');
+    expect(nfseSerie.telaNome, 'nfse_serie');
+  });
+
   test('catalogo de permissoes mostra telas de aprovacao de acesso', () {
     final porAcesso = RolePermissionCatalog.groups(query: 'acesso')
         .expand((grupo) => grupo.entries)

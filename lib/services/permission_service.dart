@@ -100,6 +100,10 @@ class PermissionService {
     'consulta_dfe': 'ConsultaDfe',
     'manifestacao_destinatario': 'ManifestacaoDestinatario',
     'nfse': 'Nfse',
+    // Tela criada em 2026-09-16 (ver bugs.md) pra cadastrar as series
+    // de NFSe (tabela nfse_serie, separada de nfe_serie) -- Web/Windows
+    // nunca teve essa tela, so' o Mobile.
+    'nfse_serie': 'nfse_serie',
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
     'agendamento_nfe': 'AgendamentoNFeRecorrente',
