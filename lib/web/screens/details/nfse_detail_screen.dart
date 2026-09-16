@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
@@ -108,12 +109,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
-    _tomadorId = (i['tomador'] is Map
-            ? i['tomador']['id']
-            : (i['parceiro'] is Map
-                ? i['parceiro']['id']
-                : i['tomador'] ?? i['parceiro']))
-        ?.toString();
+    final sessParcId = login?.parceiro?.id?.toString();
+    _tomadorId = sessParcId ??
+        (i['tomador'] is Map
+                ? i['tomador']['id']
+                : (i['parceiro'] is Map
+                    ? i['parceiro']['id']
+                    : i['tomador'] ?? i['parceiro']))
+            ?.toString();
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
     if (i['serie'] is Map) {
@@ -393,6 +396,67 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _selItem = _itens.length - 1;
         _itensGrid = false;
       });
+
+  double _num(dynamic value) =>
+      double.tryParse((value ?? '').toString().replaceAll(',', '.')) ?? 0.0;
+
+  String _fmt(double value) => value.toStringAsFixed(2);
+
+  void _recalcularServicoItem(Map<String, dynamic> item) {
+    final quantidade = _num(item['quantidade']);
+    final unitario = _num(item['valorUnitario'] ?? item['valor_unitario']);
+    final total = quantidade * unitario;
+    item['valorTotal'] = _fmt(total);
+    item['valor_total'] = item['valorTotal'];
+
+    final aliquotaIss = _num(item['aliquotaIss'] ?? item['aliquota_iss']);
+    final valorIss = total * aliquotaIss / 100;
+    item['valorIss'] = _fmt(valorIss);
+    item['valor_iss'] = item['valorIss'];
+  }
+
+  void _aplicarProdutoServicoSelecionado(
+      Map<String, dynamic> item, Map<String, dynamic> selected) {
+    final id = selected['id']?.toString();
+    item['produto'] = {'id': int.tryParse(id ?? '') ?? id};
+    item['descricao'] = selected['nome']?.toString() ??
+        selected['descricao']?.toString() ??
+        item['descricao'] ??
+        '';
+    item['valorUnitario'] =
+        selected['preco']?.toString() ?? item['valorUnitario'] ?? '0.00';
+    item['quantidade'] = item['quantidade'] ?? '1.00';
+    item['cnae'] = selected['cnae']?.toString() ?? item['cnae'] ?? '';
+    item['codigoTributacaoMunicipal'] =
+        selected['codigoTributacaoMunicipal']?.toString() ??
+            selected['codigo_tributacao_municipal']?.toString() ??
+            item['codigoTributacaoMunicipal'] ??
+            '';
+    _recalcularServicoItem(item);
+  }
+
+  Future<void> _carregarImpostosServico(
+      Map<String, dynamic> item, String produtoId) async {
+    try {
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$produtoId');
+      if (r.statusCode != 200) return;
+      final raw = jsonDecode(r.body);
+      if (raw is! List || raw.isEmpty) return;
+      final imp = Map<String, dynamic>.from(raw.first as Map);
+      if (!mounted) return;
+      setState(() {
+        item['aliquotaIss'] =
+            (imp['aliqIss'] ?? imp['aliquotaIss'] ?? item['aliquotaIss'])
+                ?.toString();
+        item['codigoTributacaoMunicipal'] = (imp['codTribIss'] ??
+                imp['codigoTributacaoMunicipal'] ??
+                item['codigoTributacaoMunicipal'])
+            ?.toString();
+        _recalcularServicoItem(item);
+      });
+    } catch (_) {}
+  }
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -801,26 +865,53 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(10),
       child: Column(children: [
-        // Produto — somente os marcados como serviço (Produto.isServico == true)
-        _ddObjItem('Produto (Serviço)', prodId, _produtos, 'nome', (v) {
-          final prod = _produtos.firstWhere((p) => p['id']?.toString() == v,
-              orElse: () => {});
-          setState(() {
-            item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
-            if (prod.isNotEmpty) {
-              item['descricao'] = prod['nome']?.toString() ?? '';
-              item['valorUnitario'] = prod['preco']?.toString() ?? '';
-              item['aliquotaIss'] = prod['aliquotaIss']?.toString() ??
-                  prod['aliquota_iss']?.toString() ??
-                  '';
-              item['codigoTributacaoMunicipal'] =
-                  prod['codigoTributacaoMunicipal']?.toString() ?? '';
-            }
-          });
-        }),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Builder(builder: (context) {
+            final login = AuthUtility.userInfo?.login;
+            final empId = login?.empresa?.id?.toString() ?? _empresaId;
+            final tomadorId = login?.parceiro?.id?.toString() ?? _tomadorId;
+            return SearchableDropdownField(
+              label: 'Produto (Serviço)',
+              value: prodId,
+              items: _produtos,
+              valueField: 'id',
+              displayField: 'nome',
+              nullable: true,
+              nullLabel: '— Selecione Serviço —',
+              loadPage: ({String? busca, required int pagina}) =>
+                  DropdownHelpers.produtosContabeisBusca(
+                busca: busca,
+                pagina: pagina,
+                tamanho: 20,
+                empresaId: empId,
+                parceiroId: tomadorId,
+                isServico: true,
+              ),
+              labelResolver: DropdownHelpers.produtoContabilLabelPorId,
+              onChanged: (v) {
+                setState(() {
+                  item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
+                });
+              },
+              onItemSelected: (selected) {
+                if (selected == null) return;
+                final id = selected['id']?.toString();
+                setState(() {
+                  _aplicarProdutoServicoSelecionado(item, selected);
+                });
+                if (id != null && id.isNotEmpty) {
+                  _carregarImpostosServico(item, id);
+                }
+              },
+            );
+          }),
+        ),
         _iInp('Descrição', item, 'descricao'),
-        _iInp('Quantidade', item, 'quantidade'),
-        _iInp('Vl. Unitário', item, 'valorUnitario'),
+        _iInp('Quantidade', item, 'quantidade',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
+        _iInp('Vl. Unitário', item, 'valorUnitario',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
         _iInp('Vl. Total', item, 'valorTotal'),
         const SizedBox(height: 12),
         SizedBox(
@@ -839,13 +930,17 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  Widget _iInp(String label, Map<String, dynamic> item, String key) {
+  Widget _iInp(String label, Map<String, dynamic> item, String key,
+      {void Function(String)? onChanged}) {
     final ctrl = TextEditingController(text: item[key]?.toString() ?? '');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
         controller: ctrl,
-        onChanged: (value) => item[key] = value,
+        onChanged: (value) {
+          item[key] = value;
+          onChanged?.call(value);
+        },
         style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(
           labelText: label,
@@ -857,36 +952,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         ),
-      ),
-    );
-  }
-
-  Widget _ddObjItem(String label, String? val, List<Map<String, dynamic>> opts,
-      String df, void Function(String?) cb) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SearchableDropdownField(
-        label: label,
-        value: opts.any((o) => o['id']?.toString() == val) ? val : null,
-        items: opts.map((o) {
-          final nome = o[df]?.toString() ?? '';
-          final preco = o['preco']?.toString() ?? '';
-          final codigo = o['codigoTributacaoMunicipal']?.toString() ??
-              o['cnae']?.toString() ??
-              '';
-          final display = codigo.isNotEmpty
-              ? '$nome (R\$ $preco) [$codigo]'
-              : '$nome (R\$ $preco)';
-          return <String, dynamic>{
-            'id': o['id']?.toString() ?? '',
-            'nome': display
-          };
-        }).toList(),
-        valueField: 'id',
-        displayField: 'nome',
-        nullable: true,
-        nullLabel: '— Selecione Serviço —',
-        onChanged: cb,
       ),
     );
   }

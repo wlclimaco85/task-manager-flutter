@@ -51,14 +51,16 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> parceiros() =>
       load(ApiLinks.allParceiros, displayField: 'nome');
 
-  static Future<List<Map<String, dynamic>>> parceirosMatriz({dynamic empresaId}) async {
+  static Future<List<Map<String, dynamic>>> parceirosMatriz(
+      {dynamic empresaId}) async {
     final list = await (empresaId != null
         ? parceirosPorEmpresa(empresaId.toString())
         : parceiros());
     final matrizes = list.where((p) {
-      final tipo = (p['tipoEstabelecimento'] ?? p['tipo_estabelecimento'] ?? 'MATRIZ')
-          .toString()
-          .toUpperCase();
+      final tipo =
+          (p['tipoEstabelecimento'] ?? p['tipo_estabelecimento'] ?? 'MATRIZ')
+              .toString()
+              .toUpperCase();
       return tipo == 'MATRIZ';
     }).toList();
     return matrizes.isNotEmpty ? matrizes : list;
@@ -202,8 +204,10 @@ class DropdownHelpers {
     final items = lista.whereType<Map>().map((e) {
       final item = Map<String, dynamic>.from(e);
       if (item['nome'] == null || item['nome'].toString().isEmpty) {
-        item['nome'] =
-            item['razaoSocial'] ?? item['email'] ?? item['id']?.toString() ?? '';
+        item['nome'] = item['razaoSocial'] ??
+            item['email'] ??
+            item['id']?.toString() ??
+            '';
       }
       return item;
     }).toList();
@@ -277,9 +281,10 @@ class DropdownHelpers {
     int tamanho = 20,
     String? empresaId,
     String? parceiroId,
+    bool isServico = false,
   }) async {
     final url =
-        '${ApiLinks.baseUrl}/api/produto-contabil${buildProdutosContabeisBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho, empresaId: empresaId, parceiroId: parceiroId)}';
+        '${ApiLinks.baseUrl}/api/produto-contabil${buildProdutosContabeisBuscaQuery(busca: busca, pagina: pagina, tamanho: tamanho, empresaId: empresaId, parceiroId: parceiroId, isServico: isServico)}';
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (!resp.isSuccess || resp.body == null) {
@@ -292,7 +297,7 @@ class DropdownHelpers {
     }
   }
 
-  /// Monta a query string (`?pagina=...&tamanho=...[&nome=...][&empId=...][&parceiroId=...]&isServico=false`)
+  /// Monta a query string (`?pagina=...&tamanho=...[&nome=...][&empId=...][&parceiroId=...]&isServico=...`)
   /// de [produtosContabeisBusca] — extraído em função pura para poder ser testado sem rede.
   static String buildProdutosContabeisBuscaQuery({
     String? busca,
@@ -300,9 +305,11 @@ class DropdownHelpers {
     int tamanho = 20,
     String? empresaId,
     String? parceiroId,
+    bool isServico = false,
   }) {
     final termo = busca?.trim();
-    final query = StringBuffer('?pagina=$pagina&tamanho=$tamanho&isServico=false');
+    final query =
+        StringBuffer('?pagina=$pagina&tamanho=$tamanho&isServico=$isServico');
     if (termo != null && termo.isNotEmpty) {
       query.write('&nome=${Uri.encodeQueryComponent(termo)}');
     }
@@ -318,8 +325,8 @@ class DropdownHelpers {
   /// Resolve o rótulo de exibição de um produto pelo id.
   static Future<String?> produtoContabilLabelPorId(String id) async {
     try {
-      final resp =
-          await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/produto-contabil/$id');
+      final resp = await NetworkCaller()
+          .getRequest('${ApiLinks.baseUrl}/api/produto-contabil/$id');
       if (!resp.isSuccess || resp.body == null) return null;
       return parseProdutoLabel(resp.body);
     } catch (_) {
@@ -463,8 +470,7 @@ class DropdownHelpers {
       return load('${ApiLinks.baseUrl}/api/role/disponiveis',
           displayField: 'description');
     }
-    return load(
-        '${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId',
+    return load('${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId',
         displayField: 'description');
   }
 

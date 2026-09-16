@@ -38,14 +38,13 @@ void main() {
     });
 
     test('escapa caracteres especiais do termo de busca na URL', () {
-      final query = DropdownHelpers.buildParceirosBuscaQuery(
-          busca: 'a&b c', pagina: 0);
+      final query =
+          DropdownHelpers.buildParceirosBuscaQuery(busca: 'a&b c', pagina: 0);
       expect(query, isNot(contains('busca=a&b c')));
       expect(query, contains('busca=a%26b+c'));
     });
 
-    test('inclui empresaId quando fornecido (tela GED filtra por empresa)',
-        () {
+    test('inclui empresaId quando fornecido (tela GED filtra por empresa)', () {
       final query = DropdownHelpers.buildParceirosBuscaQuery(
           busca: null, pagina: 0, empresaId: '20001');
       expect(query, contains('empresaId=20001'));
@@ -205,8 +204,8 @@ void main() {
     });
 
     test('escapa caracteres especiais do termo de busca na URL', () {
-      final query = DropdownHelpers.buildEmpresasBuscaQuery(
-          busca: 'a&b c', pagina: 0);
+      final query =
+          DropdownHelpers.buildEmpresasBuscaQuery(busca: 'a&b c', pagina: 0);
       expect(query, isNot(contains('nome=a&b c')));
       expect(query, contains('nome=a%26b+c'));
     });
@@ -259,8 +258,8 @@ void main() {
     });
 
     test('inclui busca quando ha termo digitado', () {
-      final query =
-          DropdownHelpers.buildEmpresasBuscaQuery(busca: 'empresa x', pagina: 0);
+      final query = DropdownHelpers.buildEmpresasBuscaQuery(
+          busca: 'empresa x', pagina: 0);
       expect(query, contains('nome=empresa+x'));
     });
 
@@ -285,6 +284,13 @@ void main() {
       final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
           busca: null, pagina: 0);
       expect(query, '?pagina=0&tamanho=20&isServico=false');
+    });
+
+    test('permite isServico=true para busca de servicos da NFSe', () {
+      final query = DropdownHelpers.buildProdutosContabeisBuscaQuery(
+          busca: 'consultoria', pagina: 0, isServico: true);
+      expect(query, contains('isServico=true'));
+      expect(query, contains('nome=consultoria'));
     });
 
     test('inclui termo de busca codificado', () {
