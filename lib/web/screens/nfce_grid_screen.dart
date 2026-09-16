@@ -8,7 +8,8 @@ import '../../../services/print_service_nfce.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_snackbar.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows, FieldType;
 
 class WebNfceGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -16,12 +17,43 @@ class WebNfceGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final extraParams = <String, dynamic>{};
+    if (TenantContext.hasEmpresa) {
+      extraParams['empresa'] = TenantContext.empresaId.toString();
+      extraParams['empId'] = TenantContext.empresaId.toString();
+      extraParams['empresaId'] = TenantContext.empresaId.toString();
+    }
+    if (TenantContext.hasParceiro) {
+      extraParams['parceiro'] = TenantContext.parceiroId.toString();
+      extraParams['parceiroId'] = TenantContext.parceiroId.toString();
+      extraParams['parcId'] = TenantContext.parceiroId.toString();
+    }
+
     return DynamicGridWindowsScreen<NfceModel>(
       telaNome: 'nfce',
       tituloOverride: 'NFC-e / Cupons',
       fetchEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
       createEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
       hasPermission: hasPermission,
+      extraParams: extraParams,
+      fieldOverrides: const [
+        FieldConfigWindows(
+          label: 'Empresa',
+          fieldName: 'empresa',
+          fieldType: FieldType.dropdown,
+          isFilterable: true,
+          isInGrid: false,
+          isInForm: false,
+        ),
+        FieldConfigWindows(
+          label: 'Parceiro',
+          fieldName: 'parceiro',
+          fieldType: FieldType.dropdown,
+          isFilterable: true,
+          isInGrid: false,
+          isInForm: false,
+        ),
+      ],
       fromJson: (json) => NfceModel.fromJson(json),
       toJson: (a) => a.toJson(),
       customActions: () => [

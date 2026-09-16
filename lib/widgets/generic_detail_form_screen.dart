@@ -1039,6 +1039,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: _controllers[ef.fieldName],
+        enabled: ef.enabled,
         keyboardType: keyboardType,
         inputFormatters: formatters,
         maxLines: maxLines ?? 1,
@@ -1192,7 +1193,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                       overflow: TextOverflow.ellipsis),
                 ))
             .toList(),
-        onChanged: (val) => setState(() => _dropdownValues[ef.fieldName] = val),
+        onChanged: ef.enabled
+            ? (val) => setState(() => _dropdownValues[ef.fieldName] = val)
+            : null,
         validator: ef.isRequired
             ? (v) => v == null ? '${ef.label} é obrigatório' : null
             : null,
@@ -1506,6 +1509,7 @@ class _EF {
   final String label;
   final FieldType type;
   final bool isRequired;
+  final bool enabled;
   final String vField;
   final String dField;
   final String? dropdownEndpoint;
@@ -1518,6 +1522,7 @@ class _EF {
       required this.label,
       required this.type,
       this.isRequired = false,
+      this.enabled = true,
       this.vField = 'id',
       this.dField = 'nome',
       this.dropdownEndpoint,
@@ -1530,6 +1535,7 @@ class _EF {
         label: f.label,
         type: type,
         isRequired: f.isRequired,
+        enabled: f.enabled,
         vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
         dField:
             f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
@@ -1548,6 +1554,7 @@ class _EF {
         label: o.label,
         type: o.fieldType,
         isRequired: o.isRequired,
+        enabled: o.enabled,
         vField: o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id',
         dField:
             o.dropdownDisplayField.isNotEmpty ? o.dropdownDisplayField : 'nome',

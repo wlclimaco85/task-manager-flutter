@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../utils/dropdown_helpers.dart';
 import 'details/parceiro_detail_screen.dart';
 
 class WebParceiroGridScreen extends StatelessWidget {
@@ -13,6 +14,10 @@ class WebParceiroGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => json,
       toJson: (a) => a,
+      fieldOverrides: [
+        DropdownHelpers.empresaField(required: true),
+        DropdownHelpers.parceiroFieldScopedOrSelectable(),
+      ],
       detailScreenBuilder: (item) => WebParceiroDetailScreen(item: item, hasPermission: hasPermission),
     );
   }

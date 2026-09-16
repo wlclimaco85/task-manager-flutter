@@ -547,6 +547,8 @@ class DropdownHelpers {
       dependsOnField: cachedParceiroId == null ? 'empresa' : null,
       dropdownFutureBuilderWithParam:
           cachedParceiroId == null ? parceirosPorEmpresa : null,
+      dropdownFutureBuilder:
+          cachedParceiroId != null ? parceiros : null,
     );
   }
 
