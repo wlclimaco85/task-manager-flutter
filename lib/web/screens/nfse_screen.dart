@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../widgets/searchable_dropdown.dart';
 import 'details/nfse_detail_screen.dart';
 
@@ -257,6 +258,41 @@ class _NfseScreenState extends State<NfseScreen> {
     );
   }
 
+  void _consultarLinha(Map<String, dynamic> item) {
+    _consultaCtrl.text = _nfseNumero(item);
+    _showConsultaDialog();
+  }
+
+  void _cancelarLinha(Map<String, dynamic> item) {
+    _cancelNumeroCtrl.text = _nfseNumero(item);
+    _showCancelamentoDialog();
+  }
+
+  List<CustomAction<Map<String, dynamic>>> _buildCustomActions() => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.manage_search,
+          label: 'Consultar status',
+          onPressed: (context, item) => _consultarLinha(item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.cancel_outlined,
+          label: 'Cancelar',
+          onPressed: (context, item) => _cancelarLinha(item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.history,
+          label: 'Auditoria',
+          onPressed: (context, item) => _showAuditoriaDialog(),
+        ),
+      ];
+
+  String _nfseNumero(Map<String, dynamic> item) => (item['numero'] ??
+          item['nfseNumber'] ??
+          item['numeroNfse'] ??
+          item['id'] ??
+          '')
+      .toString();
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -297,6 +333,7 @@ class _NfseScreenState extends State<NfseScreen> {
                   toJson: (a) => a,
                   extraParams: _filtros,
                   detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                  customActions: _buildCustomActions,
                   showAppBar: false,
                 ),
               ),
@@ -377,7 +414,8 @@ class _NfseScreenState extends State<NfseScreen> {
               child: ElevatedButton.icon(
                 onPressed: _showEmissaoDialog,
                 icon: const Icon(Icons.send, size: 14),
-                label: const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
+                label:
+                    const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
@@ -515,8 +553,14 @@ class _NfseScreenState extends State<NfseScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _EmissaoDialog extends StatelessWidget {
-  final TextEditingController municipioCtrl, cnpjCtrl, nomeCtrl,
-      descricaoCtrl, valorCtrl, aliquotaCtrl, cnaeCtrl, codigoTribCtrl;
+  final TextEditingController municipioCtrl,
+      cnpjCtrl,
+      nomeCtrl,
+      descricaoCtrl,
+      valorCtrl,
+      aliquotaCtrl,
+      cnaeCtrl,
+      codigoTribCtrl;
   final bool emitindo;
   final String? resultado;
   final VoidCallback onEmitir;
@@ -554,9 +598,13 @@ class _EmissaoDialog extends StatelessWidget {
               _campo('Nome Tomador', nomeCtrl),
               _campo('Descrição do Serviço', descricaoCtrl),
               Row(children: [
-                Expanded(child: _campo('Valor', valorCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Valor', valorCtrl,
+                        teclado: TextInputType.number)),
                 const SizedBox(width: 12),
-                Expanded(child: _campo('Alíquota ISS', aliquotaCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Alíquota ISS', aliquotaCtrl,
+                        teclado: TextInputType.number)),
               ]),
               Row(children: [
                 Expanded(child: _campo('CNAE', cnaeCtrl)),
@@ -883,8 +931,7 @@ class _AuditoriaDialog extends StatelessWidget {
                           child: Text('Nenhum log de auditoria encontrado.'))
                       : ListView.separated(
                           itemCount: logs.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (_, i) {
                             final log = logs[i];
                             final data = log['data'] ??

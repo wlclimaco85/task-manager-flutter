@@ -145,52 +145,114 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   List<CustomAction<Map<String, dynamic>>> _buildCustomActions(
       BuildContext ctx) {
     if (widget.entrada) {
-      // NF-e ENTRADA
       return [
         CustomAction<Map<String, dynamic>>(
+          icon: Icons.manage_search,
+          label: "Consultar status",
+          onPressed: (context, item) => _consultarStatus(context, item),
+        ),
+        CustomAction<Map<String, dynamic>>(
           icon: Icons.upload_file,
-          label: 'Importar XML',
+          label: "Importar XML",
           onPressed: (context, item) => _importarXml(context),
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.check_circle_outline,
-          label: 'Aceitar',
+          label: "Aceitar",
           onPressed: (context, item) => _aceitar(context, item),
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.cancel_outlined,
-          label: 'Recusar',
+          label: "Recusar",
           onPressed: (context, item) => _recusar(context, item),
-        ),
-      ];
-    } else {
-      // NF-e SAÍDA
-      return [
-        CustomAction<Map<String, dynamic>>(
-          icon: Icons.send,
-          label: 'Emitir',
-          onPressed: (context, item) => _emitir(context, item),
-        ),
-        CustomAction<Map<String, dynamic>>(
-          icon: Icons.cancel_outlined,
-          label: 'Cancelar',
-          onPressed: (context, item) => _cancelar(context, item),
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.print,
-          label: 'Imprimir DANFE',
+          label: "DANFE",
           onPressed: (context, item) => _imprimirDanfe(context, item),
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.code,
-          label: 'Exportar XML',
+          label: "XML",
           onPressed: (context, item) => _baixarXml(context, item),
         ),
       ];
     }
+    return [
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.manage_search,
+        label: "Consultar status",
+        onPressed: (context, item) => _consultarStatus(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.send,
+        label: "Emitir",
+        onPressed: (context, item) => _emitir(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.cancel_outlined,
+        label: "Cancelar",
+        onPressed: (context, item) => _cancelar(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.edit_note,
+        label: "Carta de Correção",
+        onPressed: (context, item) => _emitirCce(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.history,
+        label: "Histórico de eventos",
+        onPressed: (context, item) => _historicoEventos(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.print,
+        label: "Imprimir DANFE",
+        onPressed: (context, item) => _imprimirDanfe(context, item),
+      ),
+      CustomAction<Map<String, dynamic>>(
+        icon: Icons.code,
+        label: "Exportar XML",
+        onPressed: (context, item) => _baixarXml(context, item),
+      ),
+    ];
   }
-
   // ── Ações NF-e SAÍDA ──────────────────────────────────────────────────────
+
+  Future<void> _consultarStatus(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    try {
+      final r = await TenantContext.get(ApiLinks.nfeById(id));
+      if (!context.mounted) return;
+      if (r.statusCode == 200) {
+        final body = jsonDecode(r.body);
+        final data = body is Map<String, dynamic>
+            ? (body['dados'] is Map<String, dynamic>
+                ? body['dados'] as Map<String, dynamic>
+                : body)
+            : <String, dynamic>{'retorno': body.toString()};
+        _showDataDialog(context, 'Status NF-e', {
+          'id': data['id'] ?? id,
+          'numero': data['numero'] ?? item['numero'] ?? '-',
+          'serie': data['serie'] ?? item['serie'] ?? '-',
+          'status': data['status'] ?? item['status'] ?? '-',
+          'chave': data['chave'] ?? item['chave'] ?? '-',
+          'protocolo': data['protocolo'] ?? item['protocolo'] ?? '-',
+          'motivo': data['motivoRejeicao'] ?? data['motivo'] ?? '-',
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: GridColors.error));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'), backgroundColor: GridColors.error));
+      }
+    }
+  }
 
   Future<void> _cancelar(
       BuildContext context, Map<String, dynamic> item) async {
@@ -362,6 +424,95 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       if (context.mounted)
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro: $e'), backgroundColor: GridColors.error));
+    }
+  }
+
+  Future<void> _emitirCce(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    final correcaoCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Carta de Correção NF-e',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: 420,
+          child: TextField(
+            controller: correcaoCtrl,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Correção *',
+              border: OutlineInputBorder(),
+              isDense: true,
+              hintText: 'Mínimo 15 caracteres',
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Voltar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.success,
+                foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enviar CC-e'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    if (correcaoCtrl.text.trim().length < 15) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Correção deve ter pelo menos 15 caracteres'),
+          backgroundColor: GridColors.error));
+      return;
+    }
+    try {
+      final r = await TenantContext.post(ApiLinks.cancelamentoNfeCce(id),
+          {'correcao': correcaoCtrl.text.trim()});
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(r.statusCode == 200
+              ? 'CC-e enviada com sucesso!'
+              : 'Erro ${r.statusCode}: ${r.body}'),
+          backgroundColor:
+              r.statusCode == 200 ? GridColors.success : GridColors.error));
+      if (r.statusCode == 200) setState(() => _gridKey++);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'), backgroundColor: GridColors.error));
+      }
+    }
+  }
+
+  Future<void> _historicoEventos(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    try {
+      final r = await TenantContext.get(ApiLinks.cancelamentoNfeHistorico(id));
+      if (!context.mounted) return;
+      if (r.statusCode == 200) {
+        final body = jsonDecode(r.body);
+        _showDataDialog(
+          context,
+          'Histórico de eventos NF-e',
+          body is Map<String, dynamic> ? body : {'eventos': body.toString()},
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: GridColors.error));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'), backgroundColor: GridColors.error));
+      }
     }
   }
 
@@ -795,4 +946,40 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
           ]),
         ),
       );
+
+  void _showDataDialog(
+    BuildContext context,
+    String title,
+    Map<String, dynamic> data,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: 460,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: data.entries
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Text('${e.key}: ${e.value}'),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
 }
