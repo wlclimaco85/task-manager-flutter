@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
@@ -6,6 +8,14 @@ import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/widgets/generic_grid_windows_screen.dart';
 
 void main() {
+  test('grid generico nao aplica filtro visual automatico do parceiro logado', () {
+    final source = File('lib/widgets/generic_grid_windows_screen.dart')
+        .readAsStringSync();
+
+    expect(source, isNot(contains('_applyTenantFilters();')));
+    expect(source, isNot(contains('_lockedFilters')));
+  });
+
   group('travamento por parceiroId/parcId no contexto (extraParams)', () {
     const parceiroField = FieldConfigWindows(
       fieldName: 'parceiro',
