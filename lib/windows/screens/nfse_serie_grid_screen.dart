@@ -60,6 +60,20 @@ class WindowsNfseSerieGridScreen extends StatelessWidget {
           dropdownSelectedValue: parceiroIdStr,
           enabled: false,
         ),
+      FieldConfigWindows(
+        label: 'Tipo da Série',
+        fieldName: 'tipo',
+        isFilterable: true,
+        isInForm: true,
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () async => [
+          {'id': 'NF-e', 'nome': 'NF-e'},
+          {'id': 'NFS-e', 'nome': 'NFS-e'},
+          {'id': 'NFC-e', 'nome': 'NFC-e'},
+        ],
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+      ),
     ];
 
     return DynamicGridWindowsScreen<Map<String, dynamic>>(
