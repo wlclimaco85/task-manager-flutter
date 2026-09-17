@@ -985,12 +985,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             if (prod.isNotEmpty) {
               item['descricao'] = prod['nome']?.toString() ?? '';
               item['valorUnitario'] = prod['preco']?.toString() ?? '';
+              item['quantidade'] = item['quantidade'] ?? '1.00';
               item['aliquotaIss'] = prod['aliquotaIss']?.toString() ??
                   prod['aliquota_iss']?.toString() ??
                   '';
               item['codigoTributacaoMunicipal'] =
                   prod['codigoTributacaoMunicipal']?.toString() ?? '';
             }
+            _recalcularServicoItem(item);
           });
         }),
         _iInp('Descrição', item, 'descricao'),
@@ -1071,6 +1073,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
+        // ValueKey inclui o valor atual -- sem isso o TextFormField (sem
+        // controller) so' aplica initialValue no primeiro build; ao
+        // recalcular (setState em _recalcularServicoItem) o campo ficava
+        // visualmente parado no valor antigo mesmo com o dado certo em
+        // memoria (mesmo fix aplicado na versao Web).
+        key: ValueKey('$key-$value'),
         initialValue: value,
         readOnly: true,
         style: const TextStyle(fontSize: 12, color: _grey),
