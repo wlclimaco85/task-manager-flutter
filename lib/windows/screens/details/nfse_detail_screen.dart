@@ -1038,17 +1038,46 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     );
   }
 
-  Widget _iInp(String label, Map<String, dynamic> item, String key) {
+  Widget _iInp(String label, Map<String, dynamic> item, String key,
+      {ValueChanged<String>? onChanged}) {
     final ctrl = TextEditingController(text: item[key]?.toString() ?? '');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
         controller: ctrl,
-        onChanged: (value) => item[key] = value,
+        onChanged: (value) {
+          item[key] = value;
+          onChanged?.call(value);
+        },
         style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(fontSize: 11, color: _grey),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _bord)),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        ),
+      ),
+    );
+  }
+
+  Widget _iInpSomenteLeitura(
+      String label, Map<String, dynamic> item, String key) {
+    final value = item[key]?.toString() ?? '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextFormField(
+        initialValue: value,
+        readOnly: true,
+        style: const TextStyle(fontSize: 12, color: _grey),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 11, color: _grey),
+          filled: true,
+          fillColor: _bg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
               borderSide: const BorderSide(color: _bord)),
