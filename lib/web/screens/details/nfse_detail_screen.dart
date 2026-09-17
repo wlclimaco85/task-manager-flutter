@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
@@ -39,6 +40,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   int _tab = 0;
   bool _itensGrid = true;
   int _selItem = 0;
+  bool _enviando = false;
 
   double _cabWidth = 320;
   double _rodapeHeight = 240;
@@ -348,7 +350,86 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
+  /// Emite de verdade a NFSe via Sistema Nacional NFS-e (SefinNacional) --
+  /// bug real (2026-09-17, ver bugs.md): antes disso o botao nem existia,
+  /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
+  /// transmitir nada de verdade.
+  Future<void> _enviarNfse() async {
+    setState(() => _enviando = true);
+    try {
+      final r = await TenantContext.post(
+          ApiLinks.emitirNfseNacional(_nfseId), {});
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        final b = jsonDecode(r.body);
+        final data = b is Map ? (b['data'] ?? b) : null;
+        final status = data is Map ? data['status']?.toString() : null;
+        if (status == 'AUTORIZADA') {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
+              backgroundColor: _green));
+          setState(() => widget.item['status'] = status);
+        } else {
+          final erro = data is Map ? data['mensagemErroEmissao'] : null;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('NFSe rejeitada: ${erro ?? r.body}'),
+              backgroundColor: _red));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
+    }
+  }
+
+  /// Baixa o PDF (DANFSe simplificado) -- so' disponivel depois que a
+  /// NFSe foi emitida/autorizada de verdade (usa o XML real persistido).
+  Future<void> _baixarPdf() async {
+    try {
+      final r = await TenantContext.get(ApiLinks.danfseNfse(_nfseId));
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        await FileSaver.instance.saveFile(
+          name: 'danfse_$_nfseId',
+          bytes: r.bodyBytes,
+          fileExtension: 'pdf',
+          mimeType: MimeType.pdf,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
   Future<void> _salvarItem(Map<String, dynamic> item) async {
+    // Bug real (2026-09-17, ver bugs.md): salvar item numa NFSe nova (ainda
+    // sem id) mandava nfseId=null pro backend, que rejeita com 400
+    // ("nfseId e obrigatorio"). O cabecalho precisa existir antes do item
+    // -- salva o cabecalho primeiro se ainda for uma NFSe nova.
+    if (_isNovo) {
+      await _salvarCabecalho();
+      if (_isNovo) {
+        // _salvarCabecalho ja mostra o erro real (SnackBar) se falhar --
+        // sem id novo, nao ha' como vincular o item, aborta aqui.
+        return;
+      }
+    }
     final isNew = item['id'] == null;
     final body = <String, dynamic>{
       if (!isNew) 'id': item['id'],
@@ -483,6 +564,31 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             label: const Text('Salvar',
                 style: TextStyle(color: Colors.white, fontSize: 12)),
           ),
+          // Bug real (2026-09-17, ver bugs.md): so' existia o botao
+          // "Salvar" no cabecalho -- nao tinha como EMITIR de verdade a
+          // NFSe (transmitir pro Sistema Nacional NFS-e) nem baixar o PDF
+          // depois de autorizada. Backend novo (emitir-nacional +
+          // danfse) implementado na mesma sessao.
+          if (!_isNovo)
+            TextButton.icon(
+              onPressed: _enviando ? null : _enviarNfse,
+              icon: _enviando
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send, size: 16, color: Colors.white),
+              label: const Text('Enviar',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (!_isNovo)
+            TextButton.icon(
+              onPressed: _baixarPdf,
+              icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.white),
+              label: const Text('Baixar PDF',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
           const SizedBox(width: 8),
         ],
       ),
@@ -920,6 +1026,31 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _iInp('Vl. Unitário', item, 'valorUnitario',
             onChanged: (_) => setState(() => _recalcularServicoItem(item))),
         _iInp('Vl. Total', item, 'valorTotal'),
+        // Bug real (2026-09-17, ver bugs.md): os campos de imposto do item
+        // (aliquota, base de calculo/valor ISS, codigo de tributacao,
+        // retencao) existiam no backend (NfseItem) e ate' eram calculados
+        // em memoria (_recalcularServicoItem), mas nunca apareciam como
+        // campo visivel/editavel no formulario -- a aba "Impostos" sempre
+        // mostrava tudo em branco porque o produto pode nao ter cadastro
+        // de aliquota (produto_imposto_uf), e o usuario nao tinha como
+        // digitar/corrigir manualmente.
+        _iInp('Alíquota ISS (%)', item, 'aliquotaIss',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
+        _iInpSomenteLeitura('Base de Cálculo (ISS)', item, 'valorTotal'),
+        _iInpSomenteLeitura('Valor ISS', item, 'valorIss'),
+        _iInp('Cód. Tributação Municipal', item, 'codigoTributacaoMunicipal'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            dense: true,
+            title: const Text('ISS Retido pelo Tomador',
+                style: TextStyle(fontSize: 12, color: _dark)),
+            value: item['issRetido'] == true || item['iss_retido'] == true,
+            onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
             width: double.infinity,
@@ -934,6 +1065,33 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10)))),
       ]),
+    );
+  }
+
+  /// Campo somente-leitura pra valores calculados (base de calculo/valor
+  /// ISS) -- mostra o valor mas nao deixa o usuario editar diretamente
+  /// (o calculo vem de quantidade x valor unitario x aliquota).
+  Widget _iInpSomenteLeitura(String label, Map<String, dynamic> item, String key) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextFormField(
+        key: ValueKey('$key-${item[key]}'),
+        initialValue: item[key]?.toString() ?? '',
+        readOnly: true,
+        style: const TextStyle(fontSize: 12, color: _grey),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 11, color: _grey),
+          filled: true,
+          fillColor: const Color(0xFFF0F0F0),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: _bord)),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        ),
+      ),
     );
   }
 

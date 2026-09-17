@@ -1053,6 +1053,10 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/cancelar';
   static String danfeNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/danfe';
   static String xmlNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/xml';
+  static String emitirNfseNacional(String nfseId) =>
+      '$_baseUrlNew/api/nfse/$nfseId/emitir-nacional';
+  static String danfseNfse(String nfseId) =>
+      '$_baseUrlNew/api/nfse/$nfseId/danfse';
   static String aceitarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
