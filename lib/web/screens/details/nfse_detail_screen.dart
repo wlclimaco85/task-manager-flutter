@@ -201,7 +201,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList(
           '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
-      _loadProdutosServico(empId),
+      _loadProdutosServico(empId, login?.parceiro?.id?.toString()),
       // Bug real (2026-09-17, ver bugs.md): esta tela buscava serie em
       // /api/nfse-serie (tabela nfse_serie, legada/nao usada -- so tem
       // registros "teste"), enquanto a tela onde o usuario de fato cadastra
@@ -255,9 +255,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   /// Busca produtos de serviço via /api/produto_contabil (retorna entity completa com isServico)
-  Future<void> _loadProdutosServico(String? empId) async {
+  Future<void> _loadProdutosServico(String? empId, String? parceiroId) async {
     final base = '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500'
-        '${empId != null ? '&empId=$empId' : ''}&isServico=true';
+        '${empId != null ? '&empId=$empId' : ''}'
+        '${parceiroId != null ? '&parceiroId=$parceiroId' : ''}&isServico=true';
     List<Map<String, dynamic>> produtos = [];
     await _loadList(base, (d) => produtos = d);
     if (mounted) setState(() => _produtos = produtos);
