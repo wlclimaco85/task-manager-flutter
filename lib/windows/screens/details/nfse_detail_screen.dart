@@ -123,19 +123,31 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     // master/contabilidade, entao a busca sempre voltava "0 resultado(s)"
     // pra um Cliente -- nao era so' falta de disabled, a lista realmente
     // vinha vazia do backend por isolamento de tenant (anti-IDOR).
+    //
+    // Bug real (2026-09-17, code review): mas so' pode default/travar no
+    // parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
+    // o tomador ja gravado no registro e' o proprio parceiro da sessao --
+    // se a nota EXISTENTE pertence a outro tomador, sobrescrever com o
+    // parceiro logado ao salvar corromperia o dado real da nota (mesma
+    // classe de bug da secao "NF-e Entrada" do claude.md: "Nao
+    // sobrescrever dado da nota com login.parceiro na tela").
     final sessParcId = login?.parceiro?.id?.toString();
-    _tomadorId = sessParcId ??
-        (i['tomador'] is Map
-                ? i['tomador']['id']
-                : (i['parceiro'] is Map
-                    ? i['parceiro']['id']
-                    : i['tomador'] ?? i['parceiro']))
-            ?.toString();
-    _tomadorNome = login?.parceiro?.nome ??
-        (i['tomador'] is Map
+    final tomadorRealId = (i['tomador'] is Map
+            ? i['tomador']['id']
+            : (i['parceiro'] is Map
+                ? i['parceiro']['id']
+                : i['tomador'] ?? i['parceiro']))
+        ?.toString();
+    final tomadorRealNome = (i['tomador'] is Map
             ? i['tomador']['nome']
             : (i['parceiro'] is Map ? i['parceiro']['nome'] : null))
-            ?.toString();
+        ?.toString();
+    final podeDefaultParaSessao =
+        _isNovo || tomadorRealId == null || tomadorRealId == sessParcId;
+    _tomadorId = podeDefaultParaSessao ? (sessParcId ?? tomadorRealId) : tomadorRealId;
+    _tomadorNome = podeDefaultParaSessao
+        ? (login?.parceiro?.nome ?? tomadorRealNome)
+        : tomadorRealNome;
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
     if (i['serie'] is Map) {
@@ -1000,7 +1012,13 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             onChanged: (_) => setState(() => _recalcularServicoItem(item))),
         _iInp('Vl. Unitário', item, 'valorUnitario',
             onChanged: (_) => setState(() => _recalcularServicoItem(item))),
-        _iInp('Vl. Total', item, 'valorTotal'),
+        // Bug real (2026-09-17, code review): 'Vl. Total' NAO pode ser
+        // editavel em paralelo com "Valor ISS" abaixo -- os dois dependem
+        // do mesmo total calculado, e um usuario editando aqui manualmente
+        // sem tocar Quantidade/Vl.Unitario dessincronizava o valorIss
+        // salvo (calculado sobre o total antigo) do valorTotal realmente
+        // enviado ao backend.
+        _iInpSomenteLeitura('Vl. Total', item, 'valorTotal'),
         // Bug real (2026-09-17, ver bugs.md): os campos de imposto do item
         // (aliquota, base de calculo/valor ISS, codigo de tributacao,
         // retencao) existiam no backend (NfseItem) e ate' eram calculados
@@ -1009,7 +1027,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         // sempre mostrava tudo em branco.
         _iInp('Alíquota ISS (%)', item, 'aliquotaIss',
             onChanged: (_) => setState(() => _recalcularServicoItem(item))),
-        _iInpSomenteLeitura('Base de Cálculo (ISS)', item, 'valorTotal'),
         _iInpSomenteLeitura('Valor ISS', item, 'valorIss'),
         _iInp('Cód. Tributação Municipal', item, 'codigoTributacaoMunicipal'),
         Padding(
