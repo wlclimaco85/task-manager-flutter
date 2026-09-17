@@ -46,10 +46,10 @@ void main() {
         ),
       ));
 
-      // Primeira renderização — não aguarda pumpAndSettle (que travaria)
-      // Apenas valida que o widget foi criado sem crash durante a construção
+      // Primeira renderização — valida que o widget foi criado sem crash
       expect(find.byType(MobileLoginDetailScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 2));
     });
 
     /// TEST 2: Validar que fieldOverrides contém Roles

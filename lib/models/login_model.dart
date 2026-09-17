@@ -15,6 +15,7 @@ class Login {
   String? nome;
   String? cpfCnpj;
   String? foto;
+  bool? ativo;
   List<Role>? roles;
   LoginEnum? tipoLogin;
   Empresa? empresa;
@@ -31,6 +32,7 @@ class Login {
     this.nome,
     this.cpfCnpj,
     this.foto,
+    this.ativo = true,
     this.roles,
     this.tipoLogin,
     this.empresa,
@@ -42,18 +44,25 @@ class Login {
   });
 
   Map<String, dynamic> toJson() {
+    final tipoVal = tipoLogin?.name ?? tipoLogin?.value;
     return {
       'id': id,
       'email': email,
       'senha': senha,
       'nome': nome,
       'cpfCnpj': cpfCnpj,
+      'cpf_cnpj': cpfCnpj,
       'foto': foto,
+      'ativo': ativo ?? true,
       'roles': roles?.map((role) => role.toJson()).toList(),
-      'tipoLogin': tipoLogin?.value, // Salve o value em vez do index
+      'tipoLogin': tipoVal,
+      'tipo_login': tipoVal,
       'empresa': empresa?.toJson(),
+      'empresa_id': empresa?.id,
       'parceiro': parceiro?.toJson(),
+      'parceiro_id': parceiro?.id,
       'aplicativo': aplicativo?.toJson(),
+      'aplicativo_id': aplicativo?.id,
       'trocarSenhaProximoLogin': trocarSenhaProximoLogin,
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
       'dhUpdatedAt': dhUpdatedAt?.toIso8601String(),
@@ -66,29 +75,50 @@ class Login {
       email = json['email']?.toString();
       senha = json['senha']?.toString();
       nome = json['nome']?.toString();
-      cpfCnpj = json['cpfCnpj']?.toString();
+      cpfCnpj = (json['cpfCnpj'] ?? json['cpf_cnpj'])?.toString();
       foto = json['foto']?.toString();
+      ativo = json['ativo'] == true || (json['ativo'] == null && (json['is_ativo'] == true || json['isAtivo'] == true || json['is_ativo'] == null));
 
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()
           : null;
 
-      if (json['tipoLogin'] != null) {
-        tipoLogin = LoginEnum.fromBackend(json['tipoLogin']);
+      final tipoRaw = json['tipoLogin'] ?? json['tipo_login'];
+      if (tipoRaw != null) {
+        tipoLogin = LoginEnum.fromBackend(tipoRaw);
       } else {
         tipoLogin = LoginEnum.APP_ABRACO;
       }
 
-      // CORRIGIDO: estava 'endereco' em vez de 'aplicativo'
-      aplicativo = json['aplicativo'] != null
-          ? Aplicativo.fromJson(json['aplicativo'])
-          : null;
+      if (json['aplicativo'] is Map) {
+        aplicativo = Aplicativo.fromJson(json['aplicativo']);
+      } else if (json['aplicativo'] is int) {
+        aplicativo = Aplicativo(id: json['aplicativo']);
+      } else if (json['id_aplicativo'] is int || json['aplicativo_id'] is int) {
+        aplicativo = Aplicativo(id: (json['id_aplicativo'] ?? json['aplicativo_id']) as int);
+      } else {
+        aplicativo = null;
+      }
 
-      empresa =
-          json['empresa'] != null ? Empresa.fromJson(json['empresa']) : null;
+      if (json['empresa'] is Map) {
+        empresa = Empresa.fromJson(json['empresa']);
+      } else if (json['empresa'] is int) {
+        empresa = Empresa(id: json['empresa']);
+      } else if (json['id_empresa'] is int || json['empresa_id'] is int) {
+        empresa = Empresa(id: (json['id_empresa'] ?? json['empresa_id']) as int);
+      } else {
+        empresa = null;
+      }
 
-      parceiro =
-          json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null;
+      if (json['parceiro'] is Map) {
+        parceiro = Parceiro.fromJson(json['parceiro']);
+      } else if (json['parceiro'] is int) {
+        parceiro = Parceiro(id: json['parceiro']);
+      } else if (json['id_parceiro'] is int || json['parceiro_id'] is int) {
+        parceiro = Parceiro(id: (json['id_parceiro'] ?? json['parceiro_id']) as int);
+      } else {
+        parceiro = null;
+      }
 
       trocarSenhaProximoLogin = json['trocarSenhaProximoLogin'] == true;
 

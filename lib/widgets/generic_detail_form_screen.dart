@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +8,7 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../services/network_caller.dart';
 import '../models/telas_model.dart';
+import '../models/login_model.dart' show LoginEnum;
 import '../services/tela_caller.dart';
 import '../customization/dynamic_grid_dynamic_screen.dart' as mobile_dyn;
 import '../customization/dynamic_grid_windows_screen.dart' as dyn;
@@ -254,6 +257,36 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (fn == 'tipoCliente' || fn == 'tipo_cliente') {
       return item['tipoCliente'] ?? item['tipo_cliente'];
     }
+    if (fn == 'cpf_cnpj' || fn == 'cpfCnpj') {
+      return item['cpf_cnpj'] ?? item['cpfCnpj'];
+    }
+    if (fn == 'tipo_login' || fn == 'tipoLogin') {
+      return item['tipo_login'] ?? item['tipoLogin'];
+    }
+    if (fn == 'ativo' || fn == 'is_ativo' || fn == 'isAtivo') {
+      return item['ativo'] ?? item['is_ativo'] ?? item['isAtivo'];
+    }
+    if (fn == 'parceiro' ||
+        fn == 'parceiro_id' ||
+        fn == 'parc_id' ||
+        fn == 'parceiroId') {
+      return item['parceiro'] ??
+          item['parceiro_id'] ??
+          item['parc_id'] ??
+          item['parceiroId'];
+    }
+    if (fn == 'aplicativo' ||
+        fn == 'aplicativo_id' ||
+        fn == 'app_id' ||
+        fn == 'aplicativoId') {
+      return item['aplicativo'] ??
+          item['aplicativo_id'] ??
+          item['app_id'] ??
+          item['aplicativoId'];
+    }
+    if (fn == 'foto' || fn == 'photo' || fn == 'avatar') {
+      return item['foto'] ?? item['photo'] ?? item['avatar'];
+    }
 
     // Endereço aninhado
     if (item['endereco'] is Map) {
@@ -279,13 +312,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       }
       final val = _resolveItemValue(item, fn);
       if (f.fieldType == TelaFieldType.boolean) {
-        _checkboxValues.putIfAbsent(fn, () => val == true);
+        if (fnL == 'ativo' || fnL == 'is_ativo' || fnL == 'isativo') {
+          _checkboxValues.putIfAbsent(fn, () => val == null ? true : (val == true || val == 1 || val == 'true' || val == '1'));
+        } else {
+          _checkboxValues.putIfAbsent(fn, () => val == true || val == 1 || val == 'true' || val == '1');
+        }
       } else if (f.fieldType == TelaFieldType.dropdown) {
         if (!_dropdownValues.containsKey(fn)) {
           if (val is Map) {
             _dropdownValues[fn] = val['id']?.toString() ??
                 val['value']?.toString() ??
-                val['codigo']?.toString();
+                val['codigo']?.toString() ??
+                val['name']?.toString();
           } else if (val != null) {
             _dropdownValues[fn] = val.toString();
           }
@@ -304,13 +342,21 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     // Init overrides
     for (final o in (widget.fieldOverrides ?? [])) {
       final fn = o.fieldName;
+      final fnL = fn.toLowerCase();
       final val = _resolveItemValue(item, fn);
-      if (o.fieldType == FieldType.dropdown) {
+      if (o.fieldType == FieldType.boolean) {
+        if (fnL == 'ativo' || fnL == 'is_ativo' || fnL == 'isativo') {
+          _checkboxValues.putIfAbsent(fn, () => val == null ? true : (val == true || val == 1 || val == 'true' || val == '1'));
+        } else {
+          _checkboxValues.putIfAbsent(fn, () => val == true || val == 1 || val == 'true' || val == '1');
+        }
+      } else if (o.fieldType == FieldType.dropdown) {
         if (!_dropdownValues.containsKey(fn) || _dropdownValues[fn] == null) {
           if (val is Map) {
             _dropdownValues[fn] = val['id']?.toString() ??
                 val['value']?.toString() ??
-                val['codigo']?.toString();
+                val['codigo']?.toString() ??
+                val['name']?.toString();
           } else if (val != null) {
             _dropdownValues[fn] = val.toString();
           }
@@ -366,6 +412,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
   FieldType _telaType(TelaFieldType tft, String fieldName) {
     final fn = fieldName.toLowerCase();
+    if (fn == 'foto' || fn == 'photo' || fn == 'avatar' || fn == 'imagem') {
+      return FieldType.file;
+    }
     if (fn == 'senha' || fn == 'password') return FieldType.password;
     if (fn == 'email') return FieldType.email;
     if (fn == 'cpf') return FieldType.cpf;
@@ -417,6 +466,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             key == 'tipo_conta' ||
             key == 'tipoCliente' ||
             key == 'tipo_cliente' ||
+            key == 'tipoLogin' ||
+            key == 'tipo_login' ||
             key == 'diaVencimentoMensalidade' ||
             key == 'dia_vencimento_mensalidade';
         if (isScalar) {
@@ -446,6 +497,18 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       }
       if (body.containsKey('regime') && !body.containsKey('regime_tributario')) {
         body['regime_tributario'] = body['regime'];
+      }
+      if (body.containsKey('cpf_cnpj') && !body.containsKey('cpfCnpj')) {
+        body['cpfCnpj'] = body['cpf_cnpj'];
+      }
+      if (body.containsKey('cpfCnpj') && !body.containsKey('cpf_cnpj')) {
+        body['cpf_cnpj'] = body['cpfCnpj'];
+      }
+      if (body.containsKey('tipo_login') && !body.containsKey('tipoLogin')) {
+        body['tipoLogin'] = body['tipo_login'];
+      }
+      if (body.containsKey('tipoLogin') && !body.containsKey('tipo_login')) {
+        body['tipo_login'] = body['tipoLogin'];
       }
 
       final isCreate = id == null;
@@ -665,16 +728,40 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (fnL == 'dh_created_at' ||
           fnL == 'dh_updated_at' ||
           fnL == 'dhcreatedat' ||
-          fnL == 'dhupdatedat') {
+          fnL == 'dhupdatedat' ||
+          fnL == 'password_reset_token' ||
+          fnL == 'passwordresettoken' ||
+          fnL == 'password_reset_expires' ||
+          fnL == 'passwordresetexpires' ||
+          fnL == 'must_change_password' ||
+          fnL == 'mustchangepassword' ||
+          fnL == 'aplicativo_empresa' ||
+          fnL == 'aplicativoempresa' ||
+          fnL == 'trocar_senha_proximo_login' ||
+          fnL == 'trocarsenhaproximologin') {
         continue;
       }
       if (fnL == 'id') continue;
 
-      // 1. Override explícito
-      if (_overrideMap.containsKey(f.fieldName)) {
-        if (!inserted.contains(f.fieldName)) {
-          effectiveFields.add(_EF.fromOverride(_overrideMap[f.fieldName]!));
+      // 1. Override explícito (por fieldName exato, camelCase ou snake_case)
+      final overrideKey = _overrideMap.containsKey(f.fieldName)
+          ? f.fieldName
+          : _overrideMap.containsKey(_toCamelCase(f.fieldName))
+              ? _toCamelCase(f.fieldName)
+              : _overrideMap.containsKey(_toSnakeCase(f.fieldName))
+                  ? _toSnakeCase(f.fieldName)
+                  : null;
+      if (overrideKey != null) {
+        final ov = _overrideMap[overrideKey]!;
+        if (!ov.isInForm) {
           inserted.add(f.fieldName);
+          inserted.add(overrideKey);
+          continue;
+        }
+        if (!inserted.contains(f.fieldName)) {
+          effectiveFields.add(_EF.fromOverride(ov));
+          inserted.add(f.fieldName);
+          inserted.add(overrideKey);
         }
         continue;
       }
@@ -684,9 +771,16 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         final base = fnL.endsWith('_id')
             ? fnL.substring(0, fnL.length - 3)
             : fnL.substring(3);
-        if (_overrideMap.containsKey(base) && !inserted.contains(base)) {
-          effectiveFields.add(_EF.fromOverride(_overrideMap[base]!));
-          inserted.add(base);
+        if (_overrideMap.containsKey(base)) {
+          final ov = _overrideMap[base]!;
+          if (!ov.isInForm) {
+            inserted.add(base);
+            continue;
+          }
+          if (!inserted.contains(base)) {
+            effectiveFields.add(_EF.fromOverride(ov));
+            inserted.add(base);
+          }
         }
         continue;
       }
@@ -709,6 +803,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           label: f.label,
           type: isMulti ? FieldType.multiselect : FieldType.dropdown,
           isRequired: f.isRequired,
+          enabled: f.enabled,
           vField:
               f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value'
                   ? f.dropdownValueField
@@ -730,6 +825,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
     // Overrides não inseridos
     for (final o in (widget.fieldOverrides ?? [])) {
+      if (!o.isInForm) continue;
       if (!inserted.contains(o.fieldName)) {
         effectiveFields.add(_EF.fromOverride(o));
         inserted.add(o.fieldName);
@@ -978,6 +1074,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         return _buildDate(ef);
       case FieldType.password:
         return _buildPassword(ef);
+      case FieldType.file:
+        return _buildPhotoField(ef);
       case FieldType.email:
         return _buildText(ef,
             keyboardType: TextInputType.emailAddress,
@@ -1008,16 +1106,24 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   InputDecoration _dec(String label,
-          {Widget? prefix, Widget? suffix, bool req = false}) =>
+          {Widget? prefix,
+          Widget? suffix,
+          bool req = false,
+          bool enabled = true}) =>
       InputDecoration(
         labelText: label + (req ? ' *' : ''),
         filled: true,
-        fillColor: const Color(0xFFFBFCFE),
-        labelStyle: const TextStyle(color: GridColors.textSecondary),
+        fillColor: enabled ? const Color(0xFFFBFCFE) : const Color(0xFFF1F3F5),
+        labelStyle: TextStyle(
+          color: enabled ? GridColors.textSecondary : Colors.grey.shade600,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide: const BorderSide(color: GridColors.divider)),
+        disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
             borderSide:
@@ -1043,7 +1149,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         keyboardType: keyboardType,
         inputFormatters: formatters,
         maxLines: maxLines ?? 1,
-        decoration: _dec(ef.label, prefix: prefix, req: ef.isRequired),
+        decoration: _dec(ef.label, prefix: prefix, req: ef.isRequired, enabled: ef.enabled),
         validator: ef.isRequired
             ? (v) => (v == null || v.trim().isEmpty)
                 ? '${ef.label} é obrigatório'
@@ -1051,6 +1157,140 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             : null,
       ),
     );
+  }
+
+  Widget _buildPhotoField(_EF ef) {
+    _controllers.putIfAbsent(ef.fieldName, () => TextEditingController());
+    final ctrl = _controllers[ef.fieldName]!;
+    final photoRaw = ctrl.text.trim();
+
+    ImageProvider? imageProvider;
+    if (photoRaw.isNotEmpty) {
+      try {
+        if (photoRaw.startsWith('http://') || photoRaw.startsWith('https://')) {
+          imageProvider = NetworkImage(photoRaw);
+        } else {
+          String cleanBase64 = photoRaw;
+          if (cleanBase64.contains(',')) {
+            cleanBase64 = cleanBase64.split(',').last;
+          }
+          cleanBase64 = cleanBase64.replaceAll(RegExp(r'\s+'), '');
+          final bytes = base64Decode(cleanBase64);
+          imageProvider = MemoryImage(bytes);
+        }
+      } catch (_) {
+        imageProvider = null;
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: ef.enabled ? const Color(0xFFFBFCFE) : const Color(0xFFF1F3F5),
+          border: Border.all(color: GridColors.divider),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: GridColors.primaryLight,
+              backgroundImage: imageProvider,
+              child: imageProvider == null
+                  ? const Icon(Icons.person, size: 34, color: GridColors.primary)
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    ef.label,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: GridColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    photoRaw.isNotEmpty
+                        ? 'Foto selecionada'
+                        : 'Nenhuma foto selecionada',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: photoRaw.isNotEmpty
+                          ? GridColors.success
+                          : GridColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (ef.enabled) ...[
+              OutlinedButton.icon(
+                onPressed: () => _pickPhoto(ef),
+                icon: const Icon(Icons.photo_camera_outlined, size: 16),
+                label: const Text('Alterar', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.primary,
+                  side: const BorderSide(color: GridColors.primary),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
+              if (photoRaw.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Remover foto',
+                  icon: const Icon(Icons.delete_outline,
+                      size: 20, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      ctrl.text = '';
+                    });
+                  },
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickPhoto(_EF ef) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        withData: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.bytes != null) {
+          final b64 = base64Encode(file.bytes!);
+          setState(() {
+            _controllers[ef.fieldName]?.text = b64;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao selecionar foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildPassword(_EF ef) {
@@ -1071,26 +1311,30 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       child: TextFormField(
         controller: _controllers[ef.fieldName],
         readOnly: true,
+        enabled: ef.enabled,
         decoration: _dec(ef.label,
             prefix: const Icon(Icons.calendar_today_outlined),
-            suffix: const Icon(Icons.arrow_drop_down),
-            req: ef.isRequired),
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate:
-                DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ??
-                    DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) {
-            _controllers[ef.fieldName]?.text =
-                '${picked.year.toString().padLeft(4, '0')}-'
-                '${picked.month.toString().padLeft(2, '0')}-'
-                '${picked.day.toString().padLeft(2, '0')}';
-          }
-        },
+            suffix: ef.enabled ? const Icon(Icons.arrow_drop_down) : null,
+            req: ef.isRequired,
+            enabled: ef.enabled),
+        onTap: ef.enabled
+            ? () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate:
+                      DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ??
+                          DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  _controllers[ef.fieldName]?.text =
+                      '${picked.year.toString().padLeft(4, '0')}-'
+                      '${picked.month.toString().padLeft(2, '0')}-'
+                      '${picked.day.toString().padLeft(2, '0')}';
+                }
+              }
+            : null,
       ),
     );
   }
@@ -1099,7 +1343,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         padding: const EdgeInsets.only(bottom: 16),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFFBFCFE),
+            color: ef.enabled ? const Color(0xFFFBFCFE) : const Color(0xFFF1F3F5),
             border: Border.all(color: GridColors.divider),
             borderRadius: BorderRadius.circular(6),
           ),
@@ -1107,8 +1351,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             title: Text(ef.label),
             value: _checkboxValues[ef.fieldName] ?? false,
             activeColor: GridColors.primary,
-            onChanged: (v) =>
-                setState(() => _checkboxValues[ef.fieldName] = v ?? false),
+            onChanged: ef.enabled
+                ? (v) =>
+                    setState(() => _checkboxValues[ef.fieldName] = v ?? false)
+                : null,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             controlAffinity: ListTileControlAffinity.leading,
           ),
@@ -1134,7 +1380,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: InputDecorator(
-                  decoration: _dec(ef.label),
+                  decoration: _dec(ef.label, enabled: ef.enabled),
                   child: const LinearProgressIndicator()));
         }
         final opts = snap.data ?? [];
@@ -1147,18 +1393,21 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   Widget _dropdownWidget(_EF ef, List<Map<String, dynamic>> options) {
     final vf = ef.vField;
     final df = ef.dField;
-    final seen = <dynamic>{};
-    final unique = options.where((o) {
-      final k = o[vf];
-      return k != null && seen.add(k);
-    }).toList();
     dynamic current = _dropdownValues[ef.fieldName];
+    String? fallbackLabel;
+
     if (current != null) {
       final currentStr = current.toString().trim();
-      if (!unique.any((o) => o[vf]?.toString() == currentStr)) {
+      final seen = <dynamic>{};
+      final uniqueInitial = options.where((o) {
+        final k = o[vf];
+        return k != null && seen.add(k.toString());
+      }).toList();
+
+      if (!uniqueInitial.any((o) => o[vf]?.toString() == currentStr)) {
         if (ef.fieldName == 'ambiente') {
           if (currentStr == '1' || currentStr.toUpperCase() == 'PRODUCAO') {
-            final match = unique.firstWhere(
+            final match = uniqueInitial.firstWhere(
                 (o) =>
                     o[vf]?.toString() == 'PRODUCAO' ||
                     o[vf]?.toString() == '1',
@@ -1166,24 +1415,57 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             if (match.isNotEmpty) current = match[vf];
           } else if (currentStr == '2' ||
               currentStr.toUpperCase() == 'HOMOLOGACAO') {
-            final match = unique.firstWhere(
+            final match = uniqueInitial.firstWhere(
                 (o) =>
                     o[vf]?.toString() == 'HOMOLOGACAO' ||
                     o[vf]?.toString() == '2',
                 orElse: () => {});
             if (match.isNotEmpty) current = match[vf];
           }
+        } else if (ef.fieldName == 'tipo_login' ||
+            ef.fieldName == 'tipoLogin') {
+          final match = uniqueInitial.firstWhere((o) {
+            final vStr = o[vf]?.toString().toUpperCase();
+            final dStr = o[df]?.toString().toUpperCase();
+            final cStr = currentStr.toUpperCase();
+            return vStr == cStr || dStr == cStr;
+          }, orElse: () => {});
+          if (match.isNotEmpty) {
+            current = match[vf];
+          }
         }
       }
-      if (!unique.any((o) => o[vf]?.toString() == current?.toString())) {
-        current = null;
+
+      final rawVal = widget.item[ef.fieldName] ??
+          widget.item[_toCamelCase(ef.fieldName)] ??
+          widget.item[_toSnakeCase(ef.fieldName)];
+      if (rawVal is Map) {
+        fallbackLabel = rawVal[df]?.toString() ??
+            rawVal['nome']?.toString() ??
+            rawVal['razaoSocial']?.toString() ??
+            rawVal['razao_social']?.toString() ??
+            rawVal['descricao']?.toString() ??
+            rawVal['description']?.toString();
+      } else if (ef.fieldName == 'tipo_login' ||
+          ef.fieldName == 'tipoLogin') {
+        final loginEnum = LoginEnum.fromBackend(current);
+        fallbackLabel = '${loginEnum.name} (${loginEnum.label})';
       }
     }
+
+    final unique = resolveDropdownOptions(
+      loadedOptions: options,
+      currentValue: current,
+      valueField: vf,
+      displayField: df,
+      fallbackLabel: fallbackLabel,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<dynamic>(
         value: current?.toString(),
-        decoration: _dec(ef.label, req: ef.isRequired),
+        decoration: _dec(ef.label, req: ef.isRequired, enabled: ef.enabled),
         isExpanded: true,
         menuMaxHeight: 300,
         items: unique
@@ -1223,7 +1505,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: InputDecorator(
-                  decoration: _dec(ef.label),
+                  decoration: _dec(ef.label, enabled: ef.enabled),
                   child: const LinearProgressIndicator()));
         }
         final opts = snap.data ?? [];
@@ -1237,26 +1519,38 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     final vf = ef.vField;
     final df = ef.dField;
     final selected = _multiValues[ef.fieldName] ?? [];
-    final chips = options
-        .where((o) => selected.any((s) => s.toString() == o[vf]?.toString()))
-        .map((o) => Container(
-              margin: const EdgeInsets.only(right: 4, bottom: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                  color: GridColors.secondary,
-                  borderRadius: BorderRadius.circular(12)),
-              child: Text(o[df]?.toString() ?? '',
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
-            ))
-        .toList();
+    final savedLabels = _multiValueLabels[ef.fieldName] ?? {};
+
+    final chips = selected.map((s) {
+      final sStr = s.toString();
+      final label = resolveMultiSelectChipLabel(
+        selectedId: sStr,
+        loadedOptions: options,
+        valueField: vf,
+        displayField: df,
+        savedLabels: savedLabels,
+      );
+      return Container(
+        margin: const EdgeInsets.only(right: 4, bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+            color: GridColors.secondary,
+            borderRadius: BorderRadius.circular(12)),
+        child: Text(label,
+            style: const TextStyle(color: Colors.white, fontSize: 12)),
+      );
+    }).toList();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => _openMultiDialog(ef, options, vf, df),
+        onTap: ef.enabled ? () => _openMultiDialog(ef, options, vf, df) : null,
         borderRadius: BorderRadius.circular(8),
         child: InputDecorator(
           decoration: _dec(ef.label,
-              suffix: const Icon(Icons.arrow_drop_down), req: ef.isRequired),
+              suffix: ef.enabled ? const Icon(Icons.arrow_drop_down) : null,
+              req: ef.isRequired,
+              enabled: ef.enabled),
           child: chips.isEmpty
               ? Text('Selecione...',
                   style: TextStyle(color: Colors.grey.shade500))
@@ -1268,14 +1562,26 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
   Future<void> _openMultiDialog(
       _EF ef, List<Map<String, dynamic>> options, String vf, String df) async {
+    final savedLabels = _multiValueLabels[ef.fieldName] ?? {};
+    final selected = _multiValues[ef.fieldName] ?? [];
+
+    final mergedOptions = List<Map<String, dynamic>>.from(options);
+    for (final s in selected) {
+      final sStr = s.toString();
+      if (!mergedOptions.any((o) => o[vf]?.toString() == sStr)) {
+        final label = savedLabels[sStr] ?? sStr;
+        mergedOptions.insert(0, {vf: sStr, df: label});
+      }
+    }
+
     final result = await showDialog<List<dynamic>>(
       context: context,
       builder: (ctx) => _MultiSelectDialog(
         title: ef.label,
-        options: options,
+        options: mergedOptions,
         valueField: vf,
         displayField: df,
-        initialSelected: List.from(_multiValues[ef.fieldName] ?? []),
+        initialSelected: List.from(selected),
       ),
     );
     if (result != null) setState(() => _multiValues[ef.fieldName] = result);
@@ -1802,4 +2108,33 @@ String resolveMultiSelectChipLabel({
   }
   return '#$selectedId';
 }
+
+/// Helper puro para resolução de opções de dropdown com preservação de item atual
+/// mesmo quando fora da página inicial carregada (evita current = null / sumir).
+List<Map<String, dynamic>> resolveDropdownOptions({
+  required List<Map<String, dynamic>> loadedOptions,
+  required dynamic currentValue,
+  required String valueField,
+  required String displayField,
+  String? fallbackLabel,
+}) {
+  final seen = <dynamic>{};
+  final unique = loadedOptions.where((o) {
+    final k = o[valueField];
+    return k != null && seen.add(k.toString());
+  }).toList();
+
+  if (currentValue != null) {
+    final currentStr = currentValue.toString().trim();
+    if (currentStr.isNotEmpty &&
+        !unique.any((o) => o[valueField]?.toString() == currentStr)) {
+      unique.insert(0, {
+        valueField: currentStr,
+        displayField: fallbackLabel ?? currentStr,
+      });
+    }
+  }
+  return unique;
+}
+
 
