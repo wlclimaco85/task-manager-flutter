@@ -1244,6 +1244,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       'chave': _chaveCtrl.text,
       'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
+      if (_serieId != null) 'serieId': int.tryParse(_serieId!) ?? _serieId,
       if (_statusVal != null) 'status': _statusVal,
       if (_ambienteVal != null) 'ambiente': _ambienteVal,
       'tipoOperacao': widget.item['tipoOperacao'] ?? 'SAIDA',
@@ -1283,6 +1284,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
               '${ApiLinks.baseUrl}/api/nfe/${widget.item['id']}', body);
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
+        try {
+          final b = jsonDecode(r.body);
+          if (b is Map<String, dynamic>) {
+            _aplicarCabecalhoAtualizado(b);
+          }
+        } catch (_) {}
         // Para nova NF-e: captura o ID retornado e carrega os itens/contas
         if (_isNovo) {
           try {
@@ -1862,7 +1869,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
             .map((o) => <String, dynamic>{
                   'id': o['id']?.toString() ?? '',
                   'nome':
-                      '${o['serie'] ?? ''} (atual: ${o['numeroAtual'] ?? 1})',
+                      '${o['serie'] ?? ''} (atual: ${o['numero_atual'] ?? o['numeroAtual'] ?? 1})',
                 })
             .toList(),
         valueField: 'id',
@@ -1873,9 +1880,15 @@ class _State extends State<NfeSankhyaDetailScreen> {
           if (v == null) return;
           final serie = opts.firstWhere((o) => o['id']?.toString() == v,
               orElse: () => {});
+          final fallbackNum = serie['numero_atual']?.toString() ??
+              serie['numeroAtual']?.toString() ??
+              '';
           setState(() {
             _serieId = v;
             _serieCtrl.text = serie['serie']?.toString() ?? '';
+            if (fallbackNum.isNotEmpty) {
+              _numeroCtrl.text = fallbackNum;
+            }
           });
           // Busca próximo número da série e preenche campo Número
           try {
@@ -1883,7 +1896,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
                 await TenantContext.get('${ApiLinks.baseUrl}/api/nfe-serie/$v');
             if (r.statusCode == 200) {
               final b = jsonDecode(r.body);
-              final num = b['data']?['numeroAtual']?.toString() ??
+              final num = b['data']?['numero_atual']?.toString() ??
+                  b['data']?['numeroAtual']?.toString() ??
+                  b['numero_atual']?.toString() ??
                   b['numeroAtual']?.toString() ??
                   '';
               if (num.isNotEmpty) setState(() => _numeroCtrl.text = num);
