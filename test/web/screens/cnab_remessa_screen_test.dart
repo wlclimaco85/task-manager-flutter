@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/web/screens/cnab_remessa_screen.dart';
 import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
+import 'package:task_manager_flutter/widgets/finance/cnab_config_screen.dart';
 
 void main() {
+  test('CnabConfigScreen monta filtros compatíveis com o endpoint de contas', () {
+    expect(
+      CnabConfigScreen.buildContasQuery(empresaId: 1, parceiroId: 1751),
+      'empresa=1&parceiro=1751',
+    );
+  });
+
   testWidgets('CnabRemessaScreen renders SearchableDropdownField for conta bancaria',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(

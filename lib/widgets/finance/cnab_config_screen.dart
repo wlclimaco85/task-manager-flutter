@@ -11,6 +11,20 @@ class CnabConfigScreen extends StatefulWidget {
 
   @override
   State<CnabConfigScreen> createState() => _CnabConfigScreenState();
+
+  /// O endpoint de contas usa os nomes de filtro do controller (`empresa` e
+  /// `parceiro`). Mantemos a montagem aqui para que as telas de detalhe não
+  /// repitam um contrato diferente.
+  static String buildContasQuery({int? empresaId, int? parceiroId}) {
+    final params = <String>[];
+    if (empresaId != null && empresaId > 0) {
+      params.add('empresa=$empresaId');
+    }
+    if (parceiroId != null && parceiroId > 0) {
+      params.add('parceiro=$parceiroId');
+    }
+    return params.join('&');
+  }
 }
 
 class _CnabConfigScreenState extends State<CnabConfigScreen> {
@@ -38,15 +52,13 @@ class _CnabConfigScreenState extends State<CnabConfigScreen> {
   Future<void> _loadContas() async {
     setState(() => _loading = true);
     try {
-      String query = '';
-      if (widget.empresaId != null && widget.empresaId! > 0) {
-        query = 'empresaId=${widget.empresaId}';
-      } else if (widget.parceiroId != null && widget.parceiroId! > 0) {
-        query = 'parceiroId=${widget.parceiroId}';
-      } else {
+      final query = CnabConfigScreen.buildContasQuery(
+        empresaId: widget.empresaId,
+        parceiroId: widget.parceiroId,
+      );
+      if (query.isEmpty) {
         return;
       }
-      
       final res = await NetworkCaller().getRequest('${ApiLinks.contasBancarias}?$query');
       if (res.isSuccess && res.body != null) {
         final data = res.body!['data'] ?? res.body!['content'] ?? res.body;

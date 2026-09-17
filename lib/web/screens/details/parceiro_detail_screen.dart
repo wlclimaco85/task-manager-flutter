@@ -250,8 +250,9 @@ class WebParceiroDetailScreen extends StatelessWidget {
         RelatedGridTab(
           title: 'POP/Mail',
           icon: Icons.mail_outline,
-          telaNome: 'parceiro_email_pop',
-          extraParams: {'parceiroId': id},
+          customWidget: const Center(
+            child: Text('Nenhuma configuração POP/Mail disponível para este parceiro.'),
+          ),
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
         RelatedGridTab(
@@ -299,7 +300,10 @@ class WebParceiroDetailScreen extends StatelessWidget {
           title: 'Configuração CNAB',
           icon: Icons.account_balance,
           customWidget: parceiroId > 0
-              ? CnabConfigScreen(parceiroId: parceiroId)
+              ? CnabConfigScreen(
+                  empresaId: empresaIdInt,
+                  parceiroId: parceiroId,
+                )
               : const Center(child: Text('ID do parceiro não disponível')),
         ),
       ],
