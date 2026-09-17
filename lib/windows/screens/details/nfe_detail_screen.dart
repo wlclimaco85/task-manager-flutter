@@ -110,6 +110,20 @@ class _State extends State<NfeSankhyaDetailScreen> {
     }
   }
 
+  // Bug real (2026-09-17, code review): chamada _aplicarCabecalhoAtualizado(b)
+  // ja existia (auto-alocacao de numero de serie) mas o metodo nunca foi
+  // definido nesta versao Windows -- so' existia na versao Web -- quebrando
+  // a compilacao inteira do app (undefined_method). Mesma implementacao da
+  // versao Web: aplica os dados retornados pelo backend (ex: numero real
+  // alocado) de volta no item e reinicializa o cabecalho.
+  void _aplicarCabecalhoAtualizado(Map<String, dynamic> dados) {
+    final data = dados['data'];
+    final atualizado = data is Map<String, dynamic> ? data : dados;
+    widget.item.addAll(atualizado);
+    if (!mounted) return;
+    setState(_initCabecalho);
+  }
+
   void _initCabecalho() {
     final i = widget.item;
     final login = AuthUtility.userInfo?.login;
