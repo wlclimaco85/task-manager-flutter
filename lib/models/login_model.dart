@@ -448,7 +448,9 @@ class Data {
     firstName = json['firstName'];
     lastName = json['lastName'];
     mobile = json['mobile'];
-    photo = json['photo'];
+    photo = (json['photo'] != null && json['photo'].toString().trim().isNotEmpty)
+        ? json['photo']
+        : json['foto'];
     codDadosPessoal = json['codDadosPessoal'] != null
         ? DadosPessoal.fromJson(json['codDadosPessoal'])
         : null;

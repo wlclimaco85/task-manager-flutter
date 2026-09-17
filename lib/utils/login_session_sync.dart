@@ -1,4 +1,6 @@
 import '../models/auth_utility.dart';
+import '../models/empresa_model.dart';
+import '../models/parceiro_model.dart';
 
 int? _asInt(dynamic value) {
   if (value is int) return value;
@@ -49,6 +51,20 @@ Future<void> sincronizarSessaoLoginAtualAposSalvar(
     loginTopLevel?.email = email;
     loginData?.email = email;
     sessao.data?.email = email;
+  }
+
+  final parcRaw = formData['parceiro'] ?? item?['parceiro'];
+  if (parcRaw is Map<String, dynamic>) {
+    final p = Parceiro.fromJson(parcRaw);
+    loginTopLevel?.parceiro = p;
+    loginData?.parceiro = p;
+  }
+
+  final empRaw = formData['empresa'] ?? item?['empresa'];
+  if (empRaw is Map<String, dynamic>) {
+    final e = Empresa.fromJson(empRaw);
+    loginTopLevel?.empresa = e;
+    loginData?.empresa = e;
   }
 
   await AuthUtility.setUserInfo(sessao);

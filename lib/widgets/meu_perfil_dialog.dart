@@ -213,7 +213,22 @@ class _MeuPerfilDialogState extends State<MeuPerfilDialog> {
               const SizedBox(height: 12),
               _campoSomenteLeitura('Email', login?.email ?? '-'),
               const SizedBox(height: 12),
-              _campoSomenteLeitura('Empresa', login?.empresa?.nome ?? '-'),
+              _campoSomenteLeitura(
+                login?.parceiro != null ? 'Parceiro' : 'Empresa',
+                login?.parceiro != null
+                    ? (login?.parceiro?.nome?.trim().isNotEmpty == true
+                        ? login!.parceiro!.nome!.trim()
+                        : (login?.parceiro?.razaoSocial?.trim().isNotEmpty == true
+                            ? login!.parceiro!.razaoSocial!.trim()
+                            : (login?.nome?.trim().isNotEmpty == true
+                                ? login!.nome!.trim()
+                                : '-')))
+                    : (login?.empresa?.nome?.trim().isNotEmpty == true
+                        ? login!.empresa!.nome!.trim()
+                        : (login?.empresa?.razaoSocial?.trim().isNotEmpty == true
+                            ? login!.empresa!.razaoSocial!.trim()
+                            : '-')),
+              ),
               const SizedBox(height: 12),
               _campoSomenteLeitura(
                   'Tipo de acesso', login?.tipoLogin?.label ?? '-'),

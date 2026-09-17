@@ -240,6 +240,7 @@ class _AppSidebarState extends State<AppSidebar> {
       if (login?.nome != null && login!.nome!.trim().isNotEmpty) {
         return login.nome!.trim();
       }
+      return '';
     }
     final empresa = login?.empresa;
     if (empresa != null) {

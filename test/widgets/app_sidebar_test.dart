@@ -92,6 +92,8 @@ void main() {
 
     testWidgets('recalcula grupo expandido quando a tela selecionada muda',
         (tester) async {
+      allowMenuIds(['contas_pagar', 'pdv_nfce', 'chat']);
+
       await tester.pumpWidget(buildSidebar(selectedIndex: 25));
       await tester.pump(const Duration(milliseconds: 250));
 
