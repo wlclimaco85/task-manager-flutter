@@ -66,13 +66,13 @@ class WindowsNfseSerieGridScreen extends StatelessWidget {
         isFilterable: true,
         isInForm: true,
         fieldType: FieldType.dropdown,
-        dropdownFutureBuilder: () async => [
-          {'id': 'NF-e', 'nome': 'NF-e'},
-          {'id': 'NFS-e', 'nome': 'NFS-e'},
-          {'id': 'NFC-e', 'nome': 'NFC-e'},
+        dropdownOptions: const [
+          {'value': 'NF-e', 'label': 'NF-e'},
+          {'value': 'NFS-e', 'label': 'NFS-e'},
+          {'value': 'NFC-e', 'label': 'NFC-e'},
         ],
-        dropdownValueField: 'id',
-        dropdownDisplayField: 'nome',
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
       ),
     ];
 
