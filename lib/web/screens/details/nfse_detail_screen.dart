@@ -63,6 +63,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String? _ambienteVal;
   String? _empresaId;
   String? _tomadorId;
+  String? _tomadorNome;
   String? _serieId;
   String? _cidadeId;
   DateTime? _dataEmissao;
@@ -118,6 +119,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 : (i['parceiro'] is Map
                     ? i['parceiro']['id']
                     : i['tomador'] ?? i['parceiro']))
+            ?.toString();
+    _tomadorNome = login?.parceiro?.nome ??
+        (i['tomador'] is Map
+            ? i['tomador']['nome']
+            : (i['parceiro'] is Map ? i['parceiro']['nome'] : null))
             ?.toString();
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
@@ -204,8 +210,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       // cadastrada nunca aparecia aqui porque vinha da tabela errada.
       _loadList(
           '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(() =>
-              _series = d.where((s) => s['tipo'] == 'NFS-e').toList())),
+          (d) => setState(() => _series = d.where((s) {
+                final tipo = s['tipo']?.toString().trim();
+                final normalizado = tipo?.replaceAll('_', '-').toUpperCase();
+                return normalizado == 'NFS-E' || normalizado == 'NFSE';
+              }).toList())),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
       // carregar tudo e filtrar no cliente truncava a lista e a busca por
@@ -665,8 +674,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   ? _inpDisabledText('Empresa', _empresaNome!)
                   : _ddObj('Empresa', _empresaId, _empresas, 'nome',
                       (v) => setState(() => _empresaId = v)),
-              _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
-                  (v) => setState(() => _tomadorId = v)),
+              TenantContext.hasParceiro
+                  ? _inpDisabledText('Tomador / Parceiro',
+                      _tomadorNome ?? 'Parceiro $_tomadorId')
+                  : _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
+                      (v) => setState(() => _tomadorId = v)),
               _ddSerie(),
               _inp('Número', _numeroCtrl),
               _dateField('Data Emissão', _dataEmissao,

@@ -53,11 +53,13 @@ class NfseCaller {
   Future<Map<String, dynamic>> cancelar({
     required String numero,
     required String motivo,
+    int? nfseId,
   }) async {
     final url = ApiLinks.nfseCancelar;
     final body = {
       'numero': numero,
       'motivo': motivo,
+      if (nfseId != null) 'nfseId': nfseId,
     };
     final response = await TenantContext.post(url, body);
     if (response.statusCode == 200 || response.statusCode == 204) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
@@ -45,6 +46,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   int _tab = 0;
   bool _itensGrid = true;
   int _selItem = 0;
+  bool _enviando = false;
 
   List<Map<String, dynamic>> _itens = [];
 
@@ -70,6 +72,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   DateTime? _dataCompetencia;
 
   String? _empresaNome;
+  String? _tomadorNome;
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfseId => widget.item['id']?.toString() ?? '';
@@ -112,12 +115,27 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
-    _tomadorId = (i['tomador'] is Map
-            ? i['tomador']['id']
-            : (i['parceiro'] is Map
-                ? i['parceiro']['id']
-                : i['tomador'] ?? i['parceiro']))
-        ?.toString();
+    // Tomador: bug real (2026-09-17, ver bugs.md) -- quando o login logado
+    // tem parceiroId (sessao/localStorage), o Tomador DEVE ser o proprio
+    // parceiro (disabled, mesmo padrao de "Empresa" acima e de todas as
+    // outras telas), nunca um dropdown aberto pra buscar OUTRO parceiro:
+    // /api/parceiro auto-restringe (parceiroIdLivro=proprio) quem nao e'
+    // master/contabilidade, entao a busca sempre voltava "0 resultado(s)"
+    // pra um Cliente -- nao era so' falta de disabled, a lista realmente
+    // vinha vazia do backend por isolamento de tenant (anti-IDOR).
+    final sessParcId = login?.parceiro?.id?.toString();
+    _tomadorId = sessParcId ??
+        (i['tomador'] is Map
+                ? i['tomador']['id']
+                : (i['parceiro'] is Map
+                    ? i['parceiro']['id']
+                    : i['tomador'] ?? i['parceiro']))
+            ?.toString();
+    _tomadorNome = login?.parceiro?.nome ??
+        (i['tomador'] is Map
+            ? i['tomador']['nome']
+            : (i['parceiro'] is Map ? i['parceiro']['nome'] : null))
+            ?.toString();
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
     if (i['serie'] is Map) {
@@ -347,11 +365,95 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
+  /// Emite de verdade a NFSe via Sistema Nacional NFS-e (SefinNacional) --
+  /// bug real (2026-09-17, ver bugs.md): antes disso o botao nem existia,
+  /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
+  /// transmitir nada de verdade.
+  Future<void> _enviarNfse() async {
+    setState(() => _enviando = true);
+    try {
+      final r = await TenantContext.post(
+          ApiLinks.emitirNfseNacional(_nfseId), {});
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        final b = jsonDecode(r.body);
+        final data = b is Map ? (b['data'] ?? b) : null;
+        final status = data is Map ? data['status']?.toString() : null;
+        if (status == 'AUTORIZADA') {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
+              backgroundColor: _green));
+          setState(() => widget.item['status'] = status);
+        } else {
+          final erro = data is Map ? data['mensagemErroEmissao'] : null;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('NFSe rejeitada: ${erro ?? r.body}'),
+              backgroundColor: _red));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
+    }
+  }
+
+  /// Baixa o PDF (DANFSe simplificado) -- so' disponivel depois que a
+  /// NFSe foi emitida/autorizada de verdade (usa o XML real persistido).
+  Future<void> _baixarPdf() async {
+    try {
+      final r = await TenantContext.get(ApiLinks.danfseNfse(_nfseId));
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        await FileSaver.instance.saveFile(
+          name: 'danfse_$_nfseId',
+          bytes: r.bodyBytes,
+          fileExtension: 'pdf',
+          mimeType: MimeType.pdf,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
   Future<void> _salvarItem(Map<String, dynamic> item) async {
+    // Bug real (2026-09-17, ver bugs.md): salvar item numa NFSe nova (ainda
+    // sem id) mandava nfseId=0 pro backend (int.tryParse('') ?? 0 em
+    // _novoItem), que nao existe -- o backend rejeitava e o item nunca
+    // aparecia salvo. O cabecalho precisa existir antes do item -- salva
+    // o cabecalho primeiro se ainda for uma NFSe nova.
+    if (_isNovo) {
+      await _salvarCabecalho();
+      if (_isNovo) {
+        // _salvarCabecalho ja mostra o erro real (SnackBar) se falhar --
+        // sem id novo, nao ha' como vincular o item, aborta aqui.
+        return;
+      }
+    }
     final isNew = item['id'] == null;
     final body = <String, dynamic>{
       if (!isNew) 'id': item['id'],
-      'nfseId': item['nfse_id'] ?? int.tryParse(_nfseId),
+      // Preferir sempre o id real do cabecalho (_nfseId) -- item['nfse_id']
+      // pode estar com o placeholder 0 gravado por _novoItem() quando o
+      // item foi criado antes do cabecalho existir (nunca confiar nesse
+      // valor obsoleto depois que o cabecalho ja foi salvo de verdade).
+      'nfseId': int.tryParse(_nfseId) ?? item['nfse_id'],
       if (item['produto'] != null) 'produto': item['produto'],
       'descricao': item['descricao'] ?? '',
       'quantidade': double.tryParse((item['quantidade'] ?? '').toString()),
@@ -397,6 +499,27 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
+  double _num(dynamic value) =>
+      double.tryParse((value ?? '').toString().replaceAll(',', '.')) ?? 0.0;
+
+  String _fmt(double value) => value.toStringAsFixed(2);
+
+  /// Recalcula valorTotal (quantidade x valor unitario) e valorIss (valorTotal
+  /// x aliquotaIss / 100) em memoria -- bug real (2026-09-17, ver bugs.md):
+  /// essa conta ja existia na versao Web, mas nunca foi replicada aqui.
+  void _recalcularServicoItem(Map<String, dynamic> item) {
+    final quantidade = _num(item['quantidade']);
+    final unitario = _num(item['valorUnitario'] ?? item['valor_unitario']);
+    final total = quantidade * unitario;
+    item['valorTotal'] = _fmt(total);
+    item['valor_total'] = item['valorTotal'];
+
+    final aliquotaIss = _num(item['aliquotaIss'] ?? item['aliquota_iss']);
+    final valorIss = total * aliquotaIss / 100;
+    item['valorIss'] = _fmt(valorIss);
+    item['valor_iss'] = item['valorIss'];
+  }
+
   void _novoItem() => setState(() {
         _itens.add({'nfse_id': int.tryParse(_nfseId) ?? 0});
         _selItem = _itens.length - 1;
@@ -421,6 +544,32 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             label: const Text('Salvar',
                 style: TextStyle(color: Colors.white, fontSize: 12)),
           ),
+          // Bug real (2026-09-17, ver bugs.md): so' existia o botao "Salvar"
+          // no cabecalho nesta versao Windows -- Enviar/Baixar PDF ja
+          // tinham sido implementados na versao Web na mesma sessao, mas
+          // nunca replicados aqui (cada plataforma tem seu proprio arquivo
+          // de tela). Backend (/emitir-nacional + /danfse) e' o mesmo.
+          if (!_isNovo)
+            TextButton.icon(
+              onPressed: _enviando ? null : _enviarNfse,
+              icon: _enviando
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send, size: 16, color: Colors.white),
+              label: const Text('Enviar',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (!_isNovo)
+            TextButton.icon(
+              onPressed: _baixarPdf,
+              icon: const Icon(Icons.picture_as_pdf,
+                  size: 16, color: Colors.white),
+              label: const Text('Baixar PDF',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
           const SizedBox(width: 8),
         ],
       ),
@@ -473,8 +622,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             ? _inpDisabledText('Empresa', _empresaNome!)
             : _ddObj('Empresa', _empresaId, _empresas, 'nome',
                 (v) => setState(() => _empresaId = v)),
-        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
-            (v) => setState(() => _tomadorId = v)),
+        hasSession && _tomadorNome != null
+            ? _inpDisabledText('Tomador / Parceiro', _tomadorNome!)
+            : _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
+                (v) => setState(() => _tomadorId = v)),
         _ddSerie(),
         _inp('Numero', _numeroCtrl),
         _dateField('Data Emissao', _dataEmissao,
@@ -842,9 +993,34 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           });
         }),
         _iInp('Descrição', item, 'descricao'),
-        _iInp('Quantidade', item, 'quantidade'),
-        _iInp('Vl. Unitário', item, 'valorUnitario'),
+        _iInp('Quantidade', item, 'quantidade',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
+        _iInp('Vl. Unitário', item, 'valorUnitario',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
         _iInp('Vl. Total', item, 'valorTotal'),
+        // Bug real (2026-09-17, ver bugs.md): os campos de imposto do item
+        // (aliquota, base de calculo/valor ISS, codigo de tributacao,
+        // retencao) existiam no backend (NfseItem) e ate' eram calculados
+        // em memoria (na versao Web), mas nunca apareciam como campo
+        // visivel/editavel aqui na versao Windows -- a aba "Impostos"
+        // sempre mostrava tudo em branco.
+        _iInp('Alíquota ISS (%)', item, 'aliquotaIss',
+            onChanged: (_) => setState(() => _recalcularServicoItem(item))),
+        _iInpSomenteLeitura('Base de Cálculo (ISS)', item, 'valorTotal'),
+        _iInpSomenteLeitura('Valor ISS', item, 'valorIss'),
+        _iInp('Cód. Tributação Municipal', item, 'codigoTributacaoMunicipal'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            dense: true,
+            title: const Text('ISS Retido pelo Tomador',
+                style: TextStyle(fontSize: 12, color: _dark)),
+            value: item['issRetido'] == true || item['iss_retido'] == true,
+            onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
             width: double.infinity,
