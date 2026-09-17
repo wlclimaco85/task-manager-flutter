@@ -191,9 +191,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
       _loadProdutosServico(empId),
+      // Bug real (2026-09-17, ver bugs.md): esta tela buscava serie em
+      // /api/nfse-serie (tabela nfse_serie, legada/nao usada -- so tem
+      // registros "teste"), enquanto a tela onde o usuario de fato cadastra
+      // serie de NFS-e ("NF-e Serie") grava em /api/nfe-serie (tabela
+      // nfe_serie, com campo "tipo" distinguindo NF-e de NFS-e). A serie
+      // cadastrada nunca aparecia aqui porque vinha da tabela errada.
       _loadList(
-          '${ApiLinks.baseUrl}/api/nfse-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(() => _series = d)),
+          '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() =>
+              _series = d.where((s) => s['tipo'] == 'NFS-e').toList())),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
       // carregar tudo e filtrar no cliente truncava a lista e a busca por
