@@ -6,6 +6,7 @@ import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/nfse_tax_calculator.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
@@ -323,10 +324,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         final b = jsonDecode(r.body);
         final d =
             b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _itens = (d as List? ?? [])
+        final itens = (d as List? ?? [])
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
-            .toList());
+            .toList();
+        for (final item in itens) {
+          _normalizarServicoItem(item);
+        }
+        setState(() => _itens = itens);
       }
     } catch (_) {}
   }
@@ -624,20 +629,55 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   String _fmt(double value) => value.toStringAsFixed(2);
 
+  void _normalizarServicoItem(Map<String, dynamic> item) {
+    item['aliquotaIss'] ??= item['aliquota_iss'];
+    item['valorIss'] ??= item['valor_iss'];
+    item['valorTotal'] ??= item['valor_total'];
+    item['codigoTributacaoMunicipal'] ??= item['codigo_tributacao_municipal'];
+    item['issRetido'] ??= item['iss_retido'] ?? false;
+    _recalcularServicoItem(item);
+  }
+
   /// Recalcula valorTotal (quantidade x valor unitario) e valorIss (valorTotal
   /// x aliquotaIss / 100) em memoria -- bug real (2026-09-17, ver bugs.md):
   /// essa conta ja existia na versao Web, mas nunca foi replicada aqui.
   void _recalcularServicoItem(Map<String, dynamic> item) {
     final quantidade = _num(item['quantidade']);
     final unitario = _num(item['valorUnitario'] ?? item['valor_unitario']);
-    final total = quantidade * unitario;
+    final result = NfseTaxCalculator.calculate(
+      quantidade: quantidade,
+      valorUnitario: unitario,
+      aliquotaIss: _num(item['aliquotaIss'] ?? item['aliquota_iss']),
+    );
+    final total = result.valorTotal;
     item['valorTotal'] = _fmt(total);
     item['valor_total'] = item['valorTotal'];
 
-    final aliquotaIss = _num(item['aliquotaIss'] ?? item['aliquota_iss']);
-    final valorIss = total * aliquotaIss / 100;
-    item['valorIss'] = _fmt(valorIss);
+    item['valorIss'] = _fmt(result.valorIss);
     item['valor_iss'] = item['valorIss'];
+  }
+
+  Future<void> _carregarImpostosServico(
+      Map<String, dynamic> item, String produtoId) async {
+    try {
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$produtoId');
+      if (r.statusCode != 200) return;
+      final raw = jsonDecode(r.body);
+      if (raw is! List || raw.isEmpty) return;
+      final imp = Map<String, dynamic>.from(raw.first as Map);
+      if (!mounted) return;
+      setState(() {
+        item['aliquotaIss'] =
+            (imp['aliqIss'] ?? imp['aliquotaIss'] ?? item['aliquotaIss'])
+                ?.toString();
+        item['codigoTributacaoMunicipal'] = (imp['codTribIss'] ??
+                imp['codigoTributacaoMunicipal'] ??
+                item['codigoTributacaoMunicipal'])
+            ?.toString();
+        _recalcularServicoItem(item);
+      });
+    } catch (_) {}
   }
 
   void _novoItem() => setState(() {
@@ -1116,6 +1156,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   prod['codigoTributacaoMunicipal']?.toString() ?? '';
             }
             _recalcularServicoItem(item);
+            if (v != null && v.isNotEmpty) {
+              _carregarImpostosServico(item, v);
+            }
           });
         }),
         _iInp('Descrição', item, 'descricao'),
@@ -1150,6 +1193,23 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 style: TextStyle(fontSize: 12, color: _dark)),
             value: item['issRetido'] == true || item['iss_retido'] == true,
             onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => setState(() => _recalcularServicoItem(item)),
+              icon: const Icon(Icons.calculate_outlined, size: 14),
+              label: const Text('Calcular Impostos',
+                  style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _green,
+                side: const BorderSide(color: _green),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -1376,44 +1436,58 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             style: TextStyle(color: _grey, fontSize: 12)),
       );
     }
-    return ListView.separated(
+    final baseIss = _itens.fold<double>(0,
+        (sum, item) => sum + _num(item['valorTotal'] ?? item['valor_total']));
+    final totalIss = _itens.fold<double>(
+        0, (sum, item) => sum + _num(item['valorIss'] ?? item['valor_iss']));
+    return ListView(
       padding: const EdgeInsets.all(10),
-      itemCount: _itens.length,
-      separatorBuilder: (_, __) => const Divider(height: 16),
-      itemBuilder: (_, i) {
-        final item = _itens[i];
-        final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
-        final aliquota = item['aliquotaIss']?.toString() ??
-            item['aliquota_iss']?.toString() ??
-            '-';
-        final valorIss = item['valorIss']?.toString() ??
-            item['valor_iss']?.toString() ??
-            '-';
-        final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
-            item['codigo_tributacao_municipal']?.toString() ??
-            '-';
-        final retido = item['issRetido'] == true || item['iss_retido'] == true;
-        return Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: _bord)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(descricao,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 16, runSpacing: 6, children: [
-              _impInfo('Alíquota ISS', '$aliquota%'),
-              _impInfo('Valor ISS', valorIss),
-              _impInfo('Cód. Tributação Municipal', codTrib),
-              _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
-            ]),
-          ]),
-        );
-      },
+      children: [
+        Wrap(spacing: 10, runSpacing: 8, children: [
+          _card('Base ISS', _fmt(baseIss)),
+          _card('ISS da nota', _fmt(totalIss)),
+        ]),
+        const SizedBox(height: 10),
+        ..._itens.asMap().entries.map((entry) {
+          final i = entry.key;
+          final item = _itens[i];
+          final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
+          final aliquota = item['aliquotaIss']?.toString() ??
+              item['aliquota_iss']?.toString() ??
+              '-';
+          final valorIss = item['valorIss']?.toString() ??
+              item['valor_iss']?.toString() ??
+              '-';
+          final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
+              item['codigo_tributacao_municipal']?.toString() ??
+              '-';
+          final retido =
+              item['issRetido'] == true || item['iss_retido'] == true;
+          return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: _bord)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(descricao,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Wrap(spacing: 16, runSpacing: 6, children: [
+                        _impInfo('Alíquota ISS', '$aliquota%'),
+                        _impInfo('Valor ISS', valorIss),
+                        _impInfo('Cód. Tributação Municipal', codTrib),
+                        _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
+                      ]),
+                    ]),
+              ));
+        }),
+      ],
     );
   }
 
