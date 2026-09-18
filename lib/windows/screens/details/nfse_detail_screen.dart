@@ -260,7 +260,34 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
+    await _carregarDadosTomador();
     _garantirCidadeSelecionadaNaLista();
+  }
+
+  Future<void> _carregarDadosTomador() async {
+    if (_tomadorId == null || _tomadorId!.isEmpty) return;
+    try {
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/parceiro/$_tomadorId');
+      if (r.statusCode != 200) return;
+      final raw = jsonDecode(r.body);
+      final data = raw is Map && raw['data'] is Map
+          ? Map<String, dynamic>.from(raw['data'] as Map)
+          : raw is Map
+              ? Map<String, dynamic>.from(raw)
+              : null;
+      if (data == null || !mounted) return;
+      setState(() {
+        if ((_ambienteVal == null || _ambienteVal!.isEmpty) &&
+            data['ambiente'] != null) {
+          _ambienteVal = data['ambiente'].toString();
+        }
+        if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
+            data['nome'] != null) {
+          _tomadorNome = data['nome'].toString();
+        }
+      });
+    } catch (_) {}
   }
 
   /// Garante que a cidade já selecionada (ex: ao editar uma NFSe existente)
@@ -350,7 +377,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   // ── Salvar cabeçalho ──────────────────────────────────────────────────────
 
-  Future<void> _salvarCabecalho({bool showFeedback = true}) async {
+  Future<bool> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
       if (!_isNovo) 'id': widget.item['id'],
       'numero': _numeroCtrl.text,
@@ -375,7 +402,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfse', body)
           : await TenantContext.put(
               '${ApiLinks.baseUrl}/api/nfse/${widget.item['id']}', body);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (_isNovo) {
           try {
@@ -393,6 +420,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
         }
+        return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ${r.statusCode}: ${r.body}'),
@@ -403,11 +431,26 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
+    return false;
   }
 
   Future<void> _confirmarNfse() async {
-    await _salvarCabecalho(showFeedback: false);
-    if (!mounted || _isNovo) return;
+    if (_itens.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Adicione e salve ao menos um servico antes de confirmar.'),
+          backgroundColor: _red));
+      return;
+    }
+    final salvo = await _salvarCabecalho(showFeedback: false);
+    if (!mounted || !salvo || _isNovo) {
+      if (mounted && _isNovo) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Salve o cabecalho antes de confirmar.'),
+            backgroundColor: _red));
+      }
+      return;
+    }
     try {
       final r = await TenantContext.post(ApiLinks.confirmarNfse(_nfseId), {});
       if (!mounted) return;
@@ -837,7 +880,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             (d) => setState(() => _dataCompetencia = d)),
         _ddCidade(),
         _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
-        _inp('Observacao', _observacaoCtrl),
+        _textArea('Observacao', _observacaoCtrl),
         _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
         TenantContext.hasParceiro
             ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
@@ -909,6 +952,23 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(color: _green, width: 1.5)),
             isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          ),
+        ),
+      );
+
+  Widget _textArea(String label, TextEditingController ctrl) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TextFormField(
+          controller: ctrl,
+          minLines: 3,
+          maxLines: 5,
+          style: const TextStyle(fontSize: 12, color: _dark),
+          decoration: InputDecoration(
+            labelText: label,
+            isDense: true,
+            border: const OutlineInputBorder(),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),

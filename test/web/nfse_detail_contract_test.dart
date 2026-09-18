@@ -22,6 +22,11 @@ void main() {
     expect(source, contains('municipio: _municipioCtrl.text.trim()'));
     expect(source, isNot(contains('ApiLinks.emitirNfseNacional')));
     expect(source, contains("'observacao': _observacaoCtrl.text"));
+    expect(source, contains('_textArea(\'Observação\', _observacaoCtrl)'));
+    expect(source, contains('_carregarDadosTomador()'));
+    expect(source,
+        contains('Adicione e salve ao menos um servico antes de confirmar.'));
+    expect(source, contains('final salvo = await _salvarCabecalho'));
     expect(source, contains("_statusVal = _isNovo ? 'RASCUNHO'"));
     expect(source, contains('DateTime.now()'));
   });
