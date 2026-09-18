@@ -83,55 +83,40 @@ class MenuGroup {
 class MenuConfig {
   MenuConfig._();
 
-  // Ordem por uso: Comercial -> NFS-e/Fiscal -> Financeiro -> Pessoal ->
-  // Suporte/Comunicação -> Contábil -> Produtos -> Configurações -> Sistema
-  // -> grupos só-escritório (Sistema, App Academia, Bolsa de Valores).
+  // Ordem por uso: Comercial (inclui o que e' comum a NF-e/NFS-e/NFC-e,
+  // como Série e Dashboard Fiscal) -> NF-e -> NFS-e -> NFC-e -> Financeiro
+  // -> Pessoal -> Suporte/Comunicação -> Contábil -> Produtos ->
+  // Configurações -> Sistema -> grupos só-escritório (Sistema, App
+  // Academia, Bolsa de Valores). Cada documento fiscal tem seu proprio
+  // menu dedicado desde 2026-09-18 (pedido do usuario: o menu antigo
+  // "Fiscal / NFC-e" misturava NF-e/NFS-e/NFC-e, dificultando achar telas).
   static const List<MenuGroup> groups = [
     MenuGroup(
       id: 'comercial',
       label: 'Comercial',
       icon: FontAwesomeIcons.briefcase,
       items: [
-        MenuItem(
-            id: 'nfe_entrada',
-            label: 'NF-e Entrada',
-            icon: FontAwesomeIcons.fileImport,
-            screenIndex: 47),
-        MenuItem(
-            id: 'nfe_finalidade',
-            label: 'NF-e Finalidade',
-            icon: FontAwesomeIcons.fileCircleCheck,
-            screenIndex: 54),
-        MenuItem(
-            id: 'nfe_import_csv',
-            label: 'Importar NF-e CSV',
-            icon: FontAwesomeIcons.fileCsv,
-            screenIndex: 71),
-        MenuItem(
-            id: 'nfe_import_xml',
-            label: 'Importar XML NF-e',
-            icon: FontAwesomeIcons.fileCode,
-            screenIndex: 86),
-        MenuItem(
-            id: 'nfse_import_xml',
-            label: 'Importar XML NFS-e',
-            icon: FontAwesomeIcons.fileInvoice,
-            screenIndex: 204),
-        MenuItem(
-            id: 'nfe_saida',
-            label: 'NF-e Saída',
-            icon: FontAwesomeIcons.fileExport,
-            screenIndex: 48),
+        // Série e Dashboard fiscal ficam aqui por serem conceitos COMUNS
+        // entre NF-e/NFS-e/NFC-e (cada documento tem sua propria numeracao/
+        // série, mas a gestao de série e o dashboard consolidado sao vistos
+        // como administrativos, nao exclusivos de um tipo de documento --
+        // pedido explicito do usuario pra desembaralhar o menu Comercial,
+        // que antes misturava NF-e/NFS-e/NFC-e junto com vendas/compras).
         MenuItem(
             id: 'nfe_serie',
             label: 'NF-e Série',
             icon: FontAwesomeIcons.hashtag,
             screenIndex: 55),
         MenuItem(
-            id: 'nfe_tipo_operacao',
-            label: 'NF-e Tipo Operação',
-            icon: FontAwesomeIcons.arrowsLeftRight,
-            screenIndex: 56),
+            id: 'nfse_serie',
+            label: 'Séries NFS-e',
+            icon: FontAwesomeIcons.hashtag,
+            screenIndex: 203),
+        MenuItem(
+            id: 'dashboard_fiscal',
+            label: 'Dashboard Fiscal',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 146),
         MenuItem(
             id: 'planos',
             label: 'Planos',
@@ -187,28 +172,48 @@ class MenuConfig {
             label: 'Dashboard Comercial',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 145),
-        MenuItem(
-            id: 'nfce_grid',
-            label: 'NFC-e (Cupons)',
-            icon: FontAwesomeIcons.receipt,
-            screenIndex: 187),
       ],
     ),
+    // Pedido explicito do usuario (2026-09-18): o menu "Comercial"/"Fiscal
+    // NFC-e" misturava NF-e, NFS-e e NFC-e juntos, confuso pra achar cada
+    // tela -- agora cada documento fiscal tem seu proprio menu dedicado.
+    // O que e' comum aos tres (série, dashboard) ficou no grupo Comercial
+    // acima.
     MenuGroup(
-      id: 'fiscal',
-      label: 'Fiscal / NFC-e',
-      icon: FontAwesomeIcons.cashRegister,
+      id: 'nfe',
+      label: 'NF-e',
+      icon: FontAwesomeIcons.fileInvoiceDollar,
       items: [
         MenuItem(
-            id: 'pdv_nfce',
-            label: 'PDV / NFC-e',
-            icon: FontAwesomeIcons.cashRegister,
-            screenIndex: 80),
+            id: 'nfe_entrada',
+            label: 'NF-e Entrada',
+            icon: FontAwesomeIcons.fileImport,
+            screenIndex: 47),
         MenuItem(
-            id: 'config_fiscal',
-            label: 'Config. Fiscal',
-            icon: FontAwesomeIcons.gear,
-            screenIndex: 81),
+            id: 'nfe_saida',
+            label: 'NF-e Saída',
+            icon: FontAwesomeIcons.fileExport,
+            screenIndex: 48),
+        MenuItem(
+            id: 'nfe_finalidade',
+            label: 'NF-e Finalidade',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 54),
+        MenuItem(
+            id: 'nfe_tipo_operacao',
+            label: 'NF-e Tipo Operação',
+            icon: FontAwesomeIcons.arrowsLeftRight,
+            screenIndex: 56),
+        MenuItem(
+            id: 'nfe_import_csv',
+            label: 'Importar NF-e CSV',
+            icon: FontAwesomeIcons.fileCsv,
+            screenIndex: 71),
+        MenuItem(
+            id: 'nfe_import_xml',
+            label: 'Importar XML NF-e',
+            icon: FontAwesomeIcons.fileCode,
+            screenIndex: 86),
         MenuItem(
             id: 'consulta_dfe',
             label: 'Consulta DF-e',
@@ -220,37 +225,54 @@ class MenuConfig {
             icon: FontAwesomeIcons.fileCircleCheck,
             screenIndex: 98),
         MenuItem(
-            id: 'nfse',
-            label: 'NFSe',
-            icon: FontAwesomeIcons.fileInvoice,
-            screenIndex: 99),
-        // Bug de producao (2026-09-16, ver bugs.md): nfse_serie ja existia
-        // no backend (entity/repository/controller/tela_fields, tela
-        // dinamica id 6347, mesma estrutura de 'nfe_serie') e ja tinha tela
-        // propria no Mobile (NfseSerieScreen), mas nunca teve tela no
-        // Web/Windows -- o dropdown "Serie" ao emitir NFSe busca em
-        // /api/nfse-serie (tabela separada de nfe_serie), sempre vazio
-        // porque nao havia onde cadastrar essa serie fora do mobile.
-        MenuItem(
-            id: 'nfse_serie',
-            label: 'Séries NFS-e',
-            icon: FontAwesomeIcons.hashtag,
-            screenIndex: 203),
-        MenuItem(
             id: 'cancelamento_cce',
             label: 'Cancelamento e CC-e',
             icon: FontAwesomeIcons.filePen,
             screenIndex: 111),
         MenuItem(
-            id: 'dashboard_fiscal',
-            label: 'Dashboard Fiscal',
-            icon: FontAwesomeIcons.chartPie,
-            screenIndex: 146),
-        MenuItem(
             id: 'agendamento_nfe',
             label: 'Agendar NFe Recorrente',
             icon: FontAwesomeIcons.calendarPlus,
             screenIndex: 183),
+      ],
+    ),
+    MenuGroup(
+      id: 'nfse',
+      label: 'NFS-e',
+      icon: FontAwesomeIcons.fileInvoice,
+      items: [
+        MenuItem(
+            id: 'nfse',
+            label: 'NFSe',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 99),
+        MenuItem(
+            id: 'nfse_import_xml',
+            label: 'Importar XML NFS-e',
+            icon: FontAwesomeIcons.fileCode,
+            screenIndex: 204),
+      ],
+    ),
+    MenuGroup(
+      id: 'nfce',
+      label: 'NFC-e',
+      icon: FontAwesomeIcons.cashRegister,
+      items: [
+        MenuItem(
+            id: 'pdv_nfce',
+            label: 'PDV / NFC-e',
+            icon: FontAwesomeIcons.cashRegister,
+            screenIndex: 80),
+        MenuItem(
+            id: 'nfce_grid',
+            label: 'NFC-e (Cupons)',
+            icon: FontAwesomeIcons.receipt,
+            screenIndex: 187),
+        MenuItem(
+            id: 'config_fiscal',
+            label: 'Config. Fiscal',
+            icon: FontAwesomeIcons.gear,
+            screenIndex: 81),
       ],
     ),
     MenuGroup(

@@ -43,20 +43,39 @@ void main() {
     expect(itensDoCatalogo, containsAll(itensDoMenu));
   });
 
-  test('catalogo de permissoes mostra Fiscal NFC-e para controle pela tela',
+  // Pedido explicito do usuario (2026-09-18): o menu antigo "Fiscal / NFC-e"
+  // misturava NF-e, NFS-e e NFC-e juntos, dificultando achar cada tela --
+  // separado em 3 grupos dedicados. O que e' comum aos tres (Série,
+  // Dashboard Fiscal) ficou no grupo Comercial.
+  test('catalogo de permissoes separa NF-e, NFS-e e NFC-e em grupos proprios',
       () {
-    final fiscal = RolePermissionCatalog.groups()
-        .firstWhere((grupo) => grupo.label == 'Fiscal / NFC-e');
-    final telas = fiscal.entries.map((tela) => tela.label).toSet();
+    final grupos = RolePermissionCatalog.groups();
 
-    expect(telas, contains('PDV / NFC-e'));
-    expect(telas, contains('Config. Fiscal'));
-    expect(telas, contains('Consulta DF-e'));
-    expect(telas, contains('Manifestação Destinatário'));
-    expect(telas, contains('NFSe'));
-    expect(telas, contains('Cancelamento e CC-e'));
-    expect(telas, contains('Dashboard Fiscal'));
-    expect(telas, contains('Agendar NFe Recorrente'));
+    final nfe = grupos.firstWhere((grupo) => grupo.label == 'NF-e');
+    final telasNfe = nfe.entries.map((tela) => tela.label).toSet();
+    expect(telasNfe, contains('NF-e Entrada'));
+    expect(telasNfe, contains('NF-e Saída'));
+    expect(telasNfe, contains('Consulta DF-e'));
+    expect(telasNfe, contains('Manifestação Destinatário'));
+    expect(telasNfe, contains('Cancelamento e CC-e'));
+    expect(telasNfe, contains('Agendar NFe Recorrente'));
+
+    final nfse = grupos.firstWhere((grupo) => grupo.label == 'NFS-e');
+    final telasNfse = nfse.entries.map((tela) => tela.label).toSet();
+    expect(telasNfse, contains('NFSe'));
+    expect(telasNfse, contains('Importar XML NFS-e'));
+
+    final nfce = grupos.firstWhere((grupo) => grupo.label == 'NFC-e');
+    final telasNfce = nfce.entries.map((tela) => tela.label).toSet();
+    expect(telasNfce, contains('PDV / NFC-e'));
+    expect(telasNfce, contains('NFC-e (Cupons)'));
+    expect(telasNfce, contains('Config. Fiscal'));
+
+    final comercial = grupos.firstWhere((grupo) => grupo.label == 'Comercial');
+    final telasComercial = comercial.entries.map((tela) => tela.label).toSet();
+    expect(telasComercial, contains('NF-e Série'));
+    expect(telasComercial, contains('Séries NFS-e'));
+    expect(telasComercial, contains('Dashboard Fiscal'));
   });
 
   // Bug de producao (2026-09-16, ver bugs.md): "NFC-e (Cupons)" e "Envio EDI

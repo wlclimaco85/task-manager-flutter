@@ -104,7 +104,7 @@ void main() {
       await tester.pumpWidget(buildSidebar(selectedIndex: 80));
       await tester.pump(const Duration(milliseconds: 250));
 
-      expect(find.text('Fiscal / NFC-e'), findsOneWidget);
+      expect(find.text('NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsNothing);
     });
@@ -118,7 +118,7 @@ void main() {
 
       expect(find.text('Contas a Pagar'), findsOneWidget);
       expect(find.text('Financeiro'), findsNothing);
-      expect(find.text('Fiscal / NFC-e'), findsNothing);
+      expect(find.text('NFC-e'), findsNothing);
     });
 
     testWidgets('abre dois grupos por padrao quando ambos ficam visiveis',
@@ -130,7 +130,7 @@ void main() {
 
       expect(find.text('Financeiro'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsOneWidget);
-      expect(find.text('Fiscal / NFC-e'), findsOneWidget);
+      expect(find.text('NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
     });
 
