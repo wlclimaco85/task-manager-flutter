@@ -18,7 +18,6 @@ class WindowsNfseImportXmlScreen extends StatefulWidget {
 
 class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen> {
   PlatformFile? _arquivoXml;
-  String? _xmlPath;
   bool _carregando = false;
   bool _confirmando = false;
 
@@ -45,7 +44,6 @@ class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen>
         final file = result.files.first;
         setState(() {
           _arquivoXml = file;
-          _xmlPath = file.path;
           _reset();
         });
       }
@@ -56,7 +54,7 @@ class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen>
   }
 
   Future<void> _carregarPreview() async {
-    if (_xmlPath == null) {
+    if (_arquivoXml?.bytes == null) {
       _mostrarSnack('Selecione um arquivo XML primeiro');
       return;
     }
@@ -66,7 +64,8 @@ class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen>
       _reset();
     });
 
-    final result = await NfseXmlImportCaller.preview(_xmlPath!);
+    final result = await NfseXmlImportCaller.preview(
+        _arquivoXml!.bytes!, _arquivoXml!.name);
     if (!mounted) return;
 
     if (result.success) {
@@ -85,11 +84,12 @@ class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen>
   }
 
   Future<void> _confirmarImportacao({int? produtoId, bool criarNovoProduto = false}) async {
-    if (_xmlPath == null) return;
+    if (_arquivoXml?.bytes == null) return;
     setState(() => _confirmando = true);
 
     final result = await NfseXmlImportCaller.confirmar(
-      _xmlPath!,
+      _arquivoXml!.bytes!,
+      _arquivoXml!.name,
       produtoId: produtoId,
       criarNovoProduto: criarNovoProduto,
     );
@@ -109,7 +109,6 @@ class _WindowsNfseImportXmlScreenState extends State<WindowsNfseImportXmlScreen>
   void _limpar() {
     setState(() {
       _arquivoXml = null;
-      _xmlPath = null;
       _previewData = null;
       _sucesso = null;
       _mensagem = null;

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -21,15 +21,27 @@ class NfseXmlImportResult {
 /// Diferente daquele, usa o campo multipart "xml" (nome exigido pelo
 /// NfseImportController: @RequestParam("xml")).
 class NfseXmlImportCaller {
-  static Future<NfseXmlImportResult> preview(String filePath) async {
-    return _enviarXml(ApiLinks.nfseImportacaoPreview, filePath);
+  // Bug real (2026-09-18, ver bugs.md): usava dart:io File(filePath) pra ler
+  // o arquivo -- dart:io e' so' um stub no Flutter Web, e QUALQUER operacao
+  // real (inclusive so' construir File()) lanca "Unsupported operation:
+  // _Namespace" em runtime. A tela ja carrega os bytes do arquivo via
+  // FilePicker.pickFiles(withData: true) -- basta usar PlatformFile.bytes
+  // direto, sem tocar em dart:io, funciona igual em Web/Windows/Mobile.
+  static Future<NfseXmlImportResult> preview(
+    Uint8List bytes,
+    String fileName, {
+    http.Client? client,
+  }) {
+    return _enviarXml(ApiLinks.nfseImportacaoPreview, bytes, fileName, client: client);
   }
 
   static Future<NfseXmlImportResult> confirmar(
-    String filePath, {
+    Uint8List bytes,
+    String fileName, {
     int? produtoId,
     bool criarNovoProduto = false,
-  }) async {
+    http.Client? client,
+  }) {
     Map<String, String>? campos;
     if (produtoId != null || criarNovoProduto) {
       campos = {
@@ -39,14 +51,18 @@ class NfseXmlImportCaller {
         }),
       };
     }
-    return _enviarXml(ApiLinks.nfseImportacaoConfirmar, filePath, campos: campos);
+    return _enviarXml(ApiLinks.nfseImportacaoConfirmar, bytes, fileName,
+        campos: campos, client: client);
   }
 
   static Future<NfseXmlImportResult> _enviarXml(
     String endpoint,
-    String filePath, {
+    Uint8List bytes,
+    String fileName, {
     Map<String, String>? campos,
+    http.Client? client,
   }) async {
+    final httpClient = client ?? http.Client();
     try {
       final uri = TenantContext.applyToUrl(endpoint);
       final token = AuthUtility.userInfo?.token;
@@ -59,15 +75,13 @@ class NfseXmlImportCaller {
         request.fields.addAll(campos);
       }
 
-      final bytes = await File(filePath).readAsBytes();
-      final fileName = filePath.split(Platform.pathSeparator).last;
       request.files.add(http.MultipartFile.fromBytes(
         'xml',
         bytes,
         filename: fileName,
       ));
 
-      final streamed = await request.send();
+      final streamed = await httpClient.send(request);
       final resp = await http.Response.fromStream(streamed);
 
       if (resp.statusCode == 200 || resp.statusCode == 201) {
@@ -91,6 +105,8 @@ class NfseXmlImportCaller {
     } catch (e, st) {
       AppLogger.i.error('NfseXmlImportCaller: erro ao chamar $endpoint', st);
       return NfseXmlImportResult(success: false, message: 'Erro ao conectar: $e');
+    } finally {
+      if (client == null) httpClient.close();
     }
   }
 
