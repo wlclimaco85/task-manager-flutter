@@ -5,6 +5,7 @@ import '../../services/nfse_xml_import_caller.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/grid_colors.dart';
 import '../../widgets/nfse_xml_preview_widget.dart';
+import '../../windows/screens/nfse_screen.dart';
 
 /// Importacao de XML de NFS-e (nota de servico), analoga a
 /// WebNfeImportXmlScreen (importacao de XML de NF-e) -- mesmo fluxo
@@ -48,7 +49,8 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
         });
       }
     } catch (e, st) {
-      AppLogger.i.error('WebNfseImportXmlScreen: erro ao selecionar arquivo', st);
+      AppLogger.i
+          .error('WebNfseImportXmlScreen: erro ao selecionar arquivo', st);
       _mostrarSnack('Nao foi possivel selecionar o arquivo: $e');
     }
   }
@@ -74,7 +76,8 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
         _previewData = result.data;
       });
     } else {
-      AppLogger.i.warn('WebNfseImportXmlScreen: preview falhou -- ${result.message}');
+      AppLogger.i
+          .warn('WebNfseImportXmlScreen: preview falhou -- ${result.message}');
       setState(() {
         _carregando = false;
         _sucesso = false;
@@ -83,7 +86,8 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
     }
   }
 
-  Future<void> _confirmarImportacao({int? produtoId, bool criarNovoProduto = false}) async {
+  Future<void> _confirmarImportacao(
+      {int? produtoId, bool criarNovoProduto = false}) async {
     if (_arquivoXml?.bytes == null) return;
     setState(() => _confirmando = true);
 
@@ -96,13 +100,15 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
     if (!mounted) return;
 
     if (!result.success) {
-      AppLogger.i.warn('WebNfseImportXmlScreen: confirmacao falhou -- ${result.message}');
+      AppLogger.i.warn(
+          'WebNfseImportXmlScreen: confirmacao falhou -- ${result.message}');
     }
 
     setState(() {
       _confirmando = false;
       _sucesso = result.success;
-      _mensagem = result.success ? 'XML NFS-e importado com sucesso!' : result.message;
+      _mensagem =
+          result.success ? 'XML NFS-e importado com sucesso!' : result.message;
     });
   }
 
@@ -144,7 +150,9 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                 data: _previewData!,
                 confirming: _confirmando,
                 onConfirm: ({produtoId, criarNovoProduto = false}) =>
-                    _confirmarImportacao(produtoId: produtoId, criarNovoProduto: criarNovoProduto),
+                    _confirmarImportacao(
+                        produtoId: produtoId,
+                        criarNovoProduto: criarNovoProduto),
                 onCancel: _limpar,
               ),
             if (_sucesso != null) _buildResultado(),
@@ -167,7 +175,8 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                 Icon(Icons.info_outline, color: GridColors.secondary),
                 SizedBox(width: 8),
                 Text('Instrucoes de Importacao',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             SizedBox(height: 12),
@@ -202,17 +211,22 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 14),
                   ),
-                  onPressed: (_arquivoXml != null && !_carregando) ? _carregarPreview : null,
+                  onPressed: (_arquivoXml != null && !_carregando)
+                      ? _carregarPreview
+                      : null,
                   icon: _carregando
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.visibility),
-                  label: Text(_carregando ? 'Carregando...' : 'Carregar e Visualizar'),
+                  label: Text(
+                      _carregando ? 'Carregando...' : 'Carregar e Visualizar'),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
@@ -236,7 +250,9 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: _arquivoXml != null ? GridColors.secondary : Colors.grey.shade300,
+            color: _arquivoXml != null
+                ? GridColors.secondary
+                : Colors.grey.shade300,
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -259,13 +275,17 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                     : 'Clique para selecionar arquivo XML',
                 style: TextStyle(
                   fontSize: 13,
-                  color: _arquivoXml != null ? Colors.black87 : Colors.grey.shade600,
+                  color: _arquivoXml != null
+                      ? Colors.black87
+                      : Colors.grey.shade600,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (_arquivoXml != null)
-              TextButton(onPressed: _selecionarXml, child: const Text('Trocar', style: TextStyle(fontSize: 12))),
+              TextButton(
+                  onPressed: _selecionarXml,
+                  child: const Text('Trocar', style: TextStyle(fontSize: 12))),
           ],
         ),
       ),
@@ -291,11 +311,15 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _sucesso == true ? 'Importacao Concluida' : 'Erro na Importacao',
+                    _sucesso == true
+                        ? 'Importacao Concluida'
+                        : 'Erro na Importacao',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
-                      color: _sucesso == true ? Colors.green.shade800 : Colors.red.shade800,
+                      color: _sucesso == true
+                          ? Colors.green.shade800
+                          : Colors.red.shade800,
                     ),
                   ),
                   if (_mensagem != null) ...[
@@ -304,15 +328,27 @@ class _WebNfseImportXmlScreenState extends State<WebNfseImportXmlScreen> {
                       _mensagem!,
                       style: TextStyle(
                         fontSize: 13,
-                        color: _sucesso == true ? Colors.green.shade900 : Colors.red.shade900,
+                        color: _sucesso == true
+                            ? Colors.green.shade900
+                            : Colors.red.shade900,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            if (_sucesso == true)
-              OutlinedButton(onPressed: _limpar, child: const Text('Importar outro')),
+            if (_sucesso == true) ...[
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const NfseScreen()),
+                ),
+                icon: const Icon(Icons.list_alt),
+                label: const Text('Abrir lista de NFS-e'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                  onPressed: _limpar, child: const Text('Importar outro')),
+            ],
           ],
         ),
       ),
