@@ -112,8 +112,14 @@ class NfseXmlImportCaller {
         if (body is List) return body;
         if (body is Map && body['content'] is List) return body['content'] as List;
         if (body is Map && body['data'] is List) return body['data'] as List;
+        // Achado de code review (2026-09-18): a mensagem de log era ambigua
+        // entre "erro HTTP" e "sucesso com corpo em formato desconhecido" --
+        // aqui o status foi 200, o problema e' o SHAPE do corpo.
+        AppLogger.i.warn(
+            'NfseXmlImportCaller.listar: corpo 200 em formato inesperado (nao e List/content/data)');
+        return [];
       }
-      AppLogger.i.warn('NfseXmlImportCaller.listar: resposta inesperada (${resp.statusCode})');
+      AppLogger.i.warn('NfseXmlImportCaller.listar: erro HTTP ${resp.statusCode}');
       return [];
     } catch (e, st) {
       AppLogger.i.error('NfseXmlImportCaller.listar: erro ao conectar', st);
