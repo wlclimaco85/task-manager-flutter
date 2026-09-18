@@ -78,6 +78,7 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 136:InstagramMonitor
+/// 204:NfseImportXml
 
 class MenuConfig {
   MenuConfig._();
@@ -111,6 +112,11 @@ class MenuConfig {
             label: 'Importar XML NF-e',
             icon: FontAwesomeIcons.fileCode,
             screenIndex: 86),
+        MenuItem(
+            id: 'nfse_import_xml',
+            label: 'Importar XML NFS-e',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 204),
         MenuItem(
             id: 'nfe_saida',
             label: 'NF-e Saída',

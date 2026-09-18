@@ -96,6 +96,18 @@ void main() {
     expect(nfseSerie.telaNome, 'nfse_serie');
   });
 
+  // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem
+  // que aparecer em Controle de Acesso" ja documentada no CLAUDE.md pros
+  // casos de nfce_grid/cnab_remessa acima.
+  test('catalogo de permissoes mostra Importar XML NFS-e', () {
+    final nfseImportXml = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .firstWhere((tela) => tela.menuItemId == 'nfse_import_xml');
+
+    expect(nfseImportXml.label, 'Importar XML NFS-e');
+    expect(nfseImportXml.telaNome, 'nfse_import_xml');
+  });
+
   test('catalogo de permissoes mostra telas de aprovacao de acesso', () {
     final porAcesso = RolePermissionCatalog.groups(query: 'acesso')
         .expand((grupo) => grupo.entries)

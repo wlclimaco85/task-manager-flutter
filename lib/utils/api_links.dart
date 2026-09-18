@@ -1124,6 +1124,15 @@ class ApiLinks {
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';
   static String get nfseConfigSalvar => '$_baseUrlNew/api/nfse-config';
 
+  // NFS-e XML Import -- analogo a nfeImportacaoPreview/Confirmar/Listar
+  // acima, mesmo padrao preview -> confirmar (NfseImportController).
+  static String get nfseImportacaoPreview =>
+      '$_baseUrlNew/api/nfse-import/importacao-xml/preview';
+  static String get nfseImportacaoConfirmar =>
+      '$_baseUrlNew/api/nfse-import/importacao-xml/confirmar';
+  static String get nfseImportacaoListar =>
+      '$_baseUrlNew/api/nfse-import/importacao-xml';
+
   // Dashboard de mensalidades/modulos (pago/atrasado/pendente) + relatorio PDF
   static String get mensalidadeDashboard =>
       '$_baseUrlNew/api/financeiro/mensalidade-dashboard';

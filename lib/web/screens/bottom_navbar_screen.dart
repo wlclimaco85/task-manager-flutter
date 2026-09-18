@@ -87,6 +87,7 @@ import './nfe_grid_screen.dart';
 import './nfce_grid_screen.dart';
 import './nfe_import_screen.dart';
 import './nfe_import_xml_screen.dart';
+import './nfse_import_xml_screen.dart';
 import './consulta_dfe_screen.dart';
 import './manifestacao_destinatario_screen.dart';
 import './ponto_web_screen.dart';
@@ -590,6 +591,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 201
       CnabRemessaScreen(), // 202: Remessa EDI
       WebNfseSerieGridScreen(hasPermission: (p) => true), // 203: NfseSerie
+      const WebNfseImportXmlScreen(), // 204: NfseImportXml
     ];
   }
 

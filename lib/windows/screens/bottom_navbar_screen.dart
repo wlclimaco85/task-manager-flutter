@@ -108,6 +108,7 @@ import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/fornecedor_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
+import '../../windows/screens/nfse_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
 import '../../windows/screens/manifestacao_destinatario_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
@@ -531,6 +532,27 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const SessoesScreen(), // 186: Sessões
         const SizedBox.shrink(), // 187: reservado
         const MeuCertificadoDigitalScreen(), // 188: Certificado Digital
+        // 189-203: ainda nao implementados/replicados no Windows (paridade
+        // pendente com o menu Web, que ja vai at 203 -- fora do escopo deste
+        // card). Placeholders pra manter o alinhamento posicional de
+        // screenIndex (widgetIndex = screenIndex.clamp(0, _screens.length-1)
+        // acima), sem o que o item 204 abaixo cairia no indice errado.
+        const SizedBox.shrink(), // 189: reservado
+        const SizedBox.shrink(), // 190: reservado
+        const SizedBox.shrink(), // 191: reservado
+        const SizedBox.shrink(), // 192: reservado
+        const SizedBox.shrink(), // 193: reservado
+        const SizedBox.shrink(), // 194: reservado
+        const SizedBox.shrink(), // 195: reservado
+        const SizedBox.shrink(), // 196: reservado
+        const SizedBox.shrink(), // 197: reservado
+        const SizedBox.shrink(), // 198: reservado
+        const SizedBox.shrink(), // 199: reservado
+        const SizedBox.shrink(), // 200: reservado
+        const SizedBox.shrink(), // 201: reservado
+        const SizedBox.shrink(), // 202: reservado
+        const SizedBox.shrink(), // 203: reservado
+        const WindowsNfseImportXmlScreen(), // 204: NfseImportXml
       ];
 
   String get userName {

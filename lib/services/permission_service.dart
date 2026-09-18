@@ -78,6 +78,7 @@ class PermissionService {
     'nfe_finalidade': 'NfeFinalidade',
     'nfe_import_csv': 'NfeImportCSV',
     'nfe_import_xml': 'NfeImportXml',
+    'nfse_import_xml': 'nfse_import_xml',
     'nfe_saida': 'NFeSaida',
     'nfe_serie': 'NfeSerie',
     'nfe_tipo_operacao': 'NfeTipoOperacao',
