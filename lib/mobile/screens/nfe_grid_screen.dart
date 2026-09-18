@@ -6,9 +6,11 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, BulkAction;
 import 'details/nfe_detail_screen.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../utils/grid_texts.dart';
@@ -267,12 +269,245 @@ class _MobileNfeGridScreenState extends State<MobileNfeGridScreen> {
               detailScreenBuilder: (item) =>
                   MobileNfeSankhyaDetailScreen(item: item),
               customActions: () => _buildCustomActions(context),
+              // Ações em massa só fazem sentido para NF-e de SAÍDA (emitida
+              // por nós) — NF-e de ENTRADA usa fluxo Aceitar/Recusar, então
+              // o dropdown "Ações" fica de fora e a grid de entrada continua
+              // só com "Excluir selecionados".
+              bulkActions:
+                  widget.entrada ? null : _buildBulkActions(context),
               showAppBar: false,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // ── Ações em massa (dropdown "Ações" ao lado de Excluir selecionados,
+  // NF-e SAÍDA apenas) ────────────────────────────────────────────────────
+  //
+  // Decisão: não existe endpoint de lote no backend para PDF/cancelar/emitir
+  // NF-e — cada ação chama o endpoint por-id já existente (mesmo usado pelas
+  // ações individuais _cancelar/_emitir/_imprimirDanfe abaixo), item a item
+  // num loop, agregando sucesso/falha num único SnackBar de resumo.
+  // "Excluir" foi OMITIDO deste dropdown de propósito: o botão padrão
+  // "Excluir selecionados" já cobre exclusão em massa e não deve ser
+  // duplicado aqui.
+
+  List<BulkAction<Map<String, dynamic>>> _buildBulkActions(
+      BuildContext context) {
+    return [
+      BulkAction<Map<String, dynamic>>(
+        icon: Icons.print,
+        label: 'Gerar PDF',
+        onPressed: _bulkGerarPdf,
+      ),
+      BulkAction<Map<String, dynamic>>(
+        icon: Icons.send,
+        label: 'Enviar',
+        onPressed: _bulkEmitir,
+      ),
+      BulkAction<Map<String, dynamic>>(
+        icon: Icons.cancel_outlined,
+        label: 'Cancelar',
+        isEnabled: (items) => items.every((i) =>
+            (i['status']?.toString().toUpperCase() ?? '') != 'CANCELADA'),
+        onPressed: _bulkCancelar,
+      ),
+    ];
+  }
+
+  /// Baixa o DANFE (`GET /api/nfe/{id}/danfe`) item a item — sem endpoint de
+  /// lote no backend. Mesmo endpoint de `_imprimirDanfe`.
+  Future<void> _bulkGerarPdf(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Gerando PDF ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.get(ApiLinks.danfeNfe(id));
+        if (r.statusCode == 200) {
+          await FileSaver.instance.saveFile(
+            name: 'danfe_$id',
+            bytes: r.bodyBytes,
+            fileExtension: 'pdf',
+          );
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Gerar PDF" NF-e #$id falhou: status ${r.statusCode}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Gerar PDF" NF-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok PDF(s) gerado(s) com sucesso'
+            : '$ok gerado(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor:
+            falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Emite (`POST /api/nfe/{id}/emitir`) item a item — mesmo endpoint de
+  /// `_emitir`, geração/assinatura de XML real, sem endpoint de lote.
+  Future<void> _bulkEmitir(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Emitindo ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.post(ApiLinks.emitirNfe(id), {});
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          ok++;
+        } else {
+          String msg = 'status ${r.statusCode}';
+          try {
+            final body = jsonDecode(r.body);
+            msg = body['message']?.toString() ??
+                body['mensagem']?.toString() ??
+                body['error']?.toString() ??
+                msg;
+          } catch (_) {}
+          falhas.add('#$id ($msg)');
+          AppLogger.i
+              .warn('Ação em massa "Enviar" NF-e #$id falhou: $msg');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Enviar" NF-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok NF-e(s) emitida(s) com sucesso'
+            : '$ok emitida(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor:
+            falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Cancela (`POST /api/nfe/{id}/cancelar`) item a item, pedindo a
+  /// justificativa (mín. 15 caracteres) UMA ÚNICA VEZ — mesma regra e
+  /// endpoint de `_cancelar`.
+  Future<void> _bulkCancelar(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final motivoCtrl = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cancelar ${items.length} NF-e(s)',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: motivoCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Motivo do cancelamento *',
+              labelStyle: TextStyle(fontSize: 12),
+              border: OutlineInputBorder(),
+              isDense: true,
+              hintText: 'Mínimo 15 caracteres — aplicado a todas selecionadas',
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(GridTexts.cancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.error,
+                foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, motivoCtrl.text.trim()),
+            child: const Text('Cancelar NF-e(s)'),
+          ),
+        ],
+      ),
+    );
+    motivoCtrl.dispose();
+    if (motivo == null || !context.mounted) return;
+    if (motivo.length < 15) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Motivo deve ter pelo menos 15 caracteres'),
+          backgroundColor: GridColors.error));
+      return;
+    }
+
+    var ok = 0;
+    final falhas = <String>[];
+    for (final item in items) {
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      try {
+        final r = await TenantContext.post(
+            ApiLinks.cancelarNfe(id), {'justificativa': motivo});
+        if (r.statusCode == 200) {
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Cancelar" NF-e #$id falhou: status ${r.statusCode} - ${r.body}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Cancelar" NF-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(falhas.isEmpty
+          ? '$ok NF-e(s) cancelada(s) com sucesso'
+          : '$ok cancelada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+      backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
+    ));
   }
 
   List<CustomAction<Map<String, dynamic>>> _buildCustomActions(

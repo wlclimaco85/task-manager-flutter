@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
+import '../../utils/api_links.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/tenant_context.dart';
+import '../../widgets/generic_grid_windows_screen.dart' show BulkAction;
 import '../../widgets/searchable_dropdown.dart';
 import 'details/nfse_detail_screen.dart';
 
@@ -257,6 +264,222 @@ class _NfseScreenState extends State<NfseScreen> {
     );
   }
 
+  // ── Ações em massa (dropdown "Ações" ao lado de Excluir selecionados) ────
+  //
+  // Decisão: não existe endpoint de lote no backend para PDF/cancelar/enviar
+  // NFS-e — cada ação chama o endpoint por-id já existente, item a item, num
+  // loop, e agrega sucesso/falha num único SnackBar de resumo ao final.
+  // "Excluir" foi OMITIDO deste dropdown de propósito: o botão padrão
+  // "Excluir selecionados" (buttonPermissions['deleteMultiple']) já cobre
+  // exclusão em massa para esta grid e não deve ser duplicado aqui.
+
+  List<BulkAction<Map<String, dynamic>>> _buildBulkActions() => [
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.picture_as_pdf,
+          label: 'Gerar PDF',
+          onPressed: _bulkGerarPdf,
+        ),
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.send,
+          label: 'Enviar',
+          onPressed: _bulkEnviar,
+        ),
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.cancel_outlined,
+          label: 'Cancelar',
+          isEnabled: (items) => items.every((i) =>
+              (i['status']?.toString().toUpperCase() ?? '') != 'CANCELADA'),
+          onPressed: _bulkCancelar,
+        ),
+      ];
+
+  /// Baixa o DANFSe (`GET /api/nfse/{id}/danfse`) item a item — não existe
+  /// endpoint de PDF em lote no backend. Mesmo padrão de
+  /// `nfse_detail_screen.dart._baixarPdf`.
+  Future<void> _bulkGerarPdf(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Gerando PDF ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.get(ApiLinks.danfseNfse(id));
+        if (r.statusCode == 200) {
+          await FileSaver.instance.saveFile(
+            name: 'danfse_$id',
+            bytes: r.bodyBytes,
+            fileExtension: 'pdf',
+            mimeType: MimeType.pdf,
+          );
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Gerar PDF" NFS-e #$id falhou: status ${r.statusCode}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Gerar PDF" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok PDF(s) gerado(s) com sucesso'
+            : '$ok gerado(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor:
+            falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Emite via Sistema Nacional NFS-e (`POST /api/nfse/{id}/emitir-nacional`)
+  /// item a item — mesmo endpoint usado por `nfse_detail_screen.dart._enviarNfse`.
+  Future<void> _bulkEnviar(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Enviando ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.post(ApiLinks.emitirNfseNacional(id), {});
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          final b = jsonDecode(r.body);
+          final data = b is Map ? (b['data'] ?? b) : null;
+          final status = data is Map ? data['status']?.toString() : null;
+          if (status == 'AUTORIZADA') {
+            ok++;
+          } else {
+            final erro = data is Map ? data['mensagemErroEmissao'] : null;
+            falhas.add('#$id (${erro ?? 'rejeitada'})');
+          }
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Enviar" NFS-e #$id falhou: status ${r.statusCode}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Enviar" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok NFS-e(s) enviada(s) com sucesso'
+            : '$ok enviada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor:
+            falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Cancela (`POST /api/fiscal/nfse/cancelar`) item a item, pedindo o motivo
+  /// UMA ÚNICA VEZ (aplicado a todas as selecionadas) — mesmo endpoint/corpo
+  /// usado por `nfse_detail_screen.dart._cancelarNfse`.
+  Future<void> _bulkCancelar(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final motivoCtrl = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cancelar ${items.length} NFS-e(s)'),
+        content: TextField(
+          controller: motivoCtrl,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Motivo do cancelamento',
+            hintText: 'Aplicado a todas as NFS-e selecionadas',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Voltar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, motivoCtrl.text.trim()),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    motivoCtrl.dispose();
+    if (motivo == null || motivo.isEmpty || !context.mounted) return;
+
+    var ok = 0;
+    final falhas = <String>[];
+    for (final item in items) {
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      try {
+        final r = await TenantContext.post(ApiLinks.nfseCancelar, {
+          'empresaId': item['empresaId'],
+          'municipio': item['municipioPrestacao'] ?? item['municipio'],
+          'nfseNumber': item['numero'],
+          'motivo': motivo,
+          'nfseId': int.tryParse(id),
+        });
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Cancelar" NFS-e #$id falhou: status ${r.statusCode} - ${r.body}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Cancelar" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(falhas.isEmpty
+          ? '$ok NFS-e(s) cancelada(s) com sucesso'
+          : '$ok cancelada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+      backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
+    ));
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -278,6 +501,7 @@ class _NfseScreenState extends State<NfseScreen> {
                   toJson: (a) => a,
                   extraParams: _filtros,
                   detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                  bulkActions: _buildBulkActions(),
                   showAppBar: true,
                 ),
               ),
