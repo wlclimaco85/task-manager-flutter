@@ -862,7 +862,18 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return _sectionCard(
       title: 'Dados da NFSe',
       icon: Icons.receipt_long,
-      action: const SizedBox.shrink(),
+      action: ElevatedButton.icon(
+        onPressed: _enviando ? null : () => _salvarCabecalho(),
+        icon: const Icon(Icons.save, size: 14),
+        label: const Text('Salvar', style: TextStyle(fontSize: 11)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF005A2B),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
       child: _formGrid([
         hasSession && _empresaNome != null
             ? _inpDisabledText('Empresa', _empresaNome!)

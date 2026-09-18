@@ -27,6 +27,7 @@ void main() {
     expect(source,
         contains('Adicione e salve ao menos um servico antes de confirmar.'));
     expect(source, contains('final salvo = await _salvarCabecalho'));
+    expect(source, contains("label: const Text('Salvar'"));
     expect(source, contains("_statusVal = _isNovo ? 'RASCUNHO'"));
     expect(source, contains('DateTime.now()'));
   });
