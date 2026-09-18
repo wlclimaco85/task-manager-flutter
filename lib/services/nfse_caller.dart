@@ -13,18 +13,22 @@ class NfseCaller {
     required double aliquotaIss,
     required String cnae,
     required String codigoTributacao,
+    String? empresaId,
+    int? nfseId,
   }) async {
     final url = ApiLinks.nfseEmitir;
-    final body = {
-      'municipio': municipio,
-      'cnpjTomador': cnpjTomador,
-      'nomeTomador': nomeTomador,
-      'descricaoServico': descricaoServico,
-      'valor': valor,
-      'aliquotaIss': aliquotaIss,
-      'cnae': cnae,
-      'codigoTributacao': codigoTributacao,
-    };
+    final body = buildEmitirBody(
+      municipio: municipio,
+      cnpjTomador: cnpjTomador,
+      nomeTomador: nomeTomador,
+      descricaoServico: descricaoServico,
+      valor: valor,
+      aliquotaIss: aliquotaIss,
+      cnae: cnae,
+      codigoTributacao: codigoTributacao,
+      empresaId: empresaId,
+      nfseId: nfseId,
+    );
     final response = await TenantContext.post(url, body);
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -34,6 +38,32 @@ class NfseCaller {
       statusCode: response.statusCode,
     );
   }
+
+  static Map<String, dynamic> buildEmitirBody({
+    required String municipio,
+    required String cnpjTomador,
+    required String nomeTomador,
+    required String descricaoServico,
+    required double valor,
+    required double aliquotaIss,
+    required String cnae,
+    required String codigoTributacao,
+    String? empresaId,
+    int? nfseId,
+  }) =>
+      {
+        'municipio': municipio,
+        'tomadorCnpj': cnpjTomador,
+        'tomadorNome': nomeTomador,
+        'servicoDescricao': descricaoServico,
+        'valor': valor,
+        'aliquotaIss': aliquotaIss,
+        'cnae': cnae,
+        'codTributacao': codigoTributacao,
+        if (empresaId != null)
+          'empresaId': int.tryParse(empresaId) ?? empresaId,
+        if (nfseId != null) 'nfseId': nfseId,
+      };
 
   Future<Map<String, dynamic>> consultar(String numero) async {
     final url = ApiLinks.nfseStatusNumero(numero);
@@ -56,11 +86,11 @@ class NfseCaller {
     int? nfseId,
   }) async {
     final url = ApiLinks.nfseCancelar;
-    final body = {
-      'numero': numero,
-      'motivo': motivo,
-      if (nfseId != null) 'nfseId': nfseId,
-    };
+    final body = buildCancelarBody(
+      numero: numero,
+      motivo: motivo,
+      nfseId: nfseId,
+    );
     final response = await TenantContext.post(url, body);
     if (response.statusCode == 200 || response.statusCode == 204) {
       if (response.body.isEmpty) return {'status': 'cancelado'};
@@ -71,6 +101,22 @@ class NfseCaller {
       statusCode: response.statusCode,
     );
   }
+
+  static Map<String, dynamic> buildCancelarBody({
+    required String numero,
+    required String motivo,
+    String? empresaId,
+    String? municipio,
+    int? nfseId,
+  }) =>
+      {
+        'nfseNumber': numero,
+        'motivo': motivo,
+        if (empresaId != null)
+          'empresaId': int.tryParse(empresaId) ?? empresaId,
+        if (municipio != null) 'municipio': municipio,
+        if (nfseId != null) 'nfseId': nfseId,
+      };
 
   Future<List<Map<String, dynamic>>> auditoria() async {
     final url = ApiLinks.nfseAuditoria;

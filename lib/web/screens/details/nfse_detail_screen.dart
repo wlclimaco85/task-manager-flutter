@@ -8,6 +8,7 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/nfse_tax_calculator.dart';
+import '../../../services/nfse_caller.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
@@ -42,6 +43,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   bool _itensGrid = true;
   int _selItem = 0;
   bool _enviando = false;
+  final _nfseCaller = NfseCaller();
 
   double _cabWidth = 320;
   double _rodapeHeight = 240;
@@ -60,6 +62,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   final _serieCtrl = TextEditingController();
   final _municipioCtrl = TextEditingController();
   final _codigoServicoCtrl = TextEditingController();
+  final _observacaoCtrl = TextEditingController();
   String? _statusVal;
   String? _ambienteVal;
   String? _empresaId;
@@ -74,13 +77,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfseId => widget.item['id']?.toString() ?? '';
-  String get _statusAtual => (_statusVal ?? 'PENDENTE').toUpperCase();
-  bool get _podeExcluir => !_isNovo && _statusAtual == 'PENDENTE';
-  bool get _podeCancelar =>
+  String get _statusAtual => (_statusVal ?? 'RASCUNHO').toUpperCase();
+  bool get _podeExcluir =>
       !_isNovo &&
-      _statusAtual != 'PENDENTE' &&
-      _statusAtual != 'CANCELADA' &&
-      _statusAtual != 'REJEITADA';
+      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE'}.contains(_statusAtual);
+  bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
 
   @override
   void initState() {
@@ -98,6 +99,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _serieCtrl.dispose();
     _municipioCtrl.dispose();
     _codigoServicoCtrl.dispose();
+    _observacaoCtrl.dispose();
     super.dispose();
   }
 
@@ -110,15 +112,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
     _codigoServicoCtrl.text = _codigoServicoMunicipalInicial(i);
+    _observacaoCtrl.text = i['observacao']?.toString() ?? '';
 
-    _statusVal = _isNovo ? 'PENDENTE' : (i['status']?.toString() ?? 'PENDENTE');
-    _ambienteVal = i['ambiente']?.toString() ?? 'HOMOLOGACAO';
+    _statusVal = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
 
     final sessEmpId = login?.empresa?.id?.toString();
     _empresaId = sessEmpId ??
         (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
+
+    final cidadeParceiro =
+        login?.parceiro?.cidade ?? login?.parceiro?.endereco?.cidade?.nome;
+    if (_isNovo && _municipioCtrl.text.isEmpty && cidadeParceiro != null) {
+      _municipioCtrl.text = cidadeParceiro;
+    }
+    final ambienteParceiro = login?.parceiro?.ambiente;
+    _ambienteVal = i['ambiente']?.toString() ??
+        (TenantContext.hasParceiro ? ambienteParceiro : null);
 
     // Bug real (2026-09-17, code review): so' pode default/travar o Tomador
     // no parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
@@ -172,8 +183,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _municipioCtrl.text = i['municipioPrestacao']?.toString() ?? '';
     }
 
-    _dataEmissao = _parseData(i['dataEmissao'] ?? i['dhEmissao']);
-    _dataCompetencia = _parseData(i['dataCompetencia']);
+    _dataEmissao = _parseData(i['dataEmissao'] ?? i['dhEmissao']) ??
+        (_isNovo ? DateTime.now() : null);
+    _dataCompetencia =
+        _parseData(i['dataCompetencia']) ?? (_isNovo ? DateTime.now() : null);
   }
 
   DateTime? _parseData(dynamic v) {
@@ -334,14 +347,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   // ── Salvar cabeçalho ──────────────────────────────────────────────────────
 
-  Future<void> _salvarCabecalho() async {
+  Future<void> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
       if (!_isNovo) 'id': widget.item['id'],
       'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
       'municipioPrestacao': _municipioCtrl.text,
       'codigoServicoMunicipal': _codigoServicoCtrl.text,
-      if (_statusVal != null) 'status': _statusVal,
+      'observacao': _observacaoCtrl.text,
       if (_ambienteVal != null) 'ambiente': _ambienteVal,
       if (_empresaId != null)
         'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
@@ -371,8 +384,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             }
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        if (showFeedback) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ${r.statusCode}: ${r.body}'),
@@ -385,43 +400,107 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
   }
 
+  Future<void> _confirmarNfse() async {
+    await _salvarCabecalho(showFeedback: false);
+    if (!mounted || _isNovo) return;
+    try {
+      final r = await TenantContext.post(ApiLinks.confirmarNfse(_nfseId), {});
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        setState(() {
+          _statusVal = 'CONFIRMADA';
+          widget.item['status'] = 'CONFIRMADA';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NFS-e confirmada.'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
   /// Emite de verdade a NFSe via Sistema Nacional NFS-e (SefinNacional) --
   /// bug real (2026-09-17, ver bugs.md): antes disso o botao nem existia,
   /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
-    if (_isNovo) {
-      await _salvarCabecalho();
-      if (!mounted || _isNovo) return;
+    if (_statusAtual != 'CONFIRMADA') return;
+    final login = AuthUtility.userInfo?.login;
+    final tomador = _tomadores.cast<Map<String, dynamic>?>().firstWhere(
+              (t) => t?['id']?.toString() == _tomadorId,
+              orElse: () => null,
+            ) ??
+        <String, dynamic>{
+          'cpf': login?.parceiro?.cpf,
+          'nome': login?.parceiro?.nome ?? _tomadorNome,
+        };
+    final itensValidos =
+        _itens.where((item) => item['descricao'] != null).toList();
+    final descricao = _observacaoCtrl.text.trim().isNotEmpty
+        ? _observacaoCtrl.text.trim()
+        : itensValidos
+            .map((item) => item['descricao']?.toString().trim() ?? '')
+            .where((value) => value.isNotEmpty)
+            .join('; ');
+    final valor = itensValidos.fold<double>(
+        0,
+        (total, item) =>
+            total + _num(item['valorTotal'] ?? item['valor_total']));
+    final primeiroItem =
+        itensValidos.isEmpty ? <String, dynamic>{} : itensValidos.first;
+    final cpf = tomador['cpf']?.toString().trim() ?? '';
+    if (cpf.isEmpty || descricao.isEmpty || valor <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Informe tomador, serviço e valor antes de emitir.'),
+          backgroundColor: _red));
+      return;
     }
     setState(() => _enviando = true);
     try {
-      final r =
-          await TenantContext.post(ApiLinks.emitirNfseNacional(_nfseId), {});
+      final result = await _nfseCaller.emitir(
+        municipio: _municipioCtrl.text.trim(),
+        cnpjTomador: cpf,
+        nomeTomador: tomador['nome']?.toString() ?? _tomadorNome ?? '',
+        descricaoServico: descricao,
+        valor: valor,
+        aliquotaIss:
+            _num(primeiroItem['aliquotaIss'] ?? primeiroItem['aliquota_iss']),
+        cnae: '',
+        codigoTributacao:
+            primeiroItem['codigoTributacaoMunicipal']?.toString() ??
+                primeiroItem['codigo_tributacao_municipal']?.toString() ??
+                _codigoServicoCtrl.text,
+        empresaId: _empresaId,
+        nfseId: int.tryParse(_nfseId),
+      );
       if (!mounted) return;
-      if (r.statusCode == 200 || r.statusCode == 201) {
-        final b = jsonDecode(r.body);
-        final data = b is Map ? (b['data'] ?? b) : null;
-        final status = data is Map ? data['status']?.toString() : null;
-        if (status == 'AUTORIZADA') {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                  'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
-              backgroundColor: _green));
-          setState(() {
-            widget.item['status'] = status;
-            _statusVal = status;
-          });
-        } else {
-          final erro = data is Map ? data['mensagemErroEmissao'] : null;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('NFSe rejeitada: ${erro ?? r.body}'),
-              backgroundColor: _red));
+      final retorno = result['status']?.toString().toUpperCase() ?? '';
+      final status =
+          {'ISSUED', 'EMITIDA', 'AUTHORIZED', 'AUTORIZADA'}.contains(retorno)
+              ? 'AUTORIZADA'
+              : retorno;
+      setState(() {
+        if (status.isNotEmpty) {
+          widget.item['status'] = status;
+          _statusVal = status;
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}: ${r.body}'),
-            backgroundColor: _red));
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(status == 'AUTORIZADA'
+              ? 'NFS-e enviada ao ISSWeb.'
+              : 'Retorno do ISSWeb: ${result['message'] ?? retorno}'),
+          backgroundColor: status == 'AUTORIZADA' ? _green : _red));
+    } on NfseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: _red));
       }
     } catch (e) {
       if (mounted) {
@@ -708,7 +787,15 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          if (_isNovo || _statusAtual == 'PENDENTE')
+          if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE')
+            TextButton.icon(
+              onPressed: !_enviando ? _confirmarNfse : null,
+              icon:
+                  const Icon(Icons.check_circle, size: 16, color: Colors.white),
+              label: const Text('Confirmar NFS-e',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_statusAtual == 'CONFIRMADA')
             TextButton.icon(
               onPressed: !_enviando ? _enviarNfse : null,
               icon: _enviando
@@ -735,7 +822,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               label: const Text('Excluir',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
-          if (!_isNovo)
+          if (_statusAtual == 'AUTORIZADA')
             TextButton.icon(
               onPressed: _baixarPdf,
               icon: const Icon(Icons.picture_as_pdf,
@@ -799,16 +886,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12))),
-            SizedBox(
-                height: 24,
-                child: ElevatedButton.icon(
-                    onPressed: _salvarCabecalho,
-                    icon: const Icon(Icons.save, size: 12),
-                    label: const Text('Salvar', style: TextStyle(fontSize: 11)),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: _green,
-                        padding: const EdgeInsets.symmetric(horizontal: 8)))),
+            const SizedBox.shrink(),
           ]),
         ),
         Expanded(
@@ -832,9 +910,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   (d) => setState(() => _dataCompetencia = d)),
               _ddCidade(),
               _inp('Código de Serviço Municipal', _codigoServicoCtrl),
-              _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-              _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
-                  (v) => setState(() => _ambienteVal = v)),
+              _inp('Observação', _observacaoCtrl),
+              _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
+              TenantContext.hasParceiro
+                  ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
+                  : _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+                      (v) => setState(() => _ambienteVal = v)),
             ]),
           ),
         ),

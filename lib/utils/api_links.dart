@@ -1055,6 +1055,9 @@ class ApiLinks {
   static String xmlNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/xml';
   static String emitirNfseNacional(String nfseId) =>
       '$_baseUrlNew/api/nfse/$nfseId/emitir-nacional';
+
+  static String confirmarNfse(String nfseId) =>
+      '$_baseUrlNew/api/nfse/$nfseId/confirmar';
   static String danfseNfse(String nfseId) =>
       '$_baseUrlNew/api/nfse/$nfseId/danfse';
   static String aceitarNfe(String nfeId) =>
@@ -1232,12 +1235,18 @@ class ApiLinks {
   static String dpPortal(String funcionarioId) =>
       '$_baseUrlNew/api/dp/portal/$funcionarioId';
   static String get dpEsocialImportar => '$_baseUrlNew/api/dp/esocial/importar';
-  static String get dpFolhaCompetencias => '$_baseUrlNew/api/dp/folha/competencias';
-  static String dpFolhaProcessar(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/processar';
-  static String dpFolhaHolerites(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/holerites';
-  static String dpFolhaHoleritePdf(int id) => '$_baseUrlNew/api/dp/folha/holerite/$id/pdf';
-  static String dpFolhaCnab240(int id) => '$_baseUrlNew/api/dp/folha/competencias/$id/cnab240';
-  static String get dpPontoAfdImportar => '$_baseUrlNew/api/dp/ponto/afd/importar';
+  static String get dpFolhaCompetencias =>
+      '$_baseUrlNew/api/dp/folha/competencias';
+  static String dpFolhaProcessar(int id) =>
+      '$_baseUrlNew/api/dp/folha/competencias/$id/processar';
+  static String dpFolhaHolerites(int id) =>
+      '$_baseUrlNew/api/dp/folha/competencias/$id/holerites';
+  static String dpFolhaHoleritePdf(int id) =>
+      '$_baseUrlNew/api/dp/folha/holerite/$id/pdf';
+  static String dpFolhaCnab240(int id) =>
+      '$_baseUrlNew/api/dp/folha/competencias/$id/cnab240';
+  static String get dpPontoAfdImportar =>
+      '$_baseUrlNew/api/dp/ponto/afd/importar';
   static String dpPontoEspelhoPdf(int funcId, String inicio, String fim) =>
       '$_baseUrlNew/api/dp/ponto/espelho/pdf?funcionarioId=$funcId&dataInicio=$inicio&dataFim=$fim';
   static String get dpDependentes => '$_baseUrlNew/api/dp/dependentes';
@@ -1550,4 +1559,3 @@ class ApiLinks {
   // ── Sistema Logs e Monitoramento ──
   static String get sistemaLogs => '$_baseUrlNew/api/sistema-logs';
 }
-
