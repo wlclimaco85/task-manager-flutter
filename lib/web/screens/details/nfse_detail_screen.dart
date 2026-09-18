@@ -73,6 +73,13 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   bool get _isNovo => widget.item['id'] == null;
   String get _nfseId => widget.item['id']?.toString() ?? '';
+  String get _statusAtual => (_statusVal ?? 'PENDENTE').toUpperCase();
+  bool get _podeExcluir => !_isNovo && _statusAtual == 'PENDENTE';
+  bool get _podeCancelar =>
+      !_isNovo &&
+      _statusAtual != 'PENDENTE' &&
+      _statusAtual != 'CANCELADA' &&
+      _statusAtual != 'REJEITADA';
 
   @override
   void initState() {
@@ -133,7 +140,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ?.toString();
     final podeDefaultParaSessao =
         _isNovo || tomadorRealId == null || tomadorRealId == sessParcId;
-    _tomadorId = podeDefaultParaSessao ? (sessParcId ?? tomadorRealId) : tomadorRealId;
+    _tomadorId =
+        podeDefaultParaSessao ? (sessParcId ?? tomadorRealId) : tomadorRealId;
     _tomadorNome = podeDefaultParaSessao
         ? (login?.parceiro?.nome ?? tomadorRealNome)
         : tomadorRealNome;
@@ -379,8 +387,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   Future<void> _enviarNfse() async {
     setState(() => _enviando = true);
     try {
-      final r = await TenantContext.post(
-          ApiLinks.emitirNfseNacional(_nfseId), {});
+      final r =
+          await TenantContext.post(ApiLinks.emitirNfseNacional(_nfseId), {});
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         final b = jsonDecode(r.body);
@@ -391,7 +399,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               content: Text(
                   'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
               backgroundColor: _green));
-          setState(() => widget.item['status'] = status);
+          setState(() {
+            widget.item['status'] = status;
+            _statusVal = status;
+          });
         } else {
           final erro = data is Map ? data['mensagemErroEmissao'] : null;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -426,6 +437,102 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           fileExtension: 'pdf',
           mimeType: MimeType.pdf,
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
+  Future<void> _cancelarNfse() async {
+    final motivoCtrl = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar NFS-e'),
+        content: TextField(
+          controller: motivoCtrl,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration:
+              const InputDecoration(labelText: 'Motivo do cancelamento'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Voltar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, motivoCtrl.text.trim()),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    motivoCtrl.dispose();
+    if (!mounted || motivo == null || motivo.isEmpty) return;
+
+    try {
+      final r = await TenantContext.post(ApiLinks.nfseCancelar, {
+        'empresaId': int.tryParse(_empresaId ?? '') ?? 0,
+        'municipio': _municipioCtrl.text,
+        'nfseNumber': _numeroCtrl.text,
+        'motivo': motivo,
+        'nfseId': int.tryParse(_nfseId),
+      });
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        setState(() {
+          _statusVal = 'CANCELADA';
+          widget.item['status'] = 'CANCELADA';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NFS-e cancelada.'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
+  Future<void> _excluirNfse() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir NFS-e pendente?'),
+        content:
+            const Text('Esta ação remove a nota e seus itens definitivamente.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Voltar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: _red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmar != true) return;
+
+    try {
+      final r = await TenantContext.delete(ApiLinks.nfse(_nfseId));
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 204) {
+        Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ${r.statusCode}: ${r.body}'),
@@ -580,20 +687,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          TextButton.icon(
-            onPressed: _salvarCabecalho,
-            icon: const Icon(Icons.save, size: 16, color: Colors.white),
-            label: const Text('Salvar',
-                style: TextStyle(color: Colors.white, fontSize: 12)),
-          ),
-          // Bug real (2026-09-17, ver bugs.md): so' existia o botao
-          // "Salvar" no cabecalho -- nao tinha como EMITIR de verdade a
-          // NFSe (transmitir pro Sistema Nacional NFS-e) nem baixar o PDF
-          // depois de autorizada. Backend novo (emitir-nacional +
-          // danfse) implementado na mesma sessao.
           if (!_isNovo)
             TextButton.icon(
-              onPressed: _enviando ? null : _enviarNfse,
+              onPressed:
+                  _statusAtual == 'PENDENTE' && !_enviando ? _enviarNfse : null,
               icon: _enviando
                   ? const SizedBox(
                       width: 14,
@@ -601,13 +698,28 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send, size: 16, color: Colors.white),
-              label: const Text('Enviar',
+              label: const Text('Emitir NFS-e',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_podeCancelar)
+            TextButton.icon(
+              onPressed: _cancelarNfse,
+              icon: const Icon(Icons.cancel, size: 16, color: Colors.white),
+              label: const Text('Cancelar',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_podeExcluir)
+            TextButton.icon(
+              onPressed: _excluirNfse,
+              icon: const Icon(Icons.delete, size: 16, color: Colors.white),
+              label: const Text('Excluir',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
           if (!_isNovo)
             TextButton.icon(
               onPressed: _baixarPdf,
-              icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.white),
+              icon: const Icon(Icons.picture_as_pdf,
+                  size: 16, color: Colors.white),
               label: const Text('Baixar PDF',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
@@ -1101,7 +1213,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// Campo somente-leitura pra valores calculados (base de calculo/valor
   /// ISS) -- mostra o valor mas nao deixa o usuario editar diretamente
   /// (o calculo vem de quantidade x valor unitario x aliquota).
-  Widget _iInpSomenteLeitura(String label, Map<String, dynamic> item, String key) {
+  Widget _iInpSomenteLeitura(
+      String label, Map<String, dynamic> item, String key) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
