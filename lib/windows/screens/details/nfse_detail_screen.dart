@@ -238,8 +238,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       // cadastrada nunca aparecia aqui porque vinha da tabela errada.
       _loadList(
           '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(
-              () => _series = d.where((s) => s['tipo'] == 'NFS-e').toList())),
+          (d) => setState(() => _series = d.where((s) {
+                final tipo = s['tipo']?.toString().trim();
+                final normalizado = tipo?.replaceAll('_', '-').toUpperCase();
+                return normalizado == 'NFS-E' || normalizado == 'NFSE';
+              }).toList())),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
       // carregar tudo e filtrar no cliente truncava a lista e a busca por

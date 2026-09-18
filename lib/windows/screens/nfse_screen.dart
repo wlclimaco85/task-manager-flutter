@@ -263,26 +263,6 @@ class _NfseScreenState extends State<NfseScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Header ────────────────────────────────────────────────────────
-        Container(
-          height: 56,
-          color: GridColors.error,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Row(
-            children: [
-              Icon(Icons.receipt_long, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'NFSe - Nota Fiscal de Serviços',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-        // ── Conteúdo: filtros laterais + grid ─────────────────────────────
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,12 +272,13 @@ class _NfseScreenState extends State<NfseScreen> {
                 child: DynamicGridWindowsScreen<Map<String, dynamic>>(
                   key: ValueKey(_gridKey),
                   telaNome: 'nfse',
+                  tituloOverride: 'NFSe - Nota Fiscal de Serviços',
                   hasPermission: (p) => p == 'create' ? false : true,
                   fromJson: (json) => json,
                   toJson: (a) => a,
                   extraParams: _filtros,
                   detailScreenBuilder: (item) => NfseDetailScreen(item: item),
-                  showAppBar: false,
+                  showAppBar: true,
                 ),
               ),
             ],
@@ -377,7 +358,8 @@ class _NfseScreenState extends State<NfseScreen> {
               child: ElevatedButton.icon(
                 onPressed: _showEmissaoDialog,
                 icon: const Icon(Icons.send, size: 14),
-                label: const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
+                label:
+                    const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
@@ -515,8 +497,14 @@ class _NfseScreenState extends State<NfseScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _EmissaoDialog extends StatelessWidget {
-  final TextEditingController municipioCtrl, cnpjCtrl, nomeCtrl,
-      descricaoCtrl, valorCtrl, aliquotaCtrl, cnaeCtrl, codigoTribCtrl;
+  final TextEditingController municipioCtrl,
+      cnpjCtrl,
+      nomeCtrl,
+      descricaoCtrl,
+      valorCtrl,
+      aliquotaCtrl,
+      cnaeCtrl,
+      codigoTribCtrl;
   final bool emitindo;
   final String? resultado;
   final VoidCallback onEmitir;
@@ -554,9 +542,13 @@ class _EmissaoDialog extends StatelessWidget {
               _campo('Nome Tomador', nomeCtrl),
               _campo('Descrição do Serviço', descricaoCtrl),
               Row(children: [
-                Expanded(child: _campo('Valor', valorCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Valor', valorCtrl,
+                        teclado: TextInputType.number)),
                 const SizedBox(width: 12),
-                Expanded(child: _campo('Alíquota ISS', aliquotaCtrl, teclado: TextInputType.number)),
+                Expanded(
+                    child: _campo('Alíquota ISS', aliquotaCtrl,
+                        teclado: TextInputType.number)),
               ]),
               Row(children: [
                 Expanded(child: _campo('CNAE', cnaeCtrl)),
@@ -883,8 +875,7 @@ class _AuditoriaDialog extends StatelessWidget {
                           child: Text('Nenhum log de auditoria encontrado.'))
                       : ListView.separated(
                           itemCount: logs.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (_, i) {
                             final log = logs[i];
                             final data = log['data'] ??

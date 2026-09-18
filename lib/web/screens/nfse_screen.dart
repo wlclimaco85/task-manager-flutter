@@ -299,26 +299,6 @@ class _NfseScreenState extends State<NfseScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Header ────────────────────────────────────────────────────────
-        Container(
-          height: 56,
-          color: GridColors.error,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Row(
-            children: [
-              Icon(Icons.receipt_long, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'NFSe - Nota Fiscal de Serviços',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-        // ── Conteúdo: filtros laterais + grid ─────────────────────────────
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,13 +308,14 @@ class _NfseScreenState extends State<NfseScreen> {
                 child: DynamicGridWindowsScreen<Map<String, dynamic>>(
                   key: ValueKey(_gridKey),
                   telaNome: 'nfse',
+                  tituloOverride: 'NFSe - Nota Fiscal de Serviços',
                   hasPermission: (p) => p == 'create' ? false : true,
                   fromJson: (json) => json,
                   toJson: (a) => a,
                   extraParams: _filtros,
                   detailScreenBuilder: (item) => NfseDetailScreen(item: item),
                   customActions: _buildCustomActions,
-                  showAppBar: false,
+                  showAppBar: true,
                 ),
               ),
             ],
