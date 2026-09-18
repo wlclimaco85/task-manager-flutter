@@ -11,6 +11,9 @@ void main() {
     expect(source, contains('TenantContext.hasParceiro'));
     expect(source, contains("replaceAll('_', '-').toUpperCase()"));
     expect(source, contains("normalizado == 'NFS-E'"));
+    expect(source, contains("serie['numeroAtual'] ?? serie['numero_atual']"));
+    expect(source, contains("if (_isNovo || _statusAtual == 'PENDENTE')"));
+    expect(source, contains('await _salvarCabecalho();'));
   });
 
   test('cliente NFS-e preserva o ID no cancelamento quando informado', () {

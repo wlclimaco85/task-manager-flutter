@@ -399,6 +399,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
+    if (_isNovo) {
+      await _salvarCabecalho();
+      if (!mounted || _isNovo) return;
+    }
     setState(() => _enviando = true);
     try {
       final r =
@@ -701,10 +705,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          if (!_isNovo)
+          if (_isNovo || _statusAtual == 'PENDENTE')
             TextButton.icon(
-              onPressed:
-                  _statusAtual == 'PENDENTE' && !_enviando ? _enviarNfse : null,
+              onPressed: !_enviando ? _enviarNfse : null,
               icon: _enviando
                   ? const SizedBox(
                       width: 14,
@@ -951,7 +954,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             .map((s) => <String, dynamic>{
                   'id': s['id']?.toString() ?? '',
                   'nome':
-                      '${s['serie'] ?? ''} (atual: ${s['numeroAtual'] ?? 1})',
+                      '${s['serie'] ?? ''} (atual: ${_numeroAtualSerie(s) ?? 1})',
                 })
             .toList(),
         valueField: 'id',
@@ -965,13 +968,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           if (s.isNotEmpty) {
             _serieCtrl.text = s['serie']?.toString() ?? '';
             // Auto-preencher próximo número
-            final proximo = int.tryParse(s['numeroAtual'].toString()) ?? 1;
+            final proximo = int.tryParse(_numeroAtualSerie(s).toString()) ?? 1;
             _numeroCtrl.text = proximo.toString();
           }
         },
       ),
     );
   }
+
+  dynamic _numeroAtualSerie(Map<String, dynamic> serie) =>
+      serie['numeroAtual'] ?? serie['numero_atual'];
 
   /// Dropdown de Município (Cidade) — carrega de /api/cidade
   /// Ao selecionar, preenche o código de serviço municipal se a cidade tiver
