@@ -46,4 +46,19 @@ void main() {
     expect(source, contains('SmtpConfigScope.parceiro'));
     expect(source, isNot(contains("telaNome: 'parceiro_email_pop'")));
   });
+
+  group('WebParceiroDetailScreen - tipo_estabelecimento e matriz', () {
+    test('suprime parceiro duplicado e configura matriz condicional a FILIAL', () {
+      final source = File('lib/web/screens/details/parceiro_detail_screen.dart')
+          .readAsStringSync();
+
+      expect(source, contains("fieldName: 'parceiro'"));
+      expect(source, contains("isInForm: false"));
+      expect(source, contains("fieldName: 'tipo_estabelecimento'"));
+      expect(source, contains("'value': 'MATRIZ'"));
+      expect(source, contains("'value': 'FILIAL'"));
+      expect(source, contains("fieldName: 'matriz'"));
+      expect(source, contains("visibleWhen: 'tipo_estabelecimento==FILIAL'"));
+    });
+  });
 }

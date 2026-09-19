@@ -284,6 +284,9 @@ class FieldConfigWindows {
   final String? visibleWhenField;
   final dynamic visibleWhenValue;
 
+  /// Expressão no formato '<campo>==<valor>' para controle condicional de exibição.
+  final String? visibleWhen;
+
   /// Controle granular de habilitação por modo do formulário.
   /// Quando null, usa o valor de [enabled].
   /// Útil para campos que devem ser somente-leitura no INSERT mas editáveis no EDIT
@@ -337,6 +340,7 @@ class FieldConfigWindows {
     this.fieldOrder,
     this.visibleWhenField,
     this.visibleWhenValue,
+    this.visibleWhen,
     this.enabledOnInsert,
     this.enabledOnEdit,
     this.dropdownRemoteSearch,
