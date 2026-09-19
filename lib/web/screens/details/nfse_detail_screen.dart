@@ -7,6 +7,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/nfse_tax_calculator.dart';
 import '../../../services/nfse_caller.dart';
 import '../../../widgets/searchable_dropdown.dart';
@@ -26,6 +27,37 @@ String? resolveCodigoServicoMunicipalNfseWeb(Map<String, dynamic>? cidade) {
       cidade?['ibge'];
   final texto = valor?.toString().trim();
   return texto == null || texto.isEmpty ? null : texto;
+}
+
+class NfseEmpresaDefaults {
+  final String? municipio;
+  final String? cidadeId;
+  final String? ambiente;
+  final String? codigoServicoMunicipal;
+
+  const NfseEmpresaDefaults({
+    this.municipio,
+    this.cidadeId,
+    this.ambiente,
+    this.codigoServicoMunicipal,
+  });
+}
+
+NfseEmpresaDefaults resolveNfseEmpresaDefaults(Map<String, dynamic> empresa) {
+  final cidade = empresa['cidade'] is Map
+      ? Map<String, dynamic>.from(empresa['cidade'] as Map)
+      : <String, dynamic>{};
+  String? texto(dynamic value) {
+    final result = value?.toString().trim();
+    return result == null || result.isEmpty ? null : result;
+  }
+
+  return NfseEmpresaDefaults(
+    municipio: texto(cidade['nome']) ?? texto(empresa['cidade']),
+    cidadeId: texto(cidade['id']),
+    ambiente: texto(empresa['ambiente']),
+    codigoServicoMunicipal: resolveCodigoServicoMunicipalNfseWeb(cidade),
+  );
 }
 
 /// Tela de inserção/detalhe de NFSe — espelha o layout do NfeSankhyaDetailScreen:
@@ -129,7 +161,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     }
     final ambienteParceiro = login?.parceiro?.ambiente;
     _ambienteVal = i['ambiente']?.toString() ??
-        (TenantContext.hasParceiro ? ambienteParceiro : null);
+        (!_isNovo && TenantContext.hasParceiro ? ambienteParceiro : null);
 
     // Bug real (2026-09-17, code review): so' pode default/travar o Tomador
     // no parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
@@ -257,8 +289,45 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
+    await _carregarDadosEmpresa();
     await _carregarDadosTomador();
     _garantirCidadeSelecionadaNaLista();
+  }
+
+  Future<void> _carregarDadosEmpresa() async {
+    if (!_isNovo || _empresaId == null || _empresaId!.isEmpty) return;
+    try {
+      final response = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/empresa/$_empresaId');
+      if (response.statusCode != 200) {
+        AppLogger.i.warn(
+            'Nao foi possivel carregar defaults da empresa $_empresaId (HTTP ${response.statusCode}).');
+        return;
+      }
+      final raw = jsonDecode(response.body);
+      if (raw is! Map) return;
+      final defaults = resolveNfseEmpresaDefaults(
+          Map<String, dynamic>.from(raw['data'] is Map ? raw['data'] : raw));
+      if (!mounted) return;
+      setState(() {
+        if (_municipioCtrl.text.trim().isEmpty && defaults.municipio != null) {
+          _municipioCtrl.text = defaults.municipio!;
+          _cidadeId ??= defaults.cidadeId;
+        }
+        if ((_ambienteVal == null || _ambienteVal!.isEmpty) &&
+            defaults.ambiente != null) {
+          _ambienteVal = defaults.ambiente;
+        }
+        if (_codigoServicoCtrl.text.trim().isEmpty &&
+            defaults.codigoServicoMunicipal != null) {
+          _codigoServicoCtrl.text = defaults.codigoServicoMunicipal!;
+        }
+      });
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao carregar ambiente/municipio da empresa $_empresaId para nova NFS-e: $e',
+          stack);
+    }
   }
 
   Future<void> _carregarDadosTomador() async {

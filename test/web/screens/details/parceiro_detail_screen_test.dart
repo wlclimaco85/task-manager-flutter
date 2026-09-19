@@ -33,13 +33,17 @@ void main() {
     });
   });
 
-  test('aba CNAB envia empresa e parceiro e POP/Mail nao chama tela inexistente', () {
+  test(
+      'aba CNAB envia empresa e parceiro e POP/Mail nao chama tela inexistente',
+      () {
     final source = File('lib/web/screens/details/parceiro_detail_screen.dart')
         .readAsStringSync();
 
     expect(source, contains('empresaId: empresaIdInt'));
     expect(source, contains('parceiroId: parceiroId'));
     expect(source, contains("title: 'POP/Mail'"));
+    expect(source, contains('SmtpConfigTab('));
+    expect(source, contains('SmtpConfigScope.parceiro'));
     expect(source, isNot(contains("telaNome: 'parceiro_email_pop'")));
   });
 }

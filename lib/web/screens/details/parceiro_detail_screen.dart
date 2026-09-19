@@ -12,6 +12,8 @@ import 'modulo_cobranca_screen.dart';
 import 'filiais_parceiro_screen.dart';
 
 import '../../../widgets/finance/cnab_config_screen.dart';
+import '../../../widgets/smtp_config_tab.dart';
+
 class WebParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
@@ -147,7 +149,8 @@ class WebParceiroDetailScreen extends StatelessWidget {
                   empresaId: empresaIdInt,
                   hasPermission: hasPermission,
                 )
-              : const Center(child: Text('Salve o parceiro antes de ver as filiais.')),
+              : const Center(
+                  child: Text('Salve o parceiro antes de ver as filiais.')),
         ),
         RelatedGridTab(
           title: 'Logins',
@@ -250,9 +253,13 @@ class WebParceiroDetailScreen extends StatelessWidget {
         RelatedGridTab(
           title: 'POP/Mail',
           icon: Icons.mail_outline,
-          customWidget: const Center(
-            child: Text('Nenhuma configuração POP/Mail disponível para este parceiro.'),
-          ),
+          customWidget: parceiroId > 0
+              ? SmtpConfigTab(
+                  scope: SmtpConfigScope.parceiro,
+                  id: parceiroId,
+                  nome: parceiroNome,
+                )
+              : const Center(child: Text('ID do parceiro não disponível')),
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
         RelatedGridTab(
@@ -296,7 +303,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
                 )
               : const Center(child: Text('ID do parceiro não disponível')),
         ),
-              RelatedGridTab(
+        RelatedGridTab(
           title: 'Configuração CNAB',
           icon: Icons.account_balance,
           customWidget: parceiroId > 0

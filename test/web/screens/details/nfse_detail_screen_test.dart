@@ -42,4 +42,25 @@ void main() {
     expect(query, contains('empId=1'));
     expect(query, contains('parceiroId=1751'));
   });
+
+  test('extrai municipio e ambiente dos dados da empresa emissora', () {
+    final defaults = resolveNfseEmpresaDefaults({
+      'ambiente': 'HOMOLOGACAO',
+      'cidade': {'id': 31, 'nome': 'Uberaba', 'codigoServicoMunicipal': '1701'},
+      'estado': {'sigla': 'MG'},
+    });
+
+    expect(defaults.municipio, 'Uberaba');
+    expect(defaults.cidadeId, '31');
+    expect(defaults.ambiente, 'HOMOLOGACAO');
+    expect(defaults.codigoServicoMunicipal, '1701');
+  });
+
+  test('nao inventa municipio ou ambiente quando empresa nao os possui', () {
+    final defaults = resolveNfseEmpresaDefaults(const {});
+
+    expect(defaults.municipio, isNull);
+    expect(defaults.cidadeId, isNull);
+    expect(defaults.ambiente, isNull);
+  });
 }
