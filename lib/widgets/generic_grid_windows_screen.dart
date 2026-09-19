@@ -469,26 +469,29 @@ Widget buildBulkActionsMenuButton<T>({
           );
         }).toList();
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: GridColors.divider),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.playlist_add_check,
-              size: 18,
-              color: GridColors.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              hasSelection ? 'Ações ($selectedCount)' : 'Ações',
-              style: const TextStyle(color: GridColors.primary),
-            ),
-          ],
+      child: SizedBox(
+        height: 40,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: GridColors.divider),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.playlist_add_check,
+                size: 18,
+                color: GridColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasSelection ? 'Ações ($selectedCount)' : 'Ações',
+                style: const TextStyle(color: GridColors.primary),
+              ),
+            ],
+          ),
         ),
       ),
     ),
@@ -4452,23 +4455,23 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             ),
           if (widget.hasPermission('deleteMultiple') &&
               widget.buttonPermissions['deleteMultiple']!)
-            OutlinedButton.icon(
-              onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
-              icon: const Icon(Icons.delete_outline, size: 18),
-              label: Text(
-                selectedRows.isEmpty
-                    ? 'Excluir selecionados'
-                    : 'Excluir (${selectedRows.length})',
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: GridColors.error,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+            SizedBox(
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: Text(
+                  selectedRows.isEmpty
+                      ? 'Excluir selecionados'
+                      : 'Excluir (${selectedRows.length})',
                 ),
-                side: const BorderSide(color: GridColors.divider),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.error,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  side: const BorderSide(color: GridColors.divider),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
             ),

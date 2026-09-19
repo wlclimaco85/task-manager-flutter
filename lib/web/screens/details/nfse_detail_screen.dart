@@ -60,6 +60,47 @@ NfseEmpresaDefaults resolveNfseEmpresaDefaults(Map<String, dynamic> empresa) {
   );
 }
 
+class NfseTomadorDefaults {
+  final String? municipio;
+  final String? cidadeId;
+  final String? ambiente;
+
+  const NfseTomadorDefaults({this.municipio, this.cidadeId, this.ambiente});
+}
+
+NfseTomadorDefaults resolveNfseTomadorDefaults(Map<String, dynamic> tomador) {
+  final endereco = tomador['endereco'] is Map
+      ? Map<String, dynamic>.from(tomador['endereco'] as Map)
+      : <String, dynamic>{};
+  final cidadeValue = endereco['cidade'] is Map
+      ? endereco['cidade']
+      : tomador['cidade'] ?? endereco['cidade'];
+  final cidade = cidadeValue is Map
+      ? Map<String, dynamic>.from(cidadeValue)
+      : <String, dynamic>{};
+  String? texto(dynamic value) {
+    final result = value?.toString().trim();
+    return result == null || result.isEmpty ? null : result;
+  }
+
+  final ambienteRaw = texto(tomador['ambiente']);
+  String? ambiente;
+  if (ambienteRaw != null) {
+    final normalizado = ambienteRaw.toUpperCase();
+    ambiente = normalizado.contains('PRODU') || normalizado == '1'
+        ? 'PRODUCAO'
+        : normalizado.contains('HOMOLOG') || normalizado == '2'
+            ? 'HOMOLOGACAO'
+            : null;
+  }
+
+  return NfseTomadorDefaults(
+    municipio: texto(cidade['nome']) ?? texto(cidadeValue),
+    cidadeId: texto(cidade['id']),
+    ambiente: ambiente,
+  );
+}
+
 /// Tela de inserção/detalhe de NFSe — espelha o layout do NfeSankhyaDetailScreen:
 /// cabeçalho fiscal à esquerda + grid de itens (produtos de serviço) à direita
 /// com aba de Impostos (ISS).
@@ -159,9 +200,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     if (_isNovo && _municipioCtrl.text.isEmpty && cidadeParceiro != null) {
       _municipioCtrl.text = cidadeParceiro;
     }
-    final ambienteParceiro = login?.parceiro?.ambiente;
+    final ambienteParceiro = resolveNfseTomadorDefaults({
+      'ambiente': login?.parceiro?.ambiente,
+    }).ambiente;
     _ambienteVal = i['ambiente']?.toString() ??
-        (!_isNovo && TenantContext.hasParceiro ? ambienteParceiro : null);
+        (_isNovo || TenantContext.hasParceiro ? ambienteParceiro : null);
 
     // Bug real (2026-09-17, code review): so' pode default/travar o Tomador
     // no parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
@@ -289,8 +332,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
-    await _carregarDadosEmpresa();
     await _carregarDadosTomador();
+    await _carregarDadosEmpresa();
     _garantirCidadeSelecionadaNaLista();
   }
 
@@ -343,10 +386,22 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               ? Map<String, dynamic>.from(raw)
               : null;
       if (data == null || !mounted) return;
+      final defaults = resolveNfseTomadorDefaults(data);
       setState(() {
         if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
             data['nome'] != null) {
           _tomadorNome = data['nome'].toString();
+        }
+        if (_isNovo && _municipioCtrl.text.trim().isEmpty) {
+          _municipioCtrl.text = defaults.municipio ?? '';
+        }
+        if (_isNovo &&
+            defaults.cidadeId != null &&
+            (_cidadeId == null || _municipioCtrl.text == defaults.municipio)) {
+          _cidadeId = defaults.cidadeId;
+        }
+        if (_isNovo && (_ambienteVal == null || _ambienteVal!.isEmpty)) {
+          _ambienteVal = defaults.ambiente;
         }
       });
     } catch (_) {}

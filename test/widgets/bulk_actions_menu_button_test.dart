@@ -32,6 +32,32 @@ void main() {
   }
 
   group('buildBulkActionsMenuButton - habilitação pelo total selecionado', () {
+    testWidgets('mantem a altura da acao alinhada ao botao Excluir',
+        (tester) async {
+      await pumpButton(
+        tester,
+        selectedCount: 1,
+        selectedItems: const ['nfse'],
+        actions: [
+          BulkAction<String>(
+            icon: Icons.send,
+            label: 'Enviar',
+            onPressed: (_, __) async {},
+          ),
+        ],
+        onSelected: (_) {},
+      );
+
+      final buttonSize = tester.widget<SizedBox>(
+        find
+            .descendant(
+              of: find.byType(PopupMenuButton<BulkAction<String>>),
+              matching: find.byType(SizedBox),
+            )
+            .first,
+      );
+      expect(buttonSize.height, 40);
+    });
     testWidgets('sem seleção: botão "Ações" fica desabilitado (opaco)',
         (tester) async {
       await pumpButton(
@@ -61,8 +87,7 @@ void main() {
       expect(opacity.opacity, 0.5);
     });
 
-    testWidgets(
-        'com >=1 linha selecionada: botão "Ações (N)" fica habilitado',
+    testWidgets('com >=1 linha selecionada: botão "Ações (N)" fica habilitado',
         (tester) async {
       await pumpButton(
         tester,

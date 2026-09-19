@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/utils/dropdown_helpers.dart';
 import 'package:task_manager_flutter/web/screens/details/nfse_detail_screen.dart';
+import 'package:task_manager_flutter/web/screens/nfse_screen.dart';
 
 void main() {
   testWidgets('Web: cria item de servico com campo Produto (Servico)',
@@ -54,6 +55,43 @@ void main() {
     expect(defaults.cidadeId, '31');
     expect(defaults.ambiente, 'HOMOLOGACAO');
     expect(defaults.codigoServicoMunicipal, '1701');
+  });
+
+  test('extrai municipio e ambiente do tomador para nova NFS-e', () {
+    final defaults = resolveNfseTomadorDefaults({
+      'ambiente': '2 - Homologação',
+      'cidade': {'id': 31001, 'nome': 'Uberaba'},
+    });
+
+    expect(defaults.municipio, 'Uberaba');
+    expect(defaults.cidadeId, '31001');
+    expect(defaults.ambiente, 'HOMOLOGACAO');
+  });
+
+  test('aceita cidade aninhada no endereco do tomador', () {
+    final defaults = resolveNfseTomadorDefaults({
+      'ambiente': 'PRODUCAO',
+      'cidade': 'Uberaba',
+      'endereco': {
+        'cidade': {'id': 123, 'nome': 'Uberaba'}
+      },
+    });
+
+    expect(defaults.municipio, 'Uberaba');
+    expect(defaults.cidadeId, '123');
+    expect(defaults.ambiente, 'PRODUCAO');
+  });
+
+  test('disponibiliza ações de grade apenas nos estados fiscais válidos', () {
+    expect(nfsePodeConfirmarStatus('RASCUNHO'), isTrue);
+    expect(nfsePodeConfirmarStatus('PENDENTE'), isTrue);
+    expect(nfsePodeConfirmarStatus('AUTORIZADA'), isFalse);
+    expect(nfsePodeEnviarStatus('CONFIRMADA'), isTrue);
+    expect(nfsePodeEnviarStatus('PENDENTE'), isFalse);
+    expect(nfsePodeGerarPdfStatus('AUTORIZADA'), isTrue);
+    expect(nfsePodeGerarPdfStatus('REJEITADA'), isFalse);
+    expect(nfsePodeCancelarStatus('AUTORIZADA'), isTrue);
+    expect(nfsePodeCancelarStatus('CONFIRMADA'), isFalse);
   });
 
   test('nao inventa municipio ou ambiente quando empresa nao os possui', () {
