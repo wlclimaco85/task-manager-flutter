@@ -1,3 +1,5 @@
+import 'package:task_manager_flutter/services/permission_service.dart';
+import 'package:task_manager_flutter/utils/string_utils.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import 'nfe_serie_grid_screen.dart';
 import 'dart:async';
@@ -159,7 +161,240 @@ class BottomNavBarScreen extends StatefulWidget {
 }
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
-  static bool _openHasPermission(String _) => true;
+  
+  static const Map<String, ({String menuId, AppScreen? appScreen})> _menuActionConfig = {
+    'PDV': (menuId: 'pdv_nfce', appScreen: AppScreen.pdvNfce),
+    'Produtos': (menuId: 'produtos', appScreen: AppScreen.produto),
+    'Parceiros': (menuId: 'parceiros', appScreen: AppScreen.parceiros),
+    'Fornecedores': (menuId: 'fornecedores', appScreen: AppScreen.fornecedores),
+    'Planos': (menuId: 'planos', appScreen: AppScreen.planos),
+    'Tipos de Parceiro': (menuId: 'tipo_parceiro', appScreen: AppScreen.tipoParceiro),
+    'Serviços Contratados': (menuId: 'servicos_contratados', appScreen: AppScreen.servicoContratado),
+    'Módulos de Serviço': (menuId: 'modulos_servicos', appScreen: AppScreen.moduloServico),
+    'Catálogo de Produtos': (menuId: 'catalogo_produto', appScreen: AppScreen.catalogoProduto),
+    'Unidades de Medida': (menuId: 'unidade_medida', appScreen: AppScreen.unidadeMedida),
+    'Orçamentos': (menuId: 'orcamentos', appScreen: null),
+    'Pedidos de Venda': (menuId: 'pedidos_venda', appScreen: null),
+    'Pedidos de Compra': (menuId: 'pedidos_compra', appScreen: null),
+    'Pedidos': (menuId: 'pedidos', appScreen: AppScreen.pedidos),
+    'Aprovação de Compras': (menuId: 'aprovacao_compra', appScreen: AppScreen.aprovacaoCompra),
+    'Tabela de Preços': (menuId: 'tabela_preco', appScreen: AppScreen.tabelaPreco),
+    'Devoluções': (menuId: 'devolucoes', appScreen: AppScreen.devolucoes),
+    'Reserva de Estoque': (menuId: 'reserva_estoque', appScreen: AppScreen.reservaEstoque),
+    'Multi-depósito': (menuId: 'multi_deposito', appScreen: AppScreen.multiDeposito),
+    'Dashboard Comercial': (menuId: 'dashboard_comercial', appScreen: AppScreen.dashComercialArea),
+    'Contas Pagar': (menuId: 'contas_pagar', appScreen: AppScreen.contasPagar),
+    'Contas Receber': (menuId: 'contas_receber', appScreen: AppScreen.contasReceber),
+    'Contas Bancarias': (menuId: 'conta_bancaria', appScreen: AppScreen.contasBancarias),
+    'Formas de Pagamento': (menuId: 'formas_pagamento', appScreen: AppScreen.formasPagamento),
+    'Centros de Custo': (menuId: 'centros_custo', appScreen: null),
+    'Categorias Financeiras': (menuId: 'categorias_financeiras', appScreen: null),
+    'Lançamentos Financeiros': (menuId: 'lancamentos_financeiros', appScreen: AppScreen.lancamentosFinanceiros),
+    'Importar Extratos': (menuId: 'importar_extrato', appScreen: AppScreen.importarExtrato),
+    'Conciliação Bancária': (menuId: 'conciliacao_bancaria', appScreen: AppScreen.conciliacaoBancaria),
+    'Rateio Financeiro': (menuId: 'rateio_financeiro', appScreen: null),
+    'Baixa Automática': (menuId: 'baixa_automatica', appScreen: null),
+    'Renegociação': (menuId: 'renegociacao', appScreen: null),
+    'Cobrança': (menuId: 'cobranca', appScreen: AppScreen.cobranca),
+    'Régua de Cobrança': (menuId: 'cobranca_automatica', appScreen: null),
+    'DRE Gerencial': (menuId: 'dre_gerencial', appScreen: AppScreen.dreGerencial),
+    'Envio EDI (Remessa)': (menuId: 'cnab_remessa', appScreen: AppScreen.cnabRemessa),
+    'Kanban de Pagamentos': (menuId: 'kanban_pagamentos', appScreen: null),
+    'Aprovação de Pagamentos': (menuId: 'aprovacao_pagamento', appScreen: null),
+    'Calendário de Guias': (menuId: 'calendario_guias', appScreen: null),
+    'Importar Boletos (Lote)': (menuId: 'importar_boletos_lote', appScreen: AppScreen.boletoImportacaoLote),
+    'Integrações Financeiras': (menuId: 'integracoes_financeiras', appScreen: AppScreen.integracoesFinanceiras),
+    'Dashboard': (menuId: 'dashboard', appScreen: AppScreen.dashboard),
+    'Dashboard Financeiro': (menuId: 'dashboard_financeiro', appScreen: AppScreen.dashFinanceiroArea),
+    'NF-e Saída': (menuId: 'nfe_saida', appScreen: AppScreen.nfeSaida),
+    'NF-e Entrada': (menuId: 'nfe_entrada', appScreen: AppScreen.nfeEntrada),
+    'NFC-e (Cupons)': (menuId: 'nfce_grid', appScreen: AppScreen.nfceGrid),
+    'NF-e Série': (menuId: 'nfe_serie', appScreen: AppScreen.nfeSerie),
+    'NF-e Finalidade': (menuId: 'nfe_finalidade', appScreen: null),
+    'NF-e Tipo Operação': (menuId: 'nfe_tipo_operacao', appScreen: null),
+    'Importar XML NF-e': (menuId: 'nfe_import_xml', appScreen: null),
+    'Importar NF-e CSV': (menuId: 'nfe_import_csv', appScreen: null),
+    'Consulta DF-e': (menuId: 'consulta_dfe', appScreen: null),
+    'Manifestação Destinatário': (menuId: 'manifestacao_destinatario', appScreen: null),
+    'Cancelamento e CC-e': (menuId: 'cancelamento_cce', appScreen: null),
+    'Agendar NFe Recorrente': (menuId: 'agendamento_nfe', appScreen: null),
+    'Regime Tributário': (menuId: 'regime_tributario', appScreen: AppScreen.regimeTributario),
+    'Obrigações Fiscais': (menuId: 'obrigacoes_fiscais', appScreen: AppScreen.obrigacoesFiscais),
+    'Calendário Tributário': (menuId: 'calendario_guias', appScreen: null),
+    'Dashboard Fiscal': (menuId: 'dashboard_fiscal', appScreen: AppScreen.dashFiscalArea),
+    'Notas de Serviço (NFS-e)': (menuId: 'nfse', appScreen: AppScreen.nfseLista),
+    'Séries NFS-e': (menuId: 'nfse_serie', appScreen: AppScreen.nfseSerie),
+    'Serviços NFS-e': (menuId: 'nfse_servico', appScreen: AppScreen.nfseServico),
+    'Importar XML NFS-e': (menuId: 'nfse_import_xml', appScreen: null),
+    'Config ISS': (menuId: 'config_fiscal', appScreen: AppScreen.configFiscal),
+    'Bater Ponto': (menuId: 'ponto', appScreen: AppScreen.ponto),
+    'Funcionários': (menuId: 'funcionario', appScreen: AppScreen.funcionarios),
+    'Solicitar Ajuste': (menuId: 'solicitar_ajuste', appScreen: AppScreen.solicitacaoAjustePonto),
+    'Ajuste de Ponto': (menuId: 'ajuste_ponto', appScreen: AppScreen.ajustePonto),
+    'Feriados': (menuId: 'feriados', appScreen: AppScreen.feriados),
+    'Setores': (menuId: 'setores', appScreen: AppScreen.setores),
+    'Horários Funcionário': (menuId: 'horario_func', appScreen: null),
+    'Dashboard DP': (menuId: 'dashboard_dp', appScreen: AppScreen.dashDpArea),
+    'Plano de Contas': (menuId: 'conta_contabil', appScreen: null),
+    'Lançamentos Contábeis': (menuId: 'lancamento_contabil', appScreen: AppScreen.lancamentoContabil),
+    'Balancete': (menuId: 'balancete', appScreen: AppScreen.balancete),
+    'Fechamento de Período': (menuId: 'fechamento_periodo', appScreen: AppScreen.fechamentoPeriodo),
+    'Dashboard IA': (menuId: 'ai_dashboard', appScreen: AppScreen.aiDashboard),
+    'Assistente IA': (menuId: 'ai_assistente', appScreen: AppScreen.aiAssistente),
+    'Alertas': (menuId: 'alertas', appScreen: null),
+    'Diretórios': (menuId: 'diretorios', appScreen: AppScreen.diretorios),
+    'Notícias': (menuId: 'noticias', appScreen: AppScreen.noticias),
+    'Kanban Chamados': (menuId: 'kanban', appScreen: AppScreen.kanbanChamados),
+    'Kanban Chat': (menuId: 'kanban_chat', appScreen: AppScreen.chatKanban),
+    'Instagram Monitor': (menuId: 'instagram_monitor', appScreen: null),
+    'Academias': (menuId: 'academia', appScreen: null),
+    'Alimentos': (menuId: 'alimentos', appScreen: AppScreen.alimentos),
+    'Dietas': (menuId: 'dietas', appScreen: AppScreen.dietas),
+    'Exercícios': (menuId: 'exercicios', appScreen: AppScreen.exercicios),
+    'Grupos Musculares': (menuId: 'grupos_musculares', appScreen: AppScreen.gruposMusculares),
+    'Medicamentos': (menuId: 'medicamentos', appScreen: AppScreen.medicamentos),
+    'Modalidades': (menuId: 'modalidades', appScreen: AppScreen.modalidades),
+    'Objetivos': (menuId: 'objetivos', appScreen: AppScreen.objetivos),
+    'Personais': (menuId: 'personais', appScreen: AppScreen.personais),
+    'Suplementos': (menuId: 'suplementos', appScreen: AppScreen.suplementos),
+    'Treinos': (menuId: 'treino', appScreen: null),
+    'Avaliação Física': (menuId: 'avaliacao_fisica', appScreen: AppScreen.exames),
+    'Anamnese': (menuId: 'anamnese', appScreen: null),
+    'Trading': (menuId: 'trading_painel', appScreen: AppScreen.trading),
+    'Backtesting': (menuId: 'trading_backtest', appScreen: null),
+    'Sinais de Mercado': (menuId: 'trading_sinais', appScreen: null),
+    'Oportunidades': (menuId: 'trading_oportunidades', appScreen: null),
+    'Watchlist': (menuId: 'trading_watchlist', appScreen: null),
+    'Alertas de Preço': (menuId: 'trading_alertas', appScreen: null),
+    'Operações Assistidas': (menuId: 'trading_operacoes', appScreen: null),
+    'Configuração da Corretora': (menuId: 'trading_corretora', appScreen: null),
+    'Minha Carteira': (menuId: 'trading_carteira', appScreen: null),
+    'Dashboard GME': (menuId: 'dashboard_gme', appScreen: null),
+    'Contratos GME': (menuId: 'contrato', appScreen: null),
+    'Equipamentos': (menuId: 'equipamento', appScreen: null),
+    'Ordens de Serviço': (menuId: 'ordem_servico', appScreen: null),
+    'Planos Manutenção': (menuId: 'plano_manutencao', appScreen: null),
+    'Horímetro': (menuId: 'horimetro', appScreen: null),
+    'Histórico Manutenção': (menuId: 'historico_manutencao', appScreen: null),
+    'Técnicos': (menuId: 'tecnico_manutencao', appScreen: null),
+    'Dashboard Service': (menuId: 'dashboard_service', appScreen: null),
+    'SLA': (menuId: 'sla', appScreen: null),
+    'Filas Atendimento': (menuId: 'fila_atendimento', appScreen: null),
+    'Categorias Chamado': (menuId: 'categoria_chamado', appScreen: null),
+    'Avaliações': (menuId: 'chamado_avaliacao', appScreen: null),
+    'Dashboard Projetos': (menuId: 'dashboard_projetos', appScreen: null),
+    'Projetos': (menuId: 'projeto', appScreen: null),
+    'Etapas Projeto': (menuId: 'projeto_etapa', appScreen: null),
+    'Recursos Projeto': (menuId: 'projeto_recurso', appScreen: null),
+    'Apontamentos': (menuId: 'projeto_apontamento', appScreen: null),
+    'Medições': (menuId: 'projeto_medicao', appScreen: null),
+    'Cargos/Recursos': (menuId: 'cargo_recurso', appScreen: null),
+    'Dashboard Precificação': (menuId: 'dashboard_precificacao', appScreen: null),
+    'Precificações': (menuId: 'precificacao', appScreen: null),
+    'Custos Diretos': (menuId: 'custo_direto', appScreen: null),
+    'Mão de Obra': (menuId: 'mao_de_obra', appScreen: null),
+    'Serviços Precificação': (menuId: 'precificacao_servico', appScreen: null),
+    'Condições Pagamento': (menuId: 'condicao_pagamento', appScreen: null),
+    'Propostas Comerciais': (menuId: 'proposta_comercial', appScreen: null),
+    'Aplicativo': (menuId: 'aplicativo', appScreen: AppScreen.aplicativo),
+    'Empresas': (menuId: 'empresas', appScreen: AppScreen.empresas),
+    'Usuários': (menuId: 'logins', appScreen: AppScreen.logins),
+    'Roles': (menuId: 'roles', appScreen: AppScreen.roles),
+    'Alvarás': (menuId: 'alvaras', appScreen: AppScreen.alvaras),
+    'Configurações Admin': (menuId: 'config_admin', appScreen: AppScreen.configuracoesAdmin),
+    'Configurações Sistema': (menuId: 'config_sistema', appScreen: AppScreen.configSistema),
+    'Editor de Telas': (menuId: 'editor_telas', appScreen: null),
+    'Cadastro de Empresa': (menuId: 'cadastro_empresa', appScreen: null),
+    'Importação Fiscal Automação': (menuId: 'importacao_fiscal_automacao', appScreen: null),
+    'Certificado Digital': (menuId: 'certificado_digital', appScreen: null),
+    'Solicitações de Acesso': (menuId: 'solicitacoes_acesso', appScreen: null),
+    'Permissões Multi-Empresa': (menuId: 'permissoes_multi_empresa', appScreen: null),
+    'Query Builder': (menuId: 'query_builder', appScreen: null),
+    'Sessões': (menuId: 'sessoes', appScreen: null),
+    'Meu Perfil': (menuId: 'perfil', appScreen: AppScreen.perfil),
+    'Controle de Acesso': (menuId: 'permissoes', appScreen: AppScreen.rolesPermissoes),
+    'Config Fiscal': (menuId: 'config_fiscal', appScreen: AppScreen.configFiscal),
+    'Sair': (menuId: 'sair', appScreen: null),
+  };
+
+  /// Verifica se o usuário tem permissão para visualizar uma tela no mobile,
+  /// seguindo rigorosamente a mesma matriz de segurança e permissões de role do Web.
+  bool _canSeeOption(String optionTitle, SecurityMatrix sec) {
+    if (optionTitle == 'Sair') return true;
+
+    final config = _menuActionConfig[optionTitle];
+    final menuItemId = config?.menuId ?? optionTitle.toLowerCase();
+    final appScreen = config?.appScreen;
+
+    // Itens exclusivos do dono do sistema (wlclimaco@gmail.com)
+    const ownerOnly = {'match', 'timeline', 'instagram_monitor'};
+    if (ownerOnly.contains(menuItemId)) {
+      final email = AuthUtility.userInfo?.login?.email?.toLowerCase() ?? '';
+      return email == 'wlclimaco@gmail.com';
+    }
+
+    // Itens exclusivos de MASTER
+    const masterOnly = {'sessoes'};
+    if (masterOnly.contains(menuItemId)) {
+      return sec.isMaster;
+    }
+
+    // MASTER / SYSTEM tem acesso total (respeitando módulo se configurado)
+    if (sec.isMaster) {
+      if (appScreen != null) {
+        return ModuloAccess.isScreenAllowed(appScreen);
+      }
+      return true;
+    }
+
+    // 1. Permissões dinâmicas da Role vindas do backend via PermissionService
+    if (PermissionService().canViewScreen(menuItemId)) {
+      if (appScreen != null) {
+        return !ModuloAccess.hasModulosConfigurados || ModuloAccess.isScreenAllowed(appScreen);
+      }
+      return true;
+    }
+
+    // 2. Permissões via SecurityMatrix (fallback / perfis legados)
+    if (appScreen != null) {
+      return sec.canView(appScreen);
+    }
+
+    final camelCaseId = StringUtils.snakeToCamelCase(menuItemId);
+    final allKnown = {camelCaseId};
+    final allowed = sec.allowedTelaIds(allKnown);
+    return allowed == null || allowed.contains(camelCaseId);
+  }
+
+  /// Resolve permissão para uma ação específica na tela (CRUD)
+  bool _hasActionPermission(SecurityMatrix sec, String menuItemId, String action, [AppScreen? appScreen]) {
+    if (sec.isMaster) return true;
+
+    if (appScreen != null) {
+      return _hasPermissionFor(sec, appScreen, action);
+    }
+
+    final perm = PermissionService().getPermission(menuItemId);
+    if (perm != null) {
+      final act = action.toLowerCase();
+      if (act == 'insert' || act == 'create') return perm.podeInserir;
+      if (act == 'update' || act == 'edit') return perm.podeEditar;
+      if (act == 'delete' || act == 'remove') return perm.podeDeletar;
+      if (act == 'baixar' || act == 'baixa') return perm.podeBaixar;
+      return perm.podeVer;
+    }
+
+    return sec.canView(appScreen ?? AppScreen.dashboard);
+  }
+
+  /// Retorna callback de checagem de permissão para passar aos widgets
+  bool Function(String action) _resolvePermissionForOption(String title, SecurityMatrix sec) {
+    final config = _menuActionConfig[title];
+    final menuId = config?.menuId ?? title.toLowerCase();
+    final appScreen = config?.appScreen;
+    return (String action) => _hasActionPermission(sec, menuId, action, appScreen);
+  }
+
 
   int selectedIndex = 0;
 
@@ -951,8 +1186,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         builder: (_) => DynamicGridDynamicScreen(
           key: ValueKey('mobile_dynamic_push_$telaNome'),
           telaNome: telaNome,
-          hasPermission: (action) =>
-              screen == null ? true : _hasPermissionFor(sec, screen, action),
+          hasPermission: (action) => _hasActionPermission(sec, telaNome, action, screen),
           storageKey: 'mobile_dynamic_$telaNome',
           fetchEndpointOverride: fetchEndpointOverride,
           createEndpointOverride: createEndpointOverride,
@@ -965,6 +1199,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   void onMenuOptionSelected(String option, SecurityMatrix sec) {
     Navigator.pop(context); // fecha o bottom sheet do menu
+    if (!_canSeeOption(option, sec)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SemAcessoScreen(),
+        ),
+      );
+      return;
+    }
     Future<void>? nav;
 
     switch (option) {
@@ -973,14 +1216,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const Scaffold(
-              appBar: UserBannerAppBar(
+            builder: (_) => Scaffold(
+              appBar: const UserBannerAppBar(
                 screenTitle: 'Séries NF-e',
                 showFilterButton: false,
                 showBackButton: true,
               ),
               body: SafeArea(
-                child: WebNfeSerieGridScreen(hasPermission: _openHasPermission),
+                child: WebNfeSerieGridScreen(hasPermission: _resolvePermissionForOption(option, sec)),
               ),
             ),
           ),
@@ -1020,9 +1263,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const DynamicGridDynamicScreen(
+            builder: (_) => DynamicGridDynamicScreen(
               telaNome: 'gme_dashboard',
-              hasPermission: _openHasPermission,
+              hasPermission: _resolvePermissionForOption(option, sec),
               showAppBar: true,
               useUserBannerAppBar: true,
             ),
@@ -1033,9 +1276,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const DynamicGridDynamicScreen(
+            builder: (_) => DynamicGridDynamicScreen(
               telaNome: 'service_dashboard',
-              hasPermission: _openHasPermission,
+              hasPermission: _resolvePermissionForOption(option, sec),
               showAppBar: true,
               useUserBannerAppBar: true,
             ),
@@ -1046,9 +1289,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const DynamicGridDynamicScreen(
+            builder: (_) => DynamicGridDynamicScreen(
               telaNome: 'projeto_dashboard',
-              hasPermission: _openHasPermission,
+              hasPermission: _resolvePermissionForOption(option, sec),
               showAppBar: true,
               useUserBannerAppBar: true,
             ),
@@ -1059,9 +1302,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const DynamicGridDynamicScreen(
+            builder: (_) => DynamicGridDynamicScreen(
               telaNome: 'precificacao_dashboard',
-              hasPermission: _openHasPermission,
+              hasPermission: _resolvePermissionForOption(option, sec),
               showAppBar: true,
               useUserBannerAppBar: true,
             ),
@@ -2157,7 +2400,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     ];
 
     // Filtra apenas grupos com itens visíveis
-    final gruposVisiveis = modulos.where((g) => g.items.isNotEmpty).toList();
+    final gruposVisiveis = modulos
+        .map((g) => _ModuloGroup(
+              g.nome,
+              g.icon,
+              g.items.where((i) => _canSeeOption(i.title, sec)).toList(),
+            ))
+        .where((g) => g.items.isNotEmpty)
+        .toList();
 
     showModalBottomSheet(
       context: context,

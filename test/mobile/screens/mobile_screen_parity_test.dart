@@ -23,6 +23,7 @@ import 'package:task_manager_flutter/mobile/screens/trading_screens.dart';
 import 'package:task_manager_flutter/customization/dynamic_grid_dynamic_screen.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/role_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
@@ -105,6 +106,45 @@ void main() {
 
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
+    });
+
+    testWidgets('Security Matrix and Role Permissions parity gates screens correctly', (tester) async {
+      // 1. Usuário normal sem permissões na role:
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 2, tipoLogin: LoginEnum.APP_ABRACO, roles: [
+          Role(id: 1, key: 'ROLE_CLIENTE', description: 'Cliente')
+        ]),
+        permissoes: const [
+          RolePermissaoItem(
+            telaNome: 'Planos',
+            podeVer: true,
+            podeInserir: true,
+            podeEditar: false,
+            podeDeletar: false,
+          ),
+        ],
+      );
+      PermissionService().setPermissoes(AuthUtility.userInfo!.permissoes);
+
+      expect(PermissionService().canViewScreen('planos'), isTrue);
+      expect(PermissionService().canViewScreen('roles'), isFalse);
+
+      final sec = SecurityMatrix.of(AuthUtility.userInfo);
+      expect(sec.isMaster, isFalse);
+
+      // 2. Usuário MASTER tem acesso total
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-master',
+        login: Login(id: 1, tipoLogin: LoginEnum.MASTER, roles: [
+          Role(id: 99, key: 'ROLE_SYSTEM', description: 'Sistema')
+        ]),
+        permissoes: const [],
+      );
+      final secMaster = SecurityMatrix.of(AuthUtility.userInfo);
+      expect(secMaster.isMaster, isTrue);
+      expect(secMaster.canView(AppScreen.logins), isTrue);
+      expect(secMaster.canView(AppScreen.rolesPermissoes), isTrue);
     });
   });
 }
