@@ -377,17 +377,37 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   Future<void> _carregarDadosTomador() async {
     if (_tomadorId == null || _tomadorId!.isEmpty) return;
+    final parceiroSessao = AuthUtility.userInfo?.login?.parceiro;
+    final dadosSessao = parceiroSessao?.toJson() ?? <String, dynamic>{};
+    var data = Map<String, dynamic>.from(dadosSessao);
     try {
       final r = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/parceiro/$_tomadorId');
-      if (r.statusCode != 200) return;
-      final raw = jsonDecode(r.body);
-      final data = raw is Map && raw['data'] is Map
-          ? Map<String, dynamic>.from(raw['data'] as Map)
-          : raw is Map
-              ? Map<String, dynamic>.from(raw)
-              : null;
-      if (data == null || !mounted) return;
+      if (r.statusCode == 200) {
+        final raw = jsonDecode(r.body);
+        final resposta = raw is Map && raw['data'] is Map
+            ? Map<String, dynamic>.from(raw['data'] as Map)
+            : raw is Map
+                ? Map<String, dynamic>.from(raw)
+                : <String, dynamic>{};
+        data = {
+          ...data,
+          for (final entry in resposta.entries)
+            if (entry.value != null && entry.value.toString().trim().isNotEmpty)
+              entry.key: entry.value,
+        };
+      } else {
+        AppLogger.i.warn(
+            'Usando dados da sessao para o tomador $_tomadorId (HTTP ${r.statusCode}).');
+      }
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao consultar tomador $_tomadorId; usando dados da sessao: $e',
+          stack);
+    }
+    if (data.isEmpty || !mounted) return;
+
+    try {
       final defaults = resolveNfseTomadorDefaults(data);
       final cidadeDoTomador = defaults.municipio;
       Map<String, dynamic>? cidadeEncontrada;
@@ -430,7 +450,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       });
     } catch (e, stack) {
       AppLogger.i.error(
-          'Erro ao carregar municipio/ambiente do tomador $_tomadorId para nova NFS-e: $e',
+          'Erro ao aplicar municipio/ambiente do tomador $_tomadorId para nova NFS-e: $e',
           stack);
     }
   }

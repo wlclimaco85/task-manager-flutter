@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/utils/dropdown_helpers.dart';
+import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
 import 'package:task_manager_flutter/web/screens/details/nfse_detail_screen.dart';
 import 'package:task_manager_flutter/web/screens/nfse_screen.dart';
 
@@ -166,6 +167,69 @@ void main() {
             uri.queryParameters['nome'] == 'Uberaba'),
         isTrue);
     expect(find.text('Uberaba'), findsOneWidget);
+    expect(find.text('HOMOLOGACAO'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Web usa cadastro da sessao quando GET individual do parceiro falha',
+      (tester) async {
+    AuthUtility.userInfo = LoginModel(
+      login: Login.fromJson({
+        'id': 972,
+        'empresa': {'id': 1, 'nome': 'Empresa Smoke Test'},
+        'parceiro': {
+          'id': 1805,
+          'nome': 'Abraco Contabilidade',
+          'cidade': 'Uberaba',
+          'ambiente': '2 - Homologacao',
+        },
+      }),
+    );
+    addTearDown(() => AuthUtility.userInfo = null);
+
+    final requisicoes = <Uri>[];
+    final client = MockClient((request) async {
+      requisicoes.add(request.url);
+      if (request.url.path.endsWith('/api/parceiro/1805')) {
+        return http.Response('{}', 403);
+      }
+      if (request.url.path.endsWith('/api/cidade') &&
+          request.url.queryParameters['nome'] == 'Uberaba') {
+        return http.Response(
+            jsonEncode({
+              'data': {
+                'dados': [
+                  {'id': 10968, 'nome': 'Uberaba'}
+                ]
+              }
+            }),
+            200);
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      await tester.pumpWidget(MaterialApp(
+        home: NfseDetailScreen(item: const {}),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+    }, () => client);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final municipioFinder = find.byWidgetPredicate((widget) =>
+        widget is SearchableDropdownField && widget.label.contains('Munic'));
+    final municipio = tester.widget<SearchableDropdownField>(municipioFinder);
+    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1805')),
+        isTrue);
+    expect(
+        requisicoes.any((uri) =>
+            uri.path.endsWith('/api/cidade') &&
+            uri.queryParameters['nome'] == 'Uberaba'),
+        isTrue,
+        reason: 'A cidade do cadastro da sessao precisa ser resolvida');
+    expect(municipio.value, '10968');
     expect(find.text('HOMOLOGACAO'), findsOneWidget);
   });
 
