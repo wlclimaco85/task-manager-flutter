@@ -11,7 +11,10 @@ class MobileNfseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: NfseScreen(hasPermission: hasPermission),
+        child: NfseScreen(
+          hasPermission: hasPermission,
+          isMobile: true,
+        ),
       ),
     );
   }

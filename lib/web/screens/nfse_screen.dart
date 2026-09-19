@@ -26,7 +26,8 @@ bool nfsePodeCancelarStatus(String? status) =>
 /// header vermelho + painel de filtro lateral + botões + grid dinâmica.
 class NfseScreen extends StatefulWidget {
   final bool Function(String permission)? hasPermission;
-  const NfseScreen({super.key, this.hasPermission});
+  final bool? isMobile;
+  const NfseScreen({super.key, this.hasPermission, this.isMobile});
   @override
   State<NfseScreen> createState() => _NfseScreenState();
 }
@@ -409,7 +410,8 @@ class _NfseScreenState extends State<NfseScreen> {
           isEnabled: (items) =>
               items.isNotEmpty &&
               items.every((i) =>
-                  (i['status']?.toString().toUpperCase() ?? '') == 'AUTORIZADA'),
+                  (i['status']?.toString().toUpperCase() ?? '') ==
+                  'AUTORIZADA'),
           onPressed: _bulkCancelar,
         ),
       ];
@@ -428,7 +430,8 @@ class _NfseScreenState extends State<NfseScreen> {
     }).toList();
     if (invalidos.isNotEmpty) {
       final listaStr = invalidos
-          .map((i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
           .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
@@ -482,8 +485,7 @@ class _NfseScreenState extends State<NfseScreen> {
         content: Text(falhas.isEmpty
             ? '$ok PDF(s) gerado(s) com sucesso'
             : '$ok gerado(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
-        backgroundColor:
-            falhas.isEmpty ? GridColors.success : GridColors.error,
+        backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
       ));
   }
 
@@ -499,7 +501,8 @@ class _NfseScreenState extends State<NfseScreen> {
     }).toList();
     if (invalidos.isNotEmpty) {
       final listaStr = invalidos
-          .map((i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
           .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
@@ -556,8 +559,7 @@ class _NfseScreenState extends State<NfseScreen> {
         content: Text(falhas.isEmpty
             ? '$ok NFS-e(s) enviada(s) com sucesso'
             : '$ok enviada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
-        backgroundColor:
-            falhas.isEmpty ? GridColors.success : GridColors.error,
+        backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
       ));
   }
 
@@ -574,7 +576,8 @@ class _NfseScreenState extends State<NfseScreen> {
     }).toList();
     if (invalidos.isNotEmpty) {
       final listaStr = invalidos
-          .map((i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
           .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
@@ -654,19 +657,32 @@ class _NfseScreenState extends State<NfseScreen> {
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
+  int _contarFiltrosAtivos() {
+    var count = 0;
+    if (_numeroCtrl.text.isNotEmpty) count++;
+    if (_tomadorCtrl.text.isNotEmpty) count++;
+    if (_statusFiltro != null && _statusFiltro!.isNotEmpty) count++;
+    if (_dtEmiIni != null || _dtEmiFim != null) count++;
+    return count;
+  }
+
   Widget _buildHeader() {
+    final activeCount = _contarFiltrosAtivos();
     return Container(
       height: 56,
       color: GridColors.error,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
           if (Navigator.canPop(context))
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 6),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                icon:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                 tooltip: 'Voltar',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -675,42 +691,319 @@ class _NfseScreenState extends State<NfseScreen> {
             color: Colors.white,
             size: 20,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           const Expanded(
             child: Text(
               'NFSe - Nota Fiscal de Serviços',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            icon: Icon(
-              _filtrosVisiveis ? Icons.filter_alt : Icons.filter_alt_outlined,
-              color: Colors.white,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  _filtrosVisiveis
+                      ? Icons.filter_alt
+                      : Icons.filter_alt_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                if (activeCount > 0 && !_filtrosVisiveis)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: GridColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             tooltip: _filtrosVisiveis ? 'Ocultar filtros' : 'Exibir filtros',
-            onPressed: () => setState(() => _filtrosVisiveis = !_filtrosVisiveis),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () =>
+                setState(() => _filtrosVisiveis = !_filtrosVisiveis),
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 20),
             tooltip: 'Ajuda da tela',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.showHelp(),
           ),
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
+            icon: const Icon(Icons.settings, color: Colors.white, size: 20),
             tooltip: 'Configurar grade',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.showColumnSettings(),
           ),
           IconButton(
-            icon: const Icon(Icons.download, color: Colors.white),
+            icon: const Icon(Icons.download, color: Colors.white, size: 20),
             tooltip: 'Exportar CSV',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.exportCsv(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFiltrosMobile(BuildContext context) {
+    final activeCount = _contarFiltrosAtivos();
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          bottom: BorderSide(color: GridColors.divider, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.52,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.tune,
+                          size: 18, color: GridColors.primary),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Filtros de Pesquisa',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: GridColors.textPrimary,
+                        ),
+                      ),
+                      if (activeCount > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: GridColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$activeCount ativo${activeCount > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        size: 20, color: GridColors.textSecondary),
+                    tooltip: 'Ocultar filtros',
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () => setState(() => _filtrosVisiveis = false),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              _lbl('Data de Emissão'),
+              _dateRange(
+                _dtEmiIni,
+                _dtEmiFim,
+                (s, e) => setState(() {
+                  _dtEmiIni = s;
+                  _dtEmiFim = e;
+                }),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Número da NFSe'),
+                        _inp(_numeroCtrl, 'Ex: 1234',
+                            keyboardType: TextInputType.number),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Status'),
+                        _drop(
+                          _statusFiltro,
+                          [
+                            'PENDENTE',
+                            'CONFIRMADA',
+                            'AUTORIZADA',
+                            'CANCELADA',
+                            'REJEITADA'
+                          ],
+                          (v) => setState(() => _statusFiltro = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _lbl('Tomador / Parceiro'),
+              _inp(_tomadorCtrl, 'Nome ou razão do tomador'),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _limpar,
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('Limpar',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GridColors.textSecondary,
+                        side: const BorderSide(color: GridColors.divider),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _aplicarFiltros();
+                        setState(() => _filtrosVisiveis = false);
+                      },
+                      icon: const Icon(Icons.search, size: 16),
+                      label: const Text('Filtrar',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _lbl('Ações Rápidas'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _actionChip(
+                    icon: Icons.add,
+                    label: 'Nova NFS-e',
+                    color: GridColors.success,
+                    onPressed: () => _abrirNovo(context),
+                  ),
+                  _actionChip(
+                    icon: Icons.send,
+                    label: 'Emitir NFSe',
+                    color: GridColors.primary,
+                    onPressed: _showEmissaoDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.search,
+                    label: 'Consultar',
+                    color: GridColors.secondary,
+                    onPressed: _showConsultaDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.cancel_outlined,
+                    label: 'Cancelar NFSe',
+                    color: GridColors.error,
+                    onPressed: _showCancelamentoDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.history,
+                    label: 'Auditoria',
+                    color: Colors.grey.shade700,
+                    onPressed: _showAuditoriaDialog,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -732,7 +1025,8 @@ class _NfseScreenState extends State<NfseScreen> {
           onPressed: onPressed,
           icon: Icon(icon, size: 16),
           label: Text(label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           style: OutlinedButton.styleFrom(
             foregroundColor: foregroundColor,
             side: BorderSide(color: backgroundColor),
@@ -755,8 +1049,7 @@ class _NfseScreenState extends State<NfseScreen> {
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
           elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
       ),
@@ -765,21 +1058,19 @@ class _NfseScreenState extends State<NfseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
-    final effectiveHasPerm = widget.hasPermission ?? (p) => p == 'create' ? false : true;
+    final isMobileMode =
+        widget.isMobile == true || MediaQuery.of(context).size.width < 900;
+    final effectiveHasPerm =
+        widget.hasPermission ?? (p) => p == 'create' ? false : true;
 
     return Column(
       children: [
         _buildHeader(),
         Expanded(
-          child: isMobile
+          child: isMobileMode
               ? Column(
                   children: [
-                    if (_filtrosVisiveis)
-                      SizedBox(
-                        height: 280,
-                        child: SingleChildScrollView(child: _buildFiltros()),
-                      ),
+                    if (_filtrosVisiveis) _buildFiltrosMobile(context),
                     Expanded(
                       child: DynamicGridWindowsScreen<Map<String, dynamic>>(
                         key: _dynamicGridKey,
@@ -789,7 +1080,8 @@ class _NfseScreenState extends State<NfseScreen> {
                         fromJson: (json) => json,
                         toJson: (a) => a,
                         extraParams: _filtros,
-                        detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                        detailScreenBuilder: (item) =>
+                            NfseDetailScreen(item: item),
                         customActions: _buildCustomActions,
                         bulkActions: _buildBulkActions(),
                         showAppBar: false,
@@ -814,7 +1106,8 @@ class _NfseScreenState extends State<NfseScreen> {
                         fromJson: (json) => json,
                         toJson: (a) => a,
                         extraParams: _filtros,
-                        detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                        detailScreenBuilder: (item) =>
+                            NfseDetailScreen(item: item),
                         customActions: _buildCustomActions,
                         bulkActions: _buildBulkActions(),
                         showAppBar: false,
@@ -958,23 +1251,27 @@ class _NfseScreenState extends State<NfseScreen> {
               fontWeight: FontWeight.w600,
               color: GridColors.textSecondary)));
 
-  Widget _inp(TextEditingController c, String h) => TextField(
-      controller: c,
-      style: const TextStyle(fontSize: 12),
-      decoration: InputDecoration(
-          hintText: h,
-          hintStyle: const TextStyle(fontSize: 11, color: GridColors.divider),
-          filled: true,
-          fillColor: Colors.white,
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: GridColors.divider)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: GridColors.divider))));
+  Widget _inp(TextEditingController c, String h,
+          {TextInputType? keyboardType}) =>
+      TextField(
+          controller: c,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+              hintText: h,
+              hintStyle:
+                  const TextStyle(fontSize: 11, color: GridColors.divider),
+              filled: true,
+              fillColor: Colors.white,
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: GridColors.divider)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: GridColors.divider))));
 
   Widget _drop(String? val, List<String> opts, void Function(String?) cb) =>
       SearchableDropdownField(

@@ -20,7 +20,8 @@ import 'nfce/pdv_screen.dart';
 
 class WebNfceGridScreen extends StatefulWidget {
   final SecurityCheck? hasPermission;
-  const WebNfceGridScreen({super.key, this.hasPermission});
+  final bool? isMobile;
+  const WebNfceGridScreen({super.key, this.hasPermission, this.isMobile});
 
   @override
   State<WebNfceGridScreen> createState() => _WebNfceGridScreenState();
@@ -96,19 +97,32 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
     ).then((_) => _aplicarFiltros());
   }
 
+  int _contarFiltrosAtivos() {
+    var count = 0;
+    if (_numeroCtrl.text.isNotEmpty) count++;
+    if (_chaveCtrl.text.isNotEmpty) count++;
+    if (_serieCtrl.text.isNotEmpty) count++;
+    if (_statusFiltro != null && _statusFiltro!.isNotEmpty) count++;
+    if (_dtIni != null || _dtFim != null) count++;
+    return count;
+  }
+
   Widget _buildHeader() {
+    final activeCount = _contarFiltrosAtivos();
     return Container(
       height: 56,
       color: GridColors.error,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
           if (Navigator.canPop(context))
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 6),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                 tooltip: 'Voltar',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -117,40 +131,67 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
             color: Colors.white,
             size: 20,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           const Expanded(
             child: Text(
               'NFC-e / Cupons Fiscais',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            icon: Icon(
-              _filtrosVisiveis ? Icons.filter_list_off : Icons.filter_list,
-              color: Colors.white,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  _filtrosVisiveis ? Icons.filter_list_off : Icons.filter_list,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                if (activeCount > 0 && !_filtrosVisiveis)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: GridColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             tooltip: _filtrosVisiveis ? 'Ocultar Filtros' : 'Exibir Filtros',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () =>
                 setState(() => _filtrosVisiveis = !_filtrosVisiveis),
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 20),
             tooltip: 'Ajuda da grade',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.showHelp(),
           ),
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
+            icon: const Icon(Icons.settings, color: Colors.white, size: 20),
             tooltip: 'Configurar colunas',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.showColumnSettings(),
           ),
           IconButton(
-            icon: const Icon(Icons.download, color: Colors.white),
+            icon: const Icon(Icons.download, color: Colors.white, size: 20),
             tooltip: 'Exportar CSV',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
             onPressed: () => _dynamicGridKey.currentState?.exportCsv(),
           ),
         ],
@@ -160,21 +201,18 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    final isMobileMode =
+        widget.isMobile == true || MediaQuery.of(context).size.width < 900;
     final effectiveHasPerm = widget.hasPermission ?? (p) => true;
 
     return Column(
       children: [
         _buildHeader(),
         Expanded(
-          child: isMobile
+          child: isMobileMode
               ? Column(
                   children: [
-                    if (_filtrosVisiveis)
-                      SizedBox(
-                        height: 280,
-                        child: SingleChildScrollView(child: _buildFiltros()),
-                      ),
+                    if (_filtrosVisiveis) _buildFiltrosMobile(context),
                     Expanded(
                       child: DynamicGridWindowsScreen<NfceModel>(
                         key: _dynamicGridKey,
@@ -1028,6 +1066,234 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
     );
   }
 
+  Widget _actionChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFiltrosMobile(BuildContext context) {
+    final activeCount = _contarFiltrosAtivos();
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          bottom: BorderSide(color: GridColors.divider, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.52,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.tune, size: 18, color: GridColors.error),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Filtros de Pesquisa',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: GridColors.textPrimary,
+                        ),
+                      ),
+                      if (activeCount > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: GridColors.error,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$activeCount ativo${activeCount > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20, color: GridColors.textSecondary),
+                    tooltip: 'Ocultar Filtros',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () => setState(() => _filtrosVisiveis = false),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              _lbl('Período de Emissão'),
+              _dateRange(
+                _dtIni,
+                _dtFim,
+                (s, e) => setState(() {
+                  _dtIni = s;
+                  _dtFim = e;
+                }),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Número do Cupom'),
+                        _inp(_numeroCtrl, 'Ex: 1024', keyboardType: TextInputType.number),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Série'),
+                        _inp(_serieCtrl, 'Ex: 1', keyboardType: TextInputType.number),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _lbl('Chave de Acesso'),
+              _inp(_chaveCtrl, '44 dígitos da chave NFC-e', keyboardType: TextInputType.number),
+              const SizedBox(height: 10),
+              _lbl('Status SEFAZ'),
+              _drop(
+                _statusFiltro,
+                [
+                  'PENDENTE',
+                  'AUTORIZADA',
+                  'CANCELADA',
+                  'REJEITADA',
+                  'CONTINGENCIA',
+                  'INUTILIZADA'
+                ],
+                (v) => setState(() => _statusFiltro = v),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _limpar,
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('Limpar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GridColors.textSecondary,
+                        side: const BorderSide(color: GridColors.divider),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _aplicarFiltros();
+                        setState(() => _filtrosVisiveis = false);
+                      },
+                      icon: const Icon(Icons.search, size: 16),
+                      label: const Text('Filtrar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _lbl('Ações Rápidas'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _actionChip(
+                    icon: Icons.point_of_sale,
+                    label: 'Nova NFC-e / PDV',
+                    color: GridColors.success,
+                    onPressed: () => _abrirPdv(context),
+                  ),
+                  _actionChip(
+                    icon: Icons.cloud_sync,
+                    label: 'Consultar SEFAZ',
+                    color: const Color(0xFF1565C0),
+                    onPressed: () => _consultarSefazHealth(context),
+                  ),
+                  _actionChip(
+                    icon: Icons.block,
+                    label: 'Inutilizar Numeração',
+                    color: const Color(0xFFE65100),
+                    onPressed: () => _inutilizarFaixaDialog(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFiltros() {
     return Container(
       color: GridColors.filterBackground,
@@ -1138,8 +1404,9 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
               fontWeight: FontWeight.w600,
               color: GridColors.textSecondary)));
 
-  Widget _inp(TextEditingController c, String h) => TextField(
+  Widget _inp(TextEditingController c, String h, {TextInputType? keyboardType}) => TextField(
       controller: c,
+      keyboardType: keyboardType,
       style: const TextStyle(fontSize: 12),
       decoration: InputDecoration(
           hintText: h,

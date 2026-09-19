@@ -11,7 +11,10 @@ class MobileNfceGridScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: WebNfceGridScreen(hasPermission: hasPermission),
+        child: WebNfceGridScreen(
+          hasPermission: hasPermission,
+          isMobile: true,
+        ),
       ),
     );
   }

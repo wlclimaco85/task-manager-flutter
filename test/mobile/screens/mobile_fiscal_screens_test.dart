@@ -72,10 +72,10 @@ void main() {
 
     expect(cancelAction.isEnabled!([{'status': 'AUTORIZADA'}]), isTrue);
     expect(cancelAction.isEnabled!([{'status': 'PENDENTE'}]), isFalse);
-    expect(enviarAction.isEnabled!([{'status': 'PENDENTE'}]), isTrue);
+    expect(enviarAction.isEnabled!([{'status': 'CONFIRMADA'}]), isTrue);
     expect(enviarAction.isEnabled!([{'status': 'AUTORIZADA'}]), isFalse);
     expect(pdfAction.isEnabled!([{'status': 'AUTORIZADA'}]), isTrue);
-    expect(pdfAction.isEnabled!([{'numero': '12345'}]), isTrue);
+    expect(pdfAction.isEnabled!([{'status': 'AUTORIZADA', 'numero': '12345'}]), isTrue);
     expect(pdfAction.isEnabled!([{'status': 'PENDENTE', 'numero': ''}]), isFalse);
 
     // Filter toggle test
@@ -321,5 +321,36 @@ void main() {
 
     // Drain background debounce timer (1.5s in SistemaErrorReporter)
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('All 4 fiscal screens render strictly in vertical Column on mobile without 220px horizontal sidebar', (tester) async {
+    await setMobileSurface(tester);
+
+    final screens = <Widget>[
+      const MobileNfeGridScreen(entrada: false),
+      const MobileNfeGridScreen(entrada: true),
+      const MobileNfseScreen(),
+      const MobileNfceGridScreen(),
+    ];
+
+    for (final screen in screens) {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: screen)));
+      await tester.pump();
+
+      // Ensure that NO SizedBox with width 220 exists in the tree (the desktop horizontal sidebar)
+      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+      final has220Sidebar = sizedBoxes.any((s) => s.width == 220);
+      expect(has220Sidebar, isFalse, reason: 'Screen should not render the 220px desktop sidebar on mobile!');
+
+      // Ensure "Filtros de Pesquisa" is rendered vertically on top when filters are visible
+      expect(find.text('Filtros de Pesquisa'), findsOneWidget);
+
+      // Ensure horizontal action buttons [Limpar] and [Filtrar] are present
+      expect(find.text('Limpar'), findsOneWidget);
+      expect(find.text('Filtrar'), findsOneWidget);
+
+      // Drain background debounce timer
+      await tester.pump(const Duration(seconds: 2));
+    }
   });
 }

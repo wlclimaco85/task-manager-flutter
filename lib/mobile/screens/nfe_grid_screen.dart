@@ -19,6 +19,7 @@ class MobileNfeGridScreen extends StatelessWidget {
         child: WebNfeGridScreen(
           entrada: entrada,
           hasPermission: hasPermission,
+          isMobile: true,
         ),
       ),
     );
