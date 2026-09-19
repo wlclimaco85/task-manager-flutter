@@ -1,5 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/models/empresa_model.dart';
+import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/utils/dropdown_helpers.dart';
 import 'package:task_manager_flutter/web/screens/details/nfse_detail_screen.dart';
 import 'package:task_manager_flutter/web/screens/nfse_screen.dart';
@@ -80,6 +88,79 @@ void main() {
     expect(defaults.municipio, 'Uberaba');
     expect(defaults.cidadeId, '123');
     expect(defaults.ambiente, 'PRODUCAO');
+  });
+
+  testWidgets('carrega municipio e ambiente do tomador real ao abrir NFS-e',
+      (tester) async {
+    final requisicoes = <Uri>[];
+    AuthUtility.userInfo = LoginModel(
+      login: Login(
+        id: 972,
+        empresa: Empresa(id: 20005, nome: 'Abraco Contabilidade'),
+        parceiro: Parceiro(id: 1808, nome: 'LANNA COMERCIO'),
+      ),
+    );
+    addTearDown(() => AuthUtility.userInfo = null);
+
+    final client = MockClient((request) async {
+      requisicoes.add(request.url);
+      if (request.url.path.endsWith('/api/parceiro/1808')) {
+        return http.Response(
+          jsonEncode({
+            'data': {
+              'id': 1808,
+              'nome': 'LANNA COMERCIO',
+              'cidade': 'UBERABA',
+              'ambiente': 'HOMOLOGACAO',
+            }
+          }),
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/api/cidade') &&
+          request.url.queryParameters['nome'] == 'UBERABA') {
+        return http.Response(
+          jsonEncode({
+            'data': {
+              'dados': [
+                {'id': 10968, 'nome': 'Uberaba'}
+              ]
+            }
+          }),
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/api/empresa/20005')) {
+        return http.Response(
+          jsonEncode({
+            'data': {'id': 20005, 'nome': 'Abraco Contabilidade'}
+          }),
+          200,
+        );
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      await tester.pumpWidget(MaterialApp(
+        home: NfseDetailScreen(item: const {}),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+    }, () => client);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1808')),
+        isTrue,
+        reason: 'GET parceiro nao observado: $requisicoes');
+    expect(
+        requisicoes.any((uri) =>
+            uri.path.endsWith('/api/cidade') &&
+            uri.queryParameters['nome'] == 'UBERABA'),
+        isTrue);
+    expect(find.text('Uberaba'), findsOneWidget);
+    expect(find.text('HOMOLOGACAO'), findsOneWidget);
   });
 
   test('disponibiliza ações de grade apenas nos estados fiscais válidos', () {

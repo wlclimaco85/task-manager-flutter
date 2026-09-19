@@ -72,9 +72,10 @@ NfseTomadorDefaults resolveNfseTomadorDefaults(Map<String, dynamic> tomador) {
   final endereco = tomador['endereco'] is Map
       ? Map<String, dynamic>.from(tomador['endereco'] as Map)
       : <String, dynamic>{};
-  final cidadeValue = endereco['cidade'] is Map
-      ? endereco['cidade']
-      : tomador['cidade'] ?? endereco['cidade'];
+  final cidadeEndereco = endereco['cidade'];
+  final cidadeValue = cidadeEndereco is Map
+      ? cidadeEndereco
+      : tomador['cidade'] ?? cidadeEndereco;
   final cidade = cidadeValue is Map
       ? Map<String, dynamic>.from(cidadeValue)
       : <String, dynamic>{};
@@ -95,7 +96,8 @@ NfseTomadorDefaults resolveNfseTomadorDefaults(Map<String, dynamic> tomador) {
   }
 
   return NfseTomadorDefaults(
-    municipio: texto(cidade['nome']) ?? texto(cidadeValue),
+    municipio:
+        texto(cidade['nome']) ?? texto(tomador['cidade']) ?? texto(cidadeValue),
     cidadeId: texto(cidade['id']),
     ambiente: ambiente,
   );
@@ -387,24 +389,50 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               : null;
       if (data == null || !mounted) return;
       final defaults = resolveNfseTomadorDefaults(data);
+      final cidadeDoTomador = defaults.municipio;
+      Map<String, dynamic>? cidadeEncontrada;
+      if (_isNovo && defaults.cidadeId == null && cidadeDoTomador != null) {
+        final cidades = await _buscarCidadesServidor(cidadeDoTomador);
+        final nomeNormalizado = cidadeDoTomador.trim().toUpperCase();
+        for (final cidade in cidades) {
+          if (cidade['nome']?.toString().trim().toUpperCase() ==
+              nomeNormalizado) {
+            cidadeEncontrada = cidade;
+            break;
+          }
+        }
+      }
+      if (!mounted) return;
       setState(() {
         if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
             data['nome'] != null) {
           _tomadorNome = data['nome'].toString();
         }
-        if (_isNovo && _municipioCtrl.text.trim().isEmpty) {
-          _municipioCtrl.text = defaults.municipio ?? '';
-        }
         if (_isNovo &&
-            defaults.cidadeId != null &&
-            (_cidadeId == null || _municipioCtrl.text == defaults.municipio)) {
-          _cidadeId = defaults.cidadeId;
+            _municipioCtrl.text.trim().isEmpty &&
+            cidadeDoTomador != null) {
+          _municipioCtrl.text = cidadeDoTomador;
+        }
+        final podeAplicarCidade = _isNovo &&
+            (_municipioCtrl.text.trim().isEmpty ||
+                _municipioCtrl.text.trim().toUpperCase() ==
+                    cidadeDoTomador?.trim().toUpperCase());
+        if (podeAplicarCidade && _cidadeId == null) {
+          _cidadeId = defaults.cidadeId ?? cidadeEncontrada?['id']?.toString();
+          if (cidadeEncontrada != null &&
+              !_cidades.any((c) => c['id']?.toString() == _cidadeId)) {
+            _cidades = [cidadeEncontrada!, ..._cidades];
+          }
         }
         if (_isNovo && (_ambienteVal == null || _ambienteVal!.isEmpty)) {
           _ambienteVal = defaults.ambiente;
         }
       });
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao carregar municipio/ambiente do tomador $_tomadorId para nova NFS-e: $e',
+          stack);
+    }
   }
 
   /// Garante que a cidade já selecionada (ex: ao editar uma NFSe existente)
