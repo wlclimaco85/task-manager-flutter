@@ -344,10 +344,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               : null;
       if (data == null || !mounted) return;
       setState(() {
-        if ((_ambienteVal == null || _ambienteVal!.isEmpty) &&
-            data['ambiente'] != null) {
-          _ambienteVal = data['ambiente'].toString();
-        }
         if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
             data['nome'] != null) {
           _tomadorNome = data['nome'].toString();
