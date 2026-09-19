@@ -1,3 +1,5 @@
+import '../../widgets/dp/dp_dashboard_screen.dart';
+import 'nfe_serie_grid_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -157,6 +159,8 @@ class BottomNavBarScreen extends StatefulWidget {
 }
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
+  static bool _openHasPermission(String _) => true;
+
   int selectedIndex = 0;
 
   List<Alert> _notifications = [];
@@ -964,6 +968,107 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     Future<void>? nav;
 
     switch (option) {
+      case "NF-e Série":
+      case "Série NF-e":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              appBar: UserBannerAppBar(
+                screenTitle: 'Séries NF-e',
+                showFilterButton: false,
+                showBackButton: true,
+              ),
+              body: SafeArea(
+                child: WebNfeSerieGridScreen(hasPermission: _openHasPermission),
+              ),
+            ),
+          ),
+        );
+        break;
+      case "Dashboard Fiscal":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              appBar: UserBannerAppBar(
+                screenTitle: 'Dashboard Fiscal',
+                showFilterButton: false,
+                showBackButton: true,
+              ),
+              body: SafeArea(child: DashboardComercialMercadoriasScreen()),
+            ),
+          ),
+        );
+        break;
+      case "Dashboard DP":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              appBar: UserBannerAppBar(
+                screenTitle: 'Dashboard DP',
+                showFilterButton: false,
+                showBackButton: true,
+              ),
+              body: SafeArea(child: DpDashboardScreen()),
+            ),
+          ),
+        );
+        break;
+      case "Dashboard GME":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DynamicGridDynamicScreen(
+              telaNome: 'gme_dashboard',
+              hasPermission: _openHasPermission,
+              showAppBar: true,
+              useUserBannerAppBar: true,
+            ),
+          ),
+        );
+        break;
+      case "Dashboard Service":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DynamicGridDynamicScreen(
+              telaNome: 'service_dashboard',
+              hasPermission: _openHasPermission,
+              showAppBar: true,
+              useUserBannerAppBar: true,
+            ),
+          ),
+        );
+        break;
+      case "Dashboard Projetos":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DynamicGridDynamicScreen(
+              telaNome: 'projeto_dashboard',
+              hasPermission: _openHasPermission,
+              showAppBar: true,
+              useUserBannerAppBar: true,
+            ),
+          ),
+        );
+        break;
+      case "Dashboard Precificação":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DynamicGridDynamicScreen(
+              telaNome: 'precificacao_dashboard',
+              hasPermission: _openHasPermission,
+              showAppBar: true,
+              useUserBannerAppBar: true,
+            ),
+          ),
+        );
+        break;
+
       case "Contas Pagar":
         nav = Navigator.push(
           context,
