@@ -2090,10 +2090,15 @@ class GenericGridScreen<T> extends StatefulWidget {
   });
 
   @override
-  State<GenericGridScreen<T>> createState() => _GenericGridScreenState<T>();
+  State<GenericGridScreen<T>> createState() => GenericGridScreenState<T>();
 }
 
-class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
+class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
+  void showColumnSettings() => _showColumnSettingsDialog();
+  void exportCsv() => _exportToCsv();
+  void showHelp() => _showGridHelpDialog();
+  void reload() => _loadItems(_currentPage, rowsPerPage);
+
   List<T> items = [];
   List<T> filtered = [];
   Set<String> selectedRows = {};

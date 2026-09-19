@@ -14,6 +14,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
         FileConfig,
         FieldType,
         GenericGridScreen,
+        GenericGridScreenState,
         ExportConfig,
         PaginationConfig,
         CustomAction,
@@ -94,12 +95,18 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
 
   @override
   State<DynamicGridWindowsScreen<T>> createState() =>
-      _DynamicGridWindowsScreenState<T>();
+      DynamicGridWindowsScreenState<T>();
 }
 
-class _DynamicGridWindowsScreenState<T>
+class DynamicGridWindowsScreenState<T>
     extends State<DynamicGridWindowsScreen<T>> {
   late Future<TelaConfig> _telaFuture;
+  final GlobalKey<GenericGridScreenState<T>> _gridKey = GlobalKey();
+
+  void showColumnSettings() => _gridKey.currentState?.showColumnSettings();
+  void exportCsv() => _gridKey.currentState?.exportCsv();
+  void showHelp() => _gridKey.currentState?.showHelp();
+  void reload() => _gridKey.currentState?.reload();
 
   @override
   void initState() {
@@ -501,6 +508,7 @@ class _DynamicGridWindowsScreenState<T>
         final fields = _convert(tela.fields);
 
         return GenericGridScreen<T>(
+          key: _gridKey,
           title: widget.tituloOverride ?? tela.titulo,
           fetchEndpoint: widget.fetchEndpointOverride ??
               (ApiLinks.baseUrl + tela.fetchEndpoint),

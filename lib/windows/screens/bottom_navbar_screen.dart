@@ -156,6 +156,7 @@ import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
 import 'certificado_empresa_screen.dart';
+import '../../web/screens/nfce_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -311,6 +312,21 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         return matrix.canDelete(AppScreen.comunicados);
       default:
         return matrix.canView(AppScreen.comunicados);
+    }
+  }
+
+  bool _nfceHasPermission(String permission) {
+    final matrix = SecurityMatrix.current();
+    switch (permission) {
+      case 'create':
+        return matrix.canInsert(AppScreen.nfceGrid);
+      case 'edit':
+        return matrix.canUpdate(AppScreen.nfceGrid);
+      case 'delete':
+      case 'deleteMultiple':
+        return matrix.canDelete(AppScreen.nfceGrid);
+      default:
+        return matrix.canView(AppScreen.nfceGrid);
     }
   }
 
@@ -530,7 +546,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
         const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
         const SessoesScreen(), // 186: Sessões
-        const SizedBox.shrink(), // 187: reservado
+        WebNfceGridScreen(hasPermission: _nfceHasPermission), // 187: NFC-e Cupons
         const MeuCertificadoDigitalScreen(), // 188: Certificado Digital
         // 189-203: ainda nao implementados/replicados no Windows (paridade
         // pendente com o menu Web, que ja vai at 203 -- fora do escopo deste
