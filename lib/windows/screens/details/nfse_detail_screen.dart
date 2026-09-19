@@ -7,6 +7,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/nfse_tax_calculator.dart';
+import '../../../utils/app_logger.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
@@ -128,7 +129,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _municipioCtrl.text = cidadeParceiro;
     }
     _ambienteVal = i['ambiente']?.toString() ??
-        (TenantContext.hasParceiro ? login?.parceiro?.ambiente : null);
+        (TenantContext.hasParceiro
+            ? _normalizarAmbienteTomador(login?.parceiro?.ambiente)
+            : null);
 
     // Tomador: bug real (2026-09-17, ver bugs.md) -- quando o login logado
     // tem parceiroId (sessao/localStorage), o Tomador DEVE ser o proprio
@@ -230,6 +233,37 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return item;
   }
 
+  String? _textoCidadeTomador(Map<String, dynamic> tomador) {
+    final endereco = tomador['endereco'];
+    final cidadeEndereco = endereco is Map ? endereco['cidade'] : null;
+    final cidade = tomador['cidade'] ?? cidadeEndereco;
+    final valor = cidade is Map ? cidade['nome'] : cidade;
+    final texto = valor?.toString().trim();
+    return texto == null || texto.isEmpty ? null : texto;
+  }
+
+  String? _idCidadeTomador(Map<String, dynamic> tomador) {
+    final endereco = tomador['endereco'];
+    final cidadeEndereco = endereco is Map ? endereco['cidade'] : null;
+    final cidade = tomador['cidade'] ?? cidadeEndereco;
+    final id = cidade is Map ? cidade['id'] : null;
+    final texto = id?.toString().trim();
+    return texto == null || texto.isEmpty ? null : texto;
+  }
+
+  String? _normalizarAmbienteTomador(dynamic value) {
+    final texto = value?.toString().trim();
+    if (texto == null || texto.isEmpty) return null;
+    final normalizado = texto.toUpperCase();
+    if (normalizado.contains('PRODU') || normalizado == '1') {
+      return 'PRODUCAO';
+    }
+    if (normalizado.contains('HOMOLOG') || normalizado == '2') {
+      return 'HOMOLOGACAO';
+    }
+    return null;
+  }
+
   Future<void> _loadDropdowns() async {
     final login = AuthUtility.userInfo?.login;
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
@@ -276,18 +310,49 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           : raw is Map
               ? Map<String, dynamic>.from(raw)
               : null;
-      if (data == null || !mounted) return;
+      if (data == null) return;
+      final municipio = _textoCidadeTomador(data);
+      var cidadeId = _idCidadeTomador(data);
+      Map<String, dynamic>? cidadeEncontrada;
+      if (_isNovo && municipio != null && cidadeId == null) {
+        final cidades = await _buscarCidadesServidor(municipio);
+        for (final cidade in cidades) {
+          if (cidade['nome']?.toString().trim().toUpperCase() ==
+              municipio.toUpperCase()) {
+            cidadeEncontrada = cidade;
+            cidadeId = cidade['id']?.toString();
+            break;
+          }
+        }
+      }
+      if (!mounted) return;
       setState(() {
         if ((_ambienteVal == null || _ambienteVal!.isEmpty) &&
-            data['ambiente'] != null) {
-          _ambienteVal = data['ambiente'].toString();
+            _normalizarAmbienteTomador(data['ambiente']) != null) {
+          _ambienteVal = _normalizarAmbienteTomador(data['ambiente']);
         }
         if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
             data['nome'] != null) {
           _tomadorNome = data['nome'].toString();
         }
+        final municipioAtual = _municipioCtrl.text.trim();
+        final podeAplicarMunicipio = _isNovo &&
+            (municipioAtual.isEmpty ||
+                municipioAtual.toUpperCase() == municipio?.toUpperCase());
+        if (podeAplicarMunicipio && municipio != null) {
+          _municipioCtrl.text = municipio;
+          if (_cidadeId == null) _cidadeId = cidadeId;
+          if (cidadeEncontrada != null &&
+              !_cidades.any((c) => c['id']?.toString() == _cidadeId)) {
+            _cidades = [cidadeEncontrada!, ..._cidades];
+          }
+        }
       });
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao carregar municipio/ambiente do tomador $_tomadorId para nova NFS-e: $e',
+          stack);
+    }
   }
 
   /// Garante que a cidade já selecionada (ex: ao editar uma NFSe existente)

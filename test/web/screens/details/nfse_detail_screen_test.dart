@@ -96,21 +96,27 @@ void main() {
     AuthUtility.userInfo = LoginModel(
       login: Login(
         id: 972,
-        empresa: Empresa(id: 20005, nome: 'Abraco Contabilidade'),
-        parceiro: Parceiro(id: 1808, nome: 'LANNA COMERCIO'),
+        empresa: Empresa(id: 1, nome: 'Empresa Smoke Test'),
+        parceiro: Parceiro(
+          id: 1805,
+          nome:
+              'Abraco Contabilidade Contabilidade Martins & Abrahao Arabe LTDA',
+        ),
       ),
     );
     addTearDown(() => AuthUtility.userInfo = null);
 
     final client = MockClient((request) async {
       requisicoes.add(request.url);
-      if (request.url.path.endsWith('/api/parceiro/1808')) {
+      if (request.url.path.endsWith('/api/parceiro/1805')) {
         return http.Response(
           jsonEncode({
             'data': {
-              'id': 1808,
-              'nome': 'LANNA COMERCIO',
-              'cidade': 'UBERABA',
+              'id': 1805,
+              'nome':
+                  'Abraco Contabilidade Contabilidade Martins & Abrahao Arabe LTDA',
+              'cidade': 'Uberaba',
+              'estado': 'MG',
               'ambiente': 'HOMOLOGACAO',
             }
           }),
@@ -118,7 +124,7 @@ void main() {
         );
       }
       if (request.url.path.endsWith('/api/cidade') &&
-          request.url.queryParameters['nome'] == 'UBERABA') {
+          request.url.queryParameters['nome'] == 'Uberaba') {
         return http.Response(
           jsonEncode({
             'data': {
@@ -130,10 +136,10 @@ void main() {
           200,
         );
       }
-      if (request.url.path.endsWith('/api/empresa/20005')) {
+      if (request.url.path.endsWith('/api/empresa/1')) {
         return http.Response(
           jsonEncode({
-            'data': {'id': 20005, 'nome': 'Abraco Contabilidade'}
+            'data': {'id': 1, 'nome': 'Empresa Smoke Test'}
           }),
           200,
         );
@@ -151,13 +157,13 @@ void main() {
     }, () => client);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1808')),
+    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1805')),
         isTrue,
         reason: 'GET parceiro nao observado: $requisicoes');
     expect(
         requisicoes.any((uri) =>
             uri.path.endsWith('/api/cidade') &&
-            uri.queryParameters['nome'] == 'UBERABA'),
+            uri.queryParameters['nome'] == 'Uberaba'),
         isTrue);
     expect(find.text('Uberaba'), findsOneWidget);
     expect(find.text('HOMOLOGACAO'), findsOneWidget);
