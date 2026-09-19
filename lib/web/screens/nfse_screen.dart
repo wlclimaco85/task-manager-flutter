@@ -16,7 +16,8 @@ import 'details/nfse_detail_screen.dart';
 /// Tela de NFSe — espelha o layout da NF-e Saída:
 /// header vermelho + painel de filtro lateral + botões + grid dinâmica.
 class NfseScreen extends StatefulWidget {
-  const NfseScreen({super.key});
+  final bool Function(String permission)? hasPermission;
+  const NfseScreen({super.key, this.hasPermission});
   @override
   State<NfseScreen> createState() => _NfseScreenState();
 }
@@ -597,21 +598,32 @@ class _NfseScreenState extends State<NfseScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          if (Navigator.canPop(context))
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: 'Voltar',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
           const Icon(
             Icons.receipt_long,
             color: Colors.white,
             size: 20,
           ),
           const SizedBox(width: 10),
-          const Text(
-            'NFSe - Nota Fiscal de Serviços',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          const Expanded(
+            child: Text(
+              'NFSe - Nota Fiscal de Serviços',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
           IconButton(
             icon: Icon(
               _filtrosVisiveis ? Icons.filter_alt : Icons.filter_alt_outlined,
@@ -690,35 +702,63 @@ class _NfseScreenState extends State<NfseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    final effectiveHasPerm = widget.hasPermission ?? (p) => p == 'create' ? false : true;
+
     return Column(
       children: [
         _buildHeader(),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_filtrosVisiveis)
-                SizedBox(
-                  width: 220,
-                  child: _buildFiltros(),
+          child: isMobile
+              ? Column(
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(
+                        height: 280,
+                        child: SingleChildScrollView(child: _buildFiltros()),
+                      ),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfse',
+                        tituloOverride: 'NFSe - Nota Fiscal de Serviços',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                        customActions: _buildCustomActions,
+                        bulkActions: _buildBulkActions(),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(
+                        width: 220,
+                        child: _buildFiltros(),
+                      ),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfse',
+                        tituloOverride: 'NFSe - Nota Fiscal de Serviços',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                        customActions: _buildCustomActions,
+                        bulkActions: _buildBulkActions(),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
                 ),
-              Expanded(
-                child: DynamicGridWindowsScreen<Map<String, dynamic>>(
-                  key: _dynamicGridKey,
-                  telaNome: 'nfse',
-                  tituloOverride: 'NFSe - Nota Fiscal de Serviços',
-                  hasPermission: (p) => p == 'create' ? false : true,
-                  fromJson: (json) => json,
-                  toJson: (a) => a,
-                  extraParams: _filtros,
-                  detailScreenBuilder: (item) => NfseDetailScreen(item: item),
-                  customActions: _buildCustomActions,
-                  bulkActions: _buildBulkActions(),
-                  showAppBar: false,
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );

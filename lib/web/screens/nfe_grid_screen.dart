@@ -18,7 +18,8 @@ import '../../utils/grid_texts.dart';
 
 class WebNfeGridScreen extends StatefulWidget {
   final bool entrada;
-  const WebNfeGridScreen({super.key, required this.entrada});
+  final bool Function(String permission)? hasPermission;
+  const WebNfeGridScreen({super.key, required this.entrada, this.hasPermission});
   @override
   State<WebNfeGridScreen> createState() => _WebNfeGridScreenState();
 }
@@ -115,21 +116,32 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          if (Navigator.canPop(context))
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: 'Voltar',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
           Icon(
             widget.entrada ? Icons.file_download : Icons.file_upload,
             color: Colors.white,
             size: 20,
           ),
           const SizedBox(width: 10),
-          Text(
-            titulo,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              titulo,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
           IconButton(
             icon: Icon(
               _filtrosVisiveis ? Icons.filter_list_off : Icons.filter_list,
@@ -162,36 +174,66 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   @override
   Widget build(BuildContext context) {
     final titulo = widget.entrada ? 'NF-e Entrada' : 'NF-e Saída';
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    final effectiveHasPerm = widget.hasPermission ?? (p) => p == 'create' ? false : true;
+
     return Column(
       children: [
         _buildHeader(titulo),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_filtrosVisiveis)
-                SizedBox(width: 220, child: _buildFiltros())
-              else
-                const SizedBox.shrink(),
-              Expanded(
-                child: DynamicGridWindowsScreen<Map<String, dynamic>>(
-                  key: _dynamicGridKey,
-                  telaNome: 'nfe',
-                  hasPermission: (p) => p == 'create' ? false : true,
-                  fromJson: (json) => json,
-                  toJson: (a) => a,
-                  extraParams: _filtros,
-                  detailScreenBuilder: (item) =>
-                      NfeSankhyaDetailScreen(item: item),
-                  customActions: () => _buildCustomActions(context),
-                  bulkActions: widget.entrada
-                      ? _buildBulkActionsEntrada(context)
-                      : _buildBulkActionsSaida(context),
-                  showAppBar: false,
+          child: isMobile
+              ? Column(
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(
+                        height: 280,
+                        child: SingleChildScrollView(child: _buildFiltros()),
+                      ),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfe',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) =>
+                            NfeSankhyaDetailScreen(item: item),
+                        customActions: () => _buildCustomActions(context),
+                        bulkActions: widget.entrada
+                            ? _buildBulkActionsEntrada(context)
+                            : _buildBulkActionsSaida(context),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(width: 220, child: _buildFiltros())
+                    else
+                      const SizedBox.shrink(),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfe',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) =>
+                            NfeSankhyaDetailScreen(item: item),
+                        customActions: () => _buildCustomActions(context),
+                        bulkActions: widget.entrada
+                            ? _buildBulkActionsEntrada(context)
+                            : _buildBulkActionsSaida(context),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ],
     );

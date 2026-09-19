@@ -19,8 +19,8 @@ import '../../../widgets/searchable_dropdown.dart';
 import 'nfce/pdv_screen.dart';
 
 class WebNfceGridScreen extends StatefulWidget {
-  final SecurityCheck hasPermission;
-  const WebNfceGridScreen({super.key, required this.hasPermission});
+  final SecurityCheck? hasPermission;
+  const WebNfceGridScreen({super.key, this.hasPermission});
 
   @override
   State<WebNfceGridScreen> createState() => _WebNfceGridScreenState();
@@ -103,21 +103,32 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          if (Navigator.canPop(context))
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: 'Voltar',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
           const Icon(
             Icons.receipt,
             color: Colors.white,
             size: 20,
           ),
           const SizedBox(width: 10),
-          const Text(
-            'NFC-e / Cupons Fiscais',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          const Expanded(
+            child: Text(
+              'NFC-e / Cupons Fiscais',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
           IconButton(
             icon: Icon(
               _filtrosVisiveis ? Icons.filter_list_off : Icons.filter_list,
@@ -149,53 +160,100 @@ class _WebNfceGridScreenState extends State<WebNfceGridScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    final effectiveHasPerm = widget.hasPermission ?? (p) => true;
+
     return Column(
       children: [
         _buildHeader(),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_filtrosVisiveis)
-                SizedBox(width: 220, child: _buildFiltros())
-              else
-                const SizedBox.shrink(),
-              Expanded(
-                child: DynamicGridWindowsScreen<NfceModel>(
-                  key: _dynamicGridKey,
-                  telaNome: 'nfce',
-                  tituloOverride: 'NFC-e / Cupons',
-                  fetchEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
-                  createEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
-                  hasPermission: widget.hasPermission,
-                  extraParams: _filtros,
-                  fieldOverrides: const [
-                    FieldConfigWindows(
-                      label: 'Empresa',
-                      fieldName: 'empresa',
-                      fieldType: FieldType.dropdown,
-                      isFilterable: true,
-                      isInGrid: false,
-                      isInForm: false,
-                    ),
-                    FieldConfigWindows(
-                      label: 'Parceiro',
-                      fieldName: 'parceiro',
-                      fieldType: FieldType.dropdown,
-                      isFilterable: true,
-                      isInGrid: false,
-                      isInForm: false,
+          child: isMobile
+              ? Column(
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(
+                        height: 280,
+                        child: SingleChildScrollView(child: _buildFiltros()),
+                      ),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<NfceModel>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfce',
+                        tituloOverride: 'NFC-e / Cupons',
+                        fetchEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
+                        createEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
+                        hasPermission: effectiveHasPerm,
+                        extraParams: _filtros,
+                        fieldOverrides: const [
+                          FieldConfigWindows(
+                            label: 'Empresa',
+                            fieldName: 'empresa',
+                            fieldType: FieldType.dropdown,
+                            isFilterable: true,
+                            isInGrid: false,
+                            isInForm: false,
+                          ),
+                          FieldConfigWindows(
+                            label: 'Parceiro',
+                            fieldName: 'parceiro',
+                            fieldType: FieldType.dropdown,
+                            isFilterable: true,
+                            isInGrid: false,
+                            isInForm: false,
+                          ),
+                        ],
+                        fromJson: (json) => NfceModel.fromJson(json),
+                        toJson: (a) => a.toJson(),
+                        showAppBar: false,
+                        bulkActions: _buildBulkActions(context),
+                        customActions: () => _buildCustomActions(context),
+                      ),
                     ),
                   ],
-                  fromJson: (json) => NfceModel.fromJson(json),
-                  toJson: (a) => a.toJson(),
-                  showAppBar: false,
-                  bulkActions: _buildBulkActions(context),
-                  customActions: () => _buildCustomActions(context),
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(width: 220, child: _buildFiltros())
+                    else
+                      const SizedBox.shrink(),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<NfceModel>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfce',
+                        tituloOverride: 'NFC-e / Cupons',
+                        fetchEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
+                        createEndpointOverride: '${ApiLinks.baseUrl}/api/v1/nfce',
+                        hasPermission: effectiveHasPerm,
+                        extraParams: _filtros,
+                        fieldOverrides: const [
+                          FieldConfigWindows(
+                            label: 'Empresa',
+                            fieldName: 'empresa',
+                            fieldType: FieldType.dropdown,
+                            isFilterable: true,
+                            isInGrid: false,
+                            isInForm: false,
+                          ),
+                          FieldConfigWindows(
+                            label: 'Parceiro',
+                            fieldName: 'parceiro',
+                            fieldType: FieldType.dropdown,
+                            isFilterable: true,
+                            isInGrid: false,
+                            isInForm: false,
+                          ),
+                        ],
+                        fromJson: (json) => NfceModel.fromJson(json),
+                        toJson: (a) => a.toJson(),
+                        showAppBar: false,
+                        bulkActions: _buildBulkActions(context),
+                        customActions: () => _buildCustomActions(context),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ],
     );

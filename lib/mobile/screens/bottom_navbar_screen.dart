@@ -42,6 +42,9 @@ import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
 import 'login_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
+import 'nfse_screen.dart';
+import 'nfe_grid_screen.dart';
+import 'nfce_grid_screen.dart';
 import 'nfse_serie_screen.dart';
 import 'nfse_servico_screen.dart';
 import 'nfse_config_screen.dart';
@@ -936,9 +939,44 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => NfseConsultaScreen(
+            builder: (_) => MobileNfseScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.nfseLista, action),
+            ),
+          ),
+        );
+        break;
+      case "NF-e Saída":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileNfeGridScreen(
+              entrada: false,
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfeSaida, action),
+            ),
+          ),
+        );
+        break;
+      case "NF-e Entrada":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileNfeGridScreen(
+              entrada: true,
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfeEntrada, action),
+            ),
+          ),
+        );
+        break;
+      case "NFC-e (Cupons)":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileNfceGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfceGrid, action),
             ),
           ),
         );
@@ -1398,6 +1436,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         [
           if (sec.canView(AppScreen.dashFiscalArea))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
+          if (sec.canView(AppScreen.nfeSaida))
+            _MoreMenuAction(Icons.file_upload, 'NF-e Saída'),
+          if (sec.canView(AppScreen.nfeEntrada))
+            _MoreMenuAction(Icons.file_download, 'NF-e Entrada'),
+          if (temNfce && sec.canView(AppScreen.nfceGrid))
+            _MoreMenuAction(Icons.receipt_long, 'NFC-e (Cupons)'),
           if (temNfce)
             _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
         ],
