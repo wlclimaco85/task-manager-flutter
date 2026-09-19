@@ -41,7 +41,6 @@ import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
 import 'login_grid_screen.dart';
-import 'nfse_consulta_screen.dart';
 import 'nfse_screen.dart';
 import 'nfe_grid_screen.dart';
 import 'nfce_grid_screen.dart';
@@ -55,6 +54,100 @@ import 'alvara_screen.dart';
 import 'role_permissao_mobile_screen.dart';
 import '../../widgets/comercial/dashboard_comercial_mercadorias_screen.dart';
 import 'dashboard_financeiro_screen.dart';
+
+
+import 'plano_grid_screen.dart';
+import 'tipo_parceiro_grid_screen.dart';
+import 'servico_contratado_grid_screen.dart';
+import 'modulo_servico_grid_screen.dart';
+import 'catalago_produto_grid_screen.dart';
+import 'unidade_medida_grid_screen.dart';
+import 'orcamento_grid_screen.dart';
+import 'pedido_venda_grid_screen.dart';
+import 'pedido_compra_grid_screen.dart';
+import 'pedido_grid_screen.dart';
+import 'aprovacao_compra_screen.dart';
+import 'tabela_preco_screen.dart';
+import 'devolucao_grid_screen.dart';
+import 'fornecedor_grid_screen.dart';
+import 'regime_grid_screen.dart';
+import 'obrigacao_fiscal_grid_screen.dart';
+import 'forma_pagamento_grid_screen.dart';
+import 'centro_custo_grid_screen.dart';
+import 'categoria_financeira_grid_screen.dart';
+import 'lancamento_financeiro_grid_screen.dart';
+import 'calendario_guias_grid_screen.dart';
+import 'feriado_grid_screen.dart';
+import 'setor_grid_screen.dart';
+import 'conta_contabil_grid_screen.dart';
+import 'lancamento_contabil_grid_screen.dart';
+import 'alerta_aluno_grid_screen.dart';
+import 'diretorio_grid_screen.dart';
+import 'noticias_grid_screen.dart';
+import 'alimento_grid_screen.dart';
+import 'dieta_grid_screen.dart';
+import 'exercicio_grid_screen.dart';
+import 'grupo_muscular_grid_screen.dart';
+import 'medicamento_grid_screen.dart';
+import 'modalidade_grid_screen.dart';
+import 'objetivo_grid_screen.dart';
+import 'personal_grid_screen.dart';
+import 'suplemento_grid_screen.dart';
+import 'treino_grid_screen.dart';
+import 'avaliacao_fisica_grid_screen.dart';
+import 'academia_grid_screen.dart';
+import 'aplicativo_screen.dart';
+import 'empresa_grid_screen.dart';
+import 'role_grid_screen.dart';
+import 'configuracoes_admin_screen.dart';
+import 'ticket_grid_screen.dart';
+import 'cotacao_frete_grid_screen.dart';
+import 'dividendo_grid_screen.dart';
+import 'order_grid_screen.dart';
+import 'classificacao_grid_screen.dart';
+import 'departamento_grid_screen.dart';
+import 'cargo_grid_screen.dart';
+import 'horario_func_grid_screen.dart';
+
+import 'nfe_import_xml_screen.dart';
+import 'nfse_import_xml_screen.dart';
+import 'nfe_import_screen.dart';
+import 'consulta_dfe_screen.dart';
+import 'manifestacao_destinatario_screen.dart';
+import 'cancelamento_cce_screen.dart';
+import 'calendario_tributario_screen.dart';
+import 'conciliacao_screen.dart';
+import 'rateio_financeiro_screen.dart';
+import 'baixa_automatica_screen.dart';
+import 'cobranca_screen.dart';
+import 'renegociacao_screen.dart';
+import 'dre_screen.dart';
+import 'cnab_remessa_screen.dart';
+import 'kanban_pagamentos_screen.dart';
+import 'aprovacao_pagamentos_screen.dart';
+import 'boleto_importacao_lote_screen.dart';
+import 'integracoes_financeiras_screen.dart';
+import 'ponto_ajuste_screen.dart';
+import 'ponto_solicitacao_screen.dart';
+import 'balancete_screen.dart';
+import 'fechamento_periodo_screen.dart';
+import 'ai_dashboard_screen.dart';
+import 'ai_assistente_screen.dart';
+import 'kanban_chamados_screen.dart';
+import 'kanban_chat_screen.dart';
+import 'instagram_monitor_screen.dart';
+import 'reserva_estoque_screen.dart';
+import 'deposito_screen.dart';
+import 'certificado_digital_screen.dart';
+import 'configuracoes_sistema_screen.dart';
+import 'editor_telas_screen.dart';
+import 'cadastro_empresa_wizard.dart';
+import 'importacao_fiscal_automacao_screen.dart';
+import 'solicitacoes_acesso_screen.dart';
+import 'query_builder_window_screen.dart';
+import 'sessoes_screen.dart';
+import 'anamnese_screen.dart';
+import 'trading_screens.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -1237,6 +1330,322 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const AgendamentoModuleScreen()),
         );
         break;
+      
+      // Comercial
+      case "Planos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePlanoGridScreen()));
+        break;
+      case "Tipos de Parceiro":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTipoParceiroGridScreen()));
+        break;
+      case "Serviços Contratados":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileServicoContratadoGridScreen()));
+        break;
+      case "Módulos de Serviço":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileModuloServicoGridScreen()));
+        break;
+      case "Catálogo de Produtos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCatalagoProdutoGridScreen()));
+        break;
+      case "Unidades de Medida":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileUnidadeMedidaGridScreen()));
+        break;
+      case "Orçamentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileOrcamentoGridScreen()));
+        break;
+      case "Pedidos de Venda":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePedidoVendaGridScreen()));
+        break;
+      case "Pedidos de Compra":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePedidoCompraGridScreen()));
+        break;
+      case "Pedidos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePedidoGridScreen()));
+        break;
+      case "Aprovação de Compras":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAprovacaoCompraScreen()));
+        break;
+      case "Tabela de Preços":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTabelaPrecoScreen()));
+        break;
+      case "Devoluções":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDevolucaoGridScreen()));
+        break;
+      case "Fornecedores":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileFornecedorGridScreen()));
+        break;
+      case "Reserva de Estoque":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileReservaEstoqueScreen()));
+        break;
+      case "Multi-depósito":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDepositoScreen()));
+        break;
+      case "Tickets":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTicketGridScreen()));
+        break;
+      case "Cotação de Frete":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCotacaoFreteGridScreen()));
+        break;
+      case "Dividendos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDividendoGridScreen()));
+        break;
+      case "Ordens":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileOrderGridScreen()));
+        break;
+      case "Classificação":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileClassificacaoGridScreen()));
+        break;
+      case "Departamentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDepartamentoGridScreen()));
+        break;
+      case "Cargos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCargoGridScreen()));
+        break;
+
+      // Fiscal
+      case "NF-e Finalidade":
+        nav = _pushDynamicGrid(telaNome: 'nfe_finalidade', sec: sec);
+        break;
+      case "NF-e Tipo Operação":
+        nav = _pushDynamicGrid(telaNome: 'nfe_tipo_operacao', sec: sec);
+        break;
+      case "Importar XML NF-e":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileNfeImportXmlScreen()));
+        break;
+      case "Importar NF-e CSV":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileNfeImportScreen()));
+        break;
+      case "Importar XML NFS-e":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileNfseImportXmlScreen()));
+        break;
+      case "Consulta DF-e":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileConsultaDfeScreen()));
+        break;
+      case "Manifestação Destinatário":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileManifestacaoDestinatarioScreen()));
+        break;
+      case "Cancelamento e CC-e":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCancelamentoCceScreen()));
+        break;
+      case "Regime Tributário":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRegimeGridScreen()));
+        break;
+      case "Obrigações Fiscais":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileObrigacaoFiscalGridScreen()));
+        break;
+      case "Calendário Tributário":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCalendarioTributarioScreen()));
+        break;
+
+      // Financeiro
+      case "Formas de Pagamento":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileFormaPagamentoGridScreen()));
+        break;
+      case "Centros de Custo":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCentroCustoGridScreen()));
+        break;
+      case "Categorias Financeiras":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCategoriaFinanceiraGridScreen()));
+        break;
+      case "Lançamentos Financeiros":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileLancamentoFinanceiroGridScreen()));
+        break;
+      case "Conciliação Bancária":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileConciliacaoScreen()));
+        break;
+      case "Rateio Financeiro":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRateioFinanceiroScreen()));
+        break;
+      case "Baixa Automática":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileBaixaAutomaticaScreen()));
+        break;
+      case "Renegociação":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRenegociacaoScreen()));
+        break;
+      case "Cobrança":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCobrancaScreen()));
+        break;
+      case "DRE Gerencial":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDreScreen()));
+        break;
+      case "Envio EDI (Remessa)":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCnabRemessaScreen()));
+        break;
+      case "Kanban de Pagamentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileKanbanPagamentosScreen()));
+        break;
+      case "Aprovação de Pagamentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAprovacaoPagamentosScreen()));
+        break;
+      case "Calendário de Guias":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCalendarioGuiasGridScreen()));
+        break;
+      case "Importar Boletos (Lote)":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileBoletoImportacaoLoteScreen()));
+        break;
+      case "Integrações Financeiras":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileIntegracoesFinanceirasScreen()));
+        break;
+
+      // Departamento Pessoal
+      case "Solicitar Ajuste":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const PontoSolicitacaoScreen()));
+        break;
+      case "Ajuste de Ponto":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePontoAjusteScreen()));
+        break;
+      case "Feriados":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileFeriadoGridScreen()));
+        break;
+      case "Setores":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSetorGridScreen()));
+        break;
+      case "Horários Funcionário":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileHorarioFuncGridScreen()));
+        break;
+
+      // Contábil & IA
+      case "Plano de Contas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileContaContabilGridScreen()));
+        break;
+      case "Lançamentos Contábeis":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileLancamentoContabilGridScreen()));
+        break;
+      case "Balancete":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileBalanceteScreen()));
+        break;
+      case "Fechamento de Período":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileFechamentoPeriodoScreen()));
+        break;
+      case "Dashboard IA":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAiDashboardScreen()));
+        break;
+      case "Assistente IA":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAiAssistenteScreen()));
+        break;
+
+      // Suporte & Comunicação
+      case "Alertas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAlertaAlunoGridScreen()));
+        break;
+      case "Diretórios":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDiretorioGridScreen()));
+        break;
+      case "Notícias":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileNoticiasGridScreen()));
+        break;
+      case "Kanban Chamados":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileKanbanChamadosScreen()));
+        break;
+      case "Kanban Chat":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileKanbanChatScreen()));
+        break;
+      case "Instagram Monitor":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileInstagramMonitorScreen()));
+        break;
+
+      // Academia & Saúde
+      case "Academias":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAcademiaGridScreen()));
+        break;
+      case "Alimentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAlimentoGridScreen()));
+        break;
+      case "Dietas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDietaGridScreen()));
+        break;
+      case "Exercícios":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileExercicioGridScreen()));
+        break;
+      case "Grupos Musculares":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileGrupoMuscularGridScreen()));
+        break;
+      case "Medicamentos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileMedicamentoGridScreen()));
+        break;
+      case "Modalidades":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileModalidadeGridScreen()));
+        break;
+      case "Objetivos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileObjetivoGridScreen()));
+        break;
+      case "Personais":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobilePersonalGridScreen()));
+        break;
+      case "Suplementos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSuplementoGridScreen()));
+        break;
+      case "Treinos":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTreinoGridScreen()));
+        break;
+      case "Avaliação Física":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAvaliacaoFisicaGridScreen()));
+        break;
+      case "Anamnese":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAnamneseScreen()));
+        break;
+
+      // Trading
+      case "Sinais de Mercado":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingSinaisScreen()));
+        break;
+      case "Oportunidades":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingOportunidadesScreen()));
+        break;
+      case "Watchlist":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingWatchlistScreen()));
+        break;
+      case "Alertas de Preço":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingAlertasScreen()));
+        break;
+      case "Operações Assistidas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingOperacoesScreen()));
+        break;
+      case "Configuração da Corretora":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingCorretoraScreen()));
+        break;
+      case "Minha Carteira":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileTradingCarteiraScreen()));
+        break;
+
+      // Sistema
+      case "Aplicativo":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileAplicativoScreen()));
+        break;
+      case "Empresas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileEmpresaGridScreen()));
+        break;
+      case "Roles":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRoleGridScreen()));
+        break;
+      case "Configurações Admin":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileConfiguracoesAdminScreen()));
+        break;
+      case "Configurações Sistema":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileConfiguracoesSistemaScreen()));
+        break;
+      case "Editor de Telas":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileEditorTelasScreen()));
+        break;
+      case "Cadastro de Empresa":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCadastroEmpresaWizard()));
+        break;
+      case "Importação Fiscal Automação":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileImportacaoFiscalAutomacaoScreen()));
+        break;
+      case "Certificado Digital":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCertificadoDigitalScreen()));
+        break;
+      case "Solicitações de Acesso":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSolicitacoesAcessoScreen()));
+        break;
+      case "Query Builder":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileQueryBuilderWindowScreen()));
+        break;
+      case "Sessões":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSessoesScreen()));
+        break;
+
       case "Voltar":
         return;
       case "Sair":
@@ -1379,6 +1788,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.inventory, 'Produtos'),
           if (sec.canView(AppScreen.parceiros))
             _MoreMenuAction(Icons.people, 'Parceiros'),
+          _MoreMenuAction(Icons.local_shipping, 'Fornecedores'),
+          _MoreMenuAction(Icons.card_membership, 'Planos'),
+          _MoreMenuAction(Icons.badge, 'Tipos de Parceiro'),
+          _MoreMenuAction(Icons.handshake, 'Serviços Contratados'),
+          _MoreMenuAction(Icons.view_module, 'Módulos de Serviço'),
+          _MoreMenuAction(Icons.menu_book, 'Catálogo de Produtos'),
+          _MoreMenuAction(Icons.straighten, 'Unidades de Medida'),
+          _MoreMenuAction(Icons.request_quote, 'Orçamentos'),
+          _MoreMenuAction(Icons.shopping_cart, 'Pedidos de Venda'),
+          _MoreMenuAction(Icons.shopping_bag, 'Pedidos de Compra'),
+          _MoreMenuAction(Icons.receipt, 'Pedidos'),
+          _MoreMenuAction(Icons.check_circle_outline, 'Aprovação de Compras'),
+          _MoreMenuAction(Icons.price_change, 'Tabela de Preços'),
+          _MoreMenuAction(Icons.assignment_return, 'Devoluções'),
+          _MoreMenuAction(Icons.warehouse, 'Reserva de Estoque'),
+          _MoreMenuAction(Icons.store, 'Multi-depósito'),
           if (sec.canView(AppScreen.dashComercialArea))
             _MoreMenuAction(Icons.trending_up, 'Dashboard Comercial'),
         ],
@@ -1393,27 +1818,57 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.account_balance_wallet, 'Contas Receber'),
           if (sec.canView(AppScreen.contasBancarias))
             _MoreMenuAction(Icons.account_balance, 'Contas Bancarias'),
+          _MoreMenuAction(Icons.credit_card, 'Formas de Pagamento'),
+          _MoreMenuAction(Icons.pie_chart, 'Centros de Custo'),
+          _MoreMenuAction(Icons.category, 'Categorias Financeiras'),
+          _MoreMenuAction(Icons.swap_horiz, 'Lançamentos Financeiros'),
+          if (sec.canView(AppScreen.importarExtrato) || sec.canView(AppScreen.contasBancarias))
+            _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
+          _MoreMenuAction(Icons.sync_alt, 'Conciliação Bancária'),
+          _MoreMenuAction(Icons.call_split, 'Rateio Financeiro'),
+          _MoreMenuAction(Icons.check_box, 'Baixa Automática'),
+          _MoreMenuAction(Icons.edit_calendar, 'Renegociação'),
+          _MoreMenuAction(Icons.warning_amber, 'Cobrança'),
+          if (temFinanceiroAvancado && sec.canView(AppScreen.contasReceber))
+            _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
+          _MoreMenuAction(Icons.bar_chart, 'DRE Gerencial'),
+          _MoreMenuAction(Icons.send, 'Envio EDI (Remessa)'),
+          _MoreMenuAction(Icons.view_kanban, 'Kanban de Pagamentos'),
+          _MoreMenuAction(Icons.verified, 'Aprovação de Pagamentos'),
+          _MoreMenuAction(Icons.event_note, 'Calendário de Guias'),
+          _MoreMenuAction(Icons.receipt_long, 'Importar Boletos (Lote)'),
+          _MoreMenuAction(Icons.integration_instructions, 'Integrações Financeiras'),
           if (sec.canView(AppScreen.dashboard))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
           if (sec.canView(AppScreen.dashFinanceiroArea))
-            _MoreMenuAction(
-                Icons.account_balance_wallet, 'Dashboard Financeiro'),
-          if (temFinanceiroAvancado && sec.canView(AppScreen.contasReceber))
-            _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
-          if (sec.canView(AppScreen.importarExtrato) || sec.canView(AppScreen.contasBancarias))
-            _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
+            _MoreMenuAction(Icons.account_balance_wallet, 'Dashboard Financeiro'),
         ],
       ),
       _ModuloGroup(
-        'Departamento Pessoal',
-        Icons.badge,
+        'Fiscal',
+        Icons.receipt,
         [
-          if (sec.canView(AppScreen.ponto))
-            _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
-          if (sec.canView(AppScreen.funcionarios))
-            _MoreMenuAction(Icons.people_outline, 'Funcionários'),
-          if (sec.canView(AppScreen.dashDpArea))
-            _MoreMenuAction(Icons.badge, 'Dashboard DP'),
+          if (sec.canView(AppScreen.nfeSaida))
+            _MoreMenuAction(Icons.file_upload, 'NF-e Saída'),
+          if (sec.canView(AppScreen.nfeEntrada))
+            _MoreMenuAction(Icons.file_download, 'NF-e Entrada'),
+          if (temNfce && sec.canView(AppScreen.nfceGrid))
+            _MoreMenuAction(Icons.receipt_long, 'NFC-e (Cupons)'),
+          _MoreMenuAction(Icons.tag, 'NF-e Série'),
+          _MoreMenuAction(Icons.filter_list, 'NF-e Finalidade'),
+          _MoreMenuAction(Icons.alt_route, 'NF-e Tipo Operação'),
+          _MoreMenuAction(Icons.file_present, 'Importar XML NF-e'),
+          _MoreMenuAction(Icons.table_view, 'Importar NF-e CSV'),
+          _MoreMenuAction(Icons.search, 'Consulta DF-e'),
+          _MoreMenuAction(Icons.assignment_turned_in, 'Manifestação Destinatário'),
+          _MoreMenuAction(Icons.cancel, 'Cancelamento e CC-e'),
+          if (temNfce)
+            _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
+          _MoreMenuAction(Icons.policy, 'Regime Tributário'),
+          _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
+          _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
+          if (sec.canView(AppScreen.dashFiscalArea))
+            _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
         ],
       ),
       _ModuloGroup(
@@ -1426,24 +1881,84 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
           if (temNfse && sec.canView(AppScreen.nfseServico))
             _MoreMenuAction(Icons.work, 'Serviços NFS-e'),
+          _MoreMenuAction(Icons.upload_file, 'Importar XML NFS-e'),
           if (temNfse && podeVerConfigIss)
             _MoreMenuAction(Icons.settings, 'Config ISS'),
         ],
       ),
       _ModuloGroup(
-        'Fiscal',
-        Icons.receipt,
+        'Departamento Pessoal',
+        Icons.badge,
         [
-          if (sec.canView(AppScreen.dashFiscalArea))
-            _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
-          if (sec.canView(AppScreen.nfeSaida))
-            _MoreMenuAction(Icons.file_upload, 'NF-e Saída'),
-          if (sec.canView(AppScreen.nfeEntrada))
-            _MoreMenuAction(Icons.file_download, 'NF-e Entrada'),
-          if (temNfce && sec.canView(AppScreen.nfceGrid))
-            _MoreMenuAction(Icons.receipt_long, 'NFC-e (Cupons)'),
-          if (temNfce)
-            _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
+          if (sec.canView(AppScreen.ponto))
+            _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
+          if (sec.canView(AppScreen.funcionarios))
+            _MoreMenuAction(Icons.people_outline, 'Funcionários'),
+          _MoreMenuAction(Icons.edit_calendar, 'Solicitar Ajuste'),
+          _MoreMenuAction(Icons.schedule, 'Ajuste de Ponto'),
+          _MoreMenuAction(Icons.event_busy, 'Feriados'),
+          _MoreMenuAction(Icons.domain, 'Setores'),
+          _MoreMenuAction(Icons.timelapse, 'Horários Funcionário'),
+          if (sec.canView(AppScreen.dashDpArea))
+            _MoreMenuAction(Icons.badge, 'Dashboard DP'),
+        ],
+      ),
+      _ModuloGroup(
+        'Contábil & IA',
+        Icons.account_tree,
+        [
+          _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
+          _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
+          _MoreMenuAction(Icons.scale, 'Balancete'),
+          _MoreMenuAction(Icons.lock_clock, 'Fechamento de Período'),
+          _MoreMenuAction(Icons.smart_toy, 'Dashboard IA'),
+          _MoreMenuAction(Icons.psychology, 'Assistente IA'),
+        ],
+      ),
+      _ModuloGroup(
+        'Suporte & Comunicação',
+        Icons.support_agent,
+        [
+          _MoreMenuAction(Icons.notifications, 'Alertas'),
+          _MoreMenuAction(Icons.folder_shared, 'Diretórios'),
+          _MoreMenuAction(Icons.newspaper, 'Notícias'),
+          _MoreMenuAction(Icons.view_kanban, 'Kanban Chamados'),
+          _MoreMenuAction(Icons.chat, 'Kanban Chat'),
+          _MoreMenuAction(Icons.camera_alt, 'Instagram Monitor'),
+        ],
+      ),
+      _ModuloGroup(
+        'Academia & Saúde',
+        Icons.fitness_center,
+        [
+          _MoreMenuAction(Icons.fitness_center, 'Academias'),
+          _MoreMenuAction(Icons.restaurant, 'Alimentos'),
+          _MoreMenuAction(Icons.menu_book, 'Dietas'),
+          _MoreMenuAction(Icons.directions_run, 'Exercícios'),
+          _MoreMenuAction(Icons.accessibility_new, 'Grupos Musculares'),
+          _MoreMenuAction(Icons.medication, 'Medicamentos'),
+          _MoreMenuAction(Icons.sports, 'Modalidades'),
+          _MoreMenuAction(Icons.track_changes, 'Objetivos'),
+          _MoreMenuAction(Icons.person, 'Personais'),
+          _MoreMenuAction(Icons.local_pharmacy, 'Suplementos'),
+          _MoreMenuAction(Icons.sports_gymnastics, 'Treinos'),
+          _MoreMenuAction(Icons.monitor_weight, 'Avaliação Física'),
+          _MoreMenuAction(Icons.assignment, 'Anamnese'),
+        ],
+      ),
+      _ModuloGroup(
+        'Bolsa de Valores',
+        Icons.show_chart,
+        [
+          _MoreMenuAction(Icons.candlestick_chart, 'Trading'),
+          _MoreMenuAction(Icons.history, 'Backtesting'),
+          _MoreMenuAction(Icons.trending_up, 'Sinais de Mercado'),
+          _MoreMenuAction(Icons.lightbulb, 'Oportunidades'),
+          _MoreMenuAction(Icons.remove_red_eye, 'Watchlist'),
+          _MoreMenuAction(Icons.alarm, 'Alertas de Preço'),
+          _MoreMenuAction(Icons.play_circle, 'Operações Assistidas'),
+          _MoreMenuAction(Icons.settings_input_component, 'Configuração da Corretora'),
+          _MoreMenuAction(Icons.account_balance_wallet, 'Minha Carteira'),
         ],
       ),
       _ModuloGroup(
@@ -1507,19 +2022,26 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         ],
       ),
       _ModuloGroup(
-        'Outros',
-        Icons.apps,
+        'Sistema',
+        Icons.settings,
         [
-          if (sec.canView(AppScreen.parceiros))
-            _MoreMenuAction(Icons.handshake, 'Parceiros'),
-          if (sec.canView(AppScreen.dashAtendimentoArea))
-            _MoreMenuAction(Icons.support_agent, 'Atendimento'),
-          if (sec.canView(AppScreen.mensalidades))
-            _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
+          _MoreMenuAction(Icons.apps, 'Aplicativo'),
+          _MoreMenuAction(Icons.business, 'Empresas'),
           if (sec.canView(AppScreen.logins))
             _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
+          _MoreMenuAction(Icons.security, 'Roles'),
           if (sec.canView(AppScreen.alvaras))
             _MoreMenuAction(Icons.verified_user, 'Alvarás'),
+          _MoreMenuAction(Icons.admin_panel_settings, 'Configurações Admin'),
+          _MoreMenuAction(Icons.settings_applications, 'Configurações Sistema'),
+          _MoreMenuAction(Icons.edit, 'Editor de Telas'),
+          _MoreMenuAction(Icons.domain_add, 'Cadastro de Empresa'),
+          _MoreMenuAction(Icons.auto_fix_high, 'Importação Fiscal Automação'),
+          _MoreMenuAction(Icons.vpn_key, 'Certificado Digital'),
+          _MoreMenuAction(Icons.approval, 'Solicitações de Acesso'),
+          _MoreMenuAction(Icons.switch_account, 'Permissões Multi-Empresa'),
+          _MoreMenuAction(Icons.terminal, 'Query Builder'),
+          _MoreMenuAction(Icons.devices, 'Sessões'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           if (sec.canView(AppScreen.rolesPermissoes))
             _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
