@@ -64,8 +64,13 @@ class NfseTomadorDefaults {
   final String? municipio;
   final String? cidadeId;
   final String? ambiente;
+  final String? codigoServicoMunicipal;
 
-  const NfseTomadorDefaults({this.municipio, this.cidadeId, this.ambiente});
+  const NfseTomadorDefaults(
+      {this.municipio,
+      this.cidadeId,
+      this.ambiente,
+      this.codigoServicoMunicipal});
 }
 
 NfseTomadorDefaults resolveNfseTomadorDefaults(Map<String, dynamic> tomador) {
@@ -100,6 +105,7 @@ NfseTomadorDefaults resolveNfseTomadorDefaults(Map<String, dynamic> tomador) {
         texto(cidade['nome']) ?? texto(tomador['cidade']) ?? texto(cidadeValue),
     cidadeId: texto(cidade['id']),
     ambiente: ambiente,
+    codigoServicoMunicipal: resolveCodigoServicoMunicipalNfseWeb(cidade),
   );
 }
 
@@ -141,6 +147,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String? _statusVal;
   String? _ambienteVal;
   String? _empresaId;
+  String? _parceiroEmissorId;
+  String? _parceiroEmissorNome;
   String? _tomadorId;
   String? _tomadorNome;
   String? _serieId;
@@ -157,6 +165,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       !_isNovo &&
       const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE'}.contains(_statusAtual);
   bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
+  dynamic get _login =>
+      AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
 
   @override
   void initState() {
@@ -180,7 +190,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   void _initCabecalho() {
     final i = widget.item;
-    final login = AuthUtility.userInfo?.login;
+    final login = _login;
 
     _numeroCtrl.text = i['numero']?.toString() ?? '';
     _serieCtrl.text = i['serie']?.toString() ?? '';
@@ -197,6 +207,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
 
+    _parceiroEmissorId = login?.parceiro?.id?.toString();
+    _parceiroEmissorNome = login?.parceiro?.nome ??
+        login?.parceiro?.razaoSocial ??
+        (_parceiroEmissorId == null ? null : 'Parceiro $_parceiroEmissorId');
     final cidadeParceiro =
         login?.parceiro?.cidade ?? login?.parceiro?.endereco?.cidade?.nome;
     if (_isNovo && _municipioCtrl.text.isEmpty && cidadeParceiro != null) {
@@ -208,15 +222,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _ambienteVal = i['ambiente']?.toString() ??
         (_isNovo || TenantContext.hasParceiro ? ambienteParceiro : null);
 
-    // Bug real (2026-09-17, code review): so' pode default/travar o Tomador
-    // no parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
-    // o tomador ja gravado no registro e' o proprio parceiro da sessao --
-    // se a nota EXISTENTE pertence a outro tomador, sobrescrever com o
-    // parceiro logado ao salvar corromperia o dado real da nota (mesma
-    // classe de bug ja documentada na secao "NF-e Entrada" do
-    // C:\App_Academia\claude.md: "Nao sobrescrever dado da nota com
-    // login.parceiro na tela").
-    final sessParcId = login?.parceiro?.id?.toString();
+    // O parceiro autenticado e' o emissor. O tomador e' outro cadastro.
     final tomadorRealId = (i['tomador'] is Map
             ? i['tomador']['id']
             : (i['parceiro'] is Map
@@ -227,13 +233,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             ? i['tomador']['nome']
             : (i['parceiro'] is Map ? i['parceiro']['nome'] : null))
         ?.toString();
-    final podeDefaultParaSessao =
-        _isNovo || tomadorRealId == null || tomadorRealId == sessParcId;
-    _tomadorId =
-        podeDefaultParaSessao ? (sessParcId ?? tomadorRealId) : tomadorRealId;
-    _tomadorNome = podeDefaultParaSessao
-        ? (login?.parceiro?.nome ?? tomadorRealNome)
-        : tomadorRealNome;
+    _tomadorId = tomadorRealId;
+    _tomadorNome = tomadorRealNome;
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
     if (i['serie'] is Map) {
@@ -305,14 +306,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   Future<void> _loadDropdowns() async {
-    final login = AuthUtility.userInfo?.login;
+    final login = _login;
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
     await Future.wait([
       _loadList(
           '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
-      _loadProdutosServico(empId, login?.parceiro?.id?.toString()),
+      _loadProdutosServico(empId, _parceiroEmissorId),
       // Bug real (2026-09-17, ver bugs.md): esta tela buscava serie em
       // /api/nfse-serie (tabela nfse_serie, legada/nao usada -- so tem
       // registros "teste"), enquanto a tela onde o usuario de fato cadastra
@@ -334,9 +335,98 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
-    await _carregarDadosTomador();
-    await _carregarDadosEmpresa();
+    if (_parceiroEmissorId != null && _parceiroEmissorId!.isNotEmpty) {
+      await _carregarDadosParceiroEmissor();
+    } else {
+      await _carregarDadosEmpresa();
+    }
     _garantirCidadeSelecionadaNaLista();
+  }
+
+  Future<void> _carregarDadosParceiroEmissor() async {
+    final id = _parceiroEmissorId;
+    if (!_isNovo || id == null || id.isEmpty) return;
+    final parceiroSessao = _login?.parceiro;
+    final data = <String, dynamic>{};
+    void mesclarDados(Map<String, dynamic> origem) {
+      for (final entry in origem.entries) {
+        if (entry.value != null && entry.value.toString().trim().isNotEmpty) {
+          data[entry.key] = entry.value;
+        }
+      }
+    }
+
+    if (parceiroSessao != null) mesclarDados(parceiroSessao.toJson());
+    for (final parceiro in _tomadores) {
+      if (parceiro['id']?.toString() == id) {
+        mesclarDados(parceiro);
+        break;
+      }
+    }
+    try {
+      final response =
+          await TenantContext.get('${ApiLinks.baseUrl}/api/parceiro/$id');
+      if (response.statusCode == 200) {
+        final raw = jsonDecode(response.body);
+        final parceiro = raw is Map && raw['data'] is Map
+            ? Map<String, dynamic>.from(raw['data'] as Map)
+            : raw is Map
+                ? Map<String, dynamic>.from(raw)
+                : <String, dynamic>{};
+        mesclarDados(parceiro);
+      } else {
+        AppLogger.i.warn(
+            'Usando dados da sessao para parceiro emissor $id (HTTP ${response.statusCode}).');
+      }
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao consultar parceiro emissor $id; usando dados da sessao: $e',
+          stack);
+    }
+    if (data.isEmpty || !mounted) return;
+    try {
+      final defaults = resolveNfseTomadorDefaults(data);
+      final cidadeNome = defaults.municipio;
+      Map<String, dynamic>? cidadeEncontrada;
+      if (defaults.cidadeId == null && cidadeNome != null) {
+        final cidades = await _buscarCidadesServidor(cidadeNome);
+        final normalizado = cidadeNome.trim().toUpperCase();
+        for (final cidade in cidades) {
+          if (cidade['nome']?.toString().trim().toUpperCase() == normalizado) {
+            cidadeEncontrada = cidade;
+            break;
+          }
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _parceiroEmissorNome =
+            (data['nome'] ?? data['razaoSocial'])?.toString() ??
+                _parceiroEmissorNome;
+        if (_municipioCtrl.text.trim().isEmpty && cidadeNome != null) {
+          _municipioCtrl.text = cidadeNome;
+        }
+        if (_cidadeId == null) {
+          _cidadeId = defaults.cidadeId ?? cidadeEncontrada?['id']?.toString();
+          if (cidadeEncontrada != null &&
+              !_cidades.any((c) => c['id']?.toString() == _cidadeId)) {
+            _cidades = [cidadeEncontrada!, ..._cidades];
+          }
+        }
+        if (_codigoServicoCtrl.text.trim().isEmpty) {
+          _codigoServicoCtrl.text = defaults.codigoServicoMunicipal ??
+              _codigoServicoMunicipalDaCidade(cidadeEncontrada ?? {});
+        }
+        if ((_ambienteVal == null || _ambienteVal!.isEmpty) &&
+            defaults.ambiente != null) {
+          _ambienteVal = defaults.ambiente;
+        }
+      });
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao aplicar defaults fiscais do parceiro emissor $id: $e',
+          stack);
+    }
   }
 
   Future<void> _carregarDadosEmpresa() async {
@@ -371,97 +461,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     } catch (e, stack) {
       AppLogger.i.error(
           'Erro ao carregar ambiente/municipio da empresa $_empresaId para nova NFS-e: $e',
-          stack);
-    }
-  }
-
-  Future<void> _carregarDadosTomador() async {
-    if (_tomadorId == null || _tomadorId!.isEmpty) return;
-    final parceiroSessao = AuthUtility.userInfo?.login?.parceiro;
-    final data = <String, dynamic>{};
-    void mesclarDados(Map<String, dynamic> origem) {
-      for (final entry in origem.entries) {
-        if (entry.value != null && entry.value.toString().trim().isNotEmpty) {
-          data[entry.key] = entry.value;
-        }
-      }
-    }
-
-    if (parceiroSessao != null) {
-      mesclarDados(parceiroSessao.toJson());
-    }
-    for (final tomador in _tomadores) {
-      if (tomador['id']?.toString() == _tomadorId) {
-        mesclarDados(tomador);
-        break;
-      }
-    }
-    try {
-      final r = await TenantContext.get(
-          '${ApiLinks.baseUrl}/api/parceiro/$_tomadorId');
-      if (r.statusCode == 200) {
-        final raw = jsonDecode(r.body);
-        final resposta = raw is Map && raw['data'] is Map
-            ? Map<String, dynamic>.from(raw['data'] as Map)
-            : raw is Map
-                ? Map<String, dynamic>.from(raw)
-                : <String, dynamic>{};
-        mesclarDados(resposta);
-      } else {
-        AppLogger.i.warn(
-            'Usando dados da sessao para o tomador $_tomadorId (HTTP ${r.statusCode}).');
-      }
-    } catch (e, stack) {
-      AppLogger.i.error(
-          'Erro ao consultar tomador $_tomadorId; usando dados da sessao: $e',
-          stack);
-    }
-    if (data.isEmpty || !mounted) return;
-
-    try {
-      final defaults = resolveNfseTomadorDefaults(data);
-      final cidadeDoTomador = defaults.municipio;
-      Map<String, dynamic>? cidadeEncontrada;
-      if (_isNovo && defaults.cidadeId == null && cidadeDoTomador != null) {
-        final cidades = await _buscarCidadesServidor(cidadeDoTomador);
-        final nomeNormalizado = cidadeDoTomador.trim().toUpperCase();
-        for (final cidade in cidades) {
-          if (cidade['nome']?.toString().trim().toUpperCase() ==
-              nomeNormalizado) {
-            cidadeEncontrada = cidade;
-            break;
-          }
-        }
-      }
-      if (!mounted) return;
-      setState(() {
-        if ((_tomadorNome == null || _tomadorNome!.isEmpty) &&
-            data['nome'] != null) {
-          _tomadorNome = data['nome'].toString();
-        }
-        if (_isNovo &&
-            _municipioCtrl.text.trim().isEmpty &&
-            cidadeDoTomador != null) {
-          _municipioCtrl.text = cidadeDoTomador;
-        }
-        final podeAplicarCidade = _isNovo &&
-            (_municipioCtrl.text.trim().isEmpty ||
-                _municipioCtrl.text.trim().toUpperCase() ==
-                    cidadeDoTomador?.trim().toUpperCase());
-        if (podeAplicarCidade && _cidadeId == null) {
-          _cidadeId = defaults.cidadeId ?? cidadeEncontrada?['id']?.toString();
-          if (cidadeEncontrada != null &&
-              !_cidades.any((c) => c['id']?.toString() == _cidadeId)) {
-            _cidades = [cidadeEncontrada!, ..._cidades];
-          }
-        }
-        if (_isNovo && (_ambienteVal == null || _ambienteVal!.isEmpty)) {
-          _ambienteVal = defaults.ambiente;
-        }
-      });
-    } catch (e, stack) {
-      AppLogger.i.error(
-          'Erro ao aplicar municipio/ambiente do tomador $_tomadorId para nova NFS-e: $e',
           stack);
     }
   }
@@ -654,15 +653,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
     if (_statusAtual != 'CONFIRMADA') return;
-    final login = AuthUtility.userInfo?.login;
+    final login = _login;
     final tomador = _tomadores.cast<Map<String, dynamic>?>().firstWhere(
               (t) => t?['id']?.toString() == _tomadorId,
               orElse: () => null,
             ) ??
-        <String, dynamic>{
-          'cpf': login?.parceiro?.cpf,
-          'nome': login?.parceiro?.nome ?? _tomadorNome,
-        };
+        <String, dynamic>{};
     final itensValidos =
         _itens.where((item) => item['descricao'] != null).toList();
     final descricao = _observacaoCtrl.text.trim().isNotEmpty
@@ -1094,7 +1090,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   // ── CABEÇALHO ──
   Widget _cabecalho() {
-    final hasSession = AuthUtility.userInfo?.login != null;
     return Container(
       color: Colors.white,
       child: Column(children: [
@@ -1127,15 +1122,23 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(10),
             child: Column(children: [
-              hasSession && _empresaNome != null
-                  ? _inpDisabledText('Empresa', _empresaNome!)
+              _empresaId != null
+                  ? _inpDisabledText(
+                      'Empresa', _empresaNome ?? 'Empresa $_empresaId')
                   : _ddObj('Empresa', _empresaId, _empresas, 'nome',
                       (v) => setState(() => _empresaId = v)),
-              TenantContext.hasParceiro
-                  ? _inpDisabledText('Tomador / Parceiro',
-                      _tomadorNome ?? 'Parceiro $_tomadorId')
-                  : _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
-                      (v) => setState(() => _tomadorId = v)),
+              if (_parceiroEmissorId != null)
+                _inpDisabledText('Parceiro Emissor',
+                    _parceiroEmissorNome ?? 'Parceiro $_parceiroEmissorId'),
+              _ddObj('Tomador', _tomadorId, _tomadores, 'nome', (v) {
+                setState(() {
+                  _tomadorId = v;
+                  _tomadorNome = _tomadores
+                      .where((parceiro) => parceiro['id']?.toString() == v)
+                      .map((parceiro) => parceiro['nome']?.toString())
+                      .firstWhere((nome) => nome != null, orElse: () => null);
+                });
+              }),
               _ddSerie(),
               _inp('Número', _numeroCtrl),
               _dateField('Data Emissão', _dataEmissao,
@@ -1146,7 +1149,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               _inp('Código de Serviço Municipal', _codigoServicoCtrl),
               _textArea('Observação', _observacaoCtrl),
               _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
-              TenantContext.hasParceiro
+              _parceiroEmissorId != null
                   ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
                   : _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
                       (v) => setState(() => _ambienteVal = v)),
@@ -1479,9 +1482,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Builder(builder: (context) {
-            final login = AuthUtility.userInfo?.login;
+            final login = _login;
             final empId = login?.empresa?.id?.toString() ?? _empresaId;
-            final tomadorId = login?.parceiro?.id?.toString() ?? _tomadorId;
+            final parceiroId = _parceiroEmissorId;
             return SearchableDropdownField(
               label: 'Produto (Serviço)',
               value: prodId,
@@ -1496,7 +1499,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 pagina: pagina,
                 tamanho: 20,
                 empresaId: empId,
-                parceiroId: tomadorId,
+                parceiroId: parceiroId,
                 isServico: true,
               ),
               labelResolver: DropdownHelpers.produtoContabilLabelPorId,

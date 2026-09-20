@@ -171,7 +171,7 @@ void main() {
   });
 
   testWidgets(
-      'Web usa cadastro do tomador da lista quando GET individual falha',
+      'NFS-e separa parceiro emissor do tomador e aplica defaults do emissor',
       (tester) async {
     AuthUtility.userInfo = LoginModel(
       login: Login.fromJson({
@@ -202,7 +202,11 @@ void main() {
                     'cidade': 'Uberaba',
                     'ambiente': '2 - Homologacao',
                     'endereco': {
-                      'cidade': {'id': 10968, 'nome': 'Uberaba'}
+                      'cidade': {
+                        'id': 10968,
+                        'nome': 'Uberaba',
+                        'ibge': 3170107
+                      }
                     },
                   }
                 ]
@@ -228,12 +232,88 @@ void main() {
     final municipio = tester.widget<SearchableDropdownField>(municipioFinder);
     expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1557')),
         isTrue);
-    expect(
-        requisicoes.any((uri) => uri.path.endsWith('/api/parceiro')),
-        isTrue,
+    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro')), isTrue,
         reason: 'O cadastro completo do tomador deve vir da lista da API');
     expect(municipio.value, '10968');
     expect(find.text('HOMOLOGACAO'), findsOneWidget);
+    expect(find.text('Parceiro Emissor'), findsOneWidget);
+    expect(find.text('DAMAIO JOSE MARTINS JUNIOR LTDA'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate((widget) =>
+            widget is SearchableDropdownField && widget.label == 'Empresa'),
+        findsNothing);
+    expect(
+        find.byWidgetPredicate((widget) =>
+            widget is SearchableDropdownField &&
+            widget.label == 'Parceiro Emissor'),
+        findsNothing);
+    final tomador = tester.widget<SearchableDropdownField>(
+      find.byWidgetPredicate((widget) =>
+          widget is SearchableDropdownField && widget.label == 'Tomador'),
+    );
+    expect(tomador.enabled, isTrue);
+    expect(tomador.value, isNull);
+    expect(find.text('3170107'), findsOneWidget);
+  });
+
+  testWidgets('sem parceiro de sessao usa somente empresa como escopo',
+      (tester) async {
+    AuthUtility.userInfo = LoginModel(
+      login: Login(
+        id: 972,
+        empresa: Empresa(id: 1, nome: 'Empresa Smoke Test'),
+      ),
+    );
+    addTearDown(() => AuthUtility.userInfo = null);
+    final requisicoes = <Uri>[];
+    final client = MockClient((request) async {
+      requisicoes.add(request.url);
+      if (request.url.path.endsWith('/api/empresa/1')) {
+        return http.Response(
+            jsonEncode({
+              'data': {
+                'id': 1,
+                'nome': 'Empresa Smoke Test',
+                'ambiente': 'PRODUCAO',
+                'cidade': {'id': 31, 'nome': 'Uberaba', 'ibge': 3170107},
+              }
+            }),
+            200);
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      await tester.pumpWidget(MaterialApp(
+        home: NfseDetailScreen(item: const {}),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+    }, () => client);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    expect(find.text('Parceiro Emissor'), findsNothing);
+    expect(find.text('Empresa Smoke Test'), findsOneWidget);
+    expect(find.text('PRODUCAO'), findsOneWidget);
+    final tomador = tester.widget<SearchableDropdownField>(
+      find.byWidgetPredicate((widget) =>
+          widget is SearchableDropdownField && widget.label == 'Tomador'),
+    );
+    expect(tomador.enabled, isTrue);
+    expect(tomador.value, isNull);
+    final chamadasDeEscopo = requisicoes.where((uri) =>
+        uri.path.endsWith('/api/parceiro') ||
+        uri.path.endsWith('/api/nfe-serie') ||
+        uri.path.endsWith('/api/produto-contabil'));
+    expect(chamadasDeEscopo, isNotEmpty);
+    for (final uri in chamadasDeEscopo) {
+      expect(uri.queryParameters['empId'], '1');
+      expect(uri.queryParameters.containsKey('parceiro'), isFalse);
+      expect(uri.queryParameters.containsKey('parceiroId'), isFalse);
+      expect(uri.queryParameters.containsKey('parcId'), isFalse);
+      expect(uri.queryParameters.containsKey('clienteId'), isFalse);
+    }
   });
 
   test('disponibiliza ações de grade apenas nos estados fiscais válidos', () {
