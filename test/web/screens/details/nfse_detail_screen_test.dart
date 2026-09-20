@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
@@ -254,6 +255,100 @@ void main() {
     expect(tomador.enabled, isTrue);
     expect(tomador.value, isNull);
     expect(find.text('3170107'), findsOneWidget);
+  });
+
+  testWidgets(
+      'NFS-e corrige sessao divergente com empresa e parceiro atuais do login',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    AuthUtility.userInfo = LoginModel(
+      login: Login(
+        id: 10,
+        empresa: Empresa(id: 1, nome: 'Empresa antiga'),
+        parceiro: Parceiro(id: 50, nome: 'Parceiro antigo'),
+      ),
+    );
+    addTearDown(() => AuthUtility.userInfo = null);
+
+    final requisicoes = <Uri>[];
+    final client = MockClient((request) async {
+      requisicoes.add(request.url);
+      if (request.url.path.endsWith('/api/login/me/empresas-acesso')) {
+        return http.Response(
+            jsonEncode([
+              {
+                'loginId': 10,
+                'empresaId': 2,
+                'empresaNome': 'Empresa atual',
+                'parceiroId': 51,
+                'parceiroNome': 'Parceiro emissor atual',
+                'status': 'APROVADO',
+                'ativa': true,
+              }
+            ]),
+            200);
+      }
+      if (request.url.path.endsWith('/api/parceiro/51')) {
+        return http.Response(
+            jsonEncode({
+              'id': 51,
+              'nome': 'Parceiro emissor atual',
+              'cidade': 'Uberaba',
+              'ambiente': 'HOMOLOGACAO',
+              'endereco': {
+                'cidade': {
+                  'id': 10968,
+                  'nome': 'Uberaba',
+                  'ibge': 3170107,
+                }
+              },
+            }),
+            200);
+      }
+      if (request.url.path.endsWith('/api/parceiro')) {
+        return http.Response(
+            jsonEncode({
+              'data': {'dados': []}
+            }),
+            200);
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      await tester.pumpWidget(const MaterialApp(
+        home: NfseDetailScreen(item: {}),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(seconds: 5));
+    }, () => client);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    expect(AuthUtility.userInfo?.login?.empresa?.id, 2);
+    expect(AuthUtility.userInfo?.login?.parceiro?.id, 51);
+    expect(AuthUtility.userInfo?.login?.empresa?.nome, 'Empresa atual');
+    expect(
+      AuthUtility.userInfo?.login?.parceiro?.nome,
+      'Parceiro emissor atual',
+    );
+    expect(find.text('Empresa atual'), findsOneWidget);
+    expect(find.text('Parceiro emissor atual'), findsOneWidget);
+    expect(find.text('Uberaba'), findsOneWidget);
+    expect(find.text('HOMOLOGACAO'), findsOneWidget);
+    expect(
+      requisicoes.any((uri) =>
+          uri.path.endsWith('/api/parceiro') &&
+          uri.queryParameters['empId'] == '2'),
+      isTrue,
+    );
+    expect(
+      requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/51')),
+      isTrue,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets('sem parceiro de sessao usa somente empresa como escopo',

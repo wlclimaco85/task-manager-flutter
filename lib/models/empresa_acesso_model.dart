@@ -7,6 +7,8 @@ class EmpresaAcesso {
   final String? loginEmail;
   final int empresaId;
   final String empresaNome;
+  final int? parceiroId;
+  final String? parceiroNome;
   final String status;
   final bool ativa;
   final DateTime? solicitadoEm;
@@ -20,6 +22,8 @@ class EmpresaAcesso {
     this.loginEmail,
     required this.empresaId,
     required this.empresaNome,
+    this.parceiroId,
+    this.parceiroNome,
     required this.status,
     required this.ativa,
     this.solicitadoEm,
@@ -35,6 +39,8 @@ class EmpresaAcesso {
       loginEmail: json['loginEmail']?.toString(),
       empresaId: _asInt(json['empresaId']) ?? 0,
       empresaNome: json['empresaNome']?.toString() ?? '',
+      parceiroId: _asInt(json['parceiroId']),
+      parceiroNome: json['parceiroNome']?.toString(),
       status: json['status']?.toString() ?? '',
       ativa: json['ativa'] == true,
       solicitadoEm: _asDate(json['solicitadoEm']),
@@ -50,6 +56,8 @@ class EmpresaAcesso {
         'loginEmail': loginEmail,
         'empresaId': empresaId,
         'empresaNome': empresaNome,
+        'parceiroId': parceiroId,
+        'parceiroNome': parceiroNome,
         'status': status,
         'ativa': ativa,
         'solicitadoEm': solicitadoEm?.toIso8601String(),

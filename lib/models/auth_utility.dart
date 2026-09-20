@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
 import 'empresa_acesso_model.dart';
 import 'empresa_model.dart';
+import 'parceiro_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -135,6 +136,28 @@ class AuthUtility {
     }
     if (model.data?.login != null) {
       model.data!.login!.empresa = empresa;
+    }
+    await setUserInfo(model);
+  }
+
+  /// Atualiza de forma atomica o contexto fiscal retornado pela troca de
+  /// empresa. O parceiro precisa acompanhar a empresa para evitar requisicoes
+  /// e emissoes usando estabelecimentos de tenants diferentes.
+  static Future<void> atualizarContextoAtivo(
+    Empresa empresa,
+    Parceiro? parceiro,
+  ) async {
+    final model = userInfo;
+    if (model == null) return;
+    if (model.login != null) {
+      model.login!
+        ..empresa = empresa
+        ..parceiro = parceiro;
+    }
+    if (model.data?.login != null) {
+      model.data!.login!
+        ..empresa = empresa
+        ..parceiro = parceiro;
     }
     await setUserInfo(model);
   }

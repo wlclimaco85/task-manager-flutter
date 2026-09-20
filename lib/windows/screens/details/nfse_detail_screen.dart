@@ -3,6 +3,8 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
+import '../../../models/empresa_acesso_model.dart';
+import '../../../models/parceiro_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -251,6 +253,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   Future<void> _loadDropdowns() async {
+    await _sincronizarContextoFiscalAtivo();
     final login = _login;
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
@@ -282,6 +285,68 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     ]);
     await _carregarDadosParceiroEmissor();
     _garantirCidadeSelecionadaNaLista();
+  }
+
+  Future<void> _sincronizarContextoFiscalAtivo() async {
+    final loginLocal = _login;
+    final loginId = loginLocal?.id;
+    if (!_isNovo || loginId == null) return;
+    try {
+      final response = await TenantContext.get(
+        ApiLinks.loginEmpresasAcesso,
+      );
+      if (response.statusCode != 200) {
+        AppLogger.i.warn(
+          'Nao foi possivel sincronizar o contexto fiscal do login $loginId '
+          '(HTTP ${response.statusCode}).',
+        );
+        return;
+      }
+      final raw = jsonDecode(response.body);
+      final lista = raw is List
+          ? raw
+          : raw is Map && raw['data'] is List
+              ? raw['data'] as List
+              : raw is Map && raw['data'] is Map
+                  ? (raw['data'] as Map)['dados'] as List?
+                  : null;
+      if (lista == null) return;
+      Map<String, dynamic>? ativa;
+      for (final item in lista.whereType<Map>()) {
+        final candidato = Map<String, dynamic>.from(item);
+        if (candidato['ativa'] == true) {
+          ativa = candidato;
+          break;
+        }
+      }
+      if (ativa == null) return;
+      final acesso = EmpresaAcesso.fromJson(ativa);
+      if (acesso.empresaId <= 0) return;
+      final empresaServidor = acesso.toEmpresa();
+      final parceiroServidor = acesso.parceiroId == null
+          ? null
+          : Parceiro(
+              id: acesso.parceiroId,
+              nome: acesso.parceiroNome,
+              empresa: empresaServidor,
+            );
+
+      final contextoMudou = loginLocal?.empresa?.id != empresaServidor.id ||
+          loginLocal?.parceiro?.id != parceiroServidor?.id;
+      if (!contextoMudou) return;
+
+      await AuthUtility.atualizarContextoAtivo(
+        empresaServidor,
+        parceiroServidor,
+      );
+      if (!mounted) return;
+      setState(_initCabecalho);
+    } catch (e, stack) {
+      AppLogger.i.error(
+        'Erro ao sincronizar empresa/parceiro do login $loginId na NFS-e: $e',
+        stack,
+      );
+    }
   }
 
   Future<void> _carregarDadosParceiroEmissor() async {
