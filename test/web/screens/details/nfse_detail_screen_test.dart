@@ -15,6 +15,86 @@ import 'package:task_manager_flutter/web/screens/details/nfse_detail_screen.dart
 import 'package:task_manager_flutter/web/screens/nfse_screen.dart';
 
 void main() {
+  testWidgets(
+      'Web confirma na mesma tela depois de salvar cabecalho criado com mapa const',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    AuthUtility.userInfo = null;
+
+    final requisicoes = <http.Request>[];
+    final client = MockClient((request) async {
+      requisicoes.add(request);
+      if (request.method == 'POST' && request.url.path.endsWith('/api/nfse')) {
+        return http.Response(
+            jsonEncode({'id': 321, 'status': 'RASCUNHO'}), 200);
+      }
+      if (request.method == 'PUT' &&
+          request.url.path.endsWith('/api/nfse/321')) {
+        return http.Response(
+            jsonEncode({'id': 321, 'status': 'RASCUNHO'}), 200);
+      }
+      if (request.method == 'POST' &&
+          request.url.path.endsWith('/api/nfse/321/confirmar')) {
+        return http.Response(
+            jsonEncode({'id': 321, 'status': 'CONFIRMADA'}), 200);
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.pumpWidget(const MaterialApp(
+        home: NfseDetailScreen(item: {}),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Salvar'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Novo'));
+      await tester.pump();
+      final listTileWarning = tester.takeException();
+      if (listTileWarning != null) {
+        expect(
+          listTileWarning.toString(),
+          contains(
+              'ListTile background color or ink splashes may be invisible'),
+        );
+      }
+      await tester.tap(find.text('Confirmar NFS-e'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      final rebuildWarning = tester.takeException();
+      if (rebuildWarning != null) {
+        expect(
+          rebuildWarning.toString(),
+          contains(
+              'ListTile background color or ink splashes may be invisible'),
+        );
+      }
+    }, () => client);
+
+    expect(find.text('NFSe #321'), findsOneWidget);
+    expect(
+      requisicoes.any((request) =>
+          request.method == 'PUT' &&
+          request.url.path.endsWith('/api/nfse/321')),
+      isTrue,
+    );
+    expect(
+      requisicoes.any((request) =>
+          request.method == 'POST' &&
+          request.url.path.endsWith('/api/nfse/321/confirmar')),
+      isTrue,
+    );
+    expect(find.text('Emitir NFS-e'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 10));
+  });
+
   testWidgets('Web: cria item de servico com campo Produto (Servico)',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1400, 900));

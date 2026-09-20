@@ -47,6 +47,7 @@ class NfseDetailScreen extends StatefulWidget {
 }
 
 class _NfseDetailScreenState extends State<NfseDetailScreen> {
+  late final Map<String, dynamic> _item;
   int _tab = 0;
   bool _itensGrid = true;
   int _selItem = 0;
@@ -81,8 +82,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String? _empresaNome;
   String? _tomadorNome;
 
-  bool get _isNovo => widget.item['id'] == null;
-  String get _nfseId => widget.item['id']?.toString() ?? '';
+  bool get _isNovo => _item['id'] == null;
+  String get _nfseId => _item['id']?.toString() ?? '';
   String get _statusAtual => (_statusVal ?? 'RASCUNHO').toUpperCase();
   bool get _podeExcluir =>
       !_isNovo &&
@@ -94,6 +95,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _item = Map<String, dynamic>.from(widget.item);
     _initCabecalho();
     _loadDropdowns();
     if (!_isNovo) {
@@ -112,7 +114,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   void _initCabecalho() {
-    final i = widget.item;
+    final i = _item;
     final login = _login;
 
     _numeroCtrl.text = i['numero']?.toString() ?? '';
@@ -520,7 +522,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   Future<bool> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
-      if (!_isNovo) 'id': widget.item['id'],
+      if (!_isNovo) 'id': _item['id'],
       'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
       'municipioPrestacao': _municipioCtrl.text,
@@ -542,7 +544,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       final r = _isNovo
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfse', body)
           : await TenantContext.put(
-              '${ApiLinks.baseUrl}/api/nfse/${widget.item['id']}', body);
+              '${ApiLinks.baseUrl}/api/nfse/${_item['id']}', body);
       if (!mounted) return false;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (_isNovo) {
@@ -552,7 +554,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id']))
                 : null;
             if (newId != null) {
-              setState(() => widget.item['id'] = newId);
+              setState(() => _item['id'] = newId);
               _loadItens();
             }
           } catch (_) {}
@@ -598,7 +600,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       if (r.statusCode == 200) {
         setState(() {
           _statusVal = 'CONFIRMADA';
-          widget.item['status'] = 'CONFIRMADA';
+          _item['status'] = 'CONFIRMADA';
         });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('NFS-e confirmada.'), backgroundColor: _green));
@@ -636,7 +638,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
               backgroundColor: _green));
           setState(() {
-            widget.item['status'] = status;
+            _item['status'] = status;
             _statusVal = status;
           });
         } else {
@@ -726,7 +728,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() {
           _statusVal = 'CANCELADA';
-          widget.item['status'] = 'CANCELADA';
+          _item['status'] = 'CANCELADA';
         });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('NFS-e cancelada.'), backgroundColor: _green));
@@ -1663,7 +1665,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   Widget _totaisTab() {
-    final vt = widget.item['valorTotal']?.toString() ?? '0,00';
+    final vt = _item['valorTotal']?.toString() ?? '0,00';
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Wrap(
