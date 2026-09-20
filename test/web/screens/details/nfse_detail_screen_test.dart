@@ -171,17 +171,15 @@ void main() {
   });
 
   testWidgets(
-      'Web usa cadastro da sessao quando GET individual do parceiro falha',
+      'Web usa cadastro do tomador da lista quando GET individual falha',
       (tester) async {
     AuthUtility.userInfo = LoginModel(
       login: Login.fromJson({
         'id': 972,
         'empresa': {'id': 1, 'nome': 'Empresa Smoke Test'},
         'parceiro': {
-          'id': 1805,
-          'nome': 'Abraco Contabilidade',
-          'cidade': 'Uberaba',
-          'ambiente': '2 - Homologacao',
+          'id': 1557,
+          'nome': 'DAMAIO JOSE MARTINS JUNIOR LTDA',
         },
       }),
     );
@@ -190,16 +188,23 @@ void main() {
     final requisicoes = <Uri>[];
     final client = MockClient((request) async {
       requisicoes.add(request.url);
-      if (request.url.path.endsWith('/api/parceiro/1805')) {
+      if (request.url.path.endsWith('/api/parceiro/1557')) {
         return http.Response('{}', 403);
       }
-      if (request.url.path.endsWith('/api/cidade') &&
-          request.url.queryParameters['nome'] == 'Uberaba') {
+      if (request.url.path.endsWith('/api/parceiro')) {
         return http.Response(
             jsonEncode({
               'data': {
                 'dados': [
-                  {'id': 10968, 'nome': 'Uberaba'}
+                  {
+                    'id': 1557,
+                    'nome': 'DAMAIO JOSE MARTINS JUNIOR LTDA',
+                    'cidade': 'Uberaba',
+                    'ambiente': '2 - Homologacao',
+                    'endereco': {
+                      'cidade': {'id': 10968, 'nome': 'Uberaba'}
+                    },
+                  }
                 ]
               }
             }),
@@ -221,14 +226,12 @@ void main() {
     final municipioFinder = find.byWidgetPredicate((widget) =>
         widget is SearchableDropdownField && widget.label.contains('Munic'));
     final municipio = tester.widget<SearchableDropdownField>(municipioFinder);
-    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1805')),
+    expect(requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1557')),
         isTrue);
     expect(
-        requisicoes.any((uri) =>
-            uri.path.endsWith('/api/cidade') &&
-            uri.queryParameters['nome'] == 'Uberaba'),
+        requisicoes.any((uri) => uri.path.endsWith('/api/parceiro')),
         isTrue,
-        reason: 'A cidade do cadastro da sessao precisa ser resolvida');
+        reason: 'O cadastro completo do tomador deve vir da lista da API');
     expect(municipio.value, '10968');
     expect(find.text('HOMOLOGACAO'), findsOneWidget);
   });

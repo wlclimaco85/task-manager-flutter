@@ -378,8 +378,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   Future<void> _carregarDadosTomador() async {
     if (_tomadorId == null || _tomadorId!.isEmpty) return;
     final parceiroSessao = AuthUtility.userInfo?.login?.parceiro;
-    final dadosSessao = parceiroSessao?.toJson() ?? <String, dynamic>{};
-    var data = Map<String, dynamic>.from(dadosSessao);
+    final data = <String, dynamic>{};
+    void mesclarDados(Map<String, dynamic> origem) {
+      for (final entry in origem.entries) {
+        if (entry.value != null && entry.value.toString().trim().isNotEmpty) {
+          data[entry.key] = entry.value;
+        }
+      }
+    }
+
+    if (parceiroSessao != null) {
+      mesclarDados(parceiroSessao.toJson());
+    }
+    for (final tomador in _tomadores) {
+      if (tomador['id']?.toString() == _tomadorId) {
+        mesclarDados(tomador);
+        break;
+      }
+    }
     try {
       final r = await TenantContext.get(
           '${ApiLinks.baseUrl}/api/parceiro/$_tomadorId');
@@ -390,12 +406,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             : raw is Map
                 ? Map<String, dynamic>.from(raw)
                 : <String, dynamic>{};
-        data = {
-          ...data,
-          for (final entry in resposta.entries)
-            if (entry.value != null && entry.value.toString().trim().isNotEmpty)
-              entry.key: entry.value,
-        };
+        mesclarDados(resposta);
       } else {
         AppLogger.i.warn(
             'Usando dados da sessao para o tomador $_tomadorId (HTTP ${r.statusCode}).');
