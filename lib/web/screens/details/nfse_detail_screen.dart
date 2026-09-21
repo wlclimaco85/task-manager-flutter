@@ -196,14 +196,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final i = _item;
     final login = _login;
 
-    _numeroCtrl.text = i['numero']?.toString() ?? '';
+    final status = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
+    _statusVal = status;
+    _numeroCtrl.text = status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
     _serieCtrl.text = i['serie']?.toString() ?? '';
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
     _codigoServicoCtrl.text = _codigoServicoMunicipalInicial(i);
     _observacaoCtrl.text = i['observacao']?.toString() ?? '';
-
-    _statusVal = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
 
     final sessEmpId = login?.empresa?.id?.toString();
     _empresaId = sessEmpId ??
@@ -622,7 +622,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   Future<bool> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
       if (!_isNovo) 'id': _item['id'],
-      'numero': _numeroCtrl.text,
+      if ((_statusAtual == 'AUTORIZADA' || _statusVal == 'AUTORIZADA') &&
+          _numeroCtrl.text.isNotEmpty)
+        'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
       'municipioPrestacao': _municipioCtrl.text,
       'codigoServicoMunicipal': _codigoServicoCtrl.text,
@@ -777,6 +779,15 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         if (status.isNotEmpty) {
           _item['status'] = status;
           _statusVal = status;
+        }
+        if (status == 'AUTORIZADA') {
+          final numRetornado = result['numero']?.toString() ??
+              result['nfseNumber']?.toString() ??
+              result['numeroDps']?.toString();
+          if (numRetornado != null && numRetornado.isNotEmpty) {
+            _numeroCtrl.text = numRetornado;
+            _item['numero'] = numRetornado;
+          }
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1216,7 +1227,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 });
               }),
               _ddSerie(),
-              _inp('Número', _numeroCtrl),
+              _inpDisabledText(
+                  'Número',
+                  (_statusVal == 'AUTORIZADA' || _statusAtual == 'AUTORIZADA')
+                      ? _numeroCtrl.text
+                      : ''),
               _dateField('Data Emissão', _dataEmissao,
                   (d) => setState(() => _dataEmissao = d)),
               _dateField('Data Competência', _dataCompetencia,
@@ -1368,9 +1383,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               orElse: () => {});
           if (s.isNotEmpty) {
             _serieCtrl.text = s['serie']?.toString() ?? '';
-            // Auto-preencher próximo número
-            final proximo = int.tryParse(_numeroAtualSerie(s).toString()) ?? 1;
-            _numeroCtrl.text = proximo.toString();
           }
         },
       ),

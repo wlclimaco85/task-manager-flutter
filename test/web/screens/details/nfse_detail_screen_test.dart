@@ -109,6 +109,14 @@ void main() {
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Novo'));
     await tester.pump();
+    final listTileWarning = tester.takeException();
+    if (listTileWarning != null) {
+      expect(
+        listTileWarning.toString(),
+        contains(
+            'ListTile background color or ink splashes may be invisible'),
+      );
+    }
 
     expect(find.text('Produto (Serviço)'), findsOneWidget);
     expect(find.text('Descrição'), findsOneWidget);
@@ -116,7 +124,8 @@ void main() {
     expect(find.text('Vl. Unitário'), findsOneWidget);
     expect(find.text('Vl. Total'), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
   });
 
   test('busca de produtos da NFSe envia isServico=true', () {
@@ -489,6 +498,9 @@ void main() {
       expect(uri.queryParameters.containsKey('parcId'), isFalse);
       expect(uri.queryParameters.containsKey('clienteId'), isFalse);
     }
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
   });
 
   test('disponibiliza ações de grade apenas nos estados fiscais válidos', () {
@@ -546,8 +558,60 @@ void main() {
     final body = jsonDecode(postNfse.body) as Map<String, dynamic>;
     expect(body['cidade'], {'id': 10968});
     expect(body['municipioPrestacao'], 'Uberaba');
+    expect(body.containsKey('numero'), isFalse,
+        reason: 'Rascunho nao deve enviar numero no cabecalho');
 
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 20));
+  });
+
+  testWidgets(
+      'Web: rascunho nao exibe numero e nao envia numero no salvamento',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    AuthUtility.userInfo = null;
+
+    final requisicoes = <http.Request>[];
+    final client = MockClient((request) async {
+      requisicoes.add(request);
+      if (request.method == 'POST' && request.url.path.endsWith('/api/nfse')) {
+        return http.Response(
+            jsonEncode({'id': 333, 'status': 'RASCUNHO'}), 200);
+      }
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+
+    await http.runWithClient(() async {
+      await tester.pumpWidget(MaterialApp(
+        home: NfseDetailScreen(item: const {
+          'id': 333,
+          'numero': 222,
+          'status': 'RASCUNHO',
+        }),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      // Em RASCUNHO, o numero 222 nao deve aparecer nos campos da tela
+      expect(find.text('222'), findsNothing);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Salvar'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }, () => client);
+
+    final reqs = requisicoes.where((r) => r.url.path.contains('/api/nfse'));
+    for (final req in reqs) {
+      if (req.method == 'PUT' || req.method == 'POST') {
+        final body = jsonDecode(req.body) as Map<String, dynamic>;
+        expect(body.containsKey('numero'), isFalse,
+            reason: 'Nao deve enviar campo numero em RASCUNHO');
+      }
+    }
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
   });
 }
+
