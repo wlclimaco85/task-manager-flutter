@@ -632,6 +632,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
       if (_tomadorId != null)
         'tomador': {'id': int.tryParse(_tomadorId!) ?? _tomadorId},
+      if (_cidadeId != null)
+        'cidade': {'id': int.tryParse(_cidadeId!) ?? _cidadeId},
       if (_dataEmissao != null)
         'dataEmissao': _dataEmissao!.toIso8601String().substring(0, 10),
       if (_dataCompetencia != null)
@@ -1200,10 +1202,17 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               _ddObj('Tomador', _tomadorId, _tomadores, 'nome', (v) {
                 setState(() {
                   _tomadorId = v;
-                  _tomadorNome = _tomadores
-                      .where((parceiro) => parceiro['id']?.toString() == v)
-                      .map((parceiro) => parceiro['nome']?.toString())
-                      .firstWhere((nome) => nome != null, orElse: () => null);
+                  final tomadorMap = _tomadores
+                      .cast<Map<String, dynamic>?>()
+                      .firstWhere((p) => p?['id']?.toString() == v,
+                          orElse: () => null);
+                  _tomadorNome = tomadorMap?['nome']?.toString();
+                  final cidTomador = tomadorMap?['cidade']?.toString();
+                  if (_municipioCtrl.text.trim().isEmpty &&
+                      cidTomador != null &&
+                      cidTomador.isNotEmpty) {
+                    _municipioCtrl.text = cidTomador;
+                  }
                 });
               }),
               _ddSerie(),
