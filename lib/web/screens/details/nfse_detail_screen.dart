@@ -724,81 +724,43 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
     if (_statusAtual != 'CONFIRMADA') return;
-    final login = _login;
-    final tomador = _tomadores.cast<Map<String, dynamic>?>().firstWhere(
-              (t) => t?['id']?.toString() == _tomadorId,
-              orElse: () => null,
-            ) ??
-        <String, dynamic>{};
-    final itensValidos =
-        _itens.where((item) => item['descricao'] != null).toList();
-    final descricao = _observacaoCtrl.text.trim().isNotEmpty
-        ? _observacaoCtrl.text.trim()
-        : itensValidos
-            .map((item) => item['descricao']?.toString().trim() ?? '')
-            .where((value) => value.isNotEmpty)
-            .join('; ');
-    final valor = itensValidos.fold<double>(
-        0,
-        (total, item) =>
-            total + _num(item['valorTotal'] ?? item['valor_total']));
-    final primeiroItem =
-        itensValidos.isEmpty ? <String, dynamic>{} : itensValidos.first;
-    final cpf = tomador['cpf']?.toString().trim() ?? '';
-    if (cpf.isEmpty || descricao.isEmpty || valor <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Informe tomador, serviço e valor antes de emitir.'),
-          backgroundColor: _red));
-      return;
-    }
     setState(() => _enviando = true);
     try {
-      final result = await _nfseCaller.emitir(
-        municipio: _municipioCtrl.text.trim(),
-        cnpjTomador: cpf,
-        nomeTomador: tomador['nome']?.toString() ?? _tomadorNome ?? '',
-        descricaoServico: descricao,
-        valor: valor,
-        aliquotaIss:
-            _num(primeiroItem['aliquotaIss'] ?? primeiroItem['aliquota_iss']),
-        cnae: '',
-        codigoTributacao:
-            primeiroItem['codigoTributacaoMunicipal']?.toString() ??
-                primeiroItem['codigo_tributacao_municipal']?.toString() ??
-                _codigoServicoCtrl.text,
-        empresaId: _empresaId,
-        nfseId: int.tryParse(_nfseId),
-      );
+      final r =
+          await TenantContext.post(ApiLinks.emitirNfseNacional(_nfseId), {});
       if (!mounted) return;
-      final retorno = result['status']?.toString().toUpperCase() ?? '';
-      final status =
-          {'ISSUED', 'EMITIDA', 'AUTHORIZED', 'AUTORIZADA'}.contains(retorno)
-              ? 'AUTORIZADA'
-              : retorno;
-      setState(() {
-        if (status.isNotEmpty) {
-          _item['status'] = status;
-          _statusVal = status;
-        }
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        final b = jsonDecode(r.body);
+        final data = b is Map ? (b['data'] ?? b) : null;
+        final status = data is Map ? data['status']?.toString() : null;
         if (status == 'AUTORIZADA') {
-          final numRetornado = result['numero']?.toString() ??
-              result['nfseNumber']?.toString() ??
-              result['numeroDps']?.toString();
-          if (numRetornado != null && numRetornado.isNotEmpty) {
-            _numeroCtrl.text = numRetornado;
-            _item['numero'] = numRetornado;
-          }
+          final numRetornado = data is Map
+              ? (data['numero']?.toString() ??
+                  data['nfseNumber']?.toString() ??
+                  data['numeroDps']?.toString())
+              : null;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
+              backgroundColor: _green));
+          setState(() {
+            _item['status'] = status;
+            _statusVal = status;
+            if (numRetornado != null && numRetornado.isNotEmpty) {
+              _numeroCtrl.text = numRetornado;
+              _item['numero'] = numRetornado;
+            }
+          });
+        } else {
+          final erro = data is Map ? data['mensagemErroEmissao'] : null;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('NFSe rejeitada: ${erro ?? r.body}'),
+              backgroundColor: _red));
         }
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(status == 'AUTORIZADA'
-              ? 'NFS-e enviada ao ISSWeb.'
-              : 'Retorno do ISSWeb: ${result['message'] ?? retorno}'),
-          backgroundColor: status == 'AUTORIZADA' ? _green : _red));
-    } on NfseException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), backgroundColor: _red));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
       }
     } catch (e) {
       if (mounted) {
