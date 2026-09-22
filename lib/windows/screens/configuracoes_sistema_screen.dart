@@ -124,6 +124,14 @@ class _ConfiguracoesSistemaScreenState
                 icon: Icons.delete_sweep,
                 color: GridColors.errorDark,
                 onTap: _confirmResetDatabase),
+            _actionCard(
+                id: 'limpar_base_preservar',
+                title: 'Limpar Base (Preservar 1 e 20001)',
+                subtitle:
+                    'Apaga todos os parceiros e dados de todas as empresas exceto 1 e 20001. POST /api/admin/limpar-base-preservar-empresas',
+                icon: Icons.cleaning_services_outlined,
+                color: Colors.deepOrange.shade800,
+                onTap: _confirmLimparBasePreservar),
             _deleteEmpresaCard(),
           ]),
           const SizedBox(height: 20),
@@ -627,6 +635,73 @@ class _ConfiguracoesSistemaScreenState
         'reset_database',
         () => TenantContext.post(
             '${ApiLinks.baseUrl}/api/admin/reset-database', {}));
+  }
+
+  Future<void> _confirmLimparBasePreservar() async {
+    final controller = TextEditingController();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final matches = controller.text.trim() == 'LIMPAR';
+          return AlertDialog(
+            title: const Row(children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: Colors.deepOrange, size: 24),
+              SizedBox(width: 8),
+              Text('Limpar Base de Produção',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ]),
+            content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('ATENCAO: Esta operacao e IRREVERSIVEL!',
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14)),
+                  const SizedBox(height: 12),
+                  const Text(
+                      'Todos os parceiros, movimentações, contas, notas fiscais e logins de outras empresas serão PERMANENTEMENTE EXCLUÍDOS.'),
+                  const SizedBox(height: 8),
+                  const Text(
+                      'Serão PRESERVADOS APENAS os dados das empresas 1 e 20001.'),
+                  const SizedBox(height: 12),
+                  const Text('Digite "LIMPAR" no campo abaixo para confirmar:'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'LIMPAR',
+                      isDense: true,
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                ]),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepOrange.shade800,
+                    foregroundColor: Colors.white),
+                onPressed: matches ? () => Navigator.pop(ctx, true) : null,
+                child: const Text('Confirmar Limpeza'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (confirm != true) return;
+    await _executar(
+        'limpar_base_preservar',
+        () => TenantContext.post(
+            '${ApiLinks.baseUrl}/api/admin/limpar-base-preservar-empresas', {}));
   }
 
   Future<void> _gerarSeed() async {

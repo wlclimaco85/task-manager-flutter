@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
@@ -139,6 +140,12 @@ class GenericDetailFormScreen extends StatefulWidget {
   final Future<void> Function(
       Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
 
+  /// Opcional: permite injetar um handler customizado de busca de CEP (para testes unitários).
+  final Future<Map<String, dynamic>?> Function(String cep)? onBuscarCep;
+
+  /// Opcional: permite fornecer TelaConfig pronto (evita depender de cache/rede em testes).
+  final TelaConfig? telaConfig;
+
   const GenericDetailFormScreen({
     super.key,
     required this.item,
@@ -147,6 +154,8 @@ class GenericDetailFormScreen extends StatefulWidget {
     this.fieldOverrides,
     this.relatedTabs,
     this.onAfterSave,
+    this.onBuscarCep,
+    this.telaConfig,
   });
 
   @override
@@ -172,6 +181,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _dropdownFutures = <String, Future<List<Map<String, dynamic>>>>{};
 
   bool _saving = false;
+  bool _buscandoCep = false;
   bool _initialized = false;
 
   Map<String, FieldConfigWindows> _overrideMap = {};
@@ -201,6 +211,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   Future<TelaConfig> _loadTela() async {
+    if (widget.telaConfig != null) {
+      return widget.telaConfig!;
+    }
     final svc = await _TelaServiceHelper.load(widget.telaNome);
     return svc;
   }
@@ -453,6 +466,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (fn == 'cnpj') return FieldType.cnpj;
     if (fn == 'cpfcnpj' || fn == 'cpf_cnpj') return FieldType.text;
     if (fn == 'telefone' || fn == 'celular') return FieldType.phone;
+    if (fn == 'cep' || tft == TelaFieldType.cep) return FieldType.cep;
     if (tft.index < FieldType.values.length) return FieldType.values[tft.index];
     return FieldType.text;
   }
@@ -1159,7 +1173,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       case FieldType.multiline:
         return _buildText(ef,
             maxLines: 4, keyboardType: TextInputType.multiline);
+      case FieldType.cep:
+        return _buildCepField(ef);
       default:
+        if (ef.fieldName.toLowerCase() == 'cep') {
+          return _buildCepField(ef);
+        }
         return _buildText(ef);
     }
   }
@@ -1216,6 +1235,201 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             : null,
       ),
     );
+  }
+
+  Widget _buildCepField(_EF ef) {
+    _controllers.putIfAbsent(ef.fieldName, () => TextEditingController());
+    final ctrl = _controllers[ef.fieldName]!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: ctrl,
+              enabled: ef.enabled,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(8),
+              ],
+              decoration: _dec(
+                ef.label,
+                prefix: const Icon(Icons.location_on_outlined),
+                req: ef.isRequired,
+                enabled: ef.enabled,
+              ).copyWith(
+                hintText: '00000-000',
+              ),
+              validator: ef.isRequired
+                  ? (v) => (v == null || v.trim().isEmpty)
+                      ? '${ef.label} é obrigatório'
+                      : null
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: (_buscandoCep || !ef.enabled)
+                  ? null
+                  : () => _buscarCepEPreencher(ctrl.text),
+              icon: _buscandoCep
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.search, size: 18),
+              label: Text(_buscandoCep ? 'Buscando...' : 'Buscar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buscarCepEPreencher(String rawCep) async {
+    final cep = rawCep.replaceAll(RegExp(r'\D'), '');
+    if (cep.length != 8) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('CEP deve ter 8 dígitos',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() => _buscandoCep = true);
+    try {
+      Map<String, dynamic>? data;
+      if (widget.onBuscarCep != null) {
+        data = await widget.onBuscarCep!(cep);
+      } else {
+        final resp =
+            await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
+        if (resp.statusCode == 200) {
+          final decoded = jsonDecode(resp.body);
+          if (decoded is Map<String, dynamic>) {
+            data = decoded;
+          }
+        }
+      }
+
+      if (data == null || data['erro'] == true || data['erro'] == 'true') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('CEP não encontrado',
+                  style: TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.warning,
+            ),
+          );
+        }
+        return;
+      }
+
+      void setCampo(List<String> aliases, String? valor) {
+        if (valor == null || valor.trim().isEmpty) return;
+        final v = valor.trim();
+        for (final alias in aliases) {
+          if (_controllers.containsKey(alias)) {
+            _controllers[alias]!.text = v;
+            return;
+          }
+          final camel = _toCamelCase(alias);
+          if (_controllers.containsKey(camel)) {
+            _controllers[camel]!.text = v;
+            return;
+          }
+          final snake = _toSnakeCase(alias);
+          if (_controllers.containsKey(snake)) {
+            _controllers[snake]!.text = v;
+            return;
+          }
+        }
+      }
+
+      setState(() {
+        setCampo([
+          'rua',
+          'logradouro',
+          'endereco_rua',
+          'enderecoRua'
+        ], data!['logradouro']?.toString());
+        setCampo([
+          'bairro',
+          'endereco_bairro',
+          'enderecoBairro'
+        ], data['bairro']?.toString());
+        setCampo([
+          'cidade',
+          'localidade',
+          'municipio',
+          'endereco_cidade',
+          'enderecoCidade'
+        ], data['localidade']?.toString());
+        setCampo([
+          'estado',
+          'uf',
+          'sigla_uf',
+          'endereco_estado',
+          'enderecoEstado'
+        ], data['uf']?.toString());
+        final compl = data['complemento']?.toString();
+        if (compl != null && compl.trim().isNotEmpty) {
+          setCampo([
+            'complemento',
+            'endereco_complemento',
+            'enderecoComplemento'
+          ], compl);
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: GridColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao consultar CEP: $e',
+                style: const TextStyle(color: Colors.white)),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _buscandoCep = false);
+      }
+    }
   }
 
   Widget _buildPhotoField(_EF ef) {
