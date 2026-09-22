@@ -156,6 +156,7 @@ import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
 import 'certificado_empresa_screen.dart';
+import './regra_fiscal_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -492,7 +493,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAprovacaoCompraScreen(), // 109: Aprovação de Compras
       const WindowsDevolucaoGridScreen(), // 110: Devoluções
       const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
-      const SizedBox.shrink(), // 112: RegraFiscal (web vago)
+      RegraFiscalScreen(hasPermission: (p) => true), // 112: RegraFiscal
       WebContaContabilGridScreen(
           hasPermission: (p) => true), // 113: Plano de Contas
       WebLancamentoContabilGridScreen(

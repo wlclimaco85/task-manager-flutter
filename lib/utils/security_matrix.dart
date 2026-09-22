@@ -70,6 +70,9 @@ enum AppScreen {
   nfceGrid,
   // CNAB / Remessa EDI
   cnabRemessa,
+  // Paridade Web/Windows/Mobile
+  regraFiscal, cobrancaAutomatica, aprovacaoPagamentos, sistemaTest,
+  rateioFinanceiro, baixaAutomatica, renegociacao, contaContabil, relatorioDpRh,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -171,6 +174,15 @@ const _escritorioScreens = {
   AppScreen.alvaras:    _all,
   AppScreen.nfceGrid:   _all,
   AppScreen.cnabRemessa: _all,
+  AppScreen.regraFiscal: _all,
+  AppScreen.cobrancaAutomatica: _allFinanceiro,
+  AppScreen.aprovacaoPagamentos: _allFinanceiro,
+  AppScreen.sistemaTest: _all,
+  AppScreen.rateioFinanceiro: _allFinanceiro,
+  AppScreen.baixaAutomatica: _allFinanceiro,
+  AppScreen.renegociacao: _allFinanceiro,
+  AppScreen.contaContabil: _allFinanceiro,
+  AppScreen.relatorioDpRh: _ro,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -417,6 +429,15 @@ class SecurityMatrix {
     AppScreen.dashMensalidadeArea: ['dashboardmensalidades', 'dashmensalidadearea'],
     AppScreen.nfceGrid: ['nfce_grid', 'nfcegrid', 'nfce_cupom', 'nfce cupons'],
     AppScreen.cnabRemessa: ['cnab_remessa', 'cnabremessa', 'cnab', 'remessaedi'],
+    AppScreen.regraFiscal: ['regra_fiscal', 'regrafiscal'],
+    AppScreen.cobrancaAutomatica: ['cobranca_automatica', 'cobrancaautomatica'],
+    AppScreen.aprovacaoPagamentos: ['aprovacao_pagamentos_web', 'aprovacao_pagamentos', 'aprovacaopagamentos', 'aprovacaopagamento'],
+    AppScreen.sistemaTest: ['sistema_test', 'sistematest', 'systemtest', 'teste_endpoints'],
+    AppScreen.rateioFinanceiro: ['rateio_financeiro', 'rateiofinanceiro'],
+    AppScreen.baixaAutomatica: ['baixa_automatica', 'baixaautomatica'],
+    AppScreen.renegociacao: ['renegociacao'],
+    AppScreen.contaContabil: ['conta_contabil', 'contacontabil', 'planocontas'],
+    AppScreen.relatorioDpRh: ['relatorio_dp_rh', 'relatoriodprh'],
   };
 
   /// Procura permissões de uma tela considerando nome direto, lowercase e aliases
@@ -637,17 +658,20 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.dashMensalidadeArea,
     // CNAB / Remessa EDI — integração bancária
     AppScreen.cnabRemessa,
+    AppScreen.cobrancaAutomatica, AppScreen.aprovacaoPagamentos,
+    AppScreen.rateioFinanceiro, AppScreen.baixaAutomatica,
+    AppScreen.renegociacao, AppScreen.mensalidades,
   },
   'Notas Fiscais': {
     AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.nfceGrid,
     AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
-    AppScreen.dashFiscalArea,
+    AppScreen.dashFiscalArea, AppScreen.regraFiscal,
   },
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
     AppScreen.ajustePonto, AppScreen.funcionarios, AppScreen.feriados,
-    AppScreen.dashDpArea,
+    AppScreen.dashDpArea, AppScreen.relatorioDpRh,
   },
   'Chamados': {
     AppScreen.chamados, AppScreen.kanbanChamados,
@@ -665,6 +689,10 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'NFS-e': {
     AppScreen.nfse,
     AppScreen.obrigacoesFiscais,
+  },
+  'Contábil': {
+    AppScreen.contaContabil, AppScreen.lancamentoContabil, AppScreen.balancete,
+    AppScreen.fechamentoPeriodo, AppScreen.aiDashboard, AppScreen.aiAssistente,
   },
   // Card #219 — módulo Comercial: telas mínimas para o cliente criar nota de venda.
   // pdvNfce duplicado intencionalmente com 'Notas Fiscais' (OR logic em isScreenAllowed).
@@ -844,6 +872,191 @@ class ModuloAccess {
     if (!_loaded) return false;
     final aliases = _moduloAliases[nome] ?? [nome];
     return aliases.any(_modulosContratados.contains);
+  }
+
+  static const Map<String, String> _menuItemToModulo = {
+    // Comercial
+    'pdv_nfce': 'Comercial',
+    'produtos': 'Comercial',
+    'parceiros': 'Comercial',
+    'fornecedores': 'Comercial',
+    'planos': 'Comercial',
+    'tipo_parceiro': 'Comercial',
+    'servicos_contratados': 'Comercial',
+    'modulos_servicos': 'Comercial',
+    'catalogo_produto': 'Comercial',
+    'unidade_medida': 'Comercial',
+    'orcamentos': 'Comercial',
+    'pedidos_venda': 'Comercial',
+    'pedidos_compra': 'Comercial',
+    'pedidos': 'Comercial',
+    'aprovacao_compra': 'Comercial',
+    'tabela_preco': 'Comercial',
+    'devolucoes': 'Comercial',
+    'reserva_estoque': 'Comercial',
+    'multi_deposito': 'Comercial',
+    'dashboard_comercial': 'Comercial',
+
+    // Financeiro
+    'contas_pagar': 'Financeiro',
+    'contas_receber': 'Financeiro',
+    'conta_bancaria': 'Financeiro',
+    'formas_pagamento': 'Financeiro',
+    'centros_custo': 'Financeiro',
+    'categorias_financeiras': 'Financeiro',
+    'lancamentos_financeiros': 'Financeiro',
+    'importar_extrato': 'Financeiro',
+    'conciliacao_bancaria': 'Financeiro',
+    'rateio_financeiro': 'Financeiro',
+    'baixa_automatica': 'Financeiro',
+    'renegociacao': 'Financeiro',
+    'cobranca': 'Financeiro',
+    'cobranca_automatica': 'Financeiro',
+    'dre_gerencial': 'Financeiro',
+    'cnab_remessa': 'Financeiro',
+    'kanban_pagamentos': 'Financeiro',
+    'aprovacao_pagamento': 'Financeiro',
+    'aprovacao_pagamentos_web': 'Financeiro',
+    'calendario_guias': 'Financeiro',
+    'importar_boletos_lote': 'Financeiro',
+    'integracoes_financeiras': 'Financeiro',
+    'dashboard': 'Financeiro',
+    'dashboard_financeiro': 'Financeiro',
+    'mensalidades': 'Financeiro',
+    'dashMensalidadeArea': 'Financeiro',
+    'dashboard_mensalidades': 'Financeiro',
+
+    // Fiscal / Notas Fiscais
+    'nfe_saida': 'Notas Fiscais',
+    'nfe_entrada': 'Notas Fiscais',
+    'nfce_grid': 'Notas Fiscais',
+    'nfe_serie': 'Notas Fiscais',
+    'nfe_finalidade': 'Notas Fiscais',
+    'nfe_tipo_operacao': 'Notas Fiscais',
+    'nfe_import_xml': 'Notas Fiscais',
+    'nfe_import_csv': 'Notas Fiscais',
+    'consulta_dfe': 'Notas Fiscais',
+    'manifestacao_destinatario': 'Notas Fiscais',
+    'cancelamento_cce': 'Notas Fiscais',
+    'agendamento_nfe': 'Notas Fiscais',
+    'regime_tributario': 'Notas Fiscais',
+    'obrigacoes_fiscais': 'Notas Fiscais',
+    'calendario_tributario': 'Notas Fiscais',
+    'dashboard_fiscal': 'Notas Fiscais',
+    'regra_fiscal': 'Notas Fiscais',
+
+    // NFS-e
+    'nfse': 'NFS-e',
+    'nfse_serie': 'NFS-e',
+    'nfse_servico': 'NFS-e',
+    'nfse_import_xml': 'NFS-e',
+    'config_fiscal': 'NFS-e',
+
+    // Depto Pessoal
+    'ponto': 'Departamento Pessoal',
+    'funcionario': 'Departamento Pessoal',
+    'solicitar_ajuste': 'Departamento Pessoal',
+    'ajuste_ponto': 'Departamento Pessoal',
+    'feriados': 'Departamento Pessoal',
+    'setores': 'Departamento Pessoal',
+    'horario_func': 'Departamento Pessoal',
+    'dashboard_dp': 'Departamento Pessoal',
+    'relatorio_dp_rh': 'Departamento Pessoal',
+
+    // Contábil
+    'conta_contabil': 'Contábil',
+    'lancamento_contabil': 'Contábil',
+    'balancete': 'Contábil',
+    'fechamento_periodo': 'Contábil',
+    'ai_dashboard': 'Contábil',
+    'ai_assistente': 'Contábil',
+
+    // Suporte / Comunicação
+    'alertas': 'Comunicados',
+    'diretorios': 'GED',
+    'noticias': 'Comunicados',
+    'kanban': 'Chamados',
+    'kanban_chat': 'Chat',
+
+    // Academia & Saúde
+    'academia': 'Academia',
+    'alimentos': 'Academia',
+    'dietas': 'Academia',
+    'exercicios': 'Academia',
+    'grupos_musculares': 'Academia',
+    'medicamentos': 'Academia',
+    'modalidades': 'Academia',
+    'objetivos': 'Academia',
+    'personais': 'Academia',
+    'suplementos': 'Academia',
+    'treino': 'Academia',
+    'avaliacao_fisica': 'Academia',
+    'anamnese': 'Academia',
+
+    // Bolsa de Valores
+    'trading_painel': 'Bolsa de Valores',
+    'trading_backtest': 'Bolsa de Valores',
+    'trading_sinais': 'Bolsa de Valores',
+    'trading_oportunidades': 'Bolsa de Valores',
+    'trading_watchlist': 'Bolsa de Valores',
+    'trading_alertas': 'Bolsa de Valores',
+    'trading_operacoes': 'Bolsa de Valores',
+    'trading_corretora': 'Bolsa de Valores',
+    'trading_carteira': 'Bolsa de Valores',
+
+    // GME
+    'dashboard_gme': 'GME',
+    'contrato': 'GME',
+    'equipamento': 'GME',
+    'ordem_servico': 'GME',
+    'plano_manutencao': 'GME',
+    'horimetro': 'GME',
+    'historico_manutencao': 'GME',
+    'tecnico_manutencao': 'GME',
+
+    // Service Desk
+    'dashboard_service': 'Service Desk',
+    'sla': 'Service Desk',
+    'fila_atendimento': 'Service Desk',
+    'categoria_chamado': 'Service Desk',
+    'chamado_avaliacao': 'Service Desk',
+
+    // Projetos
+    'dashboard_projetos': 'Projetos',
+    'projeto': 'Projetos',
+    'projeto_etapa': 'Projetos',
+    'projeto_recurso': 'Projetos',
+    'projeto_apontamento': 'Projetos',
+    'projeto_medicao': 'Projetos',
+    'cargo_recurso': 'Projetos',
+
+    // Precificação
+    'dashboard_precificacao': 'Precificação',
+    'precificacao': 'Precificação',
+    'custo_direto': 'Precificação',
+    'mao_de_obra': 'Precificação',
+    'precificacao_servico': 'Precificação',
+    'condicao_pagamento': 'Precificação',
+    'proposta_comercial': 'Precificação',
+  };
+
+  static bool isMenuItemAllowed(String menuItemId) {
+    if (!_loaded) return true;
+    final modulo = _menuItemToModulo[menuItemId];
+    if (modulo == null) return true;
+
+    // Módulos legados opcionais: só são liberados se contratados especificamente
+    if (modulo == 'GME') return isModuloContratado('GME');
+    if (modulo == 'Service Desk') {
+      return isModuloContratado('Service Desk') || isModuloContratado('Service');
+    }
+    if (modulo == 'Projetos') return isModuloContratado('Projetos');
+    if (modulo == 'Precificação') {
+      return isModuloContratado('Precificação') || isModuloContratado('Precificacao');
+    }
+
+    if (!hasModulosConfigurados) return true;
+    return isModuloContratado(modulo);
   }
 
   static List<AppScreen> filter(List<AppScreen> screens) =>

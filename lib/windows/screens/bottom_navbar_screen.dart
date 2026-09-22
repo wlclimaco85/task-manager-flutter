@@ -157,6 +157,9 @@ import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
 import 'certificado_empresa_screen.dart';
 import '../../web/screens/nfce_grid_screen.dart';
+import '../../web/screens/noticias_grid_screen.dart';
+import '../../web/screens/cnab_remessa_screen.dart';
+import '../../web/screens/nfse_serie_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -333,11 +336,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   List<Widget> _buildScreens(dynamic userInfo) => [
         WindowsComunicadoGridComponentesScreen(
             hasPermission: _comunicadoHasPermission),
-        const WindowsChatMessageScreen(
-          sector: 'Financeiro',
-          userName: 'Usuário',
-          chatId: '0',
-        ),
+        WindowsChatListScreen(userName: userInfo?.email ?? 'Usuário'), // 1: Chat
         WindowsComunicadoGridComponentesScreen(
             hasPermission: _comunicadoHasPermission),
         WindowsAplicativoGridScreen(hasPermission: (permission) => true),
@@ -433,7 +432,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             repository: BacktestRepository(ApiLinks.baseUrl,
                 headers: TenantContext.jsonHeaders)), // 85: Backtest
         const WindowsNfeImportXmlScreen(), // 86: NfeImportXml
-        const SizedBox.shrink(), // 87: (vago)
+        WebNoticiasGridScreen(hasPermission: (perm) => true), // 87: Noticias
         WindowsLancamentoFinanceiroGridScreen(
             hasPermission: (perm) => true), // 88: LancamentosFinanceiros
         const ExtratoImportacaoScreen(), // 89: ImportarExtrato
@@ -566,8 +565,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const SizedBox.shrink(), // 199: reservado
         const SizedBox.shrink(), // 200: reservado
         const SizedBox.shrink(), // 201: reservado
-        const SizedBox.shrink(), // 202: reservado
-        const SizedBox.shrink(), // 203: reservado
+        const CnabRemessaScreen(), // 202: Remessa EDI
+        WebNfseSerieGridScreen(hasPermission: (perm) => true), // 203: NfseSerie
         const WindowsNfseImportXmlScreen(), // 204: NfseImportXml
       ];
 

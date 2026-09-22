@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../web/screens/regra_fiscal_screen.dart' as web;
-import '../../widgets/user_banners.dart';
+import '../../customization/dynamic_grid_dynamic_screen.dart';
 
 class MobileRegraFiscalScreen extends StatelessWidget {
   final bool Function(String)? hasPermission;
@@ -9,15 +8,11 @@ class MobileRegraFiscalScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const UserBannerAppBar(
-        screenTitle: 'Regras Fiscais',
-        showFilterButton: false,
-        showBackButton: true,
-      ),
-      body: SafeArea(
-        child: web.RegraFiscalScreen(hasPermission: hasPermission ?? ((_) => true)),
-      ),
+    return DynamicGridDynamicScreen(
+      telaNome: 'regra_fiscal',
+      hasPermission: hasPermission ?? ((_) => true),
+      showAppBar: true,
+      useUserBannerAppBar: true,
     );
   }
 }

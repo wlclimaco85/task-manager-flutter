@@ -152,6 +152,11 @@ import 'query_builder_window_screen.dart';
 import 'sessoes_screen.dart';
 import 'anamnese_screen.dart';
 import 'trading_screens.dart';
+import 'regra_fiscal_screen.dart';
+import 'mensalidade_grid_screen.dart';
+import 'dashboard_mensalidade_screen.dart';
+import 'system_test_screen.dart';
+import 'relatorio_ponto_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -200,7 +205,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'DRE Gerencial': (menuId: 'dre_gerencial', appScreen: AppScreen.dreGerencial),
     'Envio EDI (Remessa)': (menuId: 'cnab_remessa', appScreen: AppScreen.cnabRemessa),
     'Kanban de Pagamentos': (menuId: 'kanban_pagamentos', appScreen: null),
-    'Aprovação de Pagamentos': (menuId: 'aprovacao_pagamento', appScreen: null),
+    'Aprovação de Pagamentos': (menuId: 'aprovacao_pagamentos_web', appScreen: AppScreen.aprovacaoPagamentos),
+    'Cobrança Automática': (menuId: 'cobranca_automatica', appScreen: AppScreen.cobrancaAutomatica),
+    'Dashboard Mensalidades': (menuId: 'dashboard_mensalidades', appScreen: AppScreen.dashMensalidadeArea),
+    'Mensalidades': (menuId: 'mensalidades', appScreen: AppScreen.mensalidades),
     'Calendário de Guias': (menuId: 'calendario_guias', appScreen: null),
     'Importar Boletos (Lote)': (menuId: 'importar_boletos_lote', appScreen: AppScreen.boletoImportacaoLote),
     'Integrações Financeiras': (menuId: 'integracoes_financeiras', appScreen: AppScreen.integracoesFinanceiras),
@@ -219,6 +227,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Cancelamento e CC-e': (menuId: 'cancelamento_cce', appScreen: null),
     'Agendar NFe Recorrente': (menuId: 'agendamento_nfe', appScreen: null),
     'Regime Tributário': (menuId: 'regime_tributario', appScreen: AppScreen.regimeTributario),
+    'Regras Fiscais': (menuId: 'regra_fiscal', appScreen: AppScreen.regraFiscal),
     'Obrigações Fiscais': (menuId: 'obrigacoes_fiscais', appScreen: AppScreen.obrigacoesFiscais),
     'Calendário Tributário': (menuId: 'calendario_guias', appScreen: null),
     'Dashboard Fiscal': (menuId: 'dashboard_fiscal', appScreen: AppScreen.dashFiscalArea),
@@ -235,6 +244,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Setores': (menuId: 'setores', appScreen: AppScreen.setores),
     'Horários Funcionário': (menuId: 'horario_func', appScreen: null),
     'Dashboard DP': (menuId: 'dashboard_dp', appScreen: AppScreen.dashDpArea),
+    'Relatórios DP/RH': (menuId: 'relatorio_dp_rh', appScreen: AppScreen.relatorioDpRh),
     'Plano de Contas': (menuId: 'conta_contabil', appScreen: null),
     'Lançamentos Contábeis': (menuId: 'lancamento_contabil', appScreen: AppScreen.lancamentoContabil),
     'Balancete': (menuId: 'balancete', appScreen: AppScreen.balancete),
@@ -314,6 +324,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Meu Perfil': (menuId: 'perfil', appScreen: AppScreen.perfil),
     'Controle de Acesso': (menuId: 'permissoes', appScreen: AppScreen.rolesPermissoes),
     'Config Fiscal': (menuId: 'config_fiscal', appScreen: AppScreen.configFiscal),
+    'Teste de Endpoints': (menuId: 'teste_endpoints', appScreen: AppScreen.sistemaTest),
     'Sair': (menuId: 'sair', appScreen: null),
   };
 
@@ -569,23 +580,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
     // MASTER / SYSTEM tem acesso total (respeitando módulo se configurado)
     if (sec.isMaster) {
-      if (appScreen != null) {
-        return ModuloAccess.isScreenAllowed(appScreen);
-      }
-      return true;
+      return ModuloAccess.isMenuItemAllowed(menuItemId);
     }
 
     // 1. CHECAGEM DE MÓDULO CONTRATADO:
-    // Se a empresa/parceiro tem módulos configurados na API, verificar se o
-    // módulo ao qual a tela pertence está contratado.
-    if (ModuloAccess.hasModulosConfigurados) {
-      if (appScreen != null && !ModuloAccess.isScreenAllowed(appScreen)) {
-        return false;
-      }
-      final modulo = _menuItemToModulo[menuItemId];
-      if (modulo != null && !_isModuloAllowed(modulo)) {
-        return false;
-      }
+    if (!ModuloAccess.isMenuItemAllowed(menuItemId)) {
+      return false;
+    }
+    if (appScreen != null && ModuloAccess.hasModulosConfigurados && !ModuloAccess.isScreenAllowed(appScreen)) {
+      return false;
     }
 
     // 2. PERMISSÕES DINÂMICAS DA ROLE VINDAS DO BACKEND (RBAC via PermissionService):
@@ -2036,6 +2039,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Regime Tributário":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRegimeGridScreen()));
         break;
+      case "Regras Fiscais":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileRegraFiscalScreen(
+              hasPermission: _resolvePermissionForOption(option, sec),
+            ),
+          ),
+        );
+        break;
       case "Obrigações Fiscais":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileObrigacaoFiscalGridScreen()));
         break;
@@ -2070,6 +2083,29 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Cobrança":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileCobrancaScreen()));
+        break;
+      case "Cobrança Automática":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              appBar: UserBannerAppBar(
+                screenTitle: 'Cobrança Automática',
+                showFilterButton: false,
+                showBackButton: true,
+              ),
+              body: SafeArea(child: CobrancaAutomaticaScreen()),
+            ),
+          ),
+        );
+        break;
+      case "Dashboard Mensalidades":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MobileWebDashboardMensalidadeScreen(),
+          ),
+        );
         break;
       case "DRE Gerencial":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDreScreen()));
@@ -2108,6 +2144,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Horários Funcionário":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileHorarioFuncGridScreen()));
+        break;
+      case "Relatórios DP/RH":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RelatorioPontoScreen()),
+        );
         break;
 
       // Contábil & IA
@@ -2250,6 +2292,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Sessões":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSessoesScreen()));
+        break;
+      case "Teste de Endpoints":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MobileSystemTestScreen()),
+        );
         break;
 
       case "Voltar":
@@ -2463,6 +2511,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.send, 'Envio EDI (Remessa)'),
             _MoreMenuAction(Icons.view_kanban, 'Kanban de Pagamentos'),
             _MoreMenuAction(Icons.verified, 'Aprovação de Pagamentos'),
+            _MoreMenuAction(Icons.auto_mode, 'Cobrança Automática'),
+            _MoreMenuAction(Icons.receipt, 'Mensalidades'),
+            _MoreMenuAction(Icons.pie_chart, 'Dashboard Mensalidades'),
             _MoreMenuAction(Icons.event_note, 'Calendário de Guias'),
             _MoreMenuAction(Icons.receipt_long, 'Importar Boletos (Lote)'),
             _MoreMenuAction(Icons.integration_instructions, 'Integrações Financeiras'),
@@ -2489,6 +2540,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             if (temNfce)
               _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
             _MoreMenuAction(Icons.policy, 'Regime Tributário'),
+            _MoreMenuAction(Icons.rule, 'Regras Fiscais'),
             _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
             _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
@@ -2522,6 +2574,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.domain, 'Setores'),
             _MoreMenuAction(Icons.timelapse, 'Horários Funcionário'),
             _MoreMenuAction(Icons.badge, 'Dashboard DP'),
+            _MoreMenuAction(Icons.analytics, 'Relatórios DP/RH'),
           ],
         ),
       if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temContabil)
@@ -2672,6 +2725,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
           if (temNfce) _MoreMenuAction(Icons.settings, 'Config Fiscal'),
+          _MoreMenuAction(Icons.health_and_safety, 'Teste de Endpoints'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
       ),

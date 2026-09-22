@@ -20,6 +20,7 @@ import 'package:task_manager_flutter/mobile/screens/academia_grid_screen.dart';
 import 'package:task_manager_flutter/mobile/screens/empresa_grid_screen.dart';
 import 'package:task_manager_flutter/mobile/screens/role_grid_screen.dart';
 import 'package:task_manager_flutter/mobile/screens/trading_screens.dart';
+import 'package:task_manager_flutter/mobile/screens/regra_fiscal_screen.dart';
 import 'package:task_manager_flutter/customization/dynamic_grid_dynamic_screen.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
@@ -53,6 +54,7 @@ void main() {
         MobileAcademiaGridScreen(),
         MobileEmpresaGridScreen(),
         MobileRoleGridScreen(),
+        MobileRegraFiscalScreen(),
       ];
 
       for (final screen in screens) {
