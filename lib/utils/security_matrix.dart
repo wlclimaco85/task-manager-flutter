@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import '../models/auth_utility.dart';
 import '../models/login_model.dart';
+import '../services/permission_service.dart';
 import '../utils/api_links.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -314,8 +315,11 @@ class SecurityMatrix {
     // Constrói mapa de permissões do backend (consolidado por tela — OR entre roles)
     // Indexado tanto pelo nome original quanto em minúsculas para matching case-insensitive
     final backendPerms = <String, Set<AppAction>>{};
-    if (userInfo.permissoes != null && userInfo.permissoes!.isNotEmpty) {
-      for (final p in userInfo.permissoes!) {
+    final rawPerms = (userInfo.permissoes != null && userInfo.permissoes!.isNotEmpty)
+        ? userInfo.permissoes
+        : PermissionService().currentPermissoes;
+    if (rawPerms != null && rawPerms.isNotEmpty) {
+      for (final p in rawPerms) {
         final actions = <AppAction>{};
         if (p.podeVer)      actions.add(AppAction.view);
         if (p.podeInserir)  actions.add(AppAction.insert);
@@ -761,6 +765,56 @@ class ModuloAccess {
     _loaded = true;
   }
 
+  static const Map<String, List<String>> _moduloAliases = {
+    'Notas Fiscais': [
+      'Notas Fiscais',
+      'Fiscal / NFC-e',
+      'Fiscal e NF-e',
+      'NFC-e',
+      'Fiscal',
+    ],
+    'Financeiro': [
+      'Financeiro',
+      'Financeiro Limitado',
+      'Financeiro avançado',
+      'Financeiro avancado',
+    ],
+    'Departamento Pessoal': [
+      'Departamento Pessoal',
+      'RH',
+      'Recursos Humanos',
+      'DP',
+    ],
+    'Contábil': [
+      'Contábil',
+      'Contabil',
+    ],
+    'Bolsa de Valores': [
+      'Bolsa de Valores',
+      'Trading',
+      'Investimentos',
+    ],
+    'NFS-e': [
+      'NFS-e',
+      'NFSe',
+    ],
+    'Comercial': [
+      'Comercial',
+    ],
+    'Chamados': [
+      'Chamados',
+    ],
+    'Chat': [
+      'Chat',
+    ],
+    'Comunicados': [
+      'Comunicados',
+    ],
+    'GED': [
+      'GED',
+    ],
+  };
+
   static bool isScreenAllowed(AppScreen screen) {
     if (!_loaded) return true;
 
@@ -769,7 +823,8 @@ class ModuloAccess {
     for (final entry in _moduloToScreens.entries) {
       if (entry.value.contains(screen)) {
         pertenceAAlgumModulo = true;
-        if (_modulosContratados.contains(entry.key)) return true;
+        final aliases = _moduloAliases[entry.key] ?? [entry.key];
+        if (aliases.any(_modulosContratados.contains)) return true;
       }
     }
     // Tela que nao pertence a nenhum modulo e livre (ex: perfil, logins)
@@ -778,12 +833,18 @@ class ModuloAccess {
     return false;
   }
 
+  /// Indica se os módulos já foram carregados da API ou do teste
+  static bool get isLoaded => _loaded;
+
   /// Indica se algum módulo foi efetivamente configurado na API.
   /// Quando false, o filtro de módulo não deve bloquear telas com permissão RBAC.
   static bool get hasModulosConfigurados => _loaded && _modulosContratados.isNotEmpty;
 
-  static bool isModuloContratado(String nome) =>
-      _loaded && _modulosContratados.contains(nome);
+  static bool isModuloContratado(String nome) {
+    if (!_loaded) return false;
+    final aliases = _moduloAliases[nome] ?? [nome];
+    return aliases.any(_modulosContratados.contains);
+  }
 
   static List<AppScreen> filter(List<AppScreen> screens) =>
       screens.where((s) => isScreenAllowed(s)).toList();

@@ -161,6 +161,8 @@ void main() {
       expect(find.text('Projetos'), findsNothing);
       expect(find.text('Precificação'), findsNothing);
 
+      await tester.pump(const Duration(seconds: 2));
+
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
     },
@@ -190,6 +192,8 @@ void main() {
       expect(find.text('Service Desk'), findsNothing);
       expect(find.text('Projetos'), findsNothing);
       expect(find.text('Precificação'), findsNothing);
+
+      await tester.pump(const Duration(seconds: 2));
 
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
@@ -246,6 +250,49 @@ void main() {
       expect(find.text('Contas Bancarias'), findsOneWidget);
       expect(find.text('Dashboard Fiscal'), findsOneWidget);
 
+      await tester.pump(const Duration(seconds: 2));
+
+      debugPrint = originalDebugPrint;
+      FlutterError.onError = originalOnError;
+    },
+  );
+
+  testWidgets(
+    'menu Mais respeita permissoes da role para modulos contratados (mostra apenas permitidos)',
+    (tester) async {
+      final originalDebugPrint = debugPrint;
+      final originalOnError = FlutterError.onError;
+
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(id: 1, tipoLogin: LoginEnum.APP_ABRACO, roles: const []),
+        permissoes: const [],
+      );
+      // Contratou Comercial e Financeiro, mas na Role só tem Parceiros e ContasReceber
+      ModuloAccess.setContratadosParaTeste(const ['Comercial', 'Financeiro']);
+      PermissionService().setPermissoes([
+        permView('Parceiros'),
+        permView('ContasReceber'),
+      ]);
+
+      await tester.pumpWidget(const MaterialApp(home: BottomNavBarScreen()));
+      await tester.pump();
+
+      await tester.tap(find.text('Mais'));
+      await tester.pump(const Duration(milliseconds: 350));
+
+      // Liberados pela Role
+      expect(find.text('Parceiros'), findsWidgets);
+      expect(find.text('Contas Receber'), findsOneWidget);
+
+      // Negados pela Role mesmo com módulo contratado
+      expect(find.text('Produtos'), findsNothing);
+      expect(find.text('Dashboard Comercial'), findsNothing);
+      expect(find.text('Contas Pagar'), findsNothing);
+      expect(find.text('Contas Bancarias'), findsNothing);
+
+      await tester.pump(const Duration(seconds: 2));
+
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;
     },
@@ -295,6 +342,8 @@ void main() {
       expect(find.text('Régua de Cobrança'), findsOneWidget);
       expect(find.text('Agendar NFe Recorrente'), findsOneWidget);
       expect(find.text('Config Fiscal'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 2));
 
       debugPrint = originalDebugPrint;
       FlutterError.onError = originalOnError;

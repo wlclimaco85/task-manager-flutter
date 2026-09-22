@@ -13,6 +13,12 @@ class PermissionService {
   /// Cache de permissões do login atual
   List<RolePermissaoItem>? _currentPermissoes;
 
+  /// Indica se há permissões dinâmicas carregadas do backend
+  bool get hasPermissoes => _currentPermissoes != null && _currentPermissoes!.isNotEmpty;
+
+  /// Permissões atuais do usuário logado
+  List<RolePermissaoItem>? get currentPermissoes => _currentPermissoes;
+
   /// Atualizar permissões (chamado após login)
   void setPermissoes(List<RolePermissaoItem>? permissoes) {
     _currentPermissoes = permissoes ?? [];
@@ -105,6 +111,7 @@ class PermissionService {
     // de NFSe (tabela nfse_serie, separada de nfe_serie) -- Web/Windows
     // nunca teve essa tela, so' o Mobile.
     'nfse_serie': 'nfse_serie',
+    'nfse_servico': 'NfseServico',
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
     'agendamento_nfe': 'AgendamentoNFeRecorrente',
@@ -153,6 +160,7 @@ class PermissionService {
     'solicitar_ajuste': 'SolicitarAjuste',
     'dashboard_dp': 'DashboardDP',
     'relatorio_dp_rh': 'RelatorioDpRh',
+    'horario_func': 'HorarioFunc',
 
     // Suporte / Comunicação
     'chat': 'Chat',
@@ -214,6 +222,7 @@ class PermissionService {
     'personais': 'Personais',
     'suplementos': 'Suplementos',
     'treino': 'Treino',
+    'anamnese': 'Anamnese',
 
     // Bolsa de Valores
     'trading_painel': 'TradingPainel',
@@ -277,6 +286,7 @@ class PermissionService {
     'parceiros': 'Parceiros',
     'pedidos': 'Pedidos',
     'fornecedores': 'Fornecedores',
+    'perfil': 'Perfil',
   };
 
   /// Obter telaNome para um menuItem.id

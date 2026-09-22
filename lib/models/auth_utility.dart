@@ -7,6 +7,7 @@ import 'empresa_acesso_model.dart';
 import 'empresa_model.dart';
 import 'parceiro_model.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
+import 'package:task_manager_flutter/utils/security_matrix.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
@@ -220,6 +221,13 @@ class AuthUtility {
       // Sincronizar permissões ao recuperar do cache
       if (userInfo != null) {
         PermissionService().setPermissoes(userInfo!.permissoes);
+        if (!ModuloAccess.isLoaded) {
+          try {
+            await ModuloAccess.load();
+          } catch (e) {
+            L.w('[AuthUtility] falha ao carregar ModuloAccess: $e');
+          }
+        }
       }
     }
 

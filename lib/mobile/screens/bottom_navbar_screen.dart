@@ -196,7 +196,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Baixa Automática': (menuId: 'baixa_automatica', appScreen: null),
     'Renegociação': (menuId: 'renegociacao', appScreen: null),
     'Cobrança': (menuId: 'cobranca', appScreen: AppScreen.cobranca),
-    'Régua de Cobrança': (menuId: 'cobranca_automatica', appScreen: null),
+    'Régua de Cobrança': (menuId: 'contas_receber', appScreen: AppScreen.contasReceber),
     'DRE Gerencial': (menuId: 'dre_gerencial', appScreen: AppScreen.dreGerencial),
     'Envio EDI (Remessa)': (menuId: 'cnab_remessa', appScreen: AppScreen.cnabRemessa),
     'Kanban de Pagamentos': (menuId: 'kanban_pagamentos', appScreen: null),
@@ -317,10 +317,230 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Sair': (menuId: 'sair', appScreen: null),
   };
 
+  /// Mapeamento de menuItemId para o módulo contratado correspondente
+  static const Map<String, String> _menuItemToModulo = {
+    // Comercial
+    'pdv_nfce': 'Comercial',
+    'produtos': 'Comercial',
+    'parceiros': 'Comercial',
+    'fornecedores': 'Comercial',
+    'planos': 'Comercial',
+    'tipo_parceiro': 'Comercial',
+    'servicos_contratados': 'Comercial',
+    'modulos_servicos': 'Comercial',
+    'catalogo_produto': 'Comercial',
+    'unidade_medida': 'Comercial',
+    'orcamentos': 'Comercial',
+    'pedidos_venda': 'Comercial',
+    'pedidos_compra': 'Comercial',
+    'pedidos': 'Comercial',
+    'aprovacao_compra': 'Comercial',
+    'tabela_preco': 'Comercial',
+    'devolucoes': 'Comercial',
+    'reserva_estoque': 'Comercial',
+    'multi_deposito': 'Comercial',
+    'dashboard_comercial': 'Comercial',
+
+    // Financeiro
+    'contas_pagar': 'Financeiro',
+    'contas_receber': 'Financeiro',
+    'conta_bancaria': 'Financeiro',
+    'formas_pagamento': 'Financeiro',
+    'centros_custo': 'Financeiro',
+    'categorias_financeiras': 'Financeiro',
+    'lancamentos_financeiros': 'Financeiro',
+    'importar_extrato': 'Financeiro',
+    'conciliacao_bancaria': 'Financeiro',
+    'rateio_financeiro': 'Financeiro',
+    'baixa_automatica': 'Financeiro',
+    'renegociacao': 'Financeiro',
+    'cobranca': 'Financeiro',
+    'cobranca_automatica': 'Financeiro',
+    'dre_gerencial': 'Financeiro',
+    'cnab_remessa': 'Financeiro',
+    'kanban_pagamentos': 'Financeiro',
+    'aprovacao_pagamento': 'Financeiro',
+    'calendario_guias': 'Financeiro',
+    'importar_boletos_lote': 'Financeiro',
+    'integracoes_financeiras': 'Financeiro',
+    'dashboard': 'Financeiro',
+    'dashboard_financeiro': 'Financeiro',
+
+    // Fiscal / Notas Fiscais
+    'nfe_saida': 'Notas Fiscais',
+    'nfe_entrada': 'Notas Fiscais',
+    'nfce_grid': 'Notas Fiscais',
+    'nfe_serie': 'Notas Fiscais',
+    'nfe_finalidade': 'Notas Fiscais',
+    'nfe_tipo_operacao': 'Notas Fiscais',
+    'nfe_import_xml': 'Notas Fiscais',
+    'nfe_import_csv': 'Notas Fiscais',
+    'consulta_dfe': 'Notas Fiscais',
+    'manifestacao_destinatario': 'Notas Fiscais',
+    'cancelamento_cce': 'Notas Fiscais',
+    'agendamento_nfe': 'Notas Fiscais',
+    'regime_tributario': 'Notas Fiscais',
+    'obrigacoes_fiscais': 'Notas Fiscais',
+    'calendario_tributario': 'Notas Fiscais',
+    'dashboard_fiscal': 'Notas Fiscais',
+
+    // NFS-e
+    'nfse': 'NFS-e',
+    'nfse_serie': 'NFS-e',
+    'nfse_servico': 'NFS-e',
+    'nfse_import_xml': 'NFS-e',
+    'config_fiscal': 'NFS-e',
+
+    // Depto Pessoal
+    'ponto': 'Departamento Pessoal',
+    'funcionario': 'Departamento Pessoal',
+    'solicitar_ajuste': 'Departamento Pessoal',
+    'ajuste_ponto': 'Departamento Pessoal',
+    'feriados': 'Departamento Pessoal',
+    'setores': 'Departamento Pessoal',
+    'horario_func': 'Departamento Pessoal',
+    'dashboard_dp': 'Departamento Pessoal',
+
+    // Contábil
+    'conta_contabil': 'Contábil',
+    'lancamento_contabil': 'Contábil',
+    'balancete': 'Contábil',
+    'fechamento_periodo': 'Contábil',
+    'ai_dashboard': 'Contábil',
+    'ai_assistente': 'Contábil',
+
+    // Suporte / Comunicação
+    'alertas': 'Comunicados',
+    'diretorios': 'GED',
+    'noticias': 'Comunicados',
+    'kanban': 'Chamados',
+    'kanban_chat': 'Chat',
+
+    // Academia & Saúde
+    'academia': 'Academia',
+    'alimentos': 'Academia',
+    'dietas': 'Academia',
+    'exercicios': 'Academia',
+    'grupos_musculares': 'Academia',
+    'medicamentos': 'Academia',
+    'modalidades': 'Academia',
+    'objetivos': 'Academia',
+    'personais': 'Academia',
+    'suplementos': 'Academia',
+    'treino': 'Academia',
+    'avaliacao_fisica': 'Academia',
+    'anamnese': 'Academia',
+
+    // Bolsa de Valores
+    'trading_painel': 'Bolsa de Valores',
+    'trading_backtest': 'Bolsa de Valores',
+    'trading_sinais': 'Bolsa de Valores',
+    'trading_oportunidades': 'Bolsa de Valores',
+    'trading_watchlist': 'Bolsa de Valores',
+    'trading_alertas': 'Bolsa de Valores',
+    'trading_operacoes': 'Bolsa de Valores',
+    'trading_corretora': 'Bolsa de Valores',
+    'trading_carteira': 'Bolsa de Valores',
+
+    // GME
+    'dashboard_gme': 'GME',
+    'contrato': 'GME',
+    'equipamento': 'GME',
+    'ordem_servico': 'GME',
+    'plano_manutencao': 'GME',
+    'horimetro': 'GME',
+    'historico_manutencao': 'GME',
+    'tecnico_manutencao': 'GME',
+
+    // Service Desk
+    'dashboard_service': 'Service Desk',
+    'sla': 'Service Desk',
+    'fila_atendimento': 'Service Desk',
+    'categoria_chamado': 'Service Desk',
+    'chamado_avaliacao': 'Service Desk',
+
+    // Projetos
+    'dashboard_projetos': 'Projetos',
+    'projeto': 'Projetos',
+    'projeto_etapa': 'Projetos',
+    'projeto_recurso': 'Projetos',
+    'projeto_apontamento': 'Projetos',
+    'projeto_medicao': 'Projetos',
+    'cargo_recurso': 'Projetos',
+
+    // Precificação
+    'dashboard_precificacao': 'Precificação',
+    'precificacao': 'Precificação',
+    'custo_direto': 'Precificação',
+    'mao_de_obra': 'Precificação',
+    'precificacao_servico': 'Precificação',
+    'condicao_pagamento': 'Precificação',
+    'proposta_comercial': 'Precificação',
+  };
+
+  /// Verifica se um determinado módulo está contratado para o tenant atual
+  static bool _isModuloAllowed(String moduloNome) {
+    final contratados = ModuloAccess.modulosContratados;
+    // Módulos legados opcionais: só são liberados se contratados especificamente
+    if (moduloNome == 'GME') return contratados.contains('GME');
+    if (moduloNome == 'Service Desk') {
+      return contratados.contains('Service Desk') ||
+          contratados.contains('Service');
+    }
+    if (moduloNome == 'Projetos') return contratados.contains('Projetos');
+    if (moduloNome == 'Precificação') {
+      return contratados.contains('Precificação') ||
+          contratados.contains('Precificacao');
+    }
+
+    if (!ModuloAccess.hasModulosConfigurados) return true;
+    switch (moduloNome) {
+      case 'Comercial':
+        return contratados.contains('Comercial');
+      case 'Financeiro':
+        return contratados.contains('Financeiro') ||
+            contratados.contains('Financeiro Limitado') ||
+            contratados.contains('Financeiro avançado') ||
+            contratados.contains('Financeiro avancado');
+      case 'Notas Fiscais':
+      case 'Fiscal':
+        return contratados.contains('Notas Fiscais') ||
+            contratados.contains('Fiscal') ||
+            contratados.contains('Fiscal / NFC-e') ||
+            contratados.contains('Fiscal e NF-e') ||
+            contratados.contains('NFC-e');
+      case 'NFS-e':
+        return contratados.contains('NFS-e') || contratados.contains('NFSe');
+      case 'Departamento Pessoal':
+        return contratados.contains('Departamento Pessoal') ||
+            contratados.contains('RH') ||
+            contratados.contains('Recursos Humanos');
+      case 'Contábil':
+        return contratados.contains('Contábil') ||
+            contratados.contains('Contabil');
+      case 'Chamados':
+        return contratados.contains('Chamados');
+      case 'Chat':
+        return contratados.contains('Chat');
+      case 'Comunicados':
+        return contratados.contains('Comunicados');
+      case 'GED':
+        return contratados.contains('GED');
+      case 'Academia':
+        return contratados.contains('Academia') ||
+            contratados.contains('App Academia');
+      case 'Bolsa de Valores':
+        return contratados.contains('Bolsa de Valores') ||
+            contratados.contains('Trading');
+      default:
+        return contratados.contains(moduloNome);
+    }
+  }
+
   /// Verifica se o usuário tem permissão para visualizar uma tela no mobile,
   /// seguindo rigorosamente a mesma matriz de segurança e permissões de role do Web.
   bool _canSeeOption(String optionTitle, SecurityMatrix sec) {
-    if (optionTitle == 'Sair') return true;
+    if (optionTitle == 'Sair' || optionTitle == 'Meu Perfil') return true;
 
     final config = _menuActionConfig[optionTitle];
     final menuItemId = config?.menuId ?? optionTitle.toLowerCase();
@@ -334,7 +554,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     }
 
     // Itens exclusivos de MASTER
-    const masterOnly = {'sessoes'};
+    const masterOnly = {
+      'sessoes',
+      'config_admin',
+      'config_sistema',
+      'editor_telas',
+      'cadastro_empresa',
+      'query_builder',
+      'aplicativo',
+    };
     if (masterOnly.contains(menuItemId)) {
       return sec.isMaster;
     }
@@ -347,15 +575,40 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       return true;
     }
 
-    // 1. Permissões dinâmicas da Role vindas do backend via PermissionService
-    if (PermissionService().canViewScreen(menuItemId)) {
-      if (appScreen != null) {
-        return !ModuloAccess.hasModulosConfigurados || ModuloAccess.isScreenAllowed(appScreen);
+    // 1. CHECAGEM DE MÓDULO CONTRATADO:
+    // Se a empresa/parceiro tem módulos configurados na API, verificar se o
+    // módulo ao qual a tela pertence está contratado.
+    if (ModuloAccess.hasModulosConfigurados) {
+      if (appScreen != null && !ModuloAccess.isScreenAllowed(appScreen)) {
+        return false;
       }
-      return true;
+      final modulo = _menuItemToModulo[menuItemId];
+      if (modulo != null && !_isModuloAllowed(modulo)) {
+        return false;
+      }
     }
 
-    // 2. Permissões via SecurityMatrix (fallback / perfis legados)
+    // 2. PERMISSÕES DINÂMICAS DA ROLE VINDAS DO BACKEND (RBAC via PermissionService):
+    // Quando o usuário possui permissões carregadas do backend, a permissão
+    // da Role é a fonte de verdade absoluta (mesma regra do Web).
+    if (PermissionService().hasPermissoes) {
+      if (menuItemId == 'agendamento_nfe') {
+        return PermissionService().canViewScreen('agendamento_nfe') ||
+            PermissionService().canViewScreen('pdv_nfce') ||
+            PermissionService().canViewScreen('nfe_saida') ||
+            PermissionService().canViewScreen('dashboard_fiscal');
+      }
+      return PermissionService().canViewScreen(menuItemId);
+    }
+
+    // 3. MÓDULOS LEGADOS SEM RBAC SEPARADO (GME, Service Desk, Projetos, Precificação):
+    const modulosLegados = {'GME', 'Service Desk', 'Projetos', 'Precificação'};
+    final moduloLegado = _menuItemToModulo[menuItemId];
+    if (moduloLegado != null && modulosLegados.contains(moduloLegado)) {
+      return _isModuloAllowed(moduloLegado);
+    }
+
+    // 4. PERMISSÕES VIA SECURITYMATRIX (fallback para perfis legados sem permissões do backend):
     if (appScreen != null) {
       return sec.canView(appScreen);
     }
@@ -363,7 +616,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     final camelCaseId = StringUtils.snakeToCamelCase(menuItemId);
     final allKnown = {camelCaseId};
     final allowed = sec.allowedTelaIds(allKnown);
-    return allowed == null || allowed.contains(camelCaseId);
+    return allowed != null && allowed.contains(camelCaseId);
   }
 
   /// Resolve permissão para uma ação específica na tela (CRUD)
@@ -405,6 +658,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   @override
   void initState() {
     super.initState();
+    if (!ModuloAccess.isLoaded) {
+      ModuloAccess.load().then((_) {
+        if (mounted) setState(() {});
+      }).catchError((_) {});
+    }
     _fetchAlerts();
     _alertTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) _fetchAlerts();
@@ -2116,270 +2374,291 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       'Fiscal e NF-e',
       'Notas Fiscais',
     ]);
-    final temNfse = _temModuloContratado(contratados, const ['NFS-e']);
+    final temNfse = _temModuloContratado(contratados, const ['NFS-e', 'NFSe']);
+    final temFinanceiro = _temModuloContratado(contratados, const [
+      'Financeiro',
+      'Financeiro Limitado',
+      'Financeiro avançado',
+      'Financeiro avancado',
+    ]);
+    final temDp = _temModuloContratado(contratados, const [
+      'Departamento Pessoal',
+      'RH',
+      'Recursos Humanos',
+    ]);
+    final temContabil = _temModuloContratado(contratados, const ['Contábil', 'Contabil']);
+    final temAcademia = _temModuloContratado(contratados, const ['Academia']);
+    final temTrading = _temModuloContratado(contratados, const [
+      'Bolsa de Valores',
+      'Trading',
+      'Investimentos',
+    ]);
+    final temSuporte = _temModuloContratado(contratados, const [
+      'Chamados',
+      'Chat',
+      'Comunicados',
+      'GED',
+    ]);
     final temFinanceiroAvancado = _temModuloContratado(contratados, const [
       'Financeiro avançado',
       'Financeiro avancado',
     ]);
     final podeVerConfigIss =
-        sec.canView(AppScreen.configFiscal) || sec.canView(AppScreen.nfse);
+        _canSeeOption('Config ISS', sec) ||
+        sec.canView(AppScreen.configFiscal) ||
+        sec.canView(AppScreen.nfse);
 
     // Define os grupos de módulos com seus itens (gateados por permissão)
     final modulos = <_ModuloGroup>[
-      _ModuloGroup(
-        'Comercial',
-        Icons.business,
-        [
-          if (temNfce && sec.canView(AppScreen.pdvNfce))
-            _MoreMenuAction(Icons.point_of_sale, 'PDV'),
-          if (temComercial && sec.canView(AppScreen.produto))
-            _MoreMenuAction(Icons.inventory, 'Produtos'),
-          if (sec.canView(AppScreen.parceiros))
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temComercial)
+        _ModuloGroup(
+          'Comercial',
+          Icons.business,
+          [
+            if (temNfce && _canSeeOption('PDV', sec))
+              _MoreMenuAction(Icons.point_of_sale, 'PDV'),
+            if (temComercial && _canSeeOption('Produtos', sec))
+              _MoreMenuAction(Icons.inventory, 'Produtos'),
             _MoreMenuAction(Icons.people, 'Parceiros'),
-          _MoreMenuAction(Icons.local_shipping, 'Fornecedores'),
-          _MoreMenuAction(Icons.card_membership, 'Planos'),
-          _MoreMenuAction(Icons.badge, 'Tipos de Parceiro'),
-          _MoreMenuAction(Icons.handshake, 'Serviços Contratados'),
-          _MoreMenuAction(Icons.view_module, 'Módulos de Serviço'),
-          _MoreMenuAction(Icons.menu_book, 'Catálogo de Produtos'),
-          _MoreMenuAction(Icons.straighten, 'Unidades de Medida'),
-          _MoreMenuAction(Icons.request_quote, 'Orçamentos'),
-          _MoreMenuAction(Icons.shopping_cart, 'Pedidos de Venda'),
-          _MoreMenuAction(Icons.shopping_bag, 'Pedidos de Compra'),
-          _MoreMenuAction(Icons.receipt, 'Pedidos'),
-          _MoreMenuAction(Icons.check_circle_outline, 'Aprovação de Compras'),
-          _MoreMenuAction(Icons.price_change, 'Tabela de Preços'),
-          _MoreMenuAction(Icons.assignment_return, 'Devoluções'),
-          _MoreMenuAction(Icons.warehouse, 'Reserva de Estoque'),
-          _MoreMenuAction(Icons.store, 'Multi-depósito'),
-          if (sec.canView(AppScreen.dashComercialArea))
+            _MoreMenuAction(Icons.local_shipping, 'Fornecedores'),
+            _MoreMenuAction(Icons.card_membership, 'Planos'),
+            _MoreMenuAction(Icons.badge, 'Tipos de Parceiro'),
+            _MoreMenuAction(Icons.handshake, 'Serviços Contratados'),
+            _MoreMenuAction(Icons.view_module, 'Módulos de Serviço'),
+            _MoreMenuAction(Icons.menu_book, 'Catálogo de Produtos'),
+            _MoreMenuAction(Icons.straighten, 'Unidades de Medida'),
+            _MoreMenuAction(Icons.request_quote, 'Orçamentos'),
+            _MoreMenuAction(Icons.shopping_cart, 'Pedidos de Venda'),
+            _MoreMenuAction(Icons.shopping_bag, 'Pedidos de Compra'),
+            _MoreMenuAction(Icons.receipt, 'Pedidos'),
+            _MoreMenuAction(Icons.check_circle_outline, 'Aprovação de Compras'),
+            _MoreMenuAction(Icons.price_change, 'Tabela de Preços'),
+            _MoreMenuAction(Icons.assignment_return, 'Devoluções'),
+            _MoreMenuAction(Icons.warehouse, 'Reserva de Estoque'),
+            _MoreMenuAction(Icons.store, 'Multi-depósito'),
             _MoreMenuAction(Icons.trending_up, 'Dashboard Comercial'),
-        ],
-      ),
-      _ModuloGroup(
-        'Financeiro',
-        Icons.account_balance,
-        [
-          if (sec.canView(AppScreen.contasPagar))
+          ],
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temFinanceiro)
+        _ModuloGroup(
+          'Financeiro',
+          Icons.account_balance,
+          [
             _MoreMenuAction(Icons.payments, 'Contas Pagar'),
-          if (sec.canView(AppScreen.contasReceber))
             _MoreMenuAction(Icons.account_balance_wallet, 'Contas Receber'),
-          if (sec.canView(AppScreen.contasBancarias))
             _MoreMenuAction(Icons.account_balance, 'Contas Bancarias'),
-          _MoreMenuAction(Icons.credit_card, 'Formas de Pagamento'),
-          _MoreMenuAction(Icons.pie_chart, 'Centros de Custo'),
-          _MoreMenuAction(Icons.category, 'Categorias Financeiras'),
-          _MoreMenuAction(Icons.swap_horiz, 'Lançamentos Financeiros'),
-          if (sec.canView(AppScreen.importarExtrato) || sec.canView(AppScreen.contasBancarias))
+            _MoreMenuAction(Icons.credit_card, 'Formas de Pagamento'),
+            _MoreMenuAction(Icons.pie_chart, 'Centros de Custo'),
+            _MoreMenuAction(Icons.category, 'Categorias Financeiras'),
+            _MoreMenuAction(Icons.swap_horiz, 'Lançamentos Financeiros'),
             _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
-          _MoreMenuAction(Icons.sync_alt, 'Conciliação Bancária'),
-          _MoreMenuAction(Icons.call_split, 'Rateio Financeiro'),
-          _MoreMenuAction(Icons.check_box, 'Baixa Automática'),
-          _MoreMenuAction(Icons.edit_calendar, 'Renegociação'),
-          _MoreMenuAction(Icons.warning_amber, 'Cobrança'),
-          if (temFinanceiroAvancado && sec.canView(AppScreen.contasReceber))
-            _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
-          _MoreMenuAction(Icons.bar_chart, 'DRE Gerencial'),
-          _MoreMenuAction(Icons.send, 'Envio EDI (Remessa)'),
-          _MoreMenuAction(Icons.view_kanban, 'Kanban de Pagamentos'),
-          _MoreMenuAction(Icons.verified, 'Aprovação de Pagamentos'),
-          _MoreMenuAction(Icons.event_note, 'Calendário de Guias'),
-          _MoreMenuAction(Icons.receipt_long, 'Importar Boletos (Lote)'),
-          _MoreMenuAction(Icons.integration_instructions, 'Integrações Financeiras'),
-          if (sec.canView(AppScreen.dashboard))
+            _MoreMenuAction(Icons.sync_alt, 'Conciliação Bancária'),
+            _MoreMenuAction(Icons.call_split, 'Rateio Financeiro'),
+            _MoreMenuAction(Icons.check_box, 'Baixa Automática'),
+            _MoreMenuAction(Icons.edit_calendar, 'Renegociação'),
+            _MoreMenuAction(Icons.warning_amber, 'Cobrança'),
+            if (temFinanceiroAvancado)
+              _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
+            _MoreMenuAction(Icons.bar_chart, 'DRE Gerencial'),
+            _MoreMenuAction(Icons.send, 'Envio EDI (Remessa)'),
+            _MoreMenuAction(Icons.view_kanban, 'Kanban de Pagamentos'),
+            _MoreMenuAction(Icons.verified, 'Aprovação de Pagamentos'),
+            _MoreMenuAction(Icons.event_note, 'Calendário de Guias'),
+            _MoreMenuAction(Icons.receipt_long, 'Importar Boletos (Lote)'),
+            _MoreMenuAction(Icons.integration_instructions, 'Integrações Financeiras'),
             _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
-          if (sec.canView(AppScreen.dashFinanceiroArea))
             _MoreMenuAction(Icons.account_balance_wallet, 'Dashboard Financeiro'),
-        ],
-      ),
-      _ModuloGroup(
-        'Fiscal',
-        Icons.receipt,
-        [
-          if (sec.canView(AppScreen.nfeSaida))
+          ],
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temNfce)
+        _ModuloGroup(
+          'Fiscal',
+          Icons.receipt,
+          [
             _MoreMenuAction(Icons.file_upload, 'NF-e Saída'),
-          if (sec.canView(AppScreen.nfeEntrada))
             _MoreMenuAction(Icons.file_download, 'NF-e Entrada'),
-          if (temNfce && sec.canView(AppScreen.nfceGrid))
             _MoreMenuAction(Icons.receipt_long, 'NFC-e (Cupons)'),
-          _MoreMenuAction(Icons.tag, 'NF-e Série'),
-          _MoreMenuAction(Icons.filter_list, 'NF-e Finalidade'),
-          _MoreMenuAction(Icons.alt_route, 'NF-e Tipo Operação'),
-          _MoreMenuAction(Icons.file_present, 'Importar XML NF-e'),
-          _MoreMenuAction(Icons.table_view, 'Importar NF-e CSV'),
-          _MoreMenuAction(Icons.search, 'Consulta DF-e'),
-          _MoreMenuAction(Icons.assignment_turned_in, 'Manifestação Destinatário'),
-          _MoreMenuAction(Icons.cancel, 'Cancelamento e CC-e'),
-          if (temNfce)
-            _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
-          _MoreMenuAction(Icons.policy, 'Regime Tributário'),
-          _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
-          _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
-          if (sec.canView(AppScreen.dashFiscalArea))
+            _MoreMenuAction(Icons.tag, 'NF-e Série'),
+            _MoreMenuAction(Icons.filter_list, 'NF-e Finalidade'),
+            _MoreMenuAction(Icons.alt_route, 'NF-e Tipo Operação'),
+            _MoreMenuAction(Icons.file_present, 'Importar XML NF-e'),
+            _MoreMenuAction(Icons.table_view, 'Importar NF-e CSV'),
+            _MoreMenuAction(Icons.search, 'Consulta DF-e'),
+            _MoreMenuAction(Icons.assignment_turned_in, 'Manifestação Destinatário'),
+            _MoreMenuAction(Icons.cancel, 'Cancelamento e CC-e'),
+            if (temNfce)
+              _MoreMenuAction(Icons.event_repeat, 'Agendar NFe Recorrente'),
+            _MoreMenuAction(Icons.policy, 'Regime Tributário'),
+            _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
+            _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
-        ],
-      ),
-      _ModuloGroup(
-        'NFS-e',
-        Icons.description,
-        [
-          if (temNfse && sec.canView(AppScreen.nfseLista))
-            _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
-          if (temNfse && sec.canView(AppScreen.nfseSerie))
-            _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
-          if (temNfse && sec.canView(AppScreen.nfseServico))
-            _MoreMenuAction(Icons.work, 'Serviços NFS-e'),
-          _MoreMenuAction(Icons.upload_file, 'Importar XML NFS-e'),
-          if (temNfse && podeVerConfigIss)
-            _MoreMenuAction(Icons.settings, 'Config ISS'),
-        ],
-      ),
-      _ModuloGroup(
-        'Departamento Pessoal',
-        Icons.badge,
-        [
-          if (sec.canView(AppScreen.ponto))
+          ],
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temNfse)
+        _ModuloGroup(
+          'NFS-e',
+          Icons.description,
+          [
+            if (temNfse) ...[
+              _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
+              _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
+              _MoreMenuAction(Icons.work, 'Serviços NFS-e'),
+              _MoreMenuAction(Icons.upload_file, 'Importar XML NFS-e'),
+            ],
+            if (temNfse && podeVerConfigIss)
+              _MoreMenuAction(Icons.settings, 'Config ISS'),
+          ],
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temDp)
+        _ModuloGroup(
+          'Departamento Pessoal',
+          Icons.badge,
+          [
             _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
-          if (sec.canView(AppScreen.funcionarios))
             _MoreMenuAction(Icons.people_outline, 'Funcionários'),
-          _MoreMenuAction(Icons.edit_calendar, 'Solicitar Ajuste'),
-          _MoreMenuAction(Icons.schedule, 'Ajuste de Ponto'),
-          _MoreMenuAction(Icons.event_busy, 'Feriados'),
-          _MoreMenuAction(Icons.domain, 'Setores'),
-          _MoreMenuAction(Icons.timelapse, 'Horários Funcionário'),
-          if (sec.canView(AppScreen.dashDpArea))
+            _MoreMenuAction(Icons.edit_calendar, 'Solicitar Ajuste'),
+            _MoreMenuAction(Icons.schedule, 'Ajuste de Ponto'),
+            _MoreMenuAction(Icons.event_busy, 'Feriados'),
+            _MoreMenuAction(Icons.domain, 'Setores'),
+            _MoreMenuAction(Icons.timelapse, 'Horários Funcionário'),
             _MoreMenuAction(Icons.badge, 'Dashboard DP'),
-        ],
-      ),
-      _ModuloGroup(
-        'Contábil & IA',
-        Icons.account_tree,
-        [
-          _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
-          _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
-          _MoreMenuAction(Icons.scale, 'Balancete'),
-          _MoreMenuAction(Icons.lock_clock, 'Fechamento de Período'),
-          _MoreMenuAction(Icons.smart_toy, 'Dashboard IA'),
-          _MoreMenuAction(Icons.psychology, 'Assistente IA'),
-        ],
-      ),
-      _ModuloGroup(
-        'Suporte & Comunicação',
-        Icons.support_agent,
-        [
-          _MoreMenuAction(Icons.notifications, 'Alertas'),
-          _MoreMenuAction(Icons.folder_shared, 'Diretórios'),
-          _MoreMenuAction(Icons.newspaper, 'Notícias'),
-          _MoreMenuAction(Icons.view_kanban, 'Kanban Chamados'),
-          _MoreMenuAction(Icons.chat, 'Kanban Chat'),
-          _MoreMenuAction(Icons.camera_alt, 'Instagram Monitor'),
-        ],
-      ),
-      _ModuloGroup(
-        'Academia & Saúde',
-        Icons.fitness_center,
-        [
-          _MoreMenuAction(Icons.fitness_center, 'Academias'),
-          _MoreMenuAction(Icons.restaurant, 'Alimentos'),
-          _MoreMenuAction(Icons.menu_book, 'Dietas'),
-          _MoreMenuAction(Icons.directions_run, 'Exercícios'),
-          _MoreMenuAction(Icons.accessibility_new, 'Grupos Musculares'),
-          _MoreMenuAction(Icons.medication, 'Medicamentos'),
-          _MoreMenuAction(Icons.sports, 'Modalidades'),
-          _MoreMenuAction(Icons.track_changes, 'Objetivos'),
-          _MoreMenuAction(Icons.person, 'Personais'),
-          _MoreMenuAction(Icons.local_pharmacy, 'Suplementos'),
-          _MoreMenuAction(Icons.sports_gymnastics, 'Treinos'),
-          _MoreMenuAction(Icons.monitor_weight, 'Avaliação Física'),
-          _MoreMenuAction(Icons.assignment, 'Anamnese'),
-        ],
-      ),
-      _ModuloGroup(
-        'Bolsa de Valores',
-        Icons.show_chart,
-        [
-          _MoreMenuAction(Icons.candlestick_chart, 'Trading'),
-          _MoreMenuAction(Icons.history, 'Backtesting'),
-          _MoreMenuAction(Icons.trending_up, 'Sinais de Mercado'),
-          _MoreMenuAction(Icons.lightbulb, 'Oportunidades'),
-          _MoreMenuAction(Icons.remove_red_eye, 'Watchlist'),
-          _MoreMenuAction(Icons.alarm, 'Alertas de Preço'),
-          _MoreMenuAction(Icons.play_circle, 'Operações Assistidas'),
-          _MoreMenuAction(Icons.settings_input_component, 'Configuração da Corretora'),
-          _MoreMenuAction(Icons.account_balance_wallet, 'Minha Carteira'),
-        ],
-      ),
-      _ModuloGroup(
-        'GME',
-        Icons.precision_manufacturing,
-        [
-          if (contratados.contains('GME')) ...[
-            _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
-            _MoreMenuAction(Icons.description, 'Contratos GME'),
-            _MoreMenuAction(Icons.build, 'Equipamentos'),
-            _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
-            _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),
-            _MoreMenuAction(Icons.timer, 'Horímetro'),
-            _MoreMenuAction(Icons.history, 'Histórico Manutenção'),
-            _MoreMenuAction(Icons.engineering, 'Técnicos'),
           ],
-        ],
-      ),
-      _ModuloGroup(
-        'Service Desk',
-        Icons.support_agent,
-        [
-          if (contratados.contains('Service Desk')) ...[
-            _MoreMenuAction(Icons.bar_chart, 'Dashboard Service'),
-            _MoreMenuAction(Icons.timer, 'SLA'),
-            _MoreMenuAction(Icons.queue, 'Filas Atendimento'),
-            _MoreMenuAction(Icons.category, 'Categorias Chamado'),
-            _MoreMenuAction(Icons.star, 'Avaliações'),
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temContabil)
+        _ModuloGroup(
+          'Contábil & IA',
+          Icons.account_tree,
+          [
+            _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
+            _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
+            _MoreMenuAction(Icons.scale, 'Balancete'),
+            _MoreMenuAction(Icons.lock_clock, 'Fechamento de Período'),
+            _MoreMenuAction(Icons.smart_toy, 'Dashboard IA'),
+            _MoreMenuAction(Icons.psychology, 'Assistente IA'),
           ],
-        ],
-      ),
-      _ModuloGroup(
-        'Projetos',
-        Icons.folder_special,
-        [
-          if (contratados.contains('Projetos')) ...[
-            _MoreMenuAction(Icons.bar_chart, 'Dashboard Projetos'),
-            _MoreMenuAction(Icons.folder, 'Projetos'),
-            _MoreMenuAction(Icons.list_alt, 'Etapas Projeto'),
-            _MoreMenuAction(Icons.people, 'Recursos Projeto'),
-            _MoreMenuAction(Icons.edit_note, 'Apontamentos'),
-            _MoreMenuAction(Icons.straighten, 'Medições'),
-            _MoreMenuAction(Icons.work, 'Cargos/Recursos'),
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temSuporte)
+        _ModuloGroup(
+          'Suporte & Comunicação',
+          Icons.support_agent,
+          [
+            _MoreMenuAction(Icons.notifications, 'Alertas'),
+            _MoreMenuAction(Icons.folder_shared, 'Diretórios'),
+            _MoreMenuAction(Icons.newspaper, 'Notícias'),
+            _MoreMenuAction(Icons.view_kanban, 'Kanban Chamados'),
+            _MoreMenuAction(Icons.chat, 'Kanban Chat'),
+            _MoreMenuAction(Icons.camera_alt, 'Instagram Monitor'),
           ],
-        ],
-      ),
-      _ModuloGroup(
-        'Precificação',
-        Icons.calculate,
-        [
-          if (contratados.contains('Precificação')) ...[
-            _MoreMenuAction(Icons.bar_chart, 'Dashboard Precificação'),
-            _MoreMenuAction(Icons.request_quote, 'Precificações'),
-            _MoreMenuAction(Icons.attach_money, 'Custos Diretos'),
-            _MoreMenuAction(Icons.person, 'Mão de Obra'),
-            _MoreMenuAction(
-                Icons.miscellaneous_services, 'Serviços Precificação'),
-            _MoreMenuAction(Icons.payment, 'Condições Pagamento'),
-            _MoreMenuAction(Icons.description, 'Propostas Comerciais'),
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temAcademia)
+        _ModuloGroup(
+          'Academia & Saúde',
+          Icons.fitness_center,
+          [
+            _MoreMenuAction(Icons.fitness_center, 'Academias'),
+            _MoreMenuAction(Icons.restaurant, 'Alimentos'),
+            _MoreMenuAction(Icons.menu_book, 'Dietas'),
+            _MoreMenuAction(Icons.directions_run, 'Exercícios'),
+            _MoreMenuAction(Icons.accessibility_new, 'Grupos Musculares'),
+            _MoreMenuAction(Icons.medication, 'Medicamentos'),
+            _MoreMenuAction(Icons.sports, 'Modalidades'),
+            _MoreMenuAction(Icons.track_changes, 'Objetivos'),
+            _MoreMenuAction(Icons.person, 'Personais'),
+            _MoreMenuAction(Icons.local_pharmacy, 'Suplementos'),
+            _MoreMenuAction(Icons.sports_gymnastics, 'Treinos'),
+            _MoreMenuAction(Icons.monitor_weight, 'Avaliação Física'),
+            _MoreMenuAction(Icons.assignment, 'Anamnese'),
           ],
-        ],
-      ),
+        ),
+      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temTrading)
+        _ModuloGroup(
+          'Bolsa de Valores',
+          Icons.show_chart,
+          [
+            _MoreMenuAction(Icons.candlestick_chart, 'Trading'),
+            _MoreMenuAction(Icons.history, 'Backtesting'),
+            _MoreMenuAction(Icons.trending_up, 'Sinais de Mercado'),
+            _MoreMenuAction(Icons.lightbulb, 'Oportunidades'),
+            _MoreMenuAction(Icons.remove_red_eye, 'Watchlist'),
+            _MoreMenuAction(Icons.alarm, 'Alertas de Preço'),
+            _MoreMenuAction(Icons.play_circle, 'Operações Assistidas'),
+            _MoreMenuAction(Icons.settings_input_component, 'Configuração da Corretora'),
+            _MoreMenuAction(Icons.account_balance_wallet, 'Minha Carteira'),
+          ],
+        ),
+      if (sec.isMaster || contratados.contains('GME'))
+        _ModuloGroup(
+          'GME',
+          Icons.precision_manufacturing,
+          [
+            if (sec.isMaster || contratados.contains('GME')) ...[
+              _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
+              _MoreMenuAction(Icons.description, 'Contratos GME'),
+              _MoreMenuAction(Icons.build, 'Equipamentos'),
+              _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
+              _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),
+              _MoreMenuAction(Icons.timer, 'Horímetro'),
+              _MoreMenuAction(Icons.history, 'Histórico Manutenção'),
+              _MoreMenuAction(Icons.engineering, 'Técnicos'),
+            ],
+          ],
+        ),
+      if (sec.isMaster || contratados.contains('Service Desk') || contratados.contains('Service'))
+        _ModuloGroup(
+          'Service Desk',
+          Icons.support_agent,
+          [
+            if (sec.isMaster || contratados.contains('Service Desk') || contratados.contains('Service')) ...[
+              _MoreMenuAction(Icons.bar_chart, 'Dashboard Service'),
+              _MoreMenuAction(Icons.timer, 'SLA'),
+              _MoreMenuAction(Icons.queue, 'Filas Atendimento'),
+              _MoreMenuAction(Icons.category, 'Categorias Chamado'),
+              _MoreMenuAction(Icons.star, 'Avaliações'),
+            ],
+          ],
+        ),
+      if (sec.isMaster || contratados.contains('Projetos'))
+        _ModuloGroup(
+          'Projetos',
+          Icons.folder_special,
+          [
+            if (sec.isMaster || contratados.contains('Projetos')) ...[
+              _MoreMenuAction(Icons.bar_chart, 'Dashboard Projetos'),
+              _MoreMenuAction(Icons.folder, 'Projetos'),
+              _MoreMenuAction(Icons.list_alt, 'Etapas Projeto'),
+              _MoreMenuAction(Icons.people, 'Recursos Projeto'),
+              _MoreMenuAction(Icons.edit_note, 'Apontamentos'),
+              _MoreMenuAction(Icons.straighten, 'Medições'),
+              _MoreMenuAction(Icons.work, 'Cargos/Recursos'),
+            ],
+          ],
+        ),
+      if (sec.isMaster || contratados.contains('Precificação') || contratados.contains('Precificacao'))
+        _ModuloGroup(
+          'Precificação',
+          Icons.calculate,
+          [
+            if (sec.isMaster || contratados.contains('Precificação') || contratados.contains('Precificacao')) ...[
+              _MoreMenuAction(Icons.bar_chart, 'Dashboard Precificação'),
+              _MoreMenuAction(Icons.request_quote, 'Precificações'),
+              _MoreMenuAction(Icons.attach_money, 'Custos Diretos'),
+              _MoreMenuAction(Icons.person, 'Mão de Obra'),
+              _MoreMenuAction(
+                  Icons.miscellaneous_services, 'Serviços Precificação'),
+              _MoreMenuAction(Icons.payment, 'Condições Pagamento'),
+              _MoreMenuAction(Icons.description, 'Propostas Comerciais'),
+            ],
+          ],
+        ),
       _ModuloGroup(
         'Sistema',
         Icons.settings,
         [
           _MoreMenuAction(Icons.apps, 'Aplicativo'),
           _MoreMenuAction(Icons.business, 'Empresas'),
-          if (sec.canView(AppScreen.logins))
-            _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
+          _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
           _MoreMenuAction(Icons.security, 'Roles'),
-          if (sec.canView(AppScreen.alvaras))
-            _MoreMenuAction(Icons.verified_user, 'Alvarás'),
+          _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.admin_panel_settings, 'Configurações Admin'),
           _MoreMenuAction(Icons.settings_applications, 'Configurações Sistema'),
           _MoreMenuAction(Icons.edit, 'Editor de Telas'),
@@ -2391,8 +2670,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.terminal, 'Query Builder'),
           _MoreMenuAction(Icons.devices, 'Sessões'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
-          if (sec.canView(AppScreen.rolesPermissoes))
-            _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
+          _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
           if (temNfce) _MoreMenuAction(Icons.settings, 'Config Fiscal'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
