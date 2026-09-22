@@ -226,4 +226,13 @@ void main() {
       expect(Uri.parse(url).hasAuthority, isTrue);
     });
   });
+
+  group('ApiLinks — Limpar Base de Produção (Preservar Empresas 1 e 20001)', () {
+    test('limparBasePreservarEmpresas aponta para /api/admin/limpar-base-preservar-empresas com context-path', () {
+      expect(ApiLinks.limparBasePreservarEmpresas,
+          contains('/api/admin/limpar-base-preservar-empresas'));
+      expect(ApiLinks.limparBasePreservarEmpresas, contains('/boletobancos'));
+      expect(Uri.parse(ApiLinks.limparBasePreservarEmpresas).hasAuthority, isTrue);
+    });
+  });
 }

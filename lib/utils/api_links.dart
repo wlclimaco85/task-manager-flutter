@@ -692,6 +692,8 @@ class ApiLinks {
       '$_baseUrlNew/api/dashboard/finance/extrato-operacional';
 
   static String get baseUrl => _baseUrlNew;
+  static String get limparBasePreservarEmpresas =>
+      '$_baseUrlNew/api/admin/limpar-base-preservar-empresas';
 
   /// Proxia imagens externas (ex.: CDN do Instagram) pelo backend para
   /// contornar o bloqueio de CORS no Flutter Web. Devolve a url original
