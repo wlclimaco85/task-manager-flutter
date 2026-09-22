@@ -540,6 +540,44 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  InkWell(
+                    key: const Key('login_footer_download_windows'),
+                    onTap: () async {
+                      final uri = Uri.parse(ApiLinks.windowsDownloadUrl);
+                      final opened = await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
+                      if (!opened && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(GridTexts.downloadOpenError)),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.download_rounded,
+                              size: 14, color: Colors.white70),
+                          SizedBox(width: 4),
+                          Text(
+                            GridTexts.downloadWindows,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.white38,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   const Text(
                     'Versão 2.4.0 (Build 2026.09)',
                     style: TextStyle(
@@ -1702,8 +1740,10 @@ class _FlashNewsSidebar extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           const SizedBox(height: 6),
 
-          // Botao PlayStore no rodape da lateral
+          // Botoes no rodape da lateral (Play Store e Windows)
           const _PlayStoreButton(),
+          const SizedBox(height: 6),
+          const _WindowsDownloadButton(),
         ],
       ),
     );
@@ -2087,6 +2127,36 @@ class _PlayStoreButton extends StatelessWidget {
       onPressed: () => _open(context),
       icon: const Icon(Icons.android_outlined, size: 18),
       label: const Text('Baixar App na Play Store'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF044828),
+        side: const BorderSide(color: Color(0xFF044828)),
+        minimumSize: const Size.fromHeight(40),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+}
+
+class _WindowsDownloadButton extends StatelessWidget {
+  const _WindowsDownloadButton();
+
+  Future<void> _open(BuildContext context) async {
+    final uri = Uri.parse(ApiLinks.windowsDownloadUrl);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(GridTexts.downloadOpenError)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      key: const Key('login_sidebar_download_windows'),
+      onPressed: () => _open(context),
+      icon: const Icon(Icons.desktop_windows_outlined, size: 18),
+      label: const Text(GridTexts.downloadWindows),
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFF044828),
         side: const BorderSide(color: Color(0xFF044828)),
