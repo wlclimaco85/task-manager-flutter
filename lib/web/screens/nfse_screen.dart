@@ -1,15 +1,33 @@
+import 'dart:convert';
+
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
+import '../../utils/api_links.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/grid_colors.dart';
-import '../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../utils/tenant_context.dart';
+import '../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, BulkAction;
 import '../../widgets/searchable_dropdown.dart';
 import 'details/nfse_detail_screen.dart';
+
+bool nfsePodeConfirmarStatus(String? status) =>
+    const {'RASCUNHO', 'PENDENTE'}.contains(status?.toUpperCase());
+bool nfsePodeEnviarStatus(String? status) =>
+    status?.toUpperCase() == 'CONFIRMADA';
+bool nfsePodeGerarPdfStatus(String? status) =>
+    status?.toUpperCase() == 'AUTORIZADA';
+bool nfsePodeCancelarStatus(String? status) =>
+    status?.toUpperCase() == 'AUTORIZADA';
 
 /// Tela de NFSe — espelha o layout da NF-e Saída:
 /// header vermelho + painel de filtro lateral + botões + grid dinâmica.
 class NfseScreen extends StatefulWidget {
-  const NfseScreen({super.key});
+  final bool Function(String permission)? hasPermission;
+  final bool? isMobile;
+  const NfseScreen({super.key, this.hasPermission, this.isMobile});
   @override
   State<NfseScreen> createState() => _NfseScreenState();
 }
@@ -24,6 +42,8 @@ class _NfseScreenState extends State<NfseScreen> {
   DateTime? _dtEmiIni, _dtEmiFim;
   Map<String, dynamic> _filtros = {};
   int _gridKey = 0;
+  bool _filtrosVisiveis = true;
+  final GlobalKey<DynamicGridWindowsScreenState> _dynamicGridKey = GlobalKey();
 
   // Emissão (dialog)
   final _municipioCtrl = TextEditingController();
@@ -268,7 +288,58 @@ class _NfseScreenState extends State<NfseScreen> {
     _showCancelamentoDialog();
   }
 
+  Future<void> _confirmarLinha(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty || !nfsePodeConfirmarStatus(item['status']?.toString())) {
+      return;
+    }
+    try {
+      final response = await TenantContext.post(ApiLinks.confirmarNfse(id), {});
+      if (!context.mounted) return;
+      if (response.statusCode == 200) {
+        _dynamicGridKey.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('NFS-e confirmada. Já pode ser enviada.'),
+          backgroundColor: GridColors.success,
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Não foi possível confirmar: ${response.body}'),
+          backgroundColor: GridColors.error,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erro ao confirmar: $e'),
+          backgroundColor: GridColors.error,
+        ));
+      }
+    }
+  }
+
   List<CustomAction<Map<String, dynamic>>> _buildCustomActions() => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.check_circle_outline,
+          label: 'Confirmar',
+          isVisible: (item) =>
+              nfsePodeConfirmarStatus(item['status']?.toString()),
+          onPressed: _confirmarLinha,
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.send,
+          label: 'Enviar',
+          isVisible: (item) => nfsePodeEnviarStatus(item['status']?.toString()),
+          onPressed: (context, item) => _bulkEnviar(context, [item]),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.picture_as_pdf,
+          label: 'Gerar PDF',
+          isVisible: (item) =>
+              nfsePodeGerarPdfStatus(item['status']?.toString()),
+          onPressed: (context, item) => _bulkGerarPdf(context, [item]),
+        ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.manage_search,
           label: 'Consultar status',
@@ -277,7 +348,20 @@ class _NfseScreenState extends State<NfseScreen> {
         CustomAction<Map<String, dynamic>>(
           icon: Icons.cancel_outlined,
           label: 'Cancelar',
-          onPressed: (context, item) => _cancelarLinha(item),
+          isVisible: (item) =>
+              nfsePodeCancelarStatus(item['status']?.toString()),
+          onPressed: (context, item) {
+            final st = (item['status']?.toString().toUpperCase() ?? '');
+            if (st != 'AUTORIZADA') {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                    'Ação não permitida: Apenas NFS-e AUTORIZADA pode ser cancelada. Status atual: ${st.isEmpty ? "N/A" : st}'),
+                backgroundColor: GridColors.error,
+              ));
+              return;
+            }
+            _cancelarLinha(item);
+          },
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.history,
@@ -293,52 +377,744 @@ class _NfseScreenState extends State<NfseScreen> {
           '')
       .toString();
 
+  // ── Ações em massa (dropdown "Ações" ao lado de Excluir selecionados) ────
+  // Validação obrigatória: só habilita ações se TODOS os itens selecionados
+  // cumprirem as regras de estado permitidas pela legislação/documentação.
+
+  List<BulkAction<Map<String, dynamic>>> _buildBulkActions() => [
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.picture_as_pdf,
+          label: 'Gerar PDF',
+          isEnabled: (items) =>
+              items.isNotEmpty &&
+              items.every((i) {
+                final st = i['status']?.toString().toUpperCase() ?? '';
+                return nfsePodeGerarPdfStatus(st);
+              }),
+          onPressed: _bulkGerarPdf,
+        ),
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.send,
+          label: 'Enviar',
+          isEnabled: (items) =>
+              items.isNotEmpty &&
+              items.every((i) {
+                final st = i['status']?.toString().toUpperCase() ?? '';
+                return nfsePodeEnviarStatus(st);
+              }),
+          onPressed: _bulkEnviar,
+        ),
+        BulkAction<Map<String, dynamic>>(
+          icon: Icons.cancel_outlined,
+          label: 'Cancelar',
+          isEnabled: (items) =>
+              items.isNotEmpty &&
+              items.every((i) =>
+                  (i['status']?.toString().toUpperCase() ?? '') ==
+                  'AUTORIZADA'),
+          onPressed: _bulkCancelar,
+        ),
+      ];
+
+  /// Baixa o DANFSe (`GET /api/nfse/{id}/danfse`) item a item — não existe
+  /// endpoint de PDF em lote no backend. Mesmo padrão de
+  /// `nfse_detail_screen.dart._baixarPdf`.
+  Future<void> _bulkGerarPdf(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final invalidos = items.where((i) {
+      final st = (i['status']?.toString().toUpperCase() ?? '');
+      final num = _nfseNumero(i);
+      return !nfsePodeGerarPdfStatus(st) || num.isEmpty;
+    }).toList();
+    if (invalidos.isNotEmpty) {
+      final listaStr = invalidos
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Ação não permitida: Apenas NFS-e autorizadas ou com número gerado podem ter PDF emitido. Itens inválidos: $listaStr'),
+        backgroundColor: GridColors.error,
+      ));
+      return;
+    }
+
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Gerando PDF ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.get(ApiLinks.danfseNfse(id));
+        if (r.statusCode == 200) {
+          await FileSaver.instance.saveFile(
+            name: 'danfse_$id',
+            bytes: r.bodyBytes,
+            fileExtension: 'pdf',
+            mimeType: MimeType.pdf,
+          );
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Gerar PDF" NFS-e #$id falhou: status ${r.statusCode}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Gerar PDF" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok PDF(s) gerado(s) com sucesso'
+            : '$ok gerado(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Emite via Sistema Nacional NFS-e (`POST /api/nfse/{id}/emitir-nacional`)
+  /// item a item — mesmo endpoint usado por `nfse_detail_screen.dart._enviarNfse`.
+  Future<void> _bulkEnviar(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final invalidos = items.where((i) {
+      final st = (i['status']?.toString().toUpperCase() ?? '');
+      return !nfsePodeEnviarStatus(st);
+    }).toList();
+    if (invalidos.isNotEmpty) {
+      final listaStr = invalidos
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Ação não permitida: Notas já autorizadas ou canceladas não podem ser enviadas: $listaStr'),
+        backgroundColor: GridColors.error,
+      ));
+      return;
+    }
+
+    var ok = 0;
+    final falhas = <String>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('Enviando ${i + 1} de ${items.length}...'),
+            duration: const Duration(seconds: 2),
+          ));
+      }
+      try {
+        final r = await TenantContext.post(ApiLinks.emitirNfseNacional(id), {});
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          final b = jsonDecode(r.body);
+          final data = b is Map ? (b['data'] ?? b) : null;
+          final status = data is Map ? data['status']?.toString() : null;
+          if (status == 'AUTORIZADA') {
+            ok++;
+          } else {
+            final erro = data is Map ? data['mensagemErroEmissao'] : null;
+            falhas.add('#$id (${erro ?? 'rejeitada'})');
+          }
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Enviar" NFS-e #$id falhou: status ${r.statusCode}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Enviar" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    _dynamicGridKey.currentState?.reload();
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(falhas.isEmpty
+            ? '$ok NFS-e(s) enviada(s) com sucesso'
+            : '$ok enviada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+        backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
+      ));
+  }
+
+  /// Cancela (`POST /api/fiscal/nfse/cancelar`) item a item, pedindo o motivo
+  /// UMA ÚNICA VEZ (aplicado a todas as selecionadas) — mesmo endpoint/corpo
+  /// usado por `nfse_detail_screen.dart._cancelarNfse`.
+  Future<void> _bulkCancelar(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final invalidos = items.where((i) {
+      final st = (i['status']?.toString().toUpperCase() ?? '');
+      return st != 'AUTORIZADA';
+    }).toList();
+    if (invalidos.isNotEmpty) {
+      final listaStr = invalidos
+          .map(
+              (i) => '#${i['id'] ?? 'sem id'} (${i['status'] ?? 'sem status'})')
+          .join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Ação não permitida: Apenas NFS-e no estado AUTORIZADA podem ser canceladas. Itens inválidos: $listaStr'),
+        backgroundColor: GridColors.error,
+      ));
+      return;
+    }
+
+    final motivoCtrl = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cancelar ${items.length} NFS-e(s)'),
+        content: TextField(
+          controller: motivoCtrl,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Motivo do cancelamento',
+            hintText: 'Aplicado a todas as NFS-e selecionadas',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Voltar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, motivoCtrl.text.trim()),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    motivoCtrl.dispose();
+    if (motivo == null || motivo.isEmpty || !context.mounted) return;
+
+    var ok = 0;
+    final falhas = <String>[];
+    for (final item in items) {
+      final id = item['id']?.toString() ?? '';
+      if (id.isEmpty) {
+        falhas.add('item sem id');
+        continue;
+      }
+      try {
+        final r = await TenantContext.post(ApiLinks.nfseCancelar, {
+          'empresaId': item['empresaId'],
+          'municipio': item['municipioPrestacao'] ?? item['municipio'],
+          'nfseNumber': item['numero'],
+          'motivo': motivo,
+          'nfseId': int.tryParse(id),
+        });
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          ok++;
+        } else {
+          falhas.add('#$id (status ${r.statusCode})');
+          AppLogger.i.warn(
+              'Ação em massa "Cancelar" NFS-e #$id falhou: status ${r.statusCode} - ${r.body}');
+        }
+      } catch (e, st) {
+        falhas.add('#$id ($e)');
+        AppLogger.i.error('Ação em massa "Cancelar" NFS-e #$id: $e', st);
+      }
+    }
+    if (!context.mounted) return;
+    _dynamicGridKey.currentState?.reload();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(falhas.isEmpty
+          ? '$ok NFS-e(s) cancelada(s) com sucesso'
+          : '$ok cancelada(s), ${falhas.length} falharam: ${falhas.join(', ')}'),
+      backgroundColor: falhas.isEmpty ? GridColors.success : GridColors.error,
+    ));
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // ── Header ────────────────────────────────────────────────────────
-        Container(
-          height: 56,
-          color: GridColors.error,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Row(
+  int _contarFiltrosAtivos() {
+    var count = 0;
+    if (_numeroCtrl.text.isNotEmpty) count++;
+    if (_tomadorCtrl.text.isNotEmpty) count++;
+    if (_statusFiltro != null && _statusFiltro!.isNotEmpty) count++;
+    if (_dtEmiIni != null || _dtEmiFim != null) count++;
+    return count;
+  }
+
+  Widget _buildHeader() {
+    final activeCount = _contarFiltrosAtivos();
+    return Container(
+      height: 56,
+      color: GridColors.error,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          if (Navigator.canPop(context))
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: IconButton(
+                icon:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: 'Voltar',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          const Icon(
+            Icons.receipt_long,
+            color: Colors.white,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'NFSe - Nota Fiscal de Serviços',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  _filtrosVisiveis
+                      ? Icons.filter_alt
+                      : Icons.filter_alt_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                if (activeCount > 0 && !_filtrosVisiveis)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: GridColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: _filtrosVisiveis ? 'Ocultar filtros' : 'Exibir filtros',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () =>
+                setState(() => _filtrosVisiveis = !_filtrosVisiveis),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 20),
+            tooltip: 'Ajuda da tela',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () => _dynamicGridKey.currentState?.showHelp(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white, size: 20),
+            tooltip: 'Configurar grade',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () => _dynamicGridKey.currentState?.showColumnSettings(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.download, color: Colors.white, size: 20),
+            tooltip: 'Exportar CSV',
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () => _dynamicGridKey.currentState?.exportCsv(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFiltrosMobile(BuildContext context) {
+    final activeCount = _contarFiltrosAtivos();
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          bottom: BorderSide(color: GridColors.divider, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.52,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.receipt_long, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'NFSe - Nota Fiscal de Serviços',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.tune,
+                          size: 18, color: GridColors.primary),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Filtros de Pesquisa',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: GridColors.textPrimary,
+                        ),
+                      ),
+                      if (activeCount > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: GridColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$activeCount ativo${activeCount > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        size: 20, color: GridColors.textSecondary),
+                    tooltip: 'Ocultar filtros',
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () => setState(() => _filtrosVisiveis = false),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              _lbl('Data de Emissão'),
+              _dateRange(
+                _dtEmiIni,
+                _dtEmiFim,
+                (s, e) => setState(() {
+                  _dtEmiIni = s;
+                  _dtEmiFim = e;
+                }),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Número da NFSe'),
+                        _inp(_numeroCtrl, 'Ex: 1234',
+                            keyboardType: TextInputType.number),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _lbl('Status'),
+                        _drop(
+                          _statusFiltro,
+                          [
+                            'PENDENTE',
+                            'CONFIRMADA',
+                            'AUTORIZADA',
+                            'CANCELADA',
+                            'REJEITADA'
+                          ],
+                          (v) => setState(() => _statusFiltro = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _lbl('Tomador / Parceiro'),
+              _inp(_tomadorCtrl, 'Nome ou razão do tomador'),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _limpar,
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('Limpar',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GridColors.textSecondary,
+                        side: const BorderSide(color: GridColors.divider),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _aplicarFiltros();
+                        setState(() => _filtrosVisiveis = false);
+                      },
+                      icon: const Icon(Icons.search, size: 16),
+                      label: const Text('Filtrar',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _lbl('Ações Rápidas'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _actionChip(
+                    icon: Icons.add,
+                    label: 'Nova NFS-e',
+                    color: GridColors.success,
+                    onPressed: () => _abrirNovo(context),
+                  ),
+                  _actionChip(
+                    icon: Icons.send,
+                    label: 'Emitir NFSe',
+                    color: GridColors.primary,
+                    onPressed: _showEmissaoDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.search,
+                    label: 'Consultar',
+                    color: GridColors.secondary,
+                    onPressed: _showConsultaDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.cancel_outlined,
+                    label: 'Cancelar NFSe',
+                    color: GridColors.error,
+                    onPressed: _showCancelamentoDialog,
+                  ),
+                  _actionChip(
+                    icon: Icons.history,
+                    label: 'Auditoria',
+                    color: Colors.grey.shade700,
+                    onPressed: _showAuditoriaDialog,
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        // ── Conteúdo: filtros laterais + grid ─────────────────────────────
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 200, child: _buildFiltros()),
-              Expanded(
-                child: DynamicGridWindowsScreen<Map<String, dynamic>>(
-                  key: ValueKey(_gridKey),
-                  telaNome: 'nfse',
-                  hasPermission: (p) => p == 'create' ? false : true,
-                  fromJson: (json) => json,
-                  toJson: (a) => a,
-                  extraParams: _filtros,
-                  detailScreenBuilder: (item) => NfseDetailScreen(item: item),
-                  customActions: _buildCustomActions,
-                  showAppBar: false,
-                ),
-              ),
-            ],
+      ),
+    );
+  }
+
+  Widget _actionBtn({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    bool isOutlined = false,
+    double height = 38,
+  }) {
+    if (isOutlined) {
+      return SizedBox(
+        width: double.infinity,
+        height: height,
+        child: OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 16),
+          label: Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: foregroundColor,
+            side: BorderSide(color: backgroundColor),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
           ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 16),
+        label: Text(label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobileMode =
+        widget.isMobile == true || MediaQuery.of(context).size.width < 900;
+    final effectiveHasPerm =
+        widget.hasPermission ?? (p) => p == 'create' ? false : true;
+
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: isMobileMode
+              ? Column(
+                  children: [
+                    if (_filtrosVisiveis) _buildFiltrosMobile(context),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfse',
+                        tituloOverride: 'NFSe - Nota Fiscal de Serviços',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) =>
+                            NfseDetailScreen(item: item),
+                        customActions: _buildCustomActions,
+                        bulkActions: _buildBulkActions(),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_filtrosVisiveis)
+                      SizedBox(
+                        width: 220,
+                        child: _buildFiltros(),
+                      ),
+                    Expanded(
+                      child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                        key: _dynamicGridKey,
+                        telaNome: 'nfse',
+                        tituloOverride: 'NFSe - Nota Fiscal de Serviços',
+                        hasPermission: effectiveHasPerm,
+                        fromJson: (json) => json,
+                        toJson: (a) => a,
+                        extraParams: _filtros,
+                        detailScreenBuilder: (item) =>
+                            NfseDetailScreen(item: item),
+                        customActions: _buildCustomActions,
+                        bulkActions: _buildBulkActions(),
+                        showAppBar: false,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ],
     );
@@ -346,10 +1122,36 @@ class _NfseScreenState extends State<NfseScreen> {
 
   Widget _buildFiltros() {
     return Container(
-      color: GridColors.filterBackground,
+      decoration: const BoxDecoration(
+        color: GridColors.filterBackground,
+        border: Border(right: BorderSide(color: GridColors.divider)),
+      ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
+            children: [
+              const Icon(Icons.tune, size: 16, color: GridColors.primary),
+              const SizedBox(width: 6),
+              const Text(
+                'Filtros',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.chevron_left, size: 18),
+                tooltip: 'Ocultar filtros',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => setState(() => _filtrosVisiveis = false),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           _lbl('Data de Emissão'),
           _dateRange(
               _dtEmiIni,
@@ -370,94 +1172,72 @@ class _NfseScreenState extends State<NfseScreen> {
               _statusFiltro,
               ['PENDENTE', 'AUTORIZADA', 'CANCELADA', 'REJEITADA'],
               (v) => setState(() => _statusFiltro = v)),
-          const SizedBox(height: 12),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _abrirNovo(context),
-                icon: const Icon(Icons.add, size: 14),
-                label:
-                    const Text('+ Nova NFSe', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
-          const SizedBox(height: 6),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _aplicarFiltros,
-                icon: const Icon(Icons.search, size: 14),
-                label: const Text('Filtrar', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
-          const SizedBox(height: 6),
-          SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _limpar,
-                icon: const Icon(Icons.clear, size: 14),
-                label: const Text('Limpar', style: TextStyle(fontSize: 12)),
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: GridColors.divider,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
+          const SizedBox(height: 14),
+          _actionBtn(
+            onPressed: () => _abrirNovo(context),
+            icon: Icons.add,
+            label: 'Nova NFS-e',
+            backgroundColor: GridColors.success,
+            foregroundColor: Colors.white,
+            height: 38,
+          ),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _aplicarFiltros,
+            icon: Icons.search,
+            label: 'Filtrar',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            height: 38,
+          ),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _limpar,
+            icon: Icons.clear,
+            label: 'Limpar',
+            backgroundColor: GridColors.divider,
+            foregroundColor: GridColors.textSecondary,
+            isOutlined: true,
+            height: 38,
+          ),
           const Divider(height: 24),
           _lbl('Ações rápidas'),
-          const SizedBox(height: 4),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showEmissaoDialog,
-                icon: const Icon(Icons.send, size: 14),
-                label:
-                    const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
-          const SizedBox(height: 6),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showConsultaDialog,
-                icon: const Icon(Icons.search, size: 14),
-                label: const Text('Consultar', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
-          const SizedBox(height: 6),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showCancelamentoDialog,
-                icon: const Icon(Icons.cancel_outlined, size: 14),
-                label:
-                    const Text('Cancelar NFSe', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
-          const SizedBox(height: 6),
-          SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showAuditoriaDialog,
-                icon: const Icon(Icons.history, size: 14),
-                label: const Text('Auditoria', style: TextStyle(fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8)),
-              )),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _showEmissaoDialog,
+            icon: Icons.send,
+            label: 'Emitir NFSe',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            height: 36,
+          ),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _showConsultaDialog,
+            icon: Icons.search,
+            label: 'Consultar',
+            backgroundColor: GridColors.secondary,
+            foregroundColor: Colors.white,
+            height: 36,
+          ),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _showCancelamentoDialog,
+            icon: Icons.cancel_outlined,
+            label: 'Cancelar NFSe',
+            backgroundColor: GridColors.error,
+            foregroundColor: Colors.white,
+            height: 36,
+          ),
+          const SizedBox(height: 8),
+          _actionBtn(
+            onPressed: _showAuditoriaDialog,
+            icon: Icons.history,
+            label: 'Auditoria',
+            backgroundColor: Colors.grey.shade700,
+            foregroundColor: Colors.white,
+            height: 36,
+          ),
         ]),
       ),
     );
@@ -471,23 +1251,27 @@ class _NfseScreenState extends State<NfseScreen> {
               fontWeight: FontWeight.w600,
               color: GridColors.textSecondary)));
 
-  Widget _inp(TextEditingController c, String h) => TextField(
-      controller: c,
-      style: const TextStyle(fontSize: 12),
-      decoration: InputDecoration(
-          hintText: h,
-          hintStyle: const TextStyle(fontSize: 11, color: GridColors.divider),
-          filled: true,
-          fillColor: Colors.white,
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: GridColors.divider)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: GridColors.divider))));
+  Widget _inp(TextEditingController c, String h,
+          {TextInputType? keyboardType}) =>
+      TextField(
+          controller: c,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+              hintText: h,
+              hintStyle:
+                  const TextStyle(fontSize: 11, color: GridColors.divider),
+              filled: true,
+              fillColor: Colors.white,
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: GridColors.divider)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: const BorderSide(color: GridColors.divider))));
 
   Widget _drop(String? val, List<String> opts, void Function(String?) cb) =>
       SearchableDropdownField(

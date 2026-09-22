@@ -127,7 +127,17 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           ),
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
+          visibleWhen: 'tipoEstabelecimento==FILIAL',
+          visibleWhenField: 'tipoEstabelecimento',
+          visibleWhenValue: 'FILIAL',
           isInForm: true,
+        ),
+        const FieldConfigWindows(
+          label: 'Parceiro',
+          fieldName: 'parceiro',
+          isInForm: false,
+          isInGrid: false,
+          isVisibleByDefault: false,
         ),
         const FieldConfigWindows(
           label: 'Módulo Serviços',

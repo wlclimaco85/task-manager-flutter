@@ -85,11 +85,23 @@ class _AppSidebarState extends State<AppSidebar> {
     if (masterOnly.contains(item.id)) {
       return SecurityMatrix.current().isMaster;
     }
-    // Primeiro: verificar permissões dinâmicas do backend via PermissionService
-    if (PermissionService().canViewScreen(item.id)) {
-      return true;
+
+    // MASTER / SYSTEM tem acesso total (respeitando módulo se configurado)
+    if (SecurityMatrix.current().isMaster) {
+      return ModuloAccess.isMenuItemAllowed(item.id);
     }
-    // Fallback: manter compatibilidade com SecurityMatrix (módulos legados)
+
+    // 1. Checagem de Módulo Contratado (idêntico ao Mobile):
+    if (!ModuloAccess.isMenuItemAllowed(item.id)) {
+      return false;
+    }
+
+    // 2. Permissões dinâmicas da Role via PermissionService (RBAC do backend):
+    if (PermissionService().hasPermissoes) {
+      return PermissionService().canViewScreen(item.id);
+    }
+
+    // 3. Fallback: manter compatibilidade com SecurityMatrix (módulos legados quando sem permissões do backend)
     // Converte item.id (snake_case) para camelCase para comparar com telaNome (backend).
     final camelCaseId = StringUtils.snakeToCamelCase(item.id);
     return _allowedIds == null || _allowedIds!.contains(camelCaseId);

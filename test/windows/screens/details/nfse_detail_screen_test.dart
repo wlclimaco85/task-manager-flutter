@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/windows/screens/details/nfse_detail_screen.dart';
 
 /// Testes de widget do novo layout de NfseDetailScreen — layout reorganizado
@@ -12,6 +16,65 @@ import 'package:task_manager_flutter/windows/screens/details/nfse_detail_screen.
 /// silenciosamente pela tela (try/catch já existente), então os dropdowns
 /// ficam vazios — comportamento equivalente ao caso "API indisponível".
 void main() {
+  testWidgets('carrega municipio e ambiente do parceiro 1805 da sessao',
+      (tester) async {
+    final requisicoes = <Uri>[];
+    AuthUtility.userInfo = LoginModel.fromJson({
+      'login': {
+        'id': 972,
+        'empresa': {'id': 1, 'nome': 'Empresa Smoke Test'},
+        'parceiro': {
+        'id': 1805,
+        'nome':
+            'Abraco Contabilidade Contabilidade Martins & Abrahao Arabe LTDA',
+      },
+      },
+    });
+    addTearDown(() => AuthUtility.userInfo = null);
+
+    final client = MockClient((request) async {
+      requisicoes.add(request.url);
+      if (request.url.path.endsWith('/api/parceiro/1805')) {
+        return http.Response(
+          '{"data":{"id":1805,"nome":"Abraco Contabilidade Contabilidade Martins & Abrahao Arabe LTDA","cidade":"Uberaba","estado":"MG","ambiente":"HOMOLOGACAO"}}',
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/api/cidade') &&
+          request.url.queryParameters['nome'] == 'Uberaba') {
+        return http.Response(
+          '{"data":{"dados":[{"id":10968,"nome":"Uberaba"}]}}',
+          200,
+        );
+      }
+      return http.Response('{"data":[]}', 200);
+    });
+
+    await http.runWithClient(() async {
+      tester.view.physicalSize = const Size(1400, 1200);
+      tester.view.devicePixelRatio = 1;
+      await tester
+          .pumpWidget(MaterialApp(home: NfseDetailScreen(item: const {})));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+    }, () => client);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    expect(
+      requisicoes.any((uri) => uri.path.endsWith('/api/parceiro/1805')),
+      isTrue,
+      reason: 'GET do parceiro do user_data não ocorreu: $requisicoes',
+    );
+    expect(
+      requisicoes.any((uri) =>
+          uri.path.endsWith('/api/cidade') &&
+          uri.queryParameters['nome'] == 'Uberaba'),
+      isTrue,
+    );
+    expect(find.text('Uberaba'), findsOneWidget);
+    expect(find.text('HOMOLOGACAO'), findsOneWidget);
+  });
+
   Widget buildScreen(Map<String, dynamic> item) {
     return MaterialApp(
       home: NfseDetailScreen(item: item),
@@ -56,9 +119,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      final dadosNota = tester.getTopLeft(find.byKey(const Key('secao_dados_nota')));
+      final dadosNota =
+          tester.getTopLeft(find.byKey(const Key('secao_dados_nota')));
       final itens = tester.getTopLeft(find.byKey(const Key('secao_itens')));
-      final impostos = tester.getTopLeft(find.byKey(const Key('secao_impostos')));
+      final impostos =
+          tester.getTopLeft(find.byKey(const Key('secao_impostos')));
       final totais = tester.getTopLeft(find.byKey(const Key('secao_totais')));
 
       // Navegação cabeçalho → itens → impostos → totais: cada seção fica
@@ -72,7 +137,8 @@ void main() {
       expect(totais.dy, greaterThan(impostos.dy));
     });
 
-    testWidgets('Campos do cabeçalho usam SearchableDropdownField e abrem busca',
+    testWidgets(
+        'Campos do cabeçalho usam SearchableDropdownField e abrem busca',
         (WidgetTester tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       tester.view.physicalSize = const Size(1400, 1200);
@@ -118,7 +184,8 @@ void main() {
       expect(find.text('Salvar Item'), findsOneWidget);
     });
 
-    testWidgets('Seção Totais exibe cartões de valor', (WidgetTester tester) async {
+    testWidgets('Seção Totais exibe cartões de valor',
+        (WidgetTester tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       tester.view.physicalSize = const Size(1400, 1200);
       tester.view.devicePixelRatio = 1.0;

@@ -14,9 +14,11 @@ import '../../../widgets/generic_grid_windows_screen.dart'
         FileConfig,
         FieldType,
         GenericGridScreen,
+        GenericGridScreenState,
         ExportConfig,
         PaginationConfig,
-        CustomAction;
+        CustomAction,
+        BulkAction;
 
 import '../models/telas_model.dart';
 import '../config/screen_field_overrides.dart';
@@ -36,6 +38,11 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final Map<String, dynamic> Function(Map<String, dynamic> formData)?
       transformFormData;
   final CustomActionsBuilder<T>? customActions;
+
+  /// Ver GenericGridScreen.bulkActions — repassado como está (lista direta,
+  /// e não builder, pois não depende de estado reconstruído a cada abertura
+  /// de menu como customActions).
+  final List<BulkAction<T>>? bulkActions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
   // Overrides de endpoint — quando informados substituem os valores que viriam da config da tela
@@ -71,6 +78,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.additionalFormData,
     this.transformFormData,
     this.customActions,
+    this.bulkActions,
     this.fieldOverrides,
     this.showAppBar = true,
     this.fetchEndpointOverride,
@@ -87,12 +95,18 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
 
   @override
   State<DynamicGridWindowsScreen<T>> createState() =>
-      _DynamicGridWindowsScreenState<T>();
+      DynamicGridWindowsScreenState<T>();
 }
 
-class _DynamicGridWindowsScreenState<T>
+class DynamicGridWindowsScreenState<T>
     extends State<DynamicGridWindowsScreen<T>> {
   late Future<TelaConfig> _telaFuture;
+  final GlobalKey<GenericGridScreenState<T>> _gridKey = GlobalKey();
+
+  void showColumnSettings() => _gridKey.currentState?.showColumnSettings();
+  void exportCsv() => _gridKey.currentState?.exportCsv();
+  void showHelp() => _gridKey.currentState?.showHelp();
+  void reload() => _gridKey.currentState?.reload();
 
   @override
   void initState() {
@@ -494,6 +508,7 @@ class _DynamicGridWindowsScreenState<T>
         final fields = _convert(tela.fields);
 
         return GenericGridScreen<T>(
+          key: _gridKey,
           title: widget.tituloOverride ?? tela.titulo,
           fetchEndpoint: widget.fetchEndpointOverride ??
               (ApiLinks.baseUrl + tela.fetchEndpoint),
@@ -519,6 +534,7 @@ class _DynamicGridWindowsScreenState<T>
           additionalFormData: widget.additionalFormData,
           transformFormData: widget.transformFormData,
           customActions: widget.customActions,
+          bulkActions: widget.bulkActions,
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,

@@ -3,9 +3,13 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
+import '../../../models/empresa_acesso_model.dart';
+import '../../../models/parceiro_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/nfse_tax_calculator.dart';
+import '../../../utils/app_logger.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
@@ -43,6 +47,7 @@ class NfseDetailScreen extends StatefulWidget {
 }
 
 class _NfseDetailScreenState extends State<NfseDetailScreen> {
+  late final Map<String, dynamic> _item;
   int _tab = 0;
   bool _itensGrid = true;
   int _selItem = 0;
@@ -62,9 +67,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   final _serieCtrl = TextEditingController();
   final _municipioCtrl = TextEditingController();
   final _codigoServicoCtrl = TextEditingController();
+  final _observacaoCtrl = TextEditingController();
   String? _statusVal;
   String? _ambienteVal;
   String? _empresaId;
+  String? _parceiroEmissorId;
+  String? _parceiroEmissorNome;
   String? _tomadorId;
   String? _serieId;
   String? _cidadeId;
@@ -74,12 +82,20 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String? _empresaNome;
   String? _tomadorNome;
 
-  bool get _isNovo => widget.item['id'] == null;
-  String get _nfseId => widget.item['id']?.toString() ?? '';
+  bool get _isNovo => _item['id'] == null;
+  String get _nfseId => _item['id']?.toString() ?? '';
+  String get _statusAtual => (_statusVal ?? 'RASCUNHO').toUpperCase();
+  bool get _podeExcluir =>
+      !_isNovo &&
+      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE'}.contains(_statusAtual);
+  bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
+  dynamic get _login =>
+      AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
 
   @override
   void initState() {
     super.initState();
+    _item = Map<String, dynamic>.from(widget.item);
     _initCabecalho();
     _loadDropdowns();
     if (!_isNovo) {
@@ -93,45 +109,42 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _serieCtrl.dispose();
     _municipioCtrl.dispose();
     _codigoServicoCtrl.dispose();
+    _observacaoCtrl.dispose();
     super.dispose();
   }
 
   void _initCabecalho() {
-    final i = widget.item;
-    final login = AuthUtility.userInfo?.login;
+    final i = _item;
+    final login = _login;
 
-    _numeroCtrl.text = i['numero']?.toString() ?? '';
+    final status = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
+    _statusVal = status;
+    _numeroCtrl.text = status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
     _serieCtrl.text = i['serie']?.toString() ?? '';
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
     _codigoServicoCtrl.text = _codigoServicoMunicipalInicial(i);
-
-    _statusVal = _isNovo ? 'PENDENTE' : (i['status']?.toString() ?? 'PENDENTE');
-    _ambienteVal = i['ambiente']?.toString() ?? 'HOMOLOGACAO';
+    _observacaoCtrl.text = i['observacao']?.toString() ?? '';
 
     final sessEmpId = login?.empresa?.id?.toString();
     _empresaId = sessEmpId ??
         (i['empresa'] is Map ? i['empresa']['id'] : i['empresa'])?.toString();
     _empresaNome = login?.empresa?.nome ??
         (i['empresa'] is Map ? i['empresa']['nome'] : null)?.toString();
+    _parceiroEmissorId = login?.parceiro?.id?.toString();
+    _parceiroEmissorNome = login?.parceiro?.nome ??
+        login?.parceiro?.razaoSocial ??
+        (_parceiroEmissorId == null ? null : 'Parceiro $_parceiroEmissorId');
+    final cidadeParceiro =
+        login?.parceiro?.cidade ?? login?.parceiro?.endereco?.cidade?.nome;
+    if (_isNovo && _municipioCtrl.text.isEmpty && cidadeParceiro != null) {
+      _municipioCtrl.text = cidadeParceiro;
+    }
+    _ambienteVal = i['ambiente']?.toString() ??
+        (TenantContext.hasParceiro
+            ? _normalizarAmbienteTomador(login?.parceiro?.ambiente)
+            : null);
 
-    // Tomador: bug real (2026-09-17, ver bugs.md) -- quando o login logado
-    // tem parceiroId (sessao/localStorage), o Tomador DEVE ser o proprio
-    // parceiro (disabled, mesmo padrao de "Empresa" acima e de todas as
-    // outras telas), nunca um dropdown aberto pra buscar OUTRO parceiro:
-    // /api/parceiro auto-restringe (parceiroIdLivro=proprio) quem nao e'
-    // master/contabilidade, entao a busca sempre voltava "0 resultado(s)"
-    // pra um Cliente -- nao era so' falta de disabled, a lista realmente
-    // vinha vazia do backend por isolamento de tenant (anti-IDOR).
-    //
-    // Bug real (2026-09-17, code review): mas so' pode default/travar no
-    // parceiro da sessao quando a NFSe ainda e' NOVA (_isNovo) ou quando
-    // o tomador ja gravado no registro e' o proprio parceiro da sessao --
-    // se a nota EXISTENTE pertence a outro tomador, sobrescrever com o
-    // parceiro logado ao salvar corromperia o dado real da nota (mesma
-    // classe de bug da secao "NF-e Entrada" do claude.md: "Nao
-    // sobrescrever dado da nota com login.parceiro na tela").
-    final sessParcId = login?.parceiro?.id?.toString();
     final tomadorRealId = (i['tomador'] is Map
             ? i['tomador']['id']
             : (i['parceiro'] is Map
@@ -142,12 +155,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             ? i['tomador']['nome']
             : (i['parceiro'] is Map ? i['parceiro']['nome'] : null))
         ?.toString();
-    final podeDefaultParaSessao =
-        _isNovo || tomadorRealId == null || tomadorRealId == sessParcId;
-    _tomadorId = podeDefaultParaSessao ? (sessParcId ?? tomadorRealId) : tomadorRealId;
-    _tomadorNome = podeDefaultParaSessao
-        ? (login?.parceiro?.nome ?? tomadorRealNome)
-        : tomadorRealNome;
+    _tomadorId = tomadorRealId;
+    _tomadorNome = tomadorRealNome;
 
     // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
     if (i['serie'] is Map) {
@@ -174,8 +183,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _municipioCtrl.text = i['municipioPrestacao']?.toString() ?? '';
     }
 
-    _dataEmissao = _parseData(i['dataEmissao'] ?? i['dhEmissao']);
-    _dataCompetencia = _parseData(i['dataCompetencia']);
+    _dataEmissao = _parseData(i['dataEmissao'] ?? i['dhEmissao']) ??
+        (_isNovo ? DateTime.now() : null);
+    _dataCompetencia =
+        _parseData(i['dataCompetencia']) ?? (_isNovo ? DateTime.now() : null);
   }
 
   DateTime? _parseData(dynamic v) {
@@ -212,15 +223,47 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return item;
   }
 
+  String? _textoCidadeTomador(Map<String, dynamic> tomador) {
+    final endereco = tomador['endereco'];
+    final cidadeEndereco = endereco is Map ? endereco['cidade'] : null;
+    final cidade = tomador['cidade'] ?? cidadeEndereco;
+    final valor = cidade is Map ? cidade['nome'] : cidade;
+    final texto = valor?.toString().trim();
+    return texto == null || texto.isEmpty ? null : texto;
+  }
+
+  String? _idCidadeTomador(Map<String, dynamic> tomador) {
+    final endereco = tomador['endereco'];
+    final cidadeEndereco = endereco is Map ? endereco['cidade'] : null;
+    final cidade = tomador['cidade'] ?? cidadeEndereco;
+    final id = cidade is Map ? cidade['id'] : null;
+    final texto = id?.toString().trim();
+    return texto == null || texto.isEmpty ? null : texto;
+  }
+
+  String? _normalizarAmbienteTomador(dynamic value) {
+    final texto = value?.toString().trim();
+    if (texto == null || texto.isEmpty) return null;
+    final normalizado = texto.toUpperCase();
+    if (normalizado.contains('PRODU') || normalizado == '1') {
+      return 'PRODUCAO';
+    }
+    if (normalizado.contains('HOMOLOG') || normalizado == '2') {
+      return 'HOMOLOGACAO';
+    }
+    return null;
+  }
+
   Future<void> _loadDropdowns() async {
-    final login = AuthUtility.userInfo?.login;
+    await _sincronizarContextoFiscalAtivo();
+    final login = _login;
     final empId = login?.empresa?.id?.toString() ?? _empresaId;
 
     await Future.wait([
       _loadList(
           '${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
-      _loadProdutosServico(empId, login?.parceiro?.id?.toString()),
+      _loadProdutosServico(empId, _parceiroEmissorId),
       // Bug real (2026-09-17, ver bugs.md): esta tela buscava serie em
       // /api/nfse-serie (tabela nfse_serie, legada/nao usada -- so tem
       // registros "teste"), enquanto a tela onde o usuario de fato cadastra
@@ -229,8 +272,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       // cadastrada nunca aparecia aqui porque vinha da tabela errada.
       _loadList(
           '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(() =>
-              _series = d.where((s) => s['tipo'] == 'NFS-e').toList())),
+          (d) => setState(() => _series = d.where((s) {
+                final tipo = s['tipo']?.toString().trim();
+                final normalizado = tipo?.replaceAll('_', '-').toUpperCase();
+                return normalizado == 'NFS-E' || normalizado == 'NFSE';
+              }).toList())),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
       // carregar tudo e filtrar no cliente truncava a lista e a busca por
@@ -239,7 +285,152 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
+    await _carregarDadosParceiroEmissor();
     _garantirCidadeSelecionadaNaLista();
+  }
+
+  Future<void> _sincronizarContextoFiscalAtivo() async {
+    final loginLocal = _login;
+    final loginId = loginLocal?.id;
+    if (!_isNovo || loginId == null) return;
+    try {
+      final response = await TenantContext.get(
+        ApiLinks.loginEmpresasAcesso,
+      );
+      if (response.statusCode != 200) {
+        AppLogger.i.warn(
+          'Nao foi possivel sincronizar o contexto fiscal do login $loginId '
+          '(HTTP ${response.statusCode}).',
+        );
+        return;
+      }
+      final raw = jsonDecode(response.body);
+      final lista = raw is List
+          ? raw
+          : raw is Map && raw['data'] is List
+              ? raw['data'] as List
+              : raw is Map && raw['data'] is Map
+                  ? (raw['data'] as Map)['dados'] as List?
+                  : null;
+      if (lista == null) return;
+      Map<String, dynamic>? ativa;
+      for (final item in lista.whereType<Map>()) {
+        final candidato = Map<String, dynamic>.from(item);
+        if (candidato['ativa'] == true) {
+          ativa = candidato;
+          break;
+        }
+      }
+      if (ativa == null) return;
+      final acesso = EmpresaAcesso.fromJson(ativa);
+      if (acesso.empresaId <= 0) return;
+      final empresaServidor = acesso.toEmpresa();
+      final parceiroServidor = acesso.parceiroId == null
+          ? null
+          : Parceiro(
+              id: acesso.parceiroId,
+              nome: acesso.parceiroNome,
+              empresa: empresaServidor,
+            );
+
+      final contextoMudou = loginLocal?.empresa?.id != empresaServidor.id ||
+          loginLocal?.parceiro?.id != parceiroServidor?.id;
+      if (!contextoMudou) return;
+
+      await AuthUtility.atualizarContextoAtivo(
+        empresaServidor,
+        parceiroServidor,
+      );
+      if (!mounted) return;
+      setState(_initCabecalho);
+    } catch (e, stack) {
+      AppLogger.i.error(
+        'Erro ao sincronizar empresa/parceiro do login $loginId na NFS-e: $e',
+        stack,
+      );
+    }
+  }
+
+  Future<void> _carregarDadosParceiroEmissor() async {
+    final id = _parceiroEmissorId;
+    if (!_isNovo || id == null || id.isEmpty) return;
+    final data = <String, dynamic>{};
+    void mesclar(Map<String, dynamic> origem) {
+      for (final entry in origem.entries) {
+        if (entry.value != null && entry.value.toString().trim().isNotEmpty) {
+          data[entry.key] = entry.value;
+        }
+      }
+    }
+
+    final sessao = _login?.parceiro;
+    if (sessao != null) mesclar(sessao.toJson());
+    for (final parceiro in _tomadores) {
+      if (parceiro['id']?.toString() == id) {
+        mesclar(parceiro);
+        break;
+      }
+    }
+    try {
+      final response =
+          await TenantContext.get('${ApiLinks.baseUrl}/api/parceiro/$id');
+      if (response.statusCode == 200) {
+        final raw = jsonDecode(response.body);
+        final payload = raw is Map && raw['data'] is Map
+            ? Map<String, dynamic>.from(raw['data'] as Map)
+            : raw is Map
+                ? Map<String, dynamic>.from(raw)
+                : <String, dynamic>{};
+        mesclar(payload);
+      } else {
+        AppLogger.i.warn(
+            'Usando sessao para parceiro emissor $id (HTTP ${response.statusCode}).');
+      }
+    } catch (e, stack) {
+      AppLogger.i.error('Erro ao consultar parceiro emissor $id: $e', stack);
+    }
+    if (data.isEmpty || !mounted) return;
+    final endereco = data['endereco'] is Map
+        ? Map<String, dynamic>.from(data['endereco'] as Map)
+        : <String, dynamic>{};
+    final cidadeValue = endereco['cidade'] ?? data['cidade'];
+    final cidade = cidadeValue is Map
+        ? Map<String, dynamic>.from(cidadeValue as Map)
+        : <String, dynamic>{};
+    final municipio = (cidade['nome'] ?? cidadeValue)?.toString().trim();
+    final ambiente = _normalizarAmbienteTomador(data['ambiente']);
+    Map<String, dynamic>? encontrada;
+    if ((cidade['id'] == null || cidade['id'].toString().isEmpty) &&
+        municipio != null &&
+        municipio.isNotEmpty) {
+      final resultados = await _buscarCidadesServidor(municipio);
+      for (final resultado in resultados) {
+        if (resultado['nome']?.toString().trim().toUpperCase() ==
+            municipio.toUpperCase()) {
+          encontrada = resultado;
+          break;
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _parceiroEmissorNome =
+          (data['nome'] ?? data['razaoSocial'])?.toString() ??
+              _parceiroEmissorNome;
+      if (_municipioCtrl.text.trim().isEmpty && municipio != null)
+        _municipioCtrl.text = municipio;
+      _cidadeId ??= cidade['id']?.toString() ?? encontrada?['id']?.toString();
+      if (encontrada != null &&
+          !_cidades.any((item) => item['id']?.toString() == _cidadeId)) {
+        _cidades = [_cidadeDropdownItem(encontrada), ..._cidades];
+      }
+      if (_codigoServicoCtrl.text.trim().isEmpty) {
+        _codigoServicoCtrl.text = _codigoServicoMunicipalDaCidade(
+            cidade.isNotEmpty ? cidade : (encontrada ?? {}));
+      }
+      if ((_ambienteVal == null || _ambienteVal!.isEmpty) && ambiente != null)
+        _ambienteVal = ambiente;
+    });
   }
 
   /// Garante que a cidade já selecionada (ex: ao editar uma NFSe existente)
@@ -315,24 +506,30 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         final b = jsonDecode(r.body);
         final d =
             b is Map ? (b['data'] is Map ? b['data']['dados'] : b['data']) : b;
-        setState(() => _itens = (d as List? ?? [])
+        final itens = (d as List? ?? [])
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
-            .toList());
+            .toList();
+        for (final item in itens) {
+          _normalizarServicoItem(item);
+        }
+        setState(() => _itens = itens);
       }
     } catch (_) {}
   }
 
   // ── Salvar cabeçalho ──────────────────────────────────────────────────────
 
-  Future<void> _salvarCabecalho() async {
+  Future<bool> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
-      if (!_isNovo) 'id': widget.item['id'],
-      'numero': _numeroCtrl.text,
+      if (!_isNovo) 'id': _item['id'],
+      if ((_statusAtual == 'AUTORIZADA' || _statusVal == 'AUTORIZADA') &&
+          _numeroCtrl.text.isNotEmpty)
+        'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
       'municipioPrestacao': _municipioCtrl.text,
       'codigoServicoMunicipal': _codigoServicoCtrl.text,
-      if (_statusVal != null) 'status': _statusVal,
+      'observacao': _observacaoCtrl.text,
       if (_ambienteVal != null) 'ambiente': _ambienteVal,
       if (_empresaId != null)
         'empresa': {'id': int.tryParse(_empresaId!) ?? _empresaId},
@@ -349,8 +546,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       final r = _isNovo
           ? await TenantContext.post('${ApiLinks.baseUrl}/api/nfse', body)
           : await TenantContext.put(
-              '${ApiLinks.baseUrl}/api/nfse/${widget.item['id']}', body);
-      if (!mounted) return;
+              '${ApiLinks.baseUrl}/api/nfse/${_item['id']}', body);
+      if (!mounted) return false;
       if (r.statusCode == 200 || r.statusCode == 201) {
         if (_isNovo) {
           try {
@@ -359,13 +556,16 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 ? (b['data'] is Map ? b['data']['id'] : (b['data'] ?? b['id']))
                 : null;
             if (newId != null) {
-              setState(() => widget.item['id'] = newId);
+              setState(() => _item['id'] = newId);
               _loadItens();
             }
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        if (showFeedback) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Salvo!'), backgroundColor: _green));
+        }
+        return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ${r.statusCode}: ${r.body}'),
@@ -376,6 +576,47 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
+    return false;
+  }
+
+  Future<void> _confirmarNfse() async {
+    if (_itens.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Adicione e salve ao menos um servico antes de confirmar.'),
+          backgroundColor: _red));
+      return;
+    }
+    final salvo = await _salvarCabecalho(showFeedback: false);
+    if (!mounted || !salvo || _isNovo) {
+      if (mounted && _isNovo) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Salve o cabecalho antes de confirmar.'),
+            backgroundColor: _red));
+      }
+      return;
+    }
+    try {
+      final r = await TenantContext.post(ApiLinks.confirmarNfse(_nfseId), {});
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        setState(() {
+          _statusVal = 'CONFIRMADA';
+          _item['status'] = 'CONFIRMADA';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NFS-e confirmada.'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
   }
 
   /// Emite de verdade a NFSe via Sistema Nacional NFS-e (SefinNacional) --
@@ -383,21 +624,34 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
+    if (_statusAtual != 'CONFIRMADA') return;
     setState(() => _enviando = true);
     try {
-      final r = await TenantContext.post(
-          ApiLinks.emitirNfseNacional(_nfseId), {});
+      final r =
+          await TenantContext.post(ApiLinks.emitirNfseNacional(_nfseId), {});
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         final b = jsonDecode(r.body);
         final data = b is Map ? (b['data'] ?? b) : null;
         final status = data is Map ? data['status']?.toString() : null;
         if (status == 'AUTORIZADA') {
+          final numRetornado = data is Map
+              ? (data['numero']?.toString() ??
+                  data['nfseNumber']?.toString() ??
+                  data['numeroDps']?.toString())
+              : null;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
                   'NFSe autorizada! Chave: ${data is Map ? data['chaveAcesso'] : ''}'),
               backgroundColor: _green));
-          setState(() => widget.item['status'] = status);
+          setState(() {
+            _item['status'] = status;
+            _statusVal = status;
+            if (numRetornado != null && numRetornado.isNotEmpty) {
+              _numeroCtrl.text = numRetornado;
+              _item['numero'] = numRetornado;
+            }
+          });
         } else {
           final erro = data is Map ? data['mensagemErroEmissao'] : null;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -432,6 +686,102 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           fileExtension: 'pdf',
           mimeType: MimeType.pdf,
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
+  Future<void> _cancelarNfse() async {
+    final motivoCtrl = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar NFS-e'),
+        content: TextField(
+          controller: motivoCtrl,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration:
+              const InputDecoration(labelText: 'Motivo do cancelamento'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Voltar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, motivoCtrl.text.trim()),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    motivoCtrl.dispose();
+    if (!mounted || motivo == null || motivo.isEmpty) return;
+
+    try {
+      final r = await TenantContext.post(ApiLinks.nfseCancelar, {
+        'empresaId': int.tryParse(_empresaId ?? '') ?? 0,
+        'municipio': _municipioCtrl.text,
+        'nfseNumber': _numeroCtrl.text,
+        'motivo': motivo,
+        'nfseId': int.tryParse(_nfseId),
+      });
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        setState(() {
+          _statusVal = 'CANCELADA';
+          _item['status'] = 'CANCELADA';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NFS-e cancelada.'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}: ${r.body}'),
+            backgroundColor: _red));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      }
+    }
+  }
+
+  Future<void> _excluirNfse() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir NFS-e pendente?'),
+        content:
+            const Text('Esta ação remove a nota e seus itens definitivamente.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Voltar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: _red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmar != true) return;
+
+    try {
+      final r = await TenantContext.delete(ApiLinks.nfse(_nfseId));
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 204) {
+        Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro ${r.statusCode}: ${r.body}'),
@@ -517,20 +867,55 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   String _fmt(double value) => value.toStringAsFixed(2);
 
+  void _normalizarServicoItem(Map<String, dynamic> item) {
+    item['aliquotaIss'] ??= item['aliquota_iss'];
+    item['valorIss'] ??= item['valor_iss'];
+    item['valorTotal'] ??= item['valor_total'];
+    item['codigoTributacaoMunicipal'] ??= item['codigo_tributacao_municipal'];
+    item['issRetido'] ??= item['iss_retido'] ?? false;
+    _recalcularServicoItem(item);
+  }
+
   /// Recalcula valorTotal (quantidade x valor unitario) e valorIss (valorTotal
   /// x aliquotaIss / 100) em memoria -- bug real (2026-09-17, ver bugs.md):
   /// essa conta ja existia na versao Web, mas nunca foi replicada aqui.
   void _recalcularServicoItem(Map<String, dynamic> item) {
     final quantidade = _num(item['quantidade']);
     final unitario = _num(item['valorUnitario'] ?? item['valor_unitario']);
-    final total = quantidade * unitario;
+    final result = NfseTaxCalculator.calculate(
+      quantidade: quantidade,
+      valorUnitario: unitario,
+      aliquotaIss: _num(item['aliquotaIss'] ?? item['aliquota_iss']),
+    );
+    final total = result.valorTotal;
     item['valorTotal'] = _fmt(total);
     item['valor_total'] = item['valorTotal'];
 
-    final aliquotaIss = _num(item['aliquotaIss'] ?? item['aliquota_iss']);
-    final valorIss = total * aliquotaIss / 100;
-    item['valorIss'] = _fmt(valorIss);
+    item['valorIss'] = _fmt(result.valorIss);
     item['valor_iss'] = item['valorIss'];
+  }
+
+  Future<void> _carregarImpostosServico(
+      Map<String, dynamic> item, String produtoId) async {
+    try {
+      final r = await TenantContext.get(
+          '${ApiLinks.baseUrl}/api/produto-imposto-uf?produtoId=$produtoId');
+      if (r.statusCode != 200) return;
+      final raw = jsonDecode(r.body);
+      if (raw is! List || raw.isEmpty) return;
+      final imp = Map<String, dynamic>.from(raw.first as Map);
+      if (!mounted) return;
+      setState(() {
+        item['aliquotaIss'] =
+            (imp['aliqIss'] ?? imp['aliquotaIss'] ?? item['aliquotaIss'])
+                ?.toString();
+        item['codigoTributacaoMunicipal'] = (imp['codTribIss'] ??
+                imp['codigoTributacaoMunicipal'] ??
+                item['codigoTributacaoMunicipal'])
+            ?.toString();
+        _recalcularServicoItem(item);
+      });
+    } catch (_) {}
   }
 
   void _novoItem() => setState(() {
@@ -551,20 +936,17 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          TextButton.icon(
-            onPressed: _salvarCabecalho,
-            icon: const Icon(Icons.save, size: 16, color: Colors.white),
-            label: const Text('Salvar',
-                style: TextStyle(color: Colors.white, fontSize: 12)),
-          ),
-          // Bug real (2026-09-17, ver bugs.md): so' existia o botao "Salvar"
-          // no cabecalho nesta versao Windows -- Enviar/Baixar PDF ja
-          // tinham sido implementados na versao Web na mesma sessao, mas
-          // nunca replicados aqui (cada plataforma tem seu proprio arquivo
-          // de tela). Backend (/emitir-nacional + /danfse) e' o mesmo.
-          if (!_isNovo)
+          if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE')
             TextButton.icon(
-              onPressed: _enviando ? null : _enviarNfse,
+              onPressed: !_enviando ? _confirmarNfse : null,
+              icon:
+                  const Icon(Icons.check_circle, size: 16, color: Colors.white),
+              label: const Text('Confirmar NFS-e',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_statusAtual == 'CONFIRMADA')
+            TextButton.icon(
+              onPressed: !_enviando ? _enviarNfse : null,
               icon: _enviando
                   ? const SizedBox(
                       width: 14,
@@ -572,10 +954,24 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send, size: 16, color: Colors.white),
-              label: const Text('Enviar',
+              label: const Text('Emitir NFS-e',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
-          if (!_isNovo)
+          if (_podeCancelar)
+            TextButton.icon(
+              onPressed: _cancelarNfse,
+              icon: const Icon(Icons.cancel, size: 16, color: Colors.white),
+              label: const Text('Cancelar',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_podeExcluir)
+            TextButton.icon(
+              onPressed: _excluirNfse,
+              icon: const Icon(Icons.delete, size: 16, color: Colors.white),
+              label: const Text('Excluir',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (_statusAtual == 'AUTORIZADA')
             TextButton.icon(
               onPressed: _baixarPdf,
               icon: const Icon(Icons.picture_as_pdf,
@@ -616,40 +1012,63 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   // CABECALHO
   Widget _cabecalho() {
-    final hasSession = AuthUtility.userInfo?.login != null;
     return _sectionCard(
       title: 'Dados da NFSe',
       icon: Icons.receipt_long,
       action: ElevatedButton.icon(
-        onPressed: _salvarCabecalho,
+        onPressed: _enviando ? null : () => _salvarCabecalho(),
         icon: const Icon(Icons.save, size: 14),
-        label: const Text('Salvar'),
+        label: const Text('Salvar', style: TextStyle(fontSize: 11)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _green,
+          backgroundColor: const Color(0xFF005A2B),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
       child: _formGrid([
-        hasSession && _empresaNome != null
-            ? _inpDisabledText('Empresa', _empresaNome!)
+        _empresaId != null
+            ? _inpDisabledText('Empresa', _empresaNome ?? 'Empresa $_empresaId')
             : _ddObj('Empresa', _empresaId, _empresas, 'nome',
                 (v) => setState(() => _empresaId = v)),
-        hasSession && _tomadorNome != null
-            ? _inpDisabledText('Tomador / Parceiro', _tomadorNome!)
-            : _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome',
-                (v) => setState(() => _tomadorId = v)),
+        if (_parceiroEmissorId != null)
+          _inpDisabledText('Parceiro Emissor',
+              _parceiroEmissorNome ?? 'Parceiro $_parceiroEmissorId'),
+        _ddObj('Tomador', _tomadorId, _tomadores, 'nome', (v) {
+          setState(() {
+            _tomadorId = v;
+            final tomadorMap = _tomadores
+                .cast<Map<String, dynamic>?>()
+                .firstWhere((p) => p?['id']?.toString() == v,
+                    orElse: () => null);
+            _tomadorNome = tomadorMap?['nome']?.toString();
+            final cidTomador = tomadorMap?['cidade']?.toString();
+            if (_municipioCtrl.text.trim().isEmpty &&
+                cidTomador != null &&
+                cidTomador.isNotEmpty) {
+              _municipioCtrl.text = cidTomador;
+            }
+          });
+        }),
         _ddSerie(),
-        _inp('Numero', _numeroCtrl),
+        _inpDisabledText(
+            'Numero',
+            (_statusVal == 'AUTORIZADA' || _statusAtual == 'AUTORIZADA')
+                ? _numeroCtrl.text
+                : ''),
         _dateField('Data Emissao', _dataEmissao,
             (d) => setState(() => _dataEmissao = d)),
         _dateField('Data Competencia', _dataCompetencia,
             (d) => setState(() => _dataCompetencia = d)),
         _ddCidade(),
         _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
-        _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
-        _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
-            (v) => setState(() => _ambienteVal = v)),
+        _textArea('Observacao', _observacaoCtrl),
+        _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
+        _parceiroEmissorId != null
+            ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
+            : _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
+                (v) => setState(() => _ambienteVal = v)),
       ]),
     );
   }
@@ -716,6 +1135,23 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 borderRadius: BorderRadius.circular(4),
                 borderSide: const BorderSide(color: _green, width: 1.5)),
             isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          ),
+        ),
+      );
+
+  Widget _textArea(String label, TextEditingController ctrl) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: TextFormField(
+          controller: ctrl,
+          minLines: 3,
+          maxLines: 5,
+          style: const TextStyle(fontSize: 12, color: _dark),
+          decoration: InputDecoration(
+            labelText: label,
+            isDense: true,
+            border: const OutlineInputBorder(),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
@@ -797,7 +1233,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             .map((s) => <String, dynamic>{
                   'id': s['id']?.toString() ?? '',
                   'nome':
-                      '${s['serie'] ?? ''} (atual: ${s['numeroAtual'] ?? 1})',
+                      '${s['serie'] ?? ''} (atual: ${_numeroAtualSerie(s) ?? 1})',
                 })
             .toList(),
         valueField: 'id',
@@ -810,14 +1246,14 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               orElse: () => {});
           if (s.isNotEmpty) {
             _serieCtrl.text = s['serie']?.toString() ?? '';
-            // Auto-preencher próximo número
-            final proximo = int.tryParse(s['numeroAtual'].toString()) ?? 1;
-            _numeroCtrl.text = proximo.toString();
           }
         },
       ),
     );
   }
+
+  dynamic _numeroAtualSerie(Map<String, dynamic> serie) =>
+      serie['numeroAtual'] ?? serie['numero_atual'];
 
   /// Dropdown de Município (Cidade) — carrega de /api/cidade
   /// Ao selecionar, preenche o código de serviço municipal se a cidade tiver
@@ -1005,6 +1441,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   prod['codigoTributacaoMunicipal']?.toString() ?? '';
             }
             _recalcularServicoItem(item);
+            if (v != null && v.isNotEmpty) {
+              _carregarImpostosServico(item, v);
+            }
           });
         }),
         _iInp('Descrição', item, 'descricao'),
@@ -1039,6 +1478,23 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                 style: TextStyle(fontSize: 12, color: _dark)),
             value: item['issRetido'] == true || item['iss_retido'] == true,
             onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => setState(() => _recalcularServicoItem(item)),
+              icon: const Icon(Icons.calculate_outlined, size: 14),
+              label: const Text('Calcular Impostos',
+                  style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _green,
+                side: const BorderSide(color: _green),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -1228,7 +1684,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   }
 
   Widget _totaisTab() {
-    final vt = widget.item['valorTotal']?.toString() ?? '0,00';
+    final vt = _item['valorTotal']?.toString() ?? '0,00';
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Wrap(
@@ -1265,44 +1721,58 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             style: TextStyle(color: _grey, fontSize: 12)),
       );
     }
-    return ListView.separated(
+    final baseIss = _itens.fold<double>(0,
+        (sum, item) => sum + _num(item['valorTotal'] ?? item['valor_total']));
+    final totalIss = _itens.fold<double>(
+        0, (sum, item) => sum + _num(item['valorIss'] ?? item['valor_iss']));
+    return ListView(
       padding: const EdgeInsets.all(10),
-      itemCount: _itens.length,
-      separatorBuilder: (_, __) => const Divider(height: 16),
-      itemBuilder: (_, i) {
-        final item = _itens[i];
-        final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
-        final aliquota = item['aliquotaIss']?.toString() ??
-            item['aliquota_iss']?.toString() ??
-            '-';
-        final valorIss = item['valorIss']?.toString() ??
-            item['valor_iss']?.toString() ??
-            '-';
-        final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
-            item['codigo_tributacao_municipal']?.toString() ??
-            '-';
-        final retido = item['issRetido'] == true || item['iss_retido'] == true;
-        return Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: _bord)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(descricao,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 16, runSpacing: 6, children: [
-              _impInfo('Alíquota ISS', '$aliquota%'),
-              _impInfo('Valor ISS', valorIss),
-              _impInfo('Cód. Tributação Municipal', codTrib),
-              _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
-            ]),
-          ]),
-        );
-      },
+      children: [
+        Wrap(spacing: 10, runSpacing: 8, children: [
+          _card('Base ISS', _fmt(baseIss)),
+          _card('ISS da nota', _fmt(totalIss)),
+        ]),
+        const SizedBox(height: 10),
+        ..._itens.asMap().entries.map((entry) {
+          final i = entry.key;
+          final item = _itens[i];
+          final descricao = item['descricao']?.toString() ?? 'Item ${i + 1}';
+          final aliquota = item['aliquotaIss']?.toString() ??
+              item['aliquota_iss']?.toString() ??
+              '-';
+          final valorIss = item['valorIss']?.toString() ??
+              item['valor_iss']?.toString() ??
+              '-';
+          final codTrib = item['codigoTributacaoMunicipal']?.toString() ??
+              item['codigo_tributacao_municipal']?.toString() ??
+              '-';
+          final retido =
+              item['issRetido'] == true || item['iss_retido'] == true;
+          return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: _bord)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(descricao,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Wrap(spacing: 16, runSpacing: 6, children: [
+                        _impInfo('Alíquota ISS', '$aliquota%'),
+                        _impInfo('Valor ISS', valorIss),
+                        _impInfo('Cód. Tributação Municipal', codTrib),
+                        _impInfo('ISS Retido', retido ? 'Sim' : 'Não'),
+                      ]),
+                    ]),
+              ));
+        }),
+      ],
     );
   }
 

@@ -1,6 +1,7 @@
 import '../models/auth_utility.dart';
 import '../models/empresa_acesso_model.dart';
 import '../models/network_response.dart';
+import '../models/parceiro_model.dart';
 import '../utils/api_links.dart';
 import 'network_caller.dart';
 
@@ -57,7 +58,14 @@ class LoginEmpresaAcessoService {
     final acesso = EmpresaAcesso.fromJson(
       Map<String, dynamic>.from(response.body as Map),
     );
-    await AuthUtility.atualizarEmpresaAtiva(acesso.toEmpresa());
+    final parceiro = acesso.parceiroId == null
+        ? null
+        : Parceiro(
+            id: acesso.parceiroId,
+            nome: acesso.parceiroNome,
+            empresa: acesso.toEmpresa(),
+          );
+    await AuthUtility.atualizarContextoAtivo(acesso.toEmpresa(), parceiro);
     await listarMeusAcessos();
     return true;
   }

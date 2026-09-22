@@ -5,7 +5,9 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
+import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
+import 'package:task_manager_flutter/utils/security_matrix.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
 
@@ -14,10 +16,14 @@ void main() {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       AuthUtility.userInfo = null;
+      ModuloAccess.reset();
+      PermissionService().clear();
     });
 
     tearDown(() {
       AuthUtility.userInfo = null;
+      ModuloAccess.reset();
+      PermissionService().clear();
     });
 
     Widget buildSidebar({
@@ -104,7 +110,7 @@ void main() {
       await tester.pumpWidget(buildSidebar(selectedIndex: 80));
       await tester.pump(const Duration(milliseconds: 250));
 
-      expect(find.text('Fiscal / NFC-e'), findsOneWidget);
+      expect(find.text('NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsNothing);
     });
@@ -118,7 +124,7 @@ void main() {
 
       expect(find.text('Contas a Pagar'), findsOneWidget);
       expect(find.text('Financeiro'), findsNothing);
-      expect(find.text('Fiscal / NFC-e'), findsNothing);
+      expect(find.text('NFC-e'), findsNothing);
     });
 
     testWidgets('abre dois grupos por padrao quando ambos ficam visiveis',
@@ -130,7 +136,7 @@ void main() {
 
       expect(find.text('Financeiro'), findsOneWidget);
       expect(find.text('Contas a Pagar'), findsOneWidget);
-      expect(find.text('Fiscal / NFC-e'), findsOneWidget);
+      expect(find.text('NFC-e'), findsOneWidget);
       expect(find.text('PDV / NFC-e'), findsOneWidget);
     });
 
@@ -209,6 +215,59 @@ void main() {
       // digitado, alem do resultado de menu -- aqui so' interessa provar
       // que o resultado de menu aparece (>= 1), nao a contagem exata.
       expect(find.text('Sessões'), findsWidgets);
+    });
+
+    testWidgets(
+        'oculta telas de modulo nao contratado mesmo se a role tiver permissao',
+        (tester) async {
+      // Contratado apenas Financeiro
+      ModuloAccess.setContratadosParaTeste(['Financeiro']);
+      // Permissão concedida para Contas a Pagar (Financeiro) e NF-e Saída (Notas Fiscais)
+      allowMenuIds(['contas_pagar', 'nfe_saida']);
+
+      await tester.pumpWidget(buildSidebar(selectedIndex: 25));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      // Contas a Pagar aparece
+      expect(find.text('Contas a Pagar'), findsOneWidget);
+
+      // NF-e Saída não deve aparecer porque o módulo Notas Fiscais não foi contratado
+      await tester.enterText(find.byType(TextField), 'NF-e Saída');
+      await tester.pumpAndSettle();
+      expect(find.text('Nenhuma tela encontrada'), findsOneWidget);
+    });
+
+    testWidgets(
+        'oculta tela quando a Role negar com podeVer = false (negacao terminal)',
+        (tester) async {
+      // Módulo Financeiro contratado
+      ModuloAccess.setContratadosParaTeste(['Financeiro']);
+
+      // Usuário com permissão explícita de podeVer: false em contas_pagar
+      AuthUtility.userInfo = LoginModel(
+        token: 'token-fake',
+        login: Login(
+          id: 1,
+          tipoLogin: LoginEnum.APP_ABRACO,
+        ),
+        permissoes: [
+          RolePermissaoItem(
+            telaNome: 'ContasPagar',
+            podeVer: false,
+            podeInserir: false,
+            podeEditar: false,
+            podeDeletar: false,
+          ),
+        ],
+      );
+      PermissionService().setPermissoes(AuthUtility.userInfo!.permissoes!);
+
+      await tester.pumpWidget(buildSidebar(selectedIndex: 25));
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.enterText(find.byType(TextField), 'Contas a Pagar');
+      await tester.pumpAndSettle();
+      expect(find.text('Nenhuma tela encontrada'), findsOneWidget);
     });
   });
 }

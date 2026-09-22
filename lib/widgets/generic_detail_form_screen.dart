@@ -20,6 +20,23 @@ import 'generic_grid_windows_screen.dart'
 ///
 /// Quando o campo referenciado não existe no estado, usa o valor padrão do
 /// tipo esperado: bool ausente == false; demais tipos ausentes == null.
+String _toCamelCaseStatic(String s) {
+  if (!s.contains('_')) return s;
+  final parts = s.split('_');
+  return parts.first +
+      parts
+          .skip(1)
+          .map((p) => p.isEmpty ? '' : p[0].toUpperCase() + p.substring(1))
+          .join();
+}
+
+String _toSnakeCaseStatic(String s) {
+  return s
+      .replaceAllMapped(
+          RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}')
+      .replaceFirst(RegExp(r'^_'), '');
+}
+
 bool avaliarVisibleWhen(
     String? expressao, Map<String, dynamic> estadoFormulario) {
   if (expressao == null || expressao.trim().isEmpty) return true;
@@ -40,8 +57,17 @@ bool avaliarVisibleWhen(
   }
 
   dynamic valorAtual = estadoFormulario[fieldName];
-  if (!estadoFormulario.containsKey(fieldName)) {
+  if (valorAtual == null) {
+    final camel = _toCamelCaseStatic(fieldName);
+    final snake = _toSnakeCaseStatic(fieldName);
+    valorAtual = estadoFormulario[camel] ?? estadoFormulario[snake];
+  }
+  if (valorAtual == null && !estadoFormulario.containsKey(fieldName)) {
     valorAtual = valorEsperado is bool ? false : null;
+  }
+
+  if (valorAtual is String && valorEsperado is String) {
+    return valorAtual.trim().toUpperCase() == valorEsperado.trim().toUpperCase();
   }
 
   return valorAtual == valorEsperado;
@@ -284,6 +310,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           item['app_id'] ??
           item['aplicativoId'];
     }
+    if (fn == 'tipoEstabelecimento' || fn == 'tipo_estabelecimento') {
+      return item['tipoEstabelecimento'] ?? item['tipo_estabelecimento'] ?? 'MATRIZ';
+    }
+    if (fn == 'matriz' || fn == 'matriz_id' || fn == 'matrizId') {
+      return item['matriz'] ?? item['matriz_id'] ?? item['matrizId'];
+    }
     if (fn == 'foto' || fn == 'photo' || fn == 'avatar') {
       return item['foto'] ?? item['photo'] ?? item['avatar'];
     }
@@ -468,6 +500,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             key == 'tipo_cliente' ||
             key == 'tipoLogin' ||
             key == 'tipo_login' ||
+            key == 'tipoEstabelecimento' ||
+            key == 'tipo_estabelecimento' ||
             key == 'diaVencimentoMensalidade' ||
             key == 'dia_vencimento_mensalidade';
         if (isScalar) {
@@ -509,6 +543,23 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       }
       if (body.containsKey('tipoLogin') && !body.containsKey('tipo_login')) {
         body['tipo_login'] = body['tipoLogin'];
+      }
+      if (body.containsKey('tipo_estabelecimento') &&
+          !body.containsKey('tipoEstabelecimento')) {
+        body['tipoEstabelecimento'] = body['tipo_estabelecimento'];
+      }
+      if (body.containsKey('tipoEstabelecimento') &&
+          !body.containsKey('tipo_estabelecimento')) {
+        body['tipo_estabelecimento'] = body['tipoEstabelecimento'];
+      }
+      final tipoEst = (body['tipoEstabelecimento'] ??
+              body['tipo_estabelecimento'])
+          ?.toString()
+          .toUpperCase();
+      if (tipoEst == 'MATRIZ') {
+        body['matriz'] = null;
+        body['matriz_id'] = null;
+        body['matrizId'] = null;
       }
 
       final isCreate = id == null;
@@ -703,6 +754,14 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     estado.addAll(_multiValues);
     for (final entry in _controllers.entries) {
       estado[entry.key] = entry.value.text;
+    }
+    if (estado.containsKey('tipo_estabelecimento') &&
+        !estado.containsKey('tipoEstabelecimento')) {
+      estado['tipoEstabelecimento'] = estado['tipo_estabelecimento'];
+    }
+    if (estado.containsKey('tipoEstabelecimento') &&
+        !estado.containsKey('tipo_estabelecimento')) {
+      estado['tipo_estabelecimento'] = estado['tipoEstabelecimento'];
     }
     return estado;
   }
@@ -1476,7 +1535,14 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                 ))
             .toList(),
         onChanged: ef.enabled
-            ? (val) => setState(() => _dropdownValues[ef.fieldName] = val)
+            ? (val) => setState(() {
+                  _dropdownValues[ef.fieldName] = val;
+                  if (ef.fieldName == 'tipo_estabelecimento') {
+                    _dropdownValues['tipoEstabelecimento'] = val;
+                  } else if (ef.fieldName == 'tipoEstabelecimento') {
+                    _dropdownValues['tipo_estabelecimento'] = val;
+                  }
+                })
             : null,
         validator: ef.isRequired
             ? (v) => v == null ? '${ef.label} é obrigatório' : null
@@ -1868,7 +1934,10 @@ class _EF {
         dropdownOptions: o.dropdownOptions
             ?.map((e) => Map<String, dynamic>.from(e as Map))
             .toList(),
-        visibleWhen: null,
+        visibleWhen: o.visibleWhen ??
+            (o.visibleWhenField != null && o.visibleWhenValue != null
+                ? '${o.visibleWhenField}==${o.visibleWhenValue}'
+                : null),
       );
 }
 

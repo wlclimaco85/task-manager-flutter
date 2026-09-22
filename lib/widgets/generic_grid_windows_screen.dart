@@ -284,6 +284,9 @@ class FieldConfigWindows {
   final String? visibleWhenField;
   final dynamic visibleWhenValue;
 
+  /// Expressão no formato '<campo>==<valor>' para controle condicional de exibição.
+  final String? visibleWhen;
+
   /// Controle granular de habilitação por modo do formulário.
   /// Quando null, usa o valor de [enabled].
   /// Útil para campos que devem ser somente-leitura no INSERT mas editáveis no EDIT
@@ -337,6 +340,7 @@ class FieldConfigWindows {
     this.fieldOrder,
     this.visibleWhenField,
     this.visibleWhenValue,
+    this.visibleWhen,
     this.enabledOnInsert,
     this.enabledOnEdit,
     this.dropdownRemoteSearch,
@@ -402,6 +406,100 @@ class CustomAction<T> {
     this.isVisible,
     this.badgeCount,
   });
+}
+
+// Ação em massa (opera sobre a lista de linhas selecionadas no grid, e não
+// sobre um único item como [CustomAction]). Usada pelo dropdown "Ações"
+// que aparece ao lado do botão "Excluir selecionados" quando o grid recebe
+// [GenericGridScreen.bulkActions] e há >=1 linha marcada.
+class BulkAction<T> {
+  final IconData icon;
+  final String label;
+
+  /// Deve tratar erro por item internamente (try/catch item a item) e nunca
+  /// deixar exceção estourar sem tratamento — quem chama ([_executeBulkAction])
+  /// só captura falha inesperada como rede fora do ar.
+  final Future<void> Function(BuildContext context, List<T> selectedItems)
+      onPressed;
+
+  /// Regra extra de habilitação (ex.: "Cancelar" só habilita se nenhuma das
+  /// selecionadas já estiver CANCELADA). Quando null, a ação fica sempre
+  /// habilitada enquanto houver seleção.
+  final bool Function(List<T> selectedItems)? isEnabled;
+
+  const BulkAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isEnabled,
+  });
+}
+
+/// Constrói o dropdown "Ações" que fica ao lado de "Excluir selecionados".
+/// Extraído como função top-level (em vez de inline em `buildPrimaryActions`)
+/// para ser testável via `pumpWidget` sem precisar montar o `GenericGridScreen`
+/// inteiro (que dispara requisição de rede em `_loadItems`).
+Widget buildBulkActionsMenuButton<T>({
+  required List<BulkAction<T>> actions,
+  required int selectedCount,
+  required List<T> selectedItems,
+  required void Function(BulkAction<T> action) onSelected,
+}) {
+  final hasSelection = selectedCount > 0;
+  return Opacity(
+    opacity: hasSelection ? 1 : 0.5,
+    child: PopupMenuButton<BulkAction<T>>(
+      enabled: hasSelection,
+      tooltip: 'Ações em massa',
+      onSelected: onSelected,
+      itemBuilder: (menuCtx) {
+        return actions.map((action) {
+          final habilitada = action.isEnabled?.call(selectedItems) ?? true;
+          return PopupMenuItem<BulkAction<T>>(
+            value: action,
+            enabled: habilitada,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  action.icon,
+                  size: 18,
+                  color: habilitada ? GridColors.primary : GridColors.divider,
+                ),
+                const SizedBox(width: 8),
+                Text(action.label),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: SizedBox(
+        height: 40,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: GridColors.divider),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.playlist_add_check,
+                size: 18,
+                color: GridColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasSelection ? 'Ações ($selectedCount)' : 'Ações',
+                style: const TextStyle(color: GridColors.primary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 // ==============================================
@@ -1903,6 +2001,12 @@ class GenericGridScreen<T> extends StatefulWidget {
   final PaginationConfig paginationConfig;
   final OnItemTap<T>? onItemTap;
   final CustomActionBuilder<T>? customActions;
+
+  /// Ações em massa exibidas num dropdown ao lado de "Excluir selecionados",
+  /// habilitado somente quando houver >=1 linha marcada. Null/vazio (default
+  /// de todas as grids que não passarem isto) = comportamento inalterado,
+  /// só com o botão "Excluir selecionados" já existente.
+  final List<BulkAction<T>>? bulkActions;
   final bool enableSearch;
   final bool enableColumnReorder;
   final bool enableColumnResize;
@@ -1972,6 +2076,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.paginationConfig = const PaginationConfig(),
     this.onItemTap,
     this.customActions,
+    this.bulkActions,
     this.enableSearch = true,
     this.enableColumnReorder = false,
     this.enableColumnResize = false,
@@ -1992,13 +2097,22 @@ class GenericGridScreen<T> extends StatefulWidget {
   });
 
   @override
-  State<GenericGridScreen<T>> createState() => _GenericGridScreenState<T>();
+  State<GenericGridScreen<T>> createState() => GenericGridScreenState<T>();
 }
 
-class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
+class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
+  void showColumnSettings() => _showColumnSettingsDialog();
+  void exportCsv() => _exportToCsv();
+  void showHelp() => _showGridHelpDialog();
+  void reload() => _loadItems(_currentPage, rowsPerPage);
+
   List<T> items = [];
   List<T> filtered = [];
   Set<String> selectedRows = {};
+  // Cache do item T por id selecionado — necessário porque `filtered` só
+  // contém a página atual; sem isto, uma seleção feita numa página some ao
+  // trocar de página e as ações em massa perderiam o item real.
+  final Map<String, T> _selectedItemsCache = {};
   int rowsPerPage = 25;
   bool filtrosAbertos = false;
   bool isLoading = false;
@@ -3420,7 +3534,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               for (final id in selectedRows) {
                 await _deleteItem(id);
               }
-              setState(() => selectedRows.clear());
+              setState(() {
+                selectedRows.clear();
+                _selectedItemsCache.clear();
+              });
             },
             style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.error,
@@ -3430,6 +3547,44 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ],
       ),
     );
+  }
+
+  /// Resolve os itens T realmente selecionados a partir do cache preenchido
+  /// em `onSelect` — cobre seleção feita em páginas diferentes da atual.
+  List<T> _selectedItemsList() =>
+      selectedRows.map((id) => _selectedItemsCache[id]).whereType<T>().toList();
+
+  /// Executa uma [BulkAction] sobre as linhas selecionadas. A ação em si é
+  /// responsável por tratar erro item a item e mostrar um resumo (ex.: "3
+  /// canceladas, 2 falharam") — este wrapper só protege contra exceção
+  /// inesperada que a ação não tenha tratado (ex.: rede fora do ar).
+  Future<void> _executeBulkAction(BulkAction<T> action) async {
+    final selected = _selectedItemsList();
+    if (selected.isEmpty) return;
+    try {
+      await action.onPressed(context, selected);
+    } catch (e, st) {
+      AppLogger.i.error(
+        'Falha inesperada ao executar ação em massa "${action.label}": $e',
+        st,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao executar "${action.label}": $e'),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          selectedRows.clear();
+          _selectedItemsCache.clear();
+        });
+        _loadItems(_currentPage, rowsPerPage);
+      }
+    }
   }
 
   Future<void> _exportToCsv() async {
@@ -4304,25 +4459,32 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             ),
           if (widget.hasPermission('deleteMultiple') &&
               widget.buttonPermissions['deleteMultiple']!)
-            OutlinedButton.icon(
-              onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
-              icon: const Icon(Icons.delete_outline, size: 18),
-              label: Text(
-                selectedRows.isEmpty
-                    ? 'Excluir selecionados'
-                    : 'Excluir (${selectedRows.length})',
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: GridColors.error,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+            SizedBox(
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: Text(
+                  selectedRows.isEmpty
+                      ? 'Excluir selecionados'
+                      : 'Excluir (${selectedRows.length})',
                 ),
-                side: const BorderSide(color: GridColors.divider),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.error,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  side: const BorderSide(color: GridColors.divider),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
+            ),
+          if (widget.bulkActions != null && widget.bulkActions!.isNotEmpty)
+            buildBulkActionsMenuButton<T>(
+              actions: widget.bulkActions!,
+              selectedCount: selectedRows.length,
+              selectedItems: _selectedItemsList(),
+              onSelected: _executeBulkAction,
             ),
           ...?widget.headerActions,
         ],
@@ -5177,14 +5339,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                           },
                           onSelect: (index, selected) {
                             setState(() {
-                              final itemMap = widget.toJson(filtered[index]);
+                              final item = filtered[index];
+                              final itemMap = widget.toJson(item);
                               final id = _getNestedValue(
                                 itemMap,
                                 widget.idFieldName,
                               ).toString();
-                              selected
-                                  ? selectedRows.add(id)
-                                  : selectedRows.remove(id);
+                              if (selected) {
+                                selectedRows.add(id);
+                                _selectedItemsCache[id] = item;
+                              } else {
+                                selectedRows.remove(id);
+                                _selectedItemsCache.remove(id);
+                              }
                             });
                             // Build list of selected row data maps
                             final selectedData = <Map<String, dynamic>>[];

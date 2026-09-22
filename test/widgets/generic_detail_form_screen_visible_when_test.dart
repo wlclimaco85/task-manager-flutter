@@ -52,5 +52,40 @@ void main() {
     test('isServico==true com isServico ausente retorna false (default false)', () {
       expect(avaliarVisibleWhen('isServico==true', {}), isFalse);
     });
+
+    test('tipo_estabelecimento==FILIAL com tipo_estabelecimento=FILIAL retorna true', () {
+      expect(
+        avaliarVisibleWhen('tipo_estabelecimento==FILIAL', {'tipo_estabelecimento': 'FILIAL'}),
+        isTrue,
+      );
+    });
+
+    test('tipo_estabelecimento==FILIAL com tipo_estabelecimento=MATRIZ retorna false', () {
+      expect(
+        avaliarVisibleWhen('tipo_estabelecimento==FILIAL', {'tipo_estabelecimento': 'MATRIZ'}),
+        isFalse,
+      );
+    });
+
+    test('tipo_estabelecimento==FILIAL resolve alias tipoEstabelecimento em camelCase', () {
+      expect(
+        avaliarVisibleWhen('tipo_estabelecimento==FILIAL', {'tipoEstabelecimento': 'FILIAL'}),
+        isTrue,
+      );
+    });
+
+    test('tipoEstabelecimento==FILIAL resolve alias tipo_estabelecimento em snake_case', () {
+      expect(
+        avaliarVisibleWhen('tipoEstabelecimento==FILIAL', {'tipo_estabelecimento': 'FILIAL'}),
+        isTrue,
+      );
+    });
+
+    test('comparacao de string eh case-insensitive (FILIAL == filial)', () {
+      expect(
+        avaliarVisibleWhen('tipo_estabelecimento==FILIAL', {'tipo_estabelecimento': 'filial'}),
+        isTrue,
+      );
+    });
   });
 }

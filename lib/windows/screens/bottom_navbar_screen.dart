@@ -108,6 +108,7 @@ import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/fornecedor_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
+import '../../windows/screens/nfse_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
 import '../../windows/screens/manifestacao_destinatario_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
@@ -155,6 +156,10 @@ import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/importacao_fiscal_automacao_screen.dart';
 import '../../widgets/sessoes_screen.dart';
 import 'certificado_empresa_screen.dart';
+import '../../web/screens/nfce_grid_screen.dart';
+import '../../web/screens/noticias_grid_screen.dart';
+import '../../web/screens/cnab_remessa_screen.dart';
+import '../../web/screens/nfse_serie_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -313,14 +318,25 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     }
   }
 
+  bool _nfceHasPermission(String permission) {
+    final matrix = SecurityMatrix.current();
+    switch (permission) {
+      case 'create':
+        return matrix.canInsert(AppScreen.nfceGrid);
+      case 'edit':
+        return matrix.canUpdate(AppScreen.nfceGrid);
+      case 'delete':
+      case 'deleteMultiple':
+        return matrix.canDelete(AppScreen.nfceGrid);
+      default:
+        return matrix.canView(AppScreen.nfceGrid);
+    }
+  }
+
   List<Widget> _buildScreens(dynamic userInfo) => [
         WindowsComunicadoGridComponentesScreen(
             hasPermission: _comunicadoHasPermission),
-        const WindowsChatMessageScreen(
-          sector: 'Financeiro',
-          userName: 'Usuário',
-          chatId: '0',
-        ),
+        WindowsChatListScreen(userName: userInfo?.email ?? 'Usuário'), // 1: Chat
         WindowsComunicadoGridComponentesScreen(
             hasPermission: _comunicadoHasPermission),
         WindowsAplicativoGridScreen(hasPermission: (permission) => true),
@@ -416,7 +432,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             repository: BacktestRepository(ApiLinks.baseUrl,
                 headers: TenantContext.jsonHeaders)), // 85: Backtest
         const WindowsNfeImportXmlScreen(), // 86: NfeImportXml
-        const SizedBox.shrink(), // 87: (vago)
+        WebNoticiasGridScreen(hasPermission: (perm) => true), // 87: Noticias
         WindowsLancamentoFinanceiroGridScreen(
             hasPermission: (perm) => true), // 88: LancamentosFinanceiros
         const ExtratoImportacaoScreen(), // 89: ImportarExtrato
@@ -529,8 +545,29 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ImportacaoFiscalAutomacaoScreen(), // 184: Importação Fiscal / Automação Fiscal
         const LoginEmpresaAcessoAprovacaoScreen(), // 185: Permissões Multi-Empresa
         const SessoesScreen(), // 186: Sessões
-        const SizedBox.shrink(), // 187: reservado
+        WebNfceGridScreen(hasPermission: _nfceHasPermission), // 187: NFC-e Cupons
         const MeuCertificadoDigitalScreen(), // 188: Certificado Digital
+        // 189-203: ainda nao implementados/replicados no Windows (paridade
+        // pendente com o menu Web, que ja vai at 203 -- fora do escopo deste
+        // card). Placeholders pra manter o alinhamento posicional de
+        // screenIndex (widgetIndex = screenIndex.clamp(0, _screens.length-1)
+        // acima), sem o que o item 204 abaixo cairia no indice errado.
+        const SizedBox.shrink(), // 189: reservado
+        const SizedBox.shrink(), // 190: reservado
+        const SizedBox.shrink(), // 191: reservado
+        const SizedBox.shrink(), // 192: reservado
+        const SizedBox.shrink(), // 193: reservado
+        const SizedBox.shrink(), // 194: reservado
+        const SizedBox.shrink(), // 195: reservado
+        const SizedBox.shrink(), // 196: reservado
+        const SizedBox.shrink(), // 197: reservado
+        const SizedBox.shrink(), // 198: reservado
+        const SizedBox.shrink(), // 199: reservado
+        const SizedBox.shrink(), // 200: reservado
+        const SizedBox.shrink(), // 201: reservado
+        const CnabRemessaScreen(), // 202: Remessa EDI
+        WebNfseSerieGridScreen(hasPermission: (perm) => true), // 203: NfseSerie
+        const WindowsNfseImportXmlScreen(), // 204: NfseImportXml
       ];
 
   String get userName {
