@@ -70,4 +70,41 @@ class SetorCaller {
       return false;
     }
   }
+
+  Future<bool> atualizarSetoresDoLogin(int loginId, List<int> setorIds) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().putRequest(
+        ApiLinks.updateSetoresLoginId(loginId),
+        setorIds,
+      );
+      if (response.isSuccess) return true;
+    } catch (e) {
+      L.d('Erro ao atualizar setores do login $loginId via PUT: $e');
+    }
+
+    // Fallback sequencial seguro caso o PUT falhe ou nao esteja disponivel
+    try {
+      final atuais = await fetchSetoresDoLogin(loginId);
+      final idsAtuais =
+          atuais.where((s) => s.id != null).map((s) => s.id!).toSet();
+      final novos = setorIds.toSet();
+
+      final paraAdicionar = novos.difference(idsAtuais);
+      final paraRemover = idsAtuais.difference(novos);
+
+      bool ok = true;
+      for (final id in paraAdicionar) {
+        final res = await associarSetorAoLogin(loginId, id);
+        if (!res) ok = false;
+      }
+      for (final id in paraRemover) {
+        final res = await removerSetorDoLogin(loginId, id);
+        if (!res) ok = false;
+      }
+      return ok;
+    } catch (e) {
+      L.d('Erro no fallback de sincronizacao de setores: $e');
+      return false;
+    }
+  }
 }

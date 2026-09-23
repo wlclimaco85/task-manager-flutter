@@ -740,6 +740,9 @@ class ApiLinks {
   static String removeSetorFromLogin(int loginId, int setorId) =>
       '$_baseUrlNew/api/login/$loginId/setores/$setorId';
 
+  static String updateSetoresLoginId(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/setores';
+
   static String fecharChamados(String id) => "$_baseUrlNew/chamados/$id/fechar";
 
   static String chatByEmpesaId(String id) => '$_baseUrlNew/api/chat/chat/$id';
