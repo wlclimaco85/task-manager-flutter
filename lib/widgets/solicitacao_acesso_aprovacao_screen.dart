@@ -504,7 +504,7 @@ class _WizardInfo extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(
-                color: GridColors.textPrimary,
+                color: GridColors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),

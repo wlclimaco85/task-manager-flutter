@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:task_manager_flutter/constants/custom_colors.dart';
 import 'package:task_manager_flutter/widgets/solicitacao_acesso_aprovacao_screen.dart';
 
 void main() {
@@ -77,6 +78,14 @@ void main() {
       expect(find.text('Perfil de acesso'), findsOneWidget);
       expect(find.text('CLIENTE'), findsOneWidget);
       expect(find.text('Abraco Contabilidade'), findsWidgets);
+      final solicitanteNoDialog = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Maria Cliente'),
+      );
+      expect(
+        tester.widget<Text>(solicitanteNoDialog).style?.color,
+        GridColors.textSecondary,
+      );
       expect(aprovacaoEnviada, isFalse);
 
       await tester.tap(find.text('Continuar'));
