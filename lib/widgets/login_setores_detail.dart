@@ -144,7 +144,7 @@ class _LoginSetoresDetailState extends State<LoginSetoresDetail> {
     final loginId = widget.loginId;
     if (loginId == null || loginId <= 0) return;
 
-    final atualizado = await showDialog<bool>(
+    final atualizado = await showDialog<dynamic>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => _VincularSetoresDialog(
@@ -157,8 +157,15 @@ class _LoginSetoresDetailState extends State<LoginSetoresDetail> {
       ),
     );
 
-    if (atualizado == true && mounted) {
-      _recarregar();
+    if (atualizado != null && mounted) {
+      if (atualizado is List<Setor>) {
+        setState(() {
+          _vinculados = List.of(atualizado)
+            ..sort((a, b) => (a.nome ?? '').compareTo(b.nome ?? ''));
+          _erro = null;
+        });
+      }
+      await _recarregar();
     }
   }
 
@@ -186,7 +193,7 @@ class _LoginSetoresDetailState extends State<LoginSetoresDetail> {
                 'Setores vinculados',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: GridColors.textPrimary,
+                      color: GridColors.textSecondary,
                     ),
               ),
               const SizedBox(width: 8),
@@ -494,7 +501,10 @@ class _VincularSetoresDialogState extends State<_VincularSetoresDialog> {
           backgroundColor: GridColors.success,
         ),
       );
-      Navigator.of(context).pop(true);
+      final selecionadosObjetos = _todosSetores
+          .where((s) => s.id != null && _selecionados.contains(s.id!))
+          .toList();
+      Navigator.of(context).pop(selecionadosObjetos);
     } else {
       setState(() {
         _salvando = false;

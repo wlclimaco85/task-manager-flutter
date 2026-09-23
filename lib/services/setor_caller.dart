@@ -3,10 +3,41 @@ import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 
 import '../models/setor_model.dart';
-
-
 import 'package:task_manager_flutter/utils/app_logger.dart';
+
 class SetorCaller {
+  List<Setor> _extrairListaSetores(dynamic body) {
+    if (body == null) return [];
+    if (body is List) {
+      return body
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              return Setor.fromJson(item);
+            } else if (item is Map) {
+              return Setor.fromJson(Map<String, dynamic>.from(item));
+            }
+            return null;
+          })
+          .whereType<Setor>()
+          .toList();
+    }
+    if (body is Map) {
+      final rawData =
+          body['data'] ?? body['content'] ?? body['dados'] ?? body['items'];
+      if (rawData is List) {
+        return _extrairListaSetores(rawData);
+      }
+      if (rawData is Map) {
+        final rawInner =
+            rawData['dados'] ?? rawData['content'] ?? rawData['items'];
+        if (rawInner is List) {
+          return _extrairListaSetores(rawInner);
+        }
+      }
+    }
+    return [];
+  }
+
   Future<List<Setor>> fetchAllSetores() async {
     List<Setor> list = [];
     try {
@@ -15,8 +46,7 @@ class SetorCaller {
       );
 
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']['dados'] ?? [];
-        list = (data as List).map((item) => Setor.fromJson(item)).toList();
+        list = _extrairListaSetores(response.body);
       }
     } catch (e) {
       L.d('Erro ao carregar setores: $e');
@@ -37,12 +67,25 @@ class SetorCaller {
         ApiLinks.getSetoresLoginId(loginId),
       );
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']['dados'] ?? response.body!['data'] ?? [];
-        list = (data as List).map((item) => Setor.fromJson(item)).toList();
+        list = _extrairListaSetores(response.body);
       }
     } catch (e) {
-      L.d('Erro ao carregar setores do login $loginId: $e');
+      L.d('Erro ao carregar setores do login $loginId via getSetoresLoginId: $e');
     }
+
+    if (list.isEmpty) {
+      try {
+        final NetworkResponse responseAlt = await NetworkCaller().getRequest(
+          '${ApiLinks.allSetores}?loginId=$loginId',
+        );
+        if (responseAlt.isSuccess && responseAlt.body != null) {
+          list = _extrairListaSetores(responseAlt.body);
+        }
+      } catch (e) {
+        L.d('Erro ao carregar setores do login $loginId via allSetores?loginId: $e');
+      }
+    }
+
     return list;
   }
 

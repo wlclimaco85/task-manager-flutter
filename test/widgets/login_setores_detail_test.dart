@@ -184,4 +184,49 @@ void main() {
 
     expect(desvinculadoId, equals(1));
   });
+
+  testWidgets('apos salvar vinculos no modal a grid atualiza e exibe os setores vinculados',
+      (tester) async {
+    final todosSetores = [
+      Setor(id: 1, nome: 'Departamento Fiscal', responsavel: 'Carlos', ramal: '101'),
+      Setor(id: 2, nome: 'Recursos Humanos', responsavel: 'Mariana', ramal: '103'),
+    ];
+    List<Setor> vinculadosRemotos = [];
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LoginSetoresDetail(
+          loginId: 814,
+          carregarSetores: () async => todosSetores,
+          carregarSetoresDoLogin: (_) async => vinculadosRemotos,
+          salvarSetores: (_, ids) async {
+            vinculadosRemotos = todosSetores.where((s) => ids.contains(s.id)).toList();
+            return true;
+          },
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Começa com empty state
+    expect(find.text('Nenhum setor vinculado'), findsOneWidget);
+
+    // Clica em vincular setores
+    await tester.tap(find.text('Vincular setores'));
+    await tester.pumpAndSettle();
+
+    // Clica em 'Selecionar todos'
+    await tester.tap(find.text('Selecionar todos'));
+    await tester.pump();
+
+    // Clica em 'Salvar vínculos'
+    await tester.tap(find.text('Salvar vínculos'));
+    await tester.pumpAndSettle();
+
+    // Grid deve agora exibir os 2 setores vinculados!
+    expect(find.text('Nenhum setor vinculado'), findsNothing);
+    expect(find.text('Departamento Fiscal'), findsOneWidget);
+    expect(find.text('Recursos Humanos'), findsOneWidget);
+    expect(find.text('Mariana'), findsOneWidget);
+  });
 }
