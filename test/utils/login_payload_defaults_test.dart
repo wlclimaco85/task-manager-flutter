@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/aplicativo_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
+import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/utils/login_payload_defaults.dart';
 import 'package:task_manager_flutter/web/screens/login_grid_screen.dart';
 
@@ -63,10 +64,23 @@ void main() {
     expect(payload['ativo'], isTrue);
   });
 
-  test('nao inventa tipoLogin quando a sessao nao informa o valor', () {
+  test('assume tipoLogin seguro (APP_CONTABILIDADE) quando a sessao nao informa o valor', () {
     final payload = buildLoginAdditionalFormData();
 
-    expect(payload.containsKey('tipoLogin'), isFalse);
+    expect(payload['tipoLogin'], LoginEnum.APP_CONTABILIDADE.value);
     expect(payload['aplicativo'], {'id': 1});
   });
+
+  test('assume tipoLogin de parceiro (APP_ABRACO) quando sessao e de parceiro sem tipoLogin explicito', () {
+    AuthUtility.userInfo = LoginModel(
+      login: Login(
+        parceiro: Parceiro(id: 10),
+      ),
+    );
+
+    final payload = buildLoginAdditionalFormData();
+
+    expect(payload['tipoLogin'], LoginEnum.APP_ABRACO.value);
+  });
 }
+
