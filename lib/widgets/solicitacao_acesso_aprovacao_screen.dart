@@ -44,29 +44,7 @@ class _SolicitacaoAcessoAprovacaoScreenState
   Future<void> _confirmarAprovar(SolicitacaoAcessoItem item) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: GridColors.success),
-            const SizedBox(width: 8),
-            const Text('Aprovar acesso'),
-          ],
-        ),
-        content: Text(
-            'Aprovar acesso de ${item.nome}? Um novo login será criado com o email ${item.email}.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: GridColors.success),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Aprovar'),
-          ),
-        ],
-      ),
+      builder: (_) => _AprovacaoWizardDialog(item: item),
     );
     if (confirmar != true) return;
     await _executar(item, aprovar: true);
@@ -301,9 +279,13 @@ class _SolicitacaoAcessoAprovacaoScreenState
   Widget _buildChipDestino(SolicitacaoAcessoItem item) {
     final filaEscritorio = item.destinoFilaEscritorio;
     return Chip(
-      label: Text(
-        filaEscritorio ? 'Fila do escritório' : 'Usuário do CNPJ',
-        style: const TextStyle(fontSize: 11),
+      label: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          item.destinoNome,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 11),
+        ),
       ),
       backgroundColor: filaEscritorio
           ? GridColors.warning.withValues(alpha: 0.15)
@@ -334,5 +316,138 @@ class _SolicitacaoAcessoAprovacaoScreenState
     if (dt == null) return '-';
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _AprovacaoWizardDialog extends StatefulWidget {
+  const _AprovacaoWizardDialog({required this.item});
+
+  final SolicitacaoAcessoItem item;
+
+  @override
+  State<_AprovacaoWizardDialog> createState() => _AprovacaoWizardDialogState();
+}
+
+class _AprovacaoWizardDialogState extends State<_AprovacaoWizardDialog> {
+  int _etapa = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final confirmacao = _etapa == 1;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      title: Row(
+        children: [
+          const Icon(Icons.how_to_reg, color: GridColors.success),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+                confirmacao ? 'Confirmar aprovacao' : 'Revisar solicitacao'),
+          ),
+          Text(
+            '${_etapa + 1}/2',
+            style: const TextStyle(
+              fontSize: 12,
+              color: GridColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(
+              value: (_etapa + 1) / 2,
+              color: GridColors.success,
+              backgroundColor: GridColors.disabledBackground,
+              minHeight: 3,
+            ),
+            const SizedBox(height: 20),
+            if (!confirmacao) ...[
+              _WizardInfo(label: 'Solicitante', value: item.nome),
+              _WizardInfo(label: 'Email', value: item.email),
+              _WizardInfo(label: 'Destino', value: item.destinoNome),
+              const _WizardInfo(label: 'Perfil de acesso', value: 'CLIENTE'),
+            ] else ...[
+              const Text(
+                'O login sera criado com os dados abaixo:',
+                style: TextStyle(color: GridColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              _WizardInfo(label: 'Cliente', value: item.nome),
+              _WizardInfo(label: 'Destino', value: item.destinoNome),
+              const _WizardInfo(label: 'Role fixa', value: 'CLIENTE'),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        if (confirmacao)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _etapa = 0),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Voltar'),
+          ),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: GridColors.success),
+          onPressed: confirmacao
+              ? () => Navigator.pop(context, true)
+              : () => setState(() => _etapa = 1),
+          icon: Icon(confirmacao ? Icons.check : Icons.arrow_forward, size: 18),
+          label: Text(confirmacao ? 'Aprovar cliente' : 'Continuar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WizardInfo extends StatelessWidget {
+  const _WizardInfo({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 128,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: GridColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: GridColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -11,8 +11,12 @@ class SolicitacaoAcessoItem {
   final String nome;
   final String email;
   final String cpfCnpj;
+  final String cpfSolicitante;
   final String status;
   final int? parceiroIdResolvido;
+  final String? parceiroNomeResolvido;
+  final int? empresaIdResolvida;
+  final String? empresaNomeResolvida;
   final DateTime? dataCriacao;
 
   SolicitacaoAcessoItem({
@@ -20,12 +24,25 @@ class SolicitacaoAcessoItem {
     required this.nome,
     required this.email,
     required this.cpfCnpj,
+    required this.cpfSolicitante,
     required this.status,
     this.parceiroIdResolvido,
+    this.parceiroNomeResolvido,
+    this.empresaIdResolvida,
+    this.empresaNomeResolvida,
     this.dataCriacao,
   });
 
-  bool get destinoFilaEscritorio => parceiroIdResolvido == null;
+  bool get destinoFilaEscritorio =>
+      parceiroIdResolvido == null && empresaIdResolvida == null;
+
+  String get destinoNome {
+    final parceiro = parceiroNomeResolvido?.trim();
+    if (parceiro != null && parceiro.isNotEmpty) return parceiro;
+    final empresa = empresaNomeResolvida?.trim();
+    if (empresa != null && empresa.isNotEmpty) return empresa;
+    return 'Fila do escritorio';
+  }
 
   factory SolicitacaoAcessoItem.fromJson(Map<String, dynamic> json) {
     return SolicitacaoAcessoItem(
@@ -33,8 +50,12 @@ class SolicitacaoAcessoItem {
       nome: json['nome']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       cpfCnpj: json['cpfCnpj']?.toString() ?? '',
+      cpfSolicitante: json['cpfSolicitante']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PENDENTE',
       parceiroIdResolvido: json['parceiroIdResolvido'] as int?,
+      parceiroNomeResolvido: json['parceiroNomeResolvido']?.toString(),
+      empresaIdResolvida: json['empresaIdResolvida'] as int?,
+      empresaNomeResolvida: json['empresaNomeResolvida']?.toString(),
       dataCriacao: DateTime.tryParse(json['dataCriacao']?.toString() ?? ''),
     );
   }
@@ -90,14 +111,16 @@ class SolicitacaoAcessoCaller {
 
   static Future<SolicitacaoAcessoActionResult> aprovar(int id) async {
     return _executarAcao(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
+      Uri.parse(
+          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
       acaoLabel: 'aprovar',
     );
   }
 
   static Future<SolicitacaoAcessoActionResult> rejeitar(int id) async {
     return _executarAcao(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id))),
+      Uri.parse(
+          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id))),
       acaoLabel: 'rejeitar',
     );
   }
