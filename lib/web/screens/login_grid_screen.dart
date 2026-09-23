@@ -5,6 +5,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart'
     hide SecurityCheck;
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/login_payload_defaults.dart';
 import '../../../services/network_caller.dart';
 import '../../web/screens/details/login_detail_screen.dart';
 import '../../web/screens/role_dialog.dart';
@@ -61,10 +62,8 @@ class WebLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static const Map<String, dynamic> additionalFormData = {
-    'trocarSenhaProximoLogin': true,
-    'aplicativo': {'id': 1},
-  };
+  static Map<String, dynamic> get additionalFormData =>
+      buildLoginAdditionalFormData();
 
   static const List<FieldConfigWindows> loginHiddenFields = [
     FieldConfigWindows(label: 'Tipo Login', fieldName: 'tipoLogin', isInForm: false, isInGrid: false),

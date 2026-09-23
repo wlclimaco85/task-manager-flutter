@@ -10,6 +10,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldType, FieldConfigWindows;
 import '../../../services/network_caller.dart';
 import '../../../widgets/login_empresas_acesso_detail.dart';
+import '../../../widgets/login_setores_detail.dart';
 
 class WebLoginDetailScreen extends StatelessWidget {
   final Login item;
@@ -329,14 +330,7 @@ class WebLoginDetailScreen extends StatelessWidget {
         RelatedGridTab(
           title: 'Setores',
           icon: Icons.business_center,
-          telaNome: 'setor',
-          extraParams: {
-            'loginId': loginId,
-            'empresaId': empresaId,
-            'parceiroId': parceiroId
-          },
-          deleteEndpointOverride:
-              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
+          customWidget: LoginSetoresDetail(loginId: item.id),
         ),
         RelatedGridTab(
           title: 'Chamados',

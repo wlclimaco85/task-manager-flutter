@@ -1,18 +1,37 @@
 fastlane_version "2.0.0"
 
+def app_root
+  File.expand_path("..", __dir__)
+end
+
+def app_path(path)
+  File.expand_path(path, app_root)
+end
+
 def flutter_version
-  pubspec = File.read("../pubspec.yaml")
+  pubspec = File.read(app_path("pubspec.yaml"))
   version_line = pubspec.match(/^version:\s*(.+)/)
   raise "Versão não encontrada no pubspec.yaml" unless version_line
   parts = version_line[1].strip.split("+")
   {
-    name: ENV["FLUTTER_BUILD_NAME"] || parts[0],
-    build: ENV["FLUTTER_BUILD_NUMBER"] || parts[1] || "1"
+    name: ENV["APP_BUILD_NAME"] || ENV["FLUTTER_BUILD_NAME"] || parts[0],
+    build: ENV["APP_BUILD_NUMBER"] || ENV["FLUTTER_BUILD_NUMBER"] || parts[1] || "1"
   }
 end
 
 def flutter(args)
-  sh("flutter #{args}")
+  reserved_flutter_env = {
+    "FLUTTER_BUILD_NAME" => ENV.delete("FLUTTER_BUILD_NAME"),
+    "FLUTTER_BUILD_NUMBER" => ENV.delete("FLUTTER_BUILD_NUMBER")
+  }
+
+  Dir.chdir(app_root) do
+    sh("flutter #{args}")
+  end
+ensure
+  reserved_flutter_env.each do |key, value|
+    ENV[key] = value unless value.nil?
+  end
 end
 
 def railway_backend_url
@@ -21,6 +40,10 @@ end
 
 def railway_ws_url
   ENV["WS_BACKEND_URL"] || "wss://appacademia-production-be7e.up.railway.app/boletobancos"
+end
+
+def railway_backend_context_path
+  ENV["BACKEND_CONTEXT_PATH"] || ""
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +171,7 @@ platform :android do
   desc "Build e upload para Google Play (internal track)"
   lane :beta do
     ver = flutter_version
-    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
+    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url} --dart-define=BACKEND_CONTEXT_PATH=#{railway_backend_context_path}")
     upload_to_play_store(
       track:                "internal",
       aab:                  "build/app/outputs/bundle/release/app-release.aab",
@@ -162,7 +185,7 @@ platform :android do
   desc "Build e publicação no Google Play (production)"
   lane :release do
     ver = flutter_version
-    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url}")
+    flutter("build appbundle --release --build-name=#{ver[:name]} --build-number=#{ver[:build]} --dart-define=BACKEND_URL=#{railway_backend_url} --dart-define=WS_BACKEND_URL=#{railway_ws_url} --dart-define=BACKEND_CONTEXT_PATH=#{railway_backend_context_path}")
     upload_to_play_store(
       track:                   "production",
       aab:                     "build/app/outputs/bundle/release/app-release.aab",

@@ -42,34 +42,27 @@ class _SolicitacaoAcessoAprovacaoScreenState
   }
 
   Future<void> _confirmarAprovar(SolicitacaoAcessoItem item) async {
-    final confirmar = await showDialog<bool>(
+    setState(() => _processando.add(item.id));
+    final setores = await SolicitacaoAcessoCaller.listarSetores();
+    if (!mounted) return;
+    setState(() => _processando.remove(item.id));
+
+    if (setores == null || setores.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: GridColors.error,
+        content: Text(setores == null
+            ? 'Nao foi possivel carregar os setores.'
+            : 'Nenhum setor cadastrado para vincular ao cliente.'),
+      ));
+      return;
+    }
+
+    final setorIds = await showDialog<List<int>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: GridColors.success),
-            const SizedBox(width: 8),
-            const Text('Aprovar acesso'),
-          ],
-        ),
-        content: Text(
-            'Aprovar acesso de ${item.nome}? Um novo login será criado com o email ${item.email}.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: GridColors.success),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Aprovar'),
-          ),
-        ],
-      ),
+      builder: (_) => _AprovacaoWizardDialog(item: item, setores: setores),
     );
-    if (confirmar != true) return;
-    await _executar(item, aprovar: true);
+    if (setorIds == null || setorIds.isEmpty) return;
+    await _executar(item, aprovar: true, setorIds: setorIds);
   }
 
   Future<void> _confirmarRejeitar(SolicitacaoAcessoItem item) async {
@@ -103,10 +96,10 @@ class _SolicitacaoAcessoAprovacaoScreenState
   }
 
   Future<void> _executar(SolicitacaoAcessoItem item,
-      {required bool aprovar}) async {
+      {required bool aprovar, List<int> setorIds = const []}) async {
     setState(() => _processando.add(item.id));
     final resultado = aprovar
-        ? await SolicitacaoAcessoCaller.aprovar(item.id)
+        ? await SolicitacaoAcessoCaller.aprovar(item.id, setorIds)
         : await SolicitacaoAcessoCaller.rejeitar(item.id);
     if (!mounted) return;
 
@@ -301,9 +294,13 @@ class _SolicitacaoAcessoAprovacaoScreenState
   Widget _buildChipDestino(SolicitacaoAcessoItem item) {
     final filaEscritorio = item.destinoFilaEscritorio;
     return Chip(
-      label: Text(
-        filaEscritorio ? 'Fila do escritório' : 'Usuário do CNPJ',
-        style: const TextStyle(fontSize: 11),
+      label: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          item.destinoNome,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 11),
+        ),
       ),
       backgroundColor: filaEscritorio
           ? GridColors.warning.withValues(alpha: 0.15)
@@ -334,5 +331,186 @@ class _SolicitacaoAcessoAprovacaoScreenState
     if (dt == null) return '-';
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _AprovacaoWizardDialog extends StatefulWidget {
+  const _AprovacaoWizardDialog({required this.item, required this.setores});
+
+  final SolicitacaoAcessoItem item;
+  final List<SolicitacaoAcessoSetor> setores;
+
+  @override
+  State<_AprovacaoWizardDialog> createState() => _AprovacaoWizardDialogState();
+}
+
+class _AprovacaoWizardDialogState extends State<_AprovacaoWizardDialog> {
+  int _etapa = 0;
+  final Set<int> _setorIds = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final selecionandoSetores = _etapa == 1;
+    final confirmacao = _etapa == 2;
+    final titulo = switch (_etapa) {
+      0 => 'Revisar solicitacao',
+      1 => 'Selecionar setores',
+      _ => 'Confirmar aprovacao',
+    };
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      title: Row(
+        children: [
+          const Icon(Icons.how_to_reg, color: GridColors.success),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(titulo),
+          ),
+          Text(
+            '${_etapa + 1}/3',
+            style: const TextStyle(
+              fontSize: 12,
+              color: GridColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(
+              value: (_etapa + 1) / 3,
+              color: GridColors.success,
+              backgroundColor: GridColors.disabledBackground,
+              minHeight: 3,
+            ),
+            const SizedBox(height: 20),
+            if (_etapa == 0) ...[
+              _WizardInfo(label: 'Solicitante', value: item.nome),
+              _WizardInfo(label: 'Email', value: item.email),
+              _WizardInfo(label: 'Destino', value: item.destinoNome),
+              const _WizardInfo(label: 'Perfil de acesso', value: 'CLIENTE'),
+            ] else if (selecionandoSetores) ...[
+              const Text(
+                'Selecione ao menos um setor para o novo login:',
+                style: TextStyle(color: GridColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 260),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: widget.setores.length,
+                  itemBuilder: (context, index) {
+                    final setor = widget.setores[index];
+                    final selecionado = _setorIds.contains(setor.id);
+                    return CheckboxListTile(
+                      value: selecionado,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: GridColors.success,
+                      title: Text(setor.descricao),
+                      onChanged: (value) => setState(() {
+                        if (value == true) {
+                          _setorIds.add(setor.id);
+                        } else {
+                          _setorIds.remove(setor.id);
+                        }
+                      }),
+                    );
+                  },
+                ),
+              ),
+            ] else ...[
+              const Text(
+                'O login sera criado com os dados abaixo:',
+                style: TextStyle(color: GridColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              _WizardInfo(label: 'Cliente', value: item.nome),
+              _WizardInfo(label: 'Destino', value: item.destinoNome),
+              const _WizardInfo(label: 'Role fixa', value: 'CLIENTE'),
+              _WizardInfo(
+                label: 'Setores',
+                value: widget.setores
+                    .where((setor) => _setorIds.contains(setor.id))
+                    .map((setor) => setor.descricao)
+                    .join(', '),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        if (_etapa > 0)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _etapa--),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Voltar'),
+          ),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: GridColors.success),
+          onPressed: confirmacao
+              ? () => Navigator.pop(context, _setorIds.toList())
+              : selecionandoSetores && _setorIds.isEmpty
+                  ? null
+                  : () => setState(() => _etapa++),
+          icon: Icon(confirmacao ? Icons.check : Icons.arrow_forward, size: 18),
+          label: Text(confirmacao ? 'Aprovar cliente' : 'Continuar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WizardInfo extends StatelessWidget {
+  const _WizardInfo({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 128,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: GridColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: GridColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

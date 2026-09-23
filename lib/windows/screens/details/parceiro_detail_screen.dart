@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../models/login_model.dart' show LoginEnum;
 import '../../../utils/dropdown_helpers.dart';
 import '../../../web/screens/login_grid_screen.dart' show WebLoginGridScreen;
 import '../../../web/screens/comunicado_componente_screen.dart'
@@ -174,7 +175,10 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'parcId': id, 'empresaId': empresaId},
-          additionalFormData: WebLoginGridScreen.additionalFormData,
+          additionalFormData: {
+            ...WebLoginGridScreen.additionalFormData,
+            'tipoLogin': LoginEnum.APP_ABRACO.value,
+          },
           // Fix card #427 (reincidencia): faltavam os overrides de Foto
           // (FieldType.file) e Roles (multiselect) que a tela direta ja
           // usa via fieldOverrides(). Sem eles o form aqui dentro de

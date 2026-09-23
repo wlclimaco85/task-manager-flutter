@@ -4822,12 +4822,11 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           }
         }
 
-        // Renderiza listas (ex: roles) como chips coloridos
+        // Renderiza listas (ex: roles) como chips coloridos em linha única, sem overflow vertical
         if (displayValue is List && displayValue.isNotEmpty) {
-          final chips = displayValue.map((e) {
-            String label = '';
+          final stringLabels = displayValue.map((e) {
             if (e is Map) {
-              label = (e['description'] ??
+              return (e['description'] ??
                           e['nome'] ??
                           e['name'] ??
                           e['label'] ??
@@ -4835,40 +4834,77 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                           e['id'])
                       ?.toString() ??
                   '';
-            } else {
-              label = e.toString();
             }
-            return Container(
-              margin: const EdgeInsets.only(right: 3, bottom: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: GridColors.success,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+            return e.toString();
+          }).where((s) => s.isNotEmpty).toList();
+
+          final int totalItems = stringLabels.length;
+          final int maxVisible = totalItems <= 2 ? totalItems : 1;
+          final visibleLabels = stringLabels.take(maxVisible).toList();
+          final int remaining = totalItems - maxVisible;
+
+          final visibleWidgets = <Widget>[];
+          for (final lbl in visibleLabels) {
+            visibleWidgets.add(
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  constraints: BoxConstraints(
+                    maxWidth: totalItems == 1 ? 220 : 120,
+                  ),
+                  decoration: BoxDecoration(
+                    color: GridColors.success,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    lbl,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             );
-          }).toList();
+          }
+
+          if (remaining > 0) {
+            visibleWidgets.add(
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: GridColors.textSecondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '+$remaining',
+                  style: const TextStyle(
+                    color: GridColors.textSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            );
+          }
 
           cells.add(DataCell(
             Tooltip(
-              message: displayValue.map((e) {
-                if (e is Map)
-                  return (e['description'] ?? e['nome'] ?? e['name'] ?? e['id'])
-                          ?.toString() ??
-                      '';
-                return e.toString();
-              }).join(', '),
-              child: Wrap(
-                spacing: 2,
-                runSpacing: 2,
-                children: chips,
+              message: stringLabels.join(', '),
+              child: ClipRect(
+                child: SizedBox(
+                  height: 26,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: visibleWidgets,
+                  ),
+                ),
               ),
             ),
             onTap: widget.onItemTap != null

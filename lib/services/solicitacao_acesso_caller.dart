@@ -11,8 +11,12 @@ class SolicitacaoAcessoItem {
   final String nome;
   final String email;
   final String cpfCnpj;
+  final String cpfSolicitante;
   final String status;
   final int? parceiroIdResolvido;
+  final String? parceiroNomeResolvido;
+  final int? empresaIdResolvida;
+  final String? empresaNomeResolvida;
   final DateTime? dataCriacao;
 
   SolicitacaoAcessoItem({
@@ -20,12 +24,25 @@ class SolicitacaoAcessoItem {
     required this.nome,
     required this.email,
     required this.cpfCnpj,
+    required this.cpfSolicitante,
     required this.status,
     this.parceiroIdResolvido,
+    this.parceiroNomeResolvido,
+    this.empresaIdResolvida,
+    this.empresaNomeResolvida,
     this.dataCriacao,
   });
 
-  bool get destinoFilaEscritorio => parceiroIdResolvido == null;
+  bool get destinoFilaEscritorio =>
+      parceiroIdResolvido == null && empresaIdResolvida == null;
+
+  String get destinoNome {
+    final parceiro = parceiroNomeResolvido?.trim();
+    if (parceiro != null && parceiro.isNotEmpty) return parceiro;
+    final empresa = empresaNomeResolvida?.trim();
+    if (empresa != null && empresa.isNotEmpty) return empresa;
+    return 'Fila do escritorio';
+  }
 
   factory SolicitacaoAcessoItem.fromJson(Map<String, dynamic> json) {
     return SolicitacaoAcessoItem(
@@ -33,9 +50,27 @@ class SolicitacaoAcessoItem {
       nome: json['nome']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       cpfCnpj: json['cpfCnpj']?.toString() ?? '',
+      cpfSolicitante: json['cpfSolicitante']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PENDENTE',
       parceiroIdResolvido: json['parceiroIdResolvido'] as int?,
+      parceiroNomeResolvido: json['parceiroNomeResolvido']?.toString(),
+      empresaIdResolvida: json['empresaIdResolvida'] as int?,
+      empresaNomeResolvida: json['empresaNomeResolvida']?.toString(),
       dataCriacao: DateTime.tryParse(json['dataCriacao']?.toString() ?? ''),
+    );
+  }
+}
+
+class SolicitacaoAcessoSetor {
+  final int id;
+  final String descricao;
+
+  const SolicitacaoAcessoSetor({required this.id, required this.descricao});
+
+  factory SolicitacaoAcessoSetor.fromJson(Map<String, dynamic> json) {
+    return SolicitacaoAcessoSetor(
+      id: json['id'] as int,
+      descricao: json['descricao']?.toString() ?? '',
     );
   }
 }
@@ -88,16 +123,42 @@ class SolicitacaoAcessoCaller {
     }
   }
 
-  static Future<SolicitacaoAcessoActionResult> aprovar(int id) async {
+  static Future<List<SolicitacaoAcessoSetor>?> listarSetores() async {
+    try {
+      final url =
+          TenantContext.applyToUrl('${ApiLinks.allSetores}?tamanho=200');
+      final response = await http.get(Uri.parse(url), headers: _authHeaders);
+      if (response.statusCode != 200) return null;
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'];
+      final dados = data is Map ? data['dados'] : null;
+      if (dados is! List) return null;
+      return dados
+          .whereType<Map>()
+          .map((e) =>
+              SolicitacaoAcessoSetor.fromJson(Map<String, dynamic>.from(e)))
+          .where((setor) => setor.descricao.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<SolicitacaoAcessoActionResult> aprovar(
+      int id, List<int> setorIds) async {
     return _executarAcao(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
+      Uri.parse(
+          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
       acaoLabel: 'aprovar',
+      body: {'setorIds': setorIds},
     );
   }
 
   static Future<SolicitacaoAcessoActionResult> rejeitar(int id) async {
     return _executarAcao(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id))),
+      Uri.parse(
+          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id))),
       acaoLabel: 'rejeitar',
     );
   }
@@ -105,9 +166,16 @@ class SolicitacaoAcessoCaller {
   static Future<SolicitacaoAcessoActionResult> _executarAcao(
     Uri url, {
     required String acaoLabel,
+    Map<String, dynamic>? body,
   }) async {
     try {
-      final response = await http.post(url, headers: _authHeaders);
+      final headers = Map<String, String>.from(_authHeaders);
+      if (body != null) headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body == null ? null : jsonEncode(body),
+      );
       if (response.statusCode == 200) {
         return const SolicitacaoAcessoActionResult.ok();
       }
