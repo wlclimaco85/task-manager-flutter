@@ -61,6 +61,20 @@ class SolicitacaoAcessoItem {
   }
 }
 
+class SolicitacaoAcessoSetor {
+  final int id;
+  final String descricao;
+
+  const SolicitacaoAcessoSetor({required this.id, required this.descricao});
+
+  factory SolicitacaoAcessoSetor.fromJson(Map<String, dynamic> json) {
+    return SolicitacaoAcessoSetor(
+      id: json['id'] as int,
+      descricao: json['descricao']?.toString() ?? '',
+    );
+  }
+}
+
 /// Resultado de uma acao (aprovar/rejeitar). [conflito] = true quando o
 /// backend respondeu 404 (outra pessoa ja decidiu a solicitacao antes).
 class SolicitacaoAcessoActionResult {
@@ -109,11 +123,35 @@ class SolicitacaoAcessoCaller {
     }
   }
 
-  static Future<SolicitacaoAcessoActionResult> aprovar(int id) async {
+  static Future<List<SolicitacaoAcessoSetor>?> listarSetores() async {
+    try {
+      final url =
+          TenantContext.applyToUrl('${ApiLinks.allSetores}?tamanho=200');
+      final response = await http.get(Uri.parse(url), headers: _authHeaders);
+      if (response.statusCode != 200) return null;
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'];
+      final dados = data is Map ? data['dados'] : null;
+      if (dados is! List) return null;
+      return dados
+          .whereType<Map>()
+          .map((e) =>
+              SolicitacaoAcessoSetor.fromJson(Map<String, dynamic>.from(e)))
+          .where((setor) => setor.descricao.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<SolicitacaoAcessoActionResult> aprovar(
+      int id, List<int> setorIds) async {
     return _executarAcao(
       Uri.parse(
           TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
       acaoLabel: 'aprovar',
+      body: {'setorIds': setorIds},
     );
   }
 
@@ -128,9 +166,16 @@ class SolicitacaoAcessoCaller {
   static Future<SolicitacaoAcessoActionResult> _executarAcao(
     Uri url, {
     required String acaoLabel,
+    Map<String, dynamic>? body,
   }) async {
     try {
-      final response = await http.post(url, headers: _authHeaders);
+      final headers = Map<String, String>.from(_authHeaders);
+      if (body != null) headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body == null ? null : jsonEncode(body),
+      );
       if (response.statusCode == 200) {
         return const SolicitacaoAcessoActionResult.ok();
       }

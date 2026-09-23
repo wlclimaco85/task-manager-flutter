@@ -14,7 +14,22 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     var aprovacaoEnviada = false;
+    List<dynamic>? setoresEnviados;
     final client = MockClient((request) async {
+      if (request.method == 'GET' && request.url.path.endsWith('/api/setor')) {
+        return http.Response(
+          jsonEncode({
+            'data': {
+              'dados': [
+                {'id': 7, 'descricao': 'Financeiro'},
+                {'id': 8, 'descricao': 'Departamento Fiscal'}
+              ]
+            }
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
       if (request.method == 'GET') {
         return http.Response(
           jsonEncode({
@@ -41,6 +56,8 @@ void main() {
       if (request.method == 'POST' &&
           request.url.path.endsWith('/solicitacao-acesso/91/aprovar')) {
         aprovacaoEnviada = true;
+        setoresEnviados = (jsonDecode(request.body)
+            as Map<String, dynamic>)['setorIds'] as List<dynamic>;
         return http.Response('{}', 200);
       }
       return http.Response('Nao esperado', 500);
@@ -65,14 +82,31 @@ void main() {
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Selecionar setores'), findsOneWidget);
+      expect(find.text('Financeiro'), findsOneWidget);
+      expect(find.text('Departamento Fiscal'), findsOneWidget);
+      expect(
+          tester
+              .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, 'Continuar'))
+              .onPressed,
+          isNull);
+
+      await tester.tap(find.text('Financeiro'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Confirmar aprovacao'), findsOneWidget);
       expect(find.text('Aprovar cliente'), findsOneWidget);
+      expect(find.text('Financeiro'), findsOneWidget);
       expect(aprovacaoEnviada, isFalse);
 
       await tester.tap(find.text('Aprovar cliente'));
       await tester.pumpAndSettle();
 
       expect(aprovacaoEnviada, isTrue);
+      expect(setoresEnviados, [7]);
       expect(find.text('Maria Cliente'), findsNothing);
     }, () => client);
   });
