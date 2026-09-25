@@ -27,6 +27,51 @@ class RoleCaller {
     return roles;
   }
 
+  
+  Future<List<Role>> fetchRolesDoLogin(int loginId) async {
+    List<Role> roles = [];
+    try {
+      final response = await NetworkCaller().getRequest(ApiLinks.getRolesLoginId(loginId));
+      if (response.isSuccess && response.body != null) {
+        final body = response.body;
+        // Lida com { data: { dados: [...] } } (Response customizado) e outras variações comuns
+        List<dynamic> dataList = [];
+        if (body is Map<String, dynamic>) {
+          if (body.containsKey('data') && body['data'] is Map<String, dynamic> && body['data'].containsKey('dados')) {
+            dataList = body['data']['dados'];
+          } else if (body.containsKey('data') && body['data'] is List) {
+            dataList = body['data'];
+          } else if (body.containsKey('dados') && body['dados'] is List) {
+            dataList = body['dados'];
+          }
+        } else if (body is List) {
+          dataList = body;
+        }
+
+        roles = dataList.map((r) => Role.fromJson(r as Map<String, dynamic>)).toList();
+      } else {
+        throw Exception('Falha ao carregar roles do login: ');
+      }
+    } catch (e) {
+      L.d('Erro ao buscar roles do login: ');
+      throw Exception('Erro ao carregar roles do login: ');
+    }
+    return roles;
+  }
+
+  Future<bool> atualizarRolesDoLogin(int loginId, List<int> roleIds) async {
+    try {
+      final response = await NetworkCaller().putRequest(
+        ApiLinks.updateRolesLoginId(loginId),
+        roleIds,
+      );
+      return response.isSuccess;
+    } catch (e) {
+      L.d('Erro ao atualizar roles do login: ');
+      return false;
+    }
+  }
+
   Future<bool> associateRoleToLogin(int loginId, int roleId) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(

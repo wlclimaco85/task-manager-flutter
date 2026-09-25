@@ -10,6 +10,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldType, FieldConfigWindows;
 import '../../../services/network_caller.dart';
 import '../../../widgets/login_setores_detail.dart';
+import '../../../widgets/login_roles_detail.dart';
 
 class MobileLoginDetailScreen extends StatelessWidget {
   final Login item;

@@ -11,6 +11,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 import '../../../services/network_caller.dart';
 import '../../../widgets/login_empresas_acesso_detail.dart';
 import '../../../widgets/login_setores_detail.dart';
+import '../../../widgets/login_roles_detail.dart';
 
 class WindowsLoginDetailScreen extends StatelessWidget {
   final Login item;
