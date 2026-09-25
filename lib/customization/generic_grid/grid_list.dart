@@ -1036,9 +1036,25 @@ class _GridListScreenState extends State<GridListScreen> {
       );
     }
 
-    final raw =
-        getNestedValue(item, c.displayFieldName ?? c.fieldName)?.toString() ??
-            '';
+    final rawVal = getNestedValue(item, c.displayFieldName ?? c.fieldName);
+    String raw = '';
+    if (rawVal is List) {
+      raw = rawVal.map((e) {
+        if (e is Map) {
+          return (e['description'] ??
+                      e['nome'] ??
+                      e['name'] ??
+                      e['label'] ??
+                      e['key'] ??
+                      e['id'])
+                  ?.toString() ??
+              '';
+        }
+        return e.toString();
+      }).where((s) => s.isNotEmpty).join(', ');
+    } else {
+      raw = rawVal?.toString() ?? '';
+    }
     if (raw.isEmpty) return const SizedBox.shrink();
     final value = _formatarValorCampo(raw);
     return Expanded(

@@ -712,7 +712,9 @@ class ApiLinks {
   static String get alertasCertificados =>
       '$_baseUrlNew/api/certificados/alertas';
 
-  static String getAllRoles =
+  static String getRolesLoginId(int loginId) => '\$_baseUrlNew/api/login/\$loginId/roles';
+  static String updateRolesLoginId(int loginId) => '\$_baseUrlNew/api/login/\$loginId/roles';
+  static String getAllRoles = 
       '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
 
   /// GET /api/role/disponiveis — roles filtradas por módulos contratados
@@ -739,6 +741,9 @@ class ApiLinks {
 
   static String removeSetorFromLogin(int loginId, int setorId) =>
       '$_baseUrlNew/api/login/$loginId/setores/$setorId';
+
+  static String updateSetoresLoginId(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/setores';
 
   static String fecharChamados(String id) => "$_baseUrlNew/chamados/$id/fechar";
 

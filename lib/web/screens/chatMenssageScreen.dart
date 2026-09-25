@@ -223,25 +223,26 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
       request.files.add(
         http.MultipartFile.fromBytes('file', fileBytes, filename: file.name),
       );
+      final int currentEmpId = TenantContext.empresaId ??
+          (_messages.isNotEmpty ? (_messages.first.empId ?? 0) : 0);
+      final int currentParceiroId = TenantContext.parceiroId ??
+          (_messages.isNotEmpty ? (_messages.first.parceiroId ?? 0) : 0);
+
       request.fields.addAll({
         'user': _loggedUserEmail,
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
         'chatId': _effectiveChatId,
-        if (TenantContext.empresaId != null)
-          'empId': TenantContext.empresaId.toString(),
-        if (TenantContext.parceiroId != null)
-          'parceiroId': TenantContext.parceiroId.toString(),
-        // Fix card #429: FileController.uploadFile exige estes 5 campos
-        // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
-        // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
-        // GED (ged_arquivos_screen.dart) quando nenhum diretorio e escolhido.
+        if (currentEmpId > 0)
+          'empId': currentEmpId.toString(),
+        if (currentParceiroId > 0)
+          'parceiroId': currentParceiroId.toString(),
         'fileName': file.name,
         'fileType': (file.extension ?? '').toLowerCase(),
         'diretorio': '{"id":0}',
-        'empresa': '{"id":${TenantContext.empresaId ?? 0}}',
-        'parceiro': '{"id":${TenantContext.parceiroId ?? 0}}',
+        'empresa': '{"id":$currentEmpId}',
+        'parceiro': '{"id":$currentParceiroId}',
         'modulo': 'chat',
       });
 
