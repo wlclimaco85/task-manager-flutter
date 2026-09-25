@@ -718,7 +718,7 @@ class _MessageContent extends StatelessWidget {
       );
     }
 
-    if (message.type == 'ticket' || text.contains('Chamado #') || text.contains('🎫 Chamado')) {
+    if (message.type == 'ticket' || text.contains('Chamado #') || text.contains('🎫 Chamado') || text.toLowerCase().contains('chamado aberto n')) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
