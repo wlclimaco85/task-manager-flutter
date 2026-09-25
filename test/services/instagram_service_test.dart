@@ -8,6 +8,49 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/services/instagram_service.dart';
 
 void main() {
+  group('InstagramService - seguranca do endpoint local', () {
+    test('Web em producao nao tenta acessar loopback do cliente', () {
+      expect(
+        InstagramService.shouldProbeLocalApi(
+          isWeb: true,
+          appUri: Uri.parse('https://escritorio-contabil-production.up.railway.app/'),
+          apiUri: Uri.parse('http://127.0.0.1:8500'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('Web local e aplicativo nativo podem acessar o servico local', () {
+      expect(
+        InstagramService.shouldProbeLocalApi(
+          isWeb: true,
+          appUri: Uri.parse('http://localhost:56080'),
+          apiUri: Uri.parse('http://127.0.0.1:8500'),
+        ),
+        isTrue,
+      );
+      expect(
+        InstagramService.shouldProbeLocalApi(
+          isWeb: false,
+          appUri: Uri(),
+          apiUri: Uri.parse('http://127.0.0.1:8500'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('Web em producao aceita API Python remota configurada', () {
+      expect(
+        InstagramService.shouldProbeLocalApi(
+          isWeb: true,
+          appUri: Uri.parse('https://escritorio-contabil-production.up.railway.app/'),
+          apiUri: Uri.parse('https://instagram-api.example.com'),
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('InstagramService — fallback sem credenciais (Python API indisponível)', () {
     test('hasLocalApi é false antes de qualquer checkLocalApi', () {
       expect(InstagramService.hasLocalApi, isFalse);

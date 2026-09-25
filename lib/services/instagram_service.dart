@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../utils/api_links.dart';
@@ -301,11 +302,39 @@ class InstagramService {
   // é obrigatório, sem ele todos os endpoints Java retornam 404.
   static String get _backendUrl => ApiLinks.baseUrl;
 
+  static bool shouldProbeLocalApi({
+    required bool isWeb,
+    required Uri appUri,
+    required Uri apiUri,
+  }) {
+    if (!isWeb) return true;
+    return !_isLoopbackHost(apiUri.host) || _isLoopbackHost(appUri.host);
+  }
+
+  static bool _isLoopbackHost(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'localhost' ||
+        normalized == '127.0.0.1' ||
+        normalized == '::1';
+  }
+
   static Future<void> checkLocalApi() async {
     try {
       final config = await fetchApiConfig();
       _pythonApiUrl = config?['python_server_url']?.trim() ?? _defaultLocalApi;
-      final r = await http.get(Uri.parse('$_pythonApiUrl/health')).timeout(const Duration(seconds: 2));
+      final apiUri = Uri.tryParse(_pythonApiUrl);
+      if (apiUri == null ||
+          !shouldProbeLocalApi(
+            isWeb: kIsWeb,
+            appUri: Uri.base,
+            apiUri: apiUri,
+          )) {
+        _localAvailable = false;
+        return;
+      }
+      final r = await http
+          .get(apiUri.resolve('/health'))
+          .timeout(const Duration(seconds: 2));
       _localAvailable = r.statusCode == 200;
     } catch (_) {
       _localAvailable = false;
