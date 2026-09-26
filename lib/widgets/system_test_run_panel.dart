@@ -6,12 +6,25 @@ import '../services/system_test_run_service.dart';
 
 class SystemTestRunPanel extends StatefulWidget {
   final SystemTestRunService? service;
-  const SystemTestRunPanel({super.key, this.service});
+  final String? token;
+  const SystemTestRunPanel({super.key, this.service, this.token});
   @override
   State<SystemTestRunPanel> createState() => _SystemTestRunPanelState();
 }
 
 class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
+  static const _groups = <String, String>{
+    'FASE_1': 'Fase 1',
+    'FASE_2': 'Fase 2',
+    'COMERCIAL': 'Comercial',
+    'NFE': 'NF-e',
+    'NFSE': 'NFS-e',
+    'NFCE': 'NFC-e',
+    'FINANCEIRO_AVANCADO': 'Financeiro avançado',
+    'TRADING': 'Bolsa de valores',
+    'GME': 'GME',
+    'TODOS': 'Tudo: fases 1 e 2',
+  };
   late final SystemTestRunService _service =
       widget.service ?? SystemTestRunService();
   Timer? _poller;
@@ -19,7 +32,8 @@ class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
   List<SystemTestEventModel> _events = const [];
   String? _error;
   bool _starting = false;
-  String get _token => AuthUtility.userInfo?.token ?? '';
+  String _selectedGroup = 'FASE_1';
+  String get _token => widget.token ?? AuthUtility.userInfo?.token ?? '';
 
   @override
   void dispose() {
@@ -38,7 +52,7 @@ class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
       _events = const [];
     });
     try {
-      final run = await _service.start(_token, const ['FASE_1']);
+      final run = await _service.start(_token, [_selectedGroup]);
       if (!mounted) return;
       setState(() => _run = run);
       _beginPolling();
@@ -102,6 +116,28 @@ class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
                   child: Text('Homologação · fluxo real com limpeza automática',
                       style: TextStyle(
                           color: Colors.white70, fontWeight: FontWeight.w600))),
+              if (run?.isActive != true)
+                SizedBox(
+                    width: 220,
+                    child: DropdownButtonFormField<String>(
+                        key: const Key('system_test_group_selector'),
+                        initialValue: _selectedGroup,
+                        dropdownColor: const Color(0xFF252936),
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                            labelText: 'Escopo', isDense: true),
+                        items: _groups.entries
+                            .map((entry) => DropdownMenuItem(
+                                value: entry.key, child: Text(entry.value)))
+                            .toList(),
+                        onChanged: _starting
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  setState(() => _selectedGroup = value);
+                                }
+                              })),
+              const SizedBox(width: 8),
               if (run?.isActive == true)
                 OutlinedButton.icon(
                     onPressed: _cancel,
@@ -109,13 +145,14 @@ class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
                     label: const Text('Cancelar'))
               else
                 FilledButton.icon(
+                    key: const Key('system_test_start_button'),
                     onPressed: _starting ? null : _start,
                     icon: _starting
                         ? const SizedBox.square(
                             dimension: 16,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.play_arrow),
-                    label: const Text('Executar Fase 1')),
+                    label: Text('Executar ${_groups[_selectedGroup]}')),
               if (run != null && run.residueCount > 0) ...[
                 const SizedBox(width: 8),
                 OutlinedButton.icon(

@@ -48,4 +48,26 @@ void main() {
         throwsA(isA<StateError>()
             .having((e) => e.message, 'message', contains('400'))));
   });
+
+  test('envia grupo agregado da fase 2 sem alterar o ambiente', () async {
+    late http.Request captured;
+    final service = SystemTestRunService(client: MockClient((request) async {
+      captured = request;
+      return http.Response(
+          jsonEncode({
+            'runId': 'run-2',
+            'marker': 'E2E-2',
+            'environment': 'HOMOLOGACAO',
+            'status': 'PENDING',
+          }),
+          202);
+    }));
+
+    await service.start('token', const ['FASE_2']);
+
+    expect(jsonDecode(captured.body), {
+      'environment': 'HOMOLOGACAO',
+      'groups': ['FASE_2']
+    });
+  });
 }
