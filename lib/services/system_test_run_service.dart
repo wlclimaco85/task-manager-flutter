@@ -48,7 +48,8 @@ class SystemTestRunService {
   }
 
   void _success(http.Response response, Set<int> expected) {
-    if (!expected.contains(response.statusCode))
+    if (!expected.contains(response.statusCode)) {
       throw StateError('Erro ${response.statusCode}: ${response.body}');
+    }
   }
 }
