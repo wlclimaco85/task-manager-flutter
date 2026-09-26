@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../models/auth_utility.dart';
 import '../../models/telas_model.dart';
 import '../../utils/api_links.dart';
+import '../../widgets/system_test_run_panel.dart';
 
 // ENUMS and DATA CLASSES for Test Structure
 enum _HttpMethod { get, post, put, delete }
@@ -59,7 +60,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -82,6 +83,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
           tabs: const [
+            Tab(icon: Icon(Icons.play_circle_outline, size: 16), text: 'Fluxo real'),
             Tab(icon: Icon(Icons.api, size: 16), text: 'Endpoints CRUD'),
             Tab(icon: Icon(Icons.table_chart, size: 16), text: 'Telas Dinâmicas'),
             Tab(icon: Icon(Icons.http, size: 16), text: 'Teste Endpoints'),
@@ -91,6 +93,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
+          const SystemTestRunPanel(),
           const _CrudTestTab(),
           const _TelasTestTab(),
           const _EndpointsTestTab(),
