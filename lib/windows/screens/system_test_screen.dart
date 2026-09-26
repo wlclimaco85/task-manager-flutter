@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import '../../models/auth_utility.dart';
 import '../../models/telas_model.dart';
 import '../../utils/api_links.dart';
-import '../../widgets/system_test_run_panel.dart';
 
 // ENUMS and DATA CLASSES for Test Structure
 enum _HttpMethod { get, post, put, delete }
@@ -32,11 +31,9 @@ class _CrudScenario {
   final String name;
   final String basePath;
   final List<_TestStep> steps;
-
   /// Map of FK field name → endpoint to prefetch (e.g. 'empresa' → '/api/empresa')
   final Map<String, String> fkPrefetch;
   String? lastCreatedId;
-
   /// Resolved FK ids after prefetch (field name → id)
   final Map<String, int> resolvedFkIds = {};
 
@@ -62,7 +59,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -77,8 +74,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
       backgroundColor: const Color(0xFF0F1117),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1D27),
-        title: const Text('Testes de Integração',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Testes de Integração', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
@@ -86,13 +82,8 @@ class _SystemTestScreenState extends State<SystemTestScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
           tabs: const [
-            Tab(
-                icon: Icon(Icons.play_circle_outline, size: 16),
-                text: 'Fluxo real'),
             Tab(icon: Icon(Icons.api, size: 16), text: 'Endpoints CRUD'),
-            Tab(
-                icon: Icon(Icons.table_chart, size: 16),
-                text: 'Telas Dinâmicas'),
+            Tab(icon: Icon(Icons.table_chart, size: 16), text: 'Telas Dinâmicas'),
           ],
         ),
       ),
@@ -151,7 +142,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       }
     });
   }
-
+  
   void _addToErrorReport({
     required String scenarioName,
     required String stepName,
@@ -170,14 +161,13 @@ class _CrudTestTabState extends State<_CrudTestTab> {
     _errorReport.writeln('- **Status Esperado:** `$expectedStatus`');
     _errorReport.writeln('- **Status Recebido:** `$actualStatus`');
     if (responseBody != null && responseBody.isNotEmpty) {
-      final truncated = responseBody.length > 300
-          ? '${responseBody.substring(0, 300)}...(truncado)'
-          : responseBody;
+      final truncated = responseBody.length > 300 ? '${responseBody.substring(0, 300)}...(truncado)' : responseBody;
       _errorReport.writeln('- **Corpo da Resposta:**');
       _errorReport.writeln('```\n$truncated\n```');
     }
     _errorReport.writeln('---\n');
   }
+
 
   Future<void> _runTests() async {
     setState(() {
@@ -192,13 +182,11 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       _skipCount = 0;
     });
 
-    _addLog(_LogEntry(
-        '🔵 INICIANDO TESTES DE INTEGRAÇÃO (CRUD)...', _LogType.info));
+    _addLog(_LogEntry('🔵 INICIANDO TESTES DE INTEGRAÇÃO (CRUD)...', _LogType.info));
 
     final token = AuthUtility.userInfo?.token;
     if (token == null) {
-      _addLog(_LogEntry(
-          '❌ Token não encontrado. Faça login primeiro.', _LogType.error));
+      _addLog(_LogEntry('❌ Token não encontrado. Faça login primeiro.', _LogType.error));
       setState(() => _isRunning = false);
       return;
     }
@@ -222,8 +210,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       // Prefetch FK ids if needed
       for (final entry in s.fkPrefetch.entries) {
         try {
-          final fkRes = await http
-              .get(Uri.parse(base + entry.value), headers: headers)
+          final fkRes = await http.get(Uri.parse(base + entry.value), headers: headers)
               .timeout(const Duration(seconds: 10));
           if (fkRes.statusCode == 200) {
             final data = jsonDecode(fkRes.body);
@@ -239,46 +226,36 @@ class _CrudTestTabState extends State<_CrudTestTab> {
             }
             if (fkId != null) {
               s.resolvedFkIds[entry.key] = fkId;
-              _addLog(_LogEntry('  🔗 FK "${entry.key}" resolvida → id=$fkId',
-                  _LogType.info));
+              _addLog(_LogEntry('  🔗 FK "${entry.key}" resolvida → id=$fkId', _LogType.info));
             } else {
-              _addLog(_LogEntry(
-                  '  ⚠️ FK "${entry.key}": não foi possível extrair ID de ${entry.value}',
-                  _LogType.warning));
+              _addLog(_LogEntry('  ⚠️ FK "${entry.key}": não foi possível extrair ID de ${entry.value}', _LogType.warning));
             }
           }
         } catch (_) {
-          _addLog(_LogEntry(
-              '  ⚠️ FK "${entry.key}": falha ao buscar ${entry.value}',
-              _LogType.warning));
+          _addLog(_LogEntry('  ⚠️ FK "${entry.key}": falha ao buscar ${entry.value}', _LogType.warning));
         }
       }
 
       for (final step in s.steps) {
-        final stepName =
-            '${step.method.name.toUpperCase()} ${s.basePath}${step.path}';
+        final stepName = '${step.method.name.toUpperCase()} ${s.basePath}${step.path}';
         _updateProgress(s.name);
 
         bool requiresId = step.path.contains('{id}');
         if (s.lastCreatedId == null && requiresId) {
-          _addLog(_LogEntry(
-              '  ⚠️ SKIP $stepName → ID da entidade não foi criado na etapa anterior.',
-              _LogType.skip));
+          _addLog(_LogEntry('  ⚠️ SKIP $stepName → ID da entidade não foi criado na etapa anterior.', _LogType.skip));
           _skipCount++;
           continue;
         }
 
-        String finalPath =
-            (s.basePath + step.path).replaceAll('{id}', s.lastCreatedId ?? '');
+        String finalPath = (s.basePath + step.path).replaceAll('{id}', s.lastCreatedId ?? '');
         Uri url = Uri.parse(base + finalPath);
         http.Response res;
         String body = '';
-
+        
         try {
           if (step.payloadKey != null) {
             final isUpdate = step.method == _HttpMethod.put;
-            final payload = _getPayload(
-                step.payloadKey!, isUpdate, s.lastCreatedId, s.resolvedFkIds);
+            final payload = _getPayload(step.payloadKey!, isUpdate, s.lastCreatedId, s.resolvedFkIds);
             if (payload != null) {
               body = jsonEncode(payload);
             }
@@ -288,82 +265,65 @@ class _CrudTestTabState extends State<_CrudTestTab> {
 
           switch (methodToRun) {
             case _HttpMethod.post:
-              res = await http
-                  .post(url, headers: headers, body: body)
-                  .timeout(const Duration(seconds: 15));
+              res = await http.post(url, headers: headers, body: body).timeout(const Duration(seconds: 15));
               break;
             case _HttpMethod.put:
-              res = await http
-                  .put(url, headers: headers, body: body)
-                  .timeout(const Duration(seconds: 15));
+              res = await http.put(url, headers: headers, body: body).timeout(const Duration(seconds: 15));
               break;
             case _HttpMethod.delete:
-              res = await http
-                  .delete(url, headers: headers)
-                  .timeout(const Duration(seconds: 15));
+              res = await http.delete(url, headers: headers).timeout(const Duration(seconds: 15));
               break;
             default: // get
-              res = await http
-                  .get(url, headers: headers)
-                  .timeout(const Duration(seconds: 15));
+              res = await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
           }
 
           if (res.statusCode == step.expectedStatus) {
-            _addLog(_LogEntry(
-                '  ✅ $stepName → ${res.statusCode}', _LogType.success));
+            _addLog(_LogEntry('  ✅ $stepName → ${res.statusCode}', _LogType.success));
             _successCount++;
-
+            
             if (step.method == _HttpMethod.post) {
-              try {
+               try {
                 final data = jsonDecode(res.body);
                 if (data is Map && data.containsKey('id')) {
                   s.lastCreatedId = data['id'].toString();
-                  _addLog(_LogEntry(
-                      '    → ID extraído: ${s.lastCreatedId}', _LogType.info));
+                  _addLog(_LogEntry('    → ID extraído: ${s.lastCreatedId}', _LogType.info));
                 } else {
-                  _addLog(_LogEntry(
-                      '    ⚠️ Resposta de criação não continha um "id".',
-                      _LogType.warning));
+                   _addLog(_LogEntry('    ⚠️ Resposta de criação não continha um "id".', _LogType.warning));
                 }
               } catch (e) {
-                _addLog(_LogEntry(
-                    '    ⚠️ Não foi possível extrair o ID da resposta: ${res.body}',
-                    _LogType.warning));
+                 _addLog(_LogEntry('    ⚠️ Não foi possível extrair o ID da resposta: ${res.body}', _LogType.warning));
               }
             }
           } else {
-            _addLog(_LogEntry(
-                '  ❌ $stepName → Esperado ${step.expectedStatus}, Recebido ${res.statusCode}',
-                _LogType.error));
-            String responseBody = res.body;
-            try {
-              // Try to pretty-print if it's JSON
-              responseBody = const JsonEncoder.withIndent('  ')
-                  .convert(jsonDecode(res.body));
-            } catch (e) {
-              // Not a JSON, use as is
-            }
-            _addLog(_LogEntry('     Corpo: ${res.body}', _LogType.error));
-            _addToErrorReport(
-              scenarioName: s.name,
-              stepName: stepName,
-              expectedStatus: step.expectedStatus,
-              actualStatus: res.statusCode,
-              payload: body,
-              responseBody: responseBody,
-            );
+            _addLog(_LogEntry('  ❌ $stepName → Esperado ${step.expectedStatus}, Recebido ${res.statusCode}', _LogType.error));
+             String responseBody = res.body;
+             try {
+               // Try to pretty-print if it's JSON
+               responseBody = const JsonEncoder.withIndent('  ').convert(jsonDecode(res.body));
+             } catch(e) {
+                // Not a JSON, use as is
+             }
+             _addLog(_LogEntry('     Corpo: ${res.body}', _LogType.error));
+             _addToErrorReport(
+                scenarioName: s.name,
+                stepName: stepName,
+                expectedStatus: step.expectedStatus,
+                actualStatus: res.statusCode,
+                payload: body,
+                responseBody: responseBody,
+             );
             _failCount++;
           }
         } catch (e) {
           _addLog(_LogEntry('  ❌ $stepName → ERRO: $e', _LogType.error));
-          _addToErrorReport(
-            scenarioName: s.name,
-            stepName: stepName,
-            expectedStatus: step.expectedStatus,
-            actualStatus: 0, // No status code from exception
-            payload: body,
-            responseBody: e.toString(),
-          );
+           _addToErrorReport(
+              scenarioName: s.name,
+              stepName: stepName,
+              expectedStatus: step.expectedStatus,
+              actualStatus: 0, // No status code from exception
+              payload: body,
+              responseBody: e.toString(),
+           );
           _failCount++;
         }
       }
@@ -382,110 +342,37 @@ class _CrudTestTabState extends State<_CrudTestTab> {
     });
   }
 
-  Map<String, dynamic>? _getPayload(String key, bool isUpdate, String? id,
-      [Map<String, int> resolvedFkIds = const {}]) {
+  Map<String, dynamic>? _getPayload(String key, bool isUpdate, String? id, [Map<String, int> resolvedFkIds = const {}]) {
     final ts = DateTime.now().millisecondsSinceEpoch;
     String suffix = isUpdate ? " (Atualizado)" : "";
 
     // Base payloads
     final Map<String, Map<String, dynamic>> payloads = {
-      'noticias': {
-        'titulo': 'Notícia de Teste $ts $suffix',
-        'noticia': 'Conteúdo da notícia de teste.',
-        'resumo': 'Resumo da notícia.',
-        'fonte': 'Fonte de Teste',
-        'autor': 'Tester',
-        'codApp': {'id': 1}
-      },
-      'comunicados': {
-        'titulo': 'Comunicado $ts $suffix',
-        'conteudo': 'Conteúdo do comunicado.',
-        'autor': 'Tester',
-        'dataPublicacao': DateTime.now().toIso8601String(),
-        'empresa': {'id': 1},
-        'aplicativo': {'id': 1},
-        'setor': {'id': 1}
-      },
-      'chamados': {
-        'titulo': 'Chamado de Teste $ts $suffix',
-        'descricao': 'Descrição detalhada do chamado.',
-        'audit': {'userLogadoId': 1}
-      },
-      'alimentos': {
-        'nome': 'Alimento Teste $ts $suffix',
-        'calorias': 100,
-        'proteinas': 10.5,
-        'carboidratos': 20.2,
-        'gorduras': 5.0
-      },
+      'noticias': {'titulo': 'Notícia de Teste $ts $suffix', 'noticia': 'Conteúdo da notícia de teste.', 'resumo': 'Resumo da notícia.', 'fonte': 'Fonte de Teste', 'autor': 'Tester', 'codApp': {'id': 1}},
+      'comunicados': {'titulo': 'Comunicado $ts $suffix', 'conteudo': 'Conteúdo do comunicado.', 'autor': 'Tester', 'dataPublicacao': DateTime.now().toIso8601String(), 'empresa': {'id': 1}, 'aplicativo': {'id': 1}, 'setor': {'id': 1}},
+      'chamados': {'titulo': 'Chamado de Teste $ts $suffix', 'descricao': 'Descrição detalhada do chamado.', 'audit': {'userLogadoId': 1}},
+      'alimentos': {'nome': 'Alimento Teste $ts $suffix', 'calorias': 100, 'proteinas': 10.5, 'carboidratos': 20.2, 'gorduras': 5.0},
       'cargo': {'nome': 'Cargo Teste $ts $suffix', 'descricao': 'Desc'},
-      'login': {
-        'nome': 'Login Teste $ts',
-        'login': 'login$ts',
-        'senha': '123',
-        'email': 'teste$ts@email.com'
-      },
+      'login': {'nome': 'Login Teste $ts', 'login': 'login$ts', 'senha': '123', 'email': 'teste$ts@email.com'},
       'departamento': {'nome': 'Departamento Teste $ts $suffix'},
       'centro_custo': {'nome': 'Centro Custo Teste $ts $suffix'},
       'exercicio': {'nome': 'Exercicio Teste $ts $suffix'},
-      'modalidade': {
-        'nome': 'Modalidade Teste $ts $suffix',
-        'codAcademia': {'id': resolvedFkIds['codAcademia'] ?? 1}
-      },
-      'objetivo': {
-        'nome': 'Objetivo Teste $ts $suffix',
-        'codAluno': {'id': resolvedFkIds['codAluno'] ?? 1}
-      },
-      'parceiro': {
-        'nome': 'Parceiro Teste $ts $suffix',
-        'tipo': 'J',
-        'cpfCnpj': '12345678000195'
-      },
-      'conta_bancaria': {
-        'nomeBanco': 'Banco Teste $ts',
-        'agencia': '1234',
-        'conta': '56789-0',
-        'empresa': {'id': resolvedFkIds['empresa'] ?? 1}
-      },
-      'conta_pagar': {
-        'descricao': 'Conta Pagar Teste $ts $suffix',
-        'valor': 100.50,
-        'dataVencimento':
-            DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        'empresa': {'id': resolvedFkIds['empresa'] ?? 1}
-      },
-      'conta_receber': {
-        'descricao': 'Conta Receber Teste $ts $suffix',
-        'valor': 250.75,
-        'dataVencimento':
-            DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        'empresa': {'id': resolvedFkIds['empresa'] ?? 1}
-      },
-      'cotacao': {
-        'ativo': 'TESTE3',
-        'valor': 5.25,
-        'dtCotacao': DateTime.now().toIso8601String()
-      },
-      'role': {
-        'name': 'ROLE_TESTE_$ts',
-        'description': 'Role de teste',
-        'aplicativo': {'id': resolvedFkIds['aplicativo'] ?? 1}
-      },
+      'modalidade': {'nome': 'Modalidade Teste $ts $suffix', 'codAcademia': {'id': resolvedFkIds['codAcademia'] ?? 1}},
+      'objetivo': {'nome': 'Objetivo Teste $ts $suffix', 'codAluno': {'id': resolvedFkIds['codAluno'] ?? 1}},
+      'parceiro': {'nome': 'Parceiro Teste $ts $suffix', 'tipo': 'J', 'cpfCnpj': '12345678000195'},
+      'conta_bancaria': {'nomeBanco': 'Banco Teste $ts', 'agencia': '1234', 'conta': '56789-0', 'empresa': {'id': resolvedFkIds['empresa'] ?? 1}},
+      'conta_pagar': {'descricao': 'Conta Pagar Teste $ts $suffix', 'valor': 100.50, 'dataVencimento': DateTime.now().add(const Duration(days: 30)).toIso8601String(), 'empresa': {'id': resolvedFkIds['empresa'] ?? 1}},
+      'conta_receber': {'descricao': 'Conta Receber Teste $ts $suffix', 'valor': 250.75, 'dataVencimento': DateTime.now().add(const Duration(days: 30)).toIso8601String(), 'empresa': {'id': resolvedFkIds['empresa'] ?? 1}},
+      'cotacao': {'ativo': 'TESTE3', 'valor': 5.25, 'dtCotacao': DateTime.now().toIso8601String()},
+      'role': {'name': 'ROLE_TESTE_$ts', 'description': 'Role de teste', 'aplicativo': {'id': resolvedFkIds['aplicativo'] ?? 1}},
       'aplicativo': {'nome': 'Aplicativo Teste $ts $suffix'},
-      'ponto': {
-        'observacao': 'Ponto de teste $ts',
-        'login': {'id': resolvedFkIds['login'] ?? 1}
-      },
+      'ponto': {'observacao': 'Ponto de teste $ts', 'login': {'id': resolvedFkIds['login'] ?? 1}},
       'default_nome': {'nome': 'Teste $ts $suffix'},
       'default_titulo': {'titulo': 'Teste $ts $suffix'},
-      'default': {
-        'name': 'Teste $ts $suffix',
-        'description': 'Descrição de teste.'
-      },
+      'default': {'name': 'Teste $ts $suffix', 'description': 'Descrição de teste.'},
     };
-
-    var payload =
-        Map<String, dynamic>.from(payloads[key] ?? payloads['default_nome']!);
+    
+    var payload = Map<String, dynamic>.from(payloads[key] ?? payloads['default_nome']!);
     if (isUpdate && id != null) {
       try {
         payload['id'] = int.parse(id);
@@ -495,55 +382,47 @@ class _CrudTestTabState extends State<_CrudTestTab> {
     }
     return payload;
   }
-
+  
   List<_CrudScenario> _buildScenarios() {
     // Helper to create a standard RESTful CRUD test sequence
-    _CrudScenario createStandardCrud(
-        String name, String path, String payloadKey,
-        {int createStatus = 201, int delStatus = 204}) {
-      return _CrudScenario(
-        name: name,
-        basePath: path,
-        steps: [
-          _TestStep(_HttpMethod.get, '', 200),
-          _TestStep(_HttpMethod.post, '', createStatus, payloadKey: payloadKey),
-          _TestStep(_HttpMethod.get, '/{id}', 200),
-          _TestStep(_HttpMethod.put, '/{id}', 200, payloadKey: payloadKey),
-          _TestStep(_HttpMethod.delete, '/{id}', delStatus),
-          _TestStep(_HttpMethod.get, '/{id}', 404),
-        ],
-      );
+    _CrudScenario createStandardCrud(String name, String path, String payloadKey, {int createStatus = 201, int delStatus = 204}) {
+        return _CrudScenario(
+            name: name,
+            basePath: path,
+            steps: [
+                _TestStep(_HttpMethod.get, '', 200),
+                _TestStep(_HttpMethod.post, '', createStatus, payloadKey: payloadKey),
+                _TestStep(_HttpMethod.get, '/{id}', 200),
+                _TestStep(_HttpMethod.put, '/{id}', 200, payloadKey: payloadKey),
+                _TestStep(_HttpMethod.delete, '/{id}', delStatus),
+                _TestStep(_HttpMethod.get, '/{id}', 404),
+            ],
+        );
     }
-
+    
     // Helper for endpoints that only have GET list
     _CrudScenario createGetList(String name, String path) {
-      return _CrudScenario(
-          name: name,
-          basePath: path,
-          steps: [_TestStep(_HttpMethod.get, '', 200)]);
+        return _CrudScenario(name: name, basePath: path, steps: [_TestStep(_HttpMethod.get, '', 200)]);
     }
 
     // Normalized paths from controller scan
     return [
       // ================= Standard RESTful CRUD =================
       // Login: sem DELETE HTTP
-      _CrudScenario(name: 'Login', basePath: '/api/login', steps: [
-        _TestStep(_HttpMethod.get, '', 200),
-        _TestStep(_HttpMethod.post, '', 200, payloadKey: 'login'),
-        _TestStep(_HttpMethod.get, '/{id}', 200),
-        _TestStep(_HttpMethod.put, '/{id}', 200, payloadKey: 'login'),
-      ]),
-      createStandardCrud('Noticias', '/api/noticias', 'noticias',
-          createStatus: 200, delStatus: 200),
-      createStandardCrud('Comunicados', '/api/comunicado', 'comunicados',
-          createStatus: 200, delStatus: 200),
-      createStandardCrud('Chamados', '/api/chamados', 'chamados',
-          createStatus: 201, delStatus: 200),
-      createStandardCrud('Alimentos', '/api/alimentos', 'alimentos',
-          createStatus: 201, delStatus: 200),
       _CrudScenario(
-        name: 'Conta a Pagar',
-        basePath: '/api/conta_pagar',
+        name: 'Login', basePath: '/api/login',
+        steps: [
+          _TestStep(_HttpMethod.get, '', 200),
+          _TestStep(_HttpMethod.post, '', 200, payloadKey: 'login'),
+          _TestStep(_HttpMethod.get, '/{id}', 200),
+          _TestStep(_HttpMethod.put, '/{id}', 200, payloadKey: 'login'),
+        ]),
+      createStandardCrud('Noticias', '/api/noticias', 'noticias', createStatus: 200, delStatus: 200),
+      createStandardCrud('Comunicados', '/api/comunicado', 'comunicados', createStatus: 200, delStatus: 200),
+      createStandardCrud('Chamados', '/api/chamados', 'chamados', createStatus: 201, delStatus: 200),
+      createStandardCrud('Alimentos', '/api/alimentos', 'alimentos', createStatus: 201, delStatus: 200),
+      _CrudScenario(
+        name: 'Conta a Pagar', basePath: '/api/conta_pagar',
         fkPrefetch: {'empresa': '/api/empresa'},
         steps: [
           _TestStep(_HttpMethod.get, '', 200),
@@ -555,8 +434,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         ],
       ),
       _CrudScenario(
-        name: 'Conta a Receber',
-        basePath: '/api/conta_receber',
+        name: 'Conta a Receber', basePath: '/api/conta_receber',
         fkPrefetch: {'empresa': '/api/empresa'},
         steps: [
           _TestStep(_HttpMethod.get, '', 200),
@@ -567,11 +445,9 @@ class _CrudTestTabState extends State<_CrudTestTab> {
           _TestStep(_HttpMethod.get, '/{id}', 404),
         ],
       ),
-      createStandardCrud('Cotações', '/api/cotacoes', 'cotacao',
-          createStatus: 200, delStatus: 200),
+      createStandardCrud('Cotações', '/api/cotacoes', 'cotacao', createStatus: 200, delStatus: 200),
       _CrudScenario(
-        name: 'Roles',
-        basePath: '/api/role',
+        name: 'Roles', basePath: '/api/role',
         fkPrefetch: {'aplicativo': '/api/aplicativo'},
         steps: [
           _TestStep(_HttpMethod.get, '', 200),
@@ -583,28 +459,27 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         ],
       ),
       _CrudScenario(
-        name: 'Contas Bancárias',
-        basePath: '/api/contas-bancaria',
+        name: 'Contas Bancárias', basePath: '/api/contas-bancaria',
         fkPrefetch: {'empresa': '/api/empresa'},
         steps: [
           _TestStep(_HttpMethod.get, '', 200),
           _TestStep(_HttpMethod.post, '', 200, payloadKey: 'conta_bancaria'),
           _TestStep(_HttpMethod.get, '/{id}', 200),
-          _TestStep(_HttpMethod.put, '/{id}', 200,
-              payloadKey: 'conta_bancaria'),
+          _TestStep(_HttpMethod.put, '/{id}', 200, payloadKey: 'conta_bancaria'),
           _TestStep(_HttpMethod.delete, '/{id}', 200),
           _TestStep(_HttpMethod.get, '/{id}', 404),
         ],
       ),
-      createStandardCrud('Aplicativos', '/api/aplicativo', 'aplicativo',
-          createStatus: 200, delStatus: 200),
+      createStandardCrud('Aplicativos', '/api/aplicativo', 'aplicativo', createStatus: 200, delStatus: 200),
 
       // ================= Custom/Partial CRUD Endpoints =================
-      _CrudScenario(name: 'Parceiros', basePath: '/api/parceiro', steps: [
-        _TestStep(_HttpMethod.get, '', 200),
-        _TestStep(_HttpMethod.post, '/insert', 200, payloadKey: 'parceiro'),
-        _TestStep(_HttpMethod.post, '/update', 200, payloadKey: 'parceiro'),
-      ]),
+      _CrudScenario(
+        name: 'Parceiros', basePath: '/api/parceiro',
+        steps: [
+          _TestStep(_HttpMethod.get, '', 200),
+          _TestStep(_HttpMethod.post, '/insert', 200, payloadKey: 'parceiro'),
+          _TestStep(_HttpMethod.post, '/update', 200, payloadKey: 'parceiro'),
+        ]),
 
       // ================= GET-only Endpoints =================
       createGetList('Alertas', '/api/alert'),
@@ -629,33 +504,23 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       createGetList('Mensalidades', '/api/mensalidades'),
 
       // ================= Dashboard (requer empresaId=1) =================
-      createGetList('Dashboard - Finance Series',
-          '/api/dashboard/finance/series?empresaId=1'),
-      createGetList(
-          'Dashboard - Chat Daily', '/api/dashboard/chats/dailys?empresaId=1'),
-      createGetList('Dashboard - Tickets Trend',
-          '/api/dashboard/tickets/trend?empresaId=1'),
-      createGetList('Dashboard - Finance Fluxo',
-          '/api/dashboard/finance/fluxo-diario?empresaId=1'),
+      createGetList('Dashboard - Finance Series', '/api/dashboard/finance/series?empresaId=1'),
+      createGetList('Dashboard - Chat Daily', '/api/dashboard/chats/dailys?empresaId=1'),
+      createGetList('Dashboard - Tickets Trend', '/api/dashboard/tickets/trend?empresaId=1'),
+      createGetList('Dashboard - Finance Fluxo', '/api/dashboard/finance/fluxo-diario?empresaId=1'),
 
       // ================= Other =================
       _CrudScenario(
-        name: 'Empresa (Leitura)',
-        basePath: '/api/empresa',
-        steps: [
-          _TestStep(_HttpMethod.get, '', 200),
-          _TestStep(_HttpMethod.get, '/1', 200)
-        ],
+        name: 'Empresa (Leitura)', basePath: '/api/empresa',
+        steps: [ _TestStep(_HttpMethod.get, '', 200), _TestStep(_HttpMethod.get, '/1', 200) ],
       ),
       _CrudScenario(
-        name: 'Registrar Ponto',
-        basePath: '/api/pontos',
-        steps: [
-          _TestStep(_HttpMethod.post, '/registrar', 200, payloadKey: 'ponto')
-        ],
+        name: 'Registrar Ponto', basePath: '/api/pontos',
+        steps: [ _TestStep(_HttpMethod.post, '/registrar', 200, payloadKey: 'ponto') ],
       ),
     ];
   }
+
 
   // ── Teste dinâmico de todos os endpoints ──────────────────────
 
@@ -672,8 +537,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       _skipCount = 0;
     });
 
-    _addLog(_LogEntry(
-        '🔵 CARREGANDO TODOS OS ENDPOINTS DO SISTEMA...', _LogType.info));
+    _addLog(_LogEntry('🔵 CARREGANDO TODOS OS ENDPOINTS DO SISTEMA...', _LogType.info));
 
     final token = AuthUtility.userInfo?.token;
     if (token == null) {
@@ -694,8 +558,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
           .get(Uri.parse('$base/api/admin/endpoints'), headers: headers)
           .timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) {
-        _addLog(_LogEntry('❌ Falha ao carregar endpoints (${res.statusCode})',
-            _LogType.error));
+        _addLog(_LogEntry('❌ Falha ao carregar endpoints (${res.statusCode})', _LogType.error));
         setState(() => _isRunning = false);
         return;
       }
@@ -708,37 +571,28 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       return;
     }
 
-    _addLog(_LogEntry(
-        '📦 ${endpoints.length} endpoints carregados.', _LogType.success));
+    _addLog(_LogEntry('📦 ${endpoints.length} endpoints carregados.', _LogType.success));
 
     // Agrupa por controller
     final Map<String, List<Map<String, dynamic>>> byController = {};
     for (final ep in endpoints) {
       final ctrl = ep['controller']?.toString() ?? 'Desconhecido';
-      byController
-          .putIfAbsent(ctrl, () => [])
-          .add(Map<String, dynamic>.from(ep));
+      byController.putIfAbsent(ctrl, () => []).add(Map<String, dynamic>.from(ep));
     }
 
-    _addLog(_LogEntry(
-        '📋 ${byController.length} controllers encontrados.', _LogType.info));
-    _totalTests =
-        byController.entries.fold<int>(0, (sum, e) => sum + e.value.length);
+    _addLog(_LogEntry('📋 ${byController.length} controllers encontrados.', _LogType.info));
+    _totalTests = byController.entries.fold<int>(0, (sum, e) => sum + e.value.length);
 
     for (final entry in byController.entries) {
       final ctrlName = entry.key;
       final eps = entry.value;
 
       _addLog(_LogEntry('', _LogType.divider));
-      _addLog(_LogEntry(
-          '📁 $ctrlName (${eps.length} endpoints)', _LogType.section));
+      _addLog(_LogEntry('📁 $ctrlName (${eps.length} endpoints)', _LogType.section));
 
       for (final ep in eps) {
-        final paths =
-            (ep['paths'] as List?)?.map((p) => p.toString()).toList() ?? [];
-        final httpMethods =
-            (ep['httpMethods'] as List?)?.map((m) => m.toString()).toList() ??
-                ['GET'];
+        final paths = (ep['paths'] as List?)?.map((p) => p.toString()).toList() ?? [];
+        final httpMethods = (ep['httpMethods'] as List?)?.map((m) => m.toString()).toList() ?? ['GET'];
         final methodName = ep['metodo']?.toString() ?? '?';
 
         for (final path in paths) {
@@ -753,41 +607,33 @@ class _CrudTestTabState extends State<_CrudTestTab> {
               switch (httpMethod) {
                 case 'POST':
                   final payload = _buildDynamicPayload(path, ctrlName);
-                  res = await http
-                      .post(uri, headers: headers, body: jsonEncode(payload))
+                  res = await http.post(uri, headers: headers, body: jsonEncode(payload))
                       .timeout(const Duration(seconds: 15));
                   break;
                 case 'PUT':
-                  res = await http
-                      .put(uri, headers: headers)
+                  res = await http.put(uri, headers: headers)
                       .timeout(const Duration(seconds: 15));
                   break;
                 case 'DELETE':
-                  res = await http
-                      .delete(uri, headers: headers)
+                  res = await http.delete(uri, headers: headers)
                       .timeout(const Duration(seconds: 15));
                   break;
                 default:
-                  res = await http
-                      .get(uri, headers: headers)
+                  res = await http.get(uri, headers: headers)
                       .timeout(const Duration(seconds: 15));
               }
 
               if (res.statusCode >= 200 && res.statusCode < 300) {
-                _addLog(_LogEntry(
-                    '  ✅ $stepName → ${res.statusCode}', _LogType.success));
+                _addLog(_LogEntry('  ✅ $stepName → ${res.statusCode}', _LogType.success));
                 _successCount++;
               } else {
-                _addLog(_LogEntry(
-                    '  ❌ $stepName → ${res.statusCode}', _LogType.error));
+                _addLog(_LogEntry('  ❌ $stepName → ${res.statusCode}', _LogType.error));
                 _addToErrorReport(
                   scenarioName: ctrlName,
                   stepName: stepName,
                   expectedStatus: 200,
                   actualStatus: res.statusCode,
-                  responseBody: res.body.length > 300
-                      ? '${res.body.substring(0, 300)}...'
-                      : res.body,
+                  responseBody: res.body.length > 300 ? '${res.body.substring(0, 300)}...' : res.body,
                 );
                 _failCount++;
               }
@@ -813,8 +659,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
     });
   }
 
-  Map<String, dynamic> _buildDynamicPayload(
-      String path, String controllerName) {
+  Map<String, dynamic> _buildDynamicPayload(String path, String controllerName) {
     final ts = DateTime.now().millisecondsSinceEpoch;
     final ctrl = controllerName.replaceAll('Controller', '').toLowerCase();
     final nomeEntity = ctrl.endsWith('s') ? ctrl : '${ctrl}teste$ts';
@@ -837,12 +682,10 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       'categoria': 'nome',
       'role': 'name',
     };
-    final campoNome = fieldMap.entries
-        .firstWhere(
-          (e) => ctrl.contains(e.key),
-          orElse: () => const MapEntry('nome', 'nome'),
-        )
-        .value;
+    final campoNome = fieldMap.entries.firstWhere(
+      (e) => ctrl.contains(e.key),
+      orElse: () => const MapEntry('nome', 'nome'),
+    ).value;
 
     return {
       campoNome: '$nomeEntity $ts',
@@ -870,8 +713,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                   ),
                 if (!_isRunning && _logs.isNotEmpty)
                   IconButton(
-                    icon:
-                        const Icon(Icons.delete_outline, color: Colors.white54),
+                    icon: const Icon(Icons.delete_outline, color: Colors.white54),
                     tooltip: 'Limpar logs',
                     onPressed: () => setState(() {
                       _logs.clear();
@@ -894,7 +736,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
       ],
     );
   }
-
+  
   void _showErrorDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -903,8 +745,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
             backgroundColor: const Color(0xFF1A1D27),
-            title: const Text('Relatório de Falhas',
-                style: TextStyle(color: Colors.white)),
+            title: const Text('Relatório de Falhas', style: TextStyle(color: Colors.white)),
             content: SizedBox(
               width: 600,
               child: Scrollbar(
@@ -934,8 +775,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                   ),
                 ),
                 onPressed: () async {
-                  await Clipboard.setData(
-                      ClipboardData(text: _errorReport.toString()));
+                  await Clipboard.setData(ClipboardData(text: _errorReport.toString()));
                   setDialogState(() => copied = true);
                   Future.delayed(const Duration(seconds: 2), () {
                     if (ctx.mounted) setDialogState(() => copied = false);
@@ -956,15 +796,13 @@ class _CrudTestTabState extends State<_CrudTestTab> {
   Widget _buildHeader(BuildContext context) {
     final scenarios = _buildScenarios();
     final totalEndpoints = scenarios.length;
-    final totalTests =
-        scenarios.fold<int>(0, (prev, s) => prev + s.steps.length);
+    final totalTests = scenarios.fold<int>(0, (prev, s) => prev + s.steps.length);
 
     return Container(
       color: const Color(0xFF1A1D27),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Row(
         children: [
-          const SystemTestRunPanel(),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -990,17 +828,14 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                     ? const SizedBox(
                         width: 14,
                         height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.play_arrow, size: 18),
                 label: Text(_isRunning ? 'Executando...' : 'Iniciar Testes'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _isRunning ? Colors.grey[700] : GridColors.success,
+                  backgroundColor: _isRunning ? Colors.grey[700] : GridColors.success,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1011,8 +846,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1565C0),
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ],
@@ -1096,9 +930,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -1110,8 +942,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
           children: [
             Icon(Icons.terminal, size: 48, color: Colors.white12),
             SizedBox(height: 12),
-            Text('Pressione "Iniciar Testes" para começar',
-                style: TextStyle(color: Colors.white24)),
+            Text('Pressione "Iniciar Testes" para começar', style: TextStyle(color: Colors.white24)),
           ],
         ),
       );
@@ -1167,7 +998,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         return const Color(0xFFFFB74D);
       case _LogType.info:
         return const Color(0xFF42A5F5);
-      case _LogType.skip:
+       case _LogType.skip:
         return Colors.white54;
       default:
         return Colors.white54;
@@ -1204,33 +1035,26 @@ class _TelasTestTabState extends State<_TelasTestTab> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
             backgroundColor: const Color(0xFF1A1D27),
-            title: const Text('Relatório de Falhas — Telas',
-                style: TextStyle(color: Colors.white)),
+            title: const Text('Relatório de Falhas — Telas', style: TextStyle(color: Colors.white)),
             content: SizedBox(
               width: 620,
               child: Scrollbar(
                 child: SingleChildScrollView(
                   child: SelectableText(
                     _errorReport.toString(),
-                    style: const TextStyle(
-                        color: Colors.white70,
-                        fontFamily: 'monospace',
-                        fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
               ),
             ),
             actions: [
               TextButton.icon(
-                icon: Icon(copied ? Icons.check : Icons.copy,
-                    size: 16,
+                icon: Icon(copied ? Icons.check : Icons.copy, size: 16,
                     color: copied ? GridColors.success : Colors.white70),
                 label: Text(copied ? 'Copiado!' : 'Copiar tudo',
-                    style: TextStyle(
-                        color: copied ? GridColors.success : Colors.white70)),
+                    style: TextStyle(color: copied ? GridColors.success : Colors.white70)),
                 onPressed: () async {
-                  await Clipboard.setData(
-                      ClipboardData(text: _errorReport.toString()));
+                  await Clipboard.setData(ClipboardData(text: _errorReport.toString()));
                   setDialogState(() => copied = true);
                   Future.delayed(const Duration(seconds: 2), () {
                     if (ctx.mounted) setDialogState(() => copied = false);
@@ -1276,8 +1100,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
     }
     _errorReport.writeln('- **Esperado:** $expected | **Recebido:** $actual');
     if (body != null && body.isNotEmpty) {
-      final truncated =
-          body.length > 300 ? '${body.substring(0, 300)}...(truncado)' : body;
+      final truncated = body.length > 300 ? '${body.substring(0, 300)}...(truncado)' : body;
       _errorReport.writeln('- **Resposta:** ```\n$truncated\n```');
     }
     _errorReport.writeln('---\n');
@@ -1315,19 +1138,12 @@ class _TelasTestTabState extends State<_TelasTestTab> {
     List<TelaConfig> telas = [];
     try {
       final res = await http
-          .get(Uri.parse('$base/api/telas?tamanho=500&pagina=0'),
-              headers: headers)
+          .get(Uri.parse('$base/api/telas?tamanho=500&pagina=0'), headers: headers)
           .timeout(const Duration(seconds: 20));
 
       if (res.statusCode != 200) {
-        _log('❌ Falha ao buscar telas: ${res.statusCode} — ${res.body}',
-            _LogType.error);
-        _reportError(
-            tela: 'GET /api/telas',
-            step: 'Listar telas',
-            expected: 200,
-            actual: res.statusCode,
-            body: res.body);
+        _log('❌ Falha ao buscar telas: ${res.statusCode} — ${res.body}', _LogType.error);
+        _reportError(tela: 'GET /api/telas', step: 'Listar telas', expected: 200, actual: res.statusCode, body: res.body);
         setState(() => _isRunning = false);
         return;
       }
@@ -1355,8 +1171,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
           .whereType<String>()
           .toList();
 
-      _log('📦 ${nomes.length} telas na lista. Carregando detalhes...',
-          _LogType.info);
+      _log('📦 ${nomes.length} telas na lista. Carregando detalhes...', _LogType.info);
 
       for (final nome in nomes) {
         try {
@@ -1366,12 +1181,10 @@ class _TelasTestTabState extends State<_TelasTestTab> {
           if (telaRes.statusCode == 200) {
             final telaJson = jsonDecode(telaRes.body);
             if (telaJson is Map) {
-              telas.add(
-                  TelaConfig.fromJson(Map<String, dynamic>.from(telaJson)));
+              telas.add(TelaConfig.fromJson(Map<String, dynamic>.from(telaJson)));
             }
           } else {
-            _log('  ⚠️ Tela "$nome" retornou ${telaRes.statusCode}',
-                _LogType.warning);
+            _log('  ⚠️ Tela "$nome" retornou ${telaRes.statusCode}', _LogType.warning);
           }
         } catch (e) {
           _log('  ⚠️ Erro ao carregar tela "$nome": $e', _LogType.warning);
@@ -1381,12 +1194,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
       _log('✅ ${telas.length} telas carregadas com sucesso.', _LogType.success);
     } catch (e) {
       _log('❌ Erro ao buscar telas: $e', _LogType.error);
-      _reportError(
-          tela: 'GET /api/telas',
-          step: 'Listar telas',
-          expected: 200,
-          actual: 0,
-          body: e.toString());
+      _reportError(tela: 'GET /api/telas', step: 'Listar telas', expected: 200, actual: 0, body: e.toString());
       setState(() => _isRunning = false);
       return;
     }
@@ -1444,8 +1252,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
               createdId = id.toString();
               _log('    → ID criado: $createdId', _LogType.info);
             } else {
-              _log('    ⚠️ Resposta sem "id" — update/delete serão pulados.',
-                  _LogType.warning);
+              _log('    ⚠️ Resposta sem "id" — update/delete serão pulados.', _LogType.warning);
             }
           } catch (_) {}
         },
@@ -1466,12 +1273,8 @@ class _TelasTestTabState extends State<_TelasTestTab> {
         _testsRun++;
         setState(() => _progress = _testsRun / _totalTests);
       } else {
-        final updateEndpoint =
-            tela.updateEndpoint.replaceAll(':id', createdId!);
-        final updatePayload = {
-          ...payload,
-          'id': int.tryParse(createdId!) ?? createdId
-        };
+        final updateEndpoint = tela.updateEndpoint.replaceAll(':id', createdId!);
+        final updatePayload = {...payload, 'id': int.tryParse(createdId!) ?? createdId};
         final updateJson = jsonEncode(updatePayload);
         await _testStep(
           label: 'PUT $updateEndpoint',
@@ -1500,8 +1303,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
         _testsRun++;
         setState(() => _progress = _testsRun / _totalTests);
       } else {
-        final deleteEndpoint =
-            tela.deleteEndpoint.replaceAll(':id', createdId!);
+        final deleteEndpoint = tela.deleteEndpoint.replaceAll(':id', createdId!);
         await _testStep(
           label: 'DELETE $deleteEndpoint',
           run: () => http
@@ -1587,8 +1389,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
           if (inner is List) {
             lista = inner;
           } else if (inner is Map) {
-            lista =
-                (inner['dados'] ?? inner['content'] ?? inner['items']) as List?;
+            lista = (inner['dados'] ?? inner['content'] ?? inner['items']) as List?;
           }
         }
         if (lista != null && lista.isNotEmpty) {
@@ -1611,8 +1412,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
     for (final f in tela.fields) {
       if (!f.showInInsert) continue;
       final fn = f.fieldName;
-      if (fn == 'id' || fn == 'dh_created_at' || fn == 'dh_updated_at')
-        continue;
+      if (fn == 'id' || fn == 'dh_created_at' || fn == 'dh_updated_at') continue;
 
       switch (f.fieldType) {
         case TelaFieldType.number:
@@ -1675,8 +1475,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                        'Testa fetch/create/update/delete de cada tela cadastrada.',
+                    Text('Testa fetch/create/update/delete de cada tela cadastrada.',
                         style: TextStyle(color: Colors.white70, fontSize: 13)),
                     SizedBox(height: 2),
                     Text('Os endpoints e campos vêm direto do backend.',
