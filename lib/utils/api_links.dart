@@ -712,25 +712,23 @@ class ApiLinks {
   static String get alertasCertificados =>
       '$_baseUrlNew/api/certificados/alertas';
 
-  static String getRolesLoginId(int loginId) => '\$_baseUrlNew/api/login/\$loginId/roles';
-  static String updateRolesLoginId(int loginId) => '\$_baseUrlNew/api/login/\$loginId/roles';
-  static String getAllRoles = 
+  static String getRolesLoginId(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/roles';
+  static String updateRolesLoginId(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/roles';
+  static String getAllRoles =
       '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
 
   /// GET /api/role/disponiveis — roles filtradas por módulos contratados
   static String get rolesDisponiveis => '$_baseUrlNew/api/role/disponiveis';
 
   static String associateRoleToLogin(int loginId, int roleId) {
-    return '$_baseUrlNew/api/logins/$loginId/roles/$roleId';
+    return '$_baseUrlNew/api/login/$loginId/roles/$roleId';
   }
 
   static String removeRoleFromLogin(int loginId, int roleId) {
-    return '$_baseUrlNew/api/logins/$loginId/roles/$roleId';
+    return '$_baseUrlNew/api/login/$loginId/roles/$roleId';
   }
-
-  //ApiLinks.fecharChamado(widget.chamadoId),
-  static String getRolesLoginId(String id) =>
-      '$_baseUrlNew/api/logins/$id/roles';
 
   // Setores de um login (roteamento de alertas)
   static String getSetoresLoginId(int loginId) =>

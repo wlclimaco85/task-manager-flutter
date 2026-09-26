@@ -3,20 +3,38 @@ import 'package:task_manager_flutter/utils/api_links.dart'; // Onde definiremos 
 import 'package:task_manager_flutter/models/network_response.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
 
-
 import 'package:task_manager_flutter/utils/app_logger.dart';
+
 class RoleCaller {
+  static List<Role> parseRolesResponse(dynamic body) {
+    dynamic rawList = body;
+    if (body is Map<String, dynamic>) {
+      final data = body['data'];
+      if (data is Map<String, dynamic>) {
+        rawList = data['dados'];
+      } else if (data is List) {
+        rawList = data;
+      } else {
+        rawList = body['dados'];
+      }
+    }
+
+    if (rawList is! List) return [];
+    return rawList
+        .whereType<Map>()
+        .map((item) => Role.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
   Future<List<Role>> getRoles() async {
-    List<Role>? roles = [];
-    RolesModel model;
+    final roles = <Role>[];
     try {
       final NetworkResponse response = await NetworkCaller().getRequest(
         ApiLinks.getAllRoles,
       );
 
       if (response.statusCode == 200 && response.body != null) {
-        model = RolesModel.fromJson(response.body!);
-        roles.addAll(model.roles ?? []);
+        roles.addAll(parseRolesResponse(response.body));
       } else {
         throw Exception('Falha ao carregar roles: ${response.statusCode}');
       }
@@ -27,17 +45,19 @@ class RoleCaller {
     return roles;
   }
 
-  
   Future<List<Role>> fetchRolesDoLogin(int loginId) async {
     List<Role> roles = [];
     try {
-      final response = await NetworkCaller().getRequest(ApiLinks.getRolesLoginId(loginId));
+      final response =
+          await NetworkCaller().getRequest(ApiLinks.getRolesLoginId(loginId));
       if (response.isSuccess && response.body != null) {
-        final body = response.body;
+        final dynamic body = response.body;
         // Lida com { data: { dados: [...] } } (Response customizado) e outras variações comuns
         List<dynamic> dataList = [];
         if (body is Map<String, dynamic>) {
-          if (body.containsKey('data') && body['data'] is Map<String, dynamic> && body['data'].containsKey('dados')) {
+          if (body.containsKey('data') &&
+              body['data'] is Map<String, dynamic> &&
+              body['data'].containsKey('dados')) {
             dataList = body['data']['dados'];
           } else if (body.containsKey('data') && body['data'] is List) {
             dataList = body['data'];
@@ -45,10 +65,12 @@ class RoleCaller {
             dataList = body['dados'];
           }
         } else if (body is List) {
-          dataList = body;
+          dataList = List<dynamic>.from(body);
         }
 
-        roles = dataList.map((r) => Role.fromJson(r as Map<String, dynamic>)).toList();
+        roles = dataList
+            .map((r) => Role.fromJson(r as Map<String, dynamic>))
+            .toList();
       } else {
         throw Exception('Falha ao carregar roles do login: ');
       }
@@ -81,7 +103,7 @@ class RoleCaller {
         // No exemplo, o endpoint é POST e não tem body.
       );
 
-      if (response.statusCode == 200) {
+      if (response.isSuccess) {
         return true;
       } else {
         return false;
@@ -98,7 +120,7 @@ class RoleCaller {
         ApiLinks.removeRoleFromLogin(loginId, roleId),
       );
 
-      if (response.statusCode == 204) {
+      if (response.isSuccess) {
         return true;
       } else {
         return false;
@@ -135,9 +157,8 @@ class RoleCaller {
         // Resposta é List<Role> direto, não envolvida em "data"
         final body = response.body;
         List<dynamic> data = body is List ? body as List<dynamic> : [body];
-        roles = data
-            .map((r) => Role.fromJson(r as Map<String, dynamic>))
-            .toList();
+        roles =
+            data.map((r) => Role.fromJson(r as Map<String, dynamic>)).toList();
       } else if (response.statusCode == 403) {
         // Anti-IDOR: usuário não tem acesso ao tenant informado
         throw Exception('Sem acesso ao tenant (403)');

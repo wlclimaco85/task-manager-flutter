@@ -1,7 +1,57 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/role_model.dart';
+import 'package:task_manager_flutter/services/role_caller.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 
 void main() {
+  group('RoleCaller - contrato de vinculo do login', () {
+    test('usa os endpoints singulares expostos pelo LoginController', () {
+      expect(ApiLinks.getRolesLoginId(42), endsWith('/api/login/42/roles'));
+      expect(ApiLinks.updateRolesLoginId(42), endsWith('/api/login/42/roles'));
+      expect(
+        ApiLinks.associateRoleToLogin(42, 7),
+        endsWith('/api/login/42/roles/7'),
+      );
+      expect(
+        ApiLinks.removeRoleFromLogin(42, 7),
+        endsWith('/api/login/42/roles/7'),
+      );
+    });
+
+    test('parseia resposta paginada usada pelo endpoint de roles do login', () {
+      final roles = RoleCaller.parseRolesResponse({
+        'data': {
+          'dados': [
+            {
+              'id': 7,
+              'description': 'Cliente',
+              'key': 'ROLE_CLIENTE',
+              'available': true,
+            },
+          ],
+        },
+      });
+
+      expect(roles, hasLength(1));
+      expect(roles.single.id, 7);
+      expect(roles.single.description, 'Cliente');
+      expect(roles.single.key, 'ROLE_CLIENTE');
+    });
+
+    test('parseia lista direta de roles', () {
+      final roles = RoleCaller.parseRolesResponse([
+        {
+          'id': 8,
+          'description': 'Administrador',
+          'key': 'ROLE_ADMIN',
+        },
+      ]);
+
+      expect(roles.single.id, 8);
+      expect(roles.single.key, 'ROLE_ADMIN');
+    });
+  });
+
   group('RoleCaller - Role Model Integration', () {
     test('deve parsear role com moduloNecessario null', () {
       final json = {
@@ -67,8 +117,9 @@ void main() {
         },
       ];
 
-      final roles =
-          jsonList.map((j) => Role.fromJson(j as Map<String, dynamic>)).toList();
+      final roles = jsonList
+          .map((j) => Role.fromJson(j as Map<String, dynamic>))
+          .toList();
 
       expect(roles.length, equals(3));
       expect(roles[0].moduloNecessario, isNull);
@@ -109,7 +160,8 @@ void main() {
       ];
 
       // Filtro: apenas roles sem moduloNecessario
-      final elegibleRoles = allRoles.where((r) => r.moduloNecessario == null).toList();
+      final elegibleRoles =
+          allRoles.where((r) => r.moduloNecessario == null).toList();
 
       expect(elegibleRoles.length, equals(1));
       expect(elegibleRoles.first.id, equals(21));
@@ -126,7 +178,7 @@ void main() {
 
       final modulosContratados = ['COBRANCA', 'ORCAMENTOS'];
       final isAvailable = role.moduloNecessario == null ||
-                         modulosContratados.contains(role.moduloNecessario);
+          modulosContratados.contains(role.moduloNecessario);
 
       expect(isAvailable, isTrue);
     });
@@ -142,7 +194,7 @@ void main() {
 
       final modulosContratados = ['COBRANCA']; // Não inclui ORCAMENTOS
       final isAvailable = role.moduloNecessario == null ||
-                         modulosContratados.contains(role.moduloNecessario);
+          modulosContratados.contains(role.moduloNecessario);
 
       expect(isAvailable, isFalse);
     });
