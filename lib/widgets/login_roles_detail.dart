@@ -7,7 +7,8 @@ import '../services/role_caller.dart';
 typedef RoleesLoader = Future<List<Role>> Function();
 typedef LoginRoleesLoader = Future<List<Role>> Function(int loginId);
 typedef LoginRoleUpdater = Future<bool> Function(int loginId, int roleId);
-typedef LoginRoleesSalvar = Future<bool> Function(int loginId, List<int> roleIds);
+typedef LoginRoleesSalvar = Future<bool> Function(
+    int loginId, List<int> roleIds);
 
 class LoginRoleesDetail extends StatefulWidget {
   final int? loginId;
@@ -25,15 +26,12 @@ class LoginRoleesDetail extends StatefulWidget {
     LoginRoleUpdater? vincularRole,
     LoginRoleUpdater? desvincularRole,
     LoginRoleesSalvar? salvarRolees,
-  })  : carregarRolees = carregarRolees ?? RoleCaller().fetchAllRolees,
+  })  : carregarRolees = carregarRolees ?? RoleCaller().getRoles,
         carregarRoleesDoLogin =
-            carregarRoleesDoLogin ?? RoleCaller().fetchRoleesDoLogin,
-        vincularRole =
-            vincularRole ?? RoleCaller().associarRoleAoLogin,
-        desvincularRole =
-            desvincularRole ?? RoleCaller().removerRoleDoLogin,
-        salvarRolees =
-            salvarRolees ?? RoleCaller().atualizarRoleesDoLogin;
+            carregarRoleesDoLogin ?? RoleCaller().fetchRolesDoLogin,
+        vincularRole = vincularRole ?? RoleCaller().associateRoleToLogin,
+        desvincularRole = desvincularRole ?? RoleCaller().removeRoleFromLogin,
+        salvarRolees = salvarRolees ?? RoleCaller().atualizarRolesDoLogin;
 
   @override
   State<LoginRoleesDetail> createState() => _LoginRoleesDetailState();
@@ -74,7 +72,8 @@ class _LoginRoleesDetailState extends State<LoginRoleesDetail> {
       if (!mounted) return;
       setState(() {
         _vinculados = List.of(list)
-          ..sort((a, b) => (a.description ?? '').compareTo(b.description ?? ''));
+          ..sort(
+              (a, b) => (a.description ?? '').compareTo(b.description ?? ''));
         _carregando = false;
       });
     } catch (e) {
@@ -161,7 +160,8 @@ class _LoginRoleesDetailState extends State<LoginRoleesDetail> {
       if (atualizado is List<Role>) {
         setState(() {
           _vinculados = List.of(atualizado)
-            ..sort((a, b) => (a.description ?? '').compareTo(b.description ?? ''));
+            ..sort(
+                (a, b) => (a.description ?? '').compareTo(b.description ?? ''));
           _erro = null;
         });
       }
@@ -221,7 +221,8 @@ class _LoginRoleesDetailState extends State<LoginRoleesDetail> {
                 label: const Text('Vincular'),
                 style: FilledButton.styleFrom(
                   backgroundColor: GridColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),
               ),
               const SizedBox(width: 8),
@@ -305,7 +306,8 @@ class _LoginRoleesDetailState extends State<LoginRoleesDetail> {
             columnSpacing: 24,
             columns: const [
               DataColumn(
-                label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold)),
+                label:
+                    Text('ID', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               DataColumn(
                 label: Text('Role / Descrição',
@@ -343,8 +345,8 @@ class _LoginRoleesDetailState extends State<LoginRoleesDetail> {
                       ],
                     ),
                   ),
-                  DataCell(Text(role.responsavel ?? '-')),
-                  DataCell(Text(role.ramal ?? '-')),
+                  DataCell(Text(role.aplicativo?.nome ?? '-')),
+                  DataCell(Text(role.key ?? '-')),
                   DataCell(
                     IconButton(
                       icon: const Icon(Icons.link_off,
@@ -420,7 +422,8 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
 
       setState(() {
         _todosRolees = porId.values.toList()
-          ..sort((a, b) => (a.description ?? '').compareTo(b.description ?? ''));
+          ..sort(
+              (a, b) => (a.description ?? '').compareTo(b.description ?? ''));
         _selecionados = widget.vinculadosAtuais
             .where((s) => s.id != null)
             .map((s) => s.id!)
@@ -438,10 +441,8 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
 
   void _selecionarTodos() {
     setState(() {
-      _selecionados = _todosRolees
-          .where((s) => s.id != null)
-          .map((s) => s.id!)
-          .toSet();
+      _selecionados =
+          _todosRolees.where((s) => s.id != null).map((s) => s.id!).toSet();
       _erro = null;
     });
   }
@@ -519,9 +520,9 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
         ? _todosRolees
         : _todosRolees.where((s) {
             final termo = _filtro.trim().toLowerCase();
-            return (s.nome ?? '').toLowerCase().contains(termo) ||
-                (s.responsavel ?? '').toLowerCase().contains(termo) ||
-                (s.ramal ?? '').toLowerCase().contains(termo);
+            return (s.description ?? '').toLowerCase().contains(termo) ||
+                (s.key ?? '').toLowerCase().contains(termo) ||
+                (s.aplicativo?.nome ?? '').toLowerCase().contains(termo);
           }).toList();
 
     return Dialog(
@@ -556,7 +557,8 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
                     tooltip: 'Fechar',
-                    onPressed: _salvando ? null : () => Navigator.of(context).pop(),
+                    onPressed:
+                        _salvando ? null : () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
@@ -643,7 +645,8 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
                         )
                       : roleesFiltrados.isEmpty
                           ? const Center(
-                              child: Text('Nenhum role encontrado para a busca.'),
+                              child:
+                                  Text('Nenhum role encontrado para a busca.'),
                             )
                           : ListView.separated(
                               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -669,17 +672,16 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
                                           : FontWeight.normal,
                                     ),
                                   ),
-                                  subtitle: (role.responsavel != null &&
-                                          role.responsavel!.isNotEmpty)
-                                      ? Text(
-                                          'Resp: ${role.responsavel}' +
-                                              ((role.ramal != null &&
-                                                      role.ramal!.isNotEmpty)
-                                                  ? ' | Chave: ${role.ramal}'
-                                                  : ''),
-                                          style: const TextStyle(fontSize: 12),
-                                        )
-                                      : null,
+                                  subtitle: Text(
+                                    [
+                                      if ((role.aplicativo?.nome ?? '')
+                                          .isNotEmpty)
+                                        role.aplicativo!.nome!,
+                                      if ((role.key ?? '').isNotEmpty)
+                                        role.key!,
+                                    ].join(' | '),
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                   onChanged: _salvando
                                       ? null
                                       : (val) {
@@ -731,7 +733,8 @@ class _VincularRoleesDialogState extends State<_VincularRoleesDialog> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: _salvando ? null : () => Navigator.of(context).pop(),
+                    onPressed:
+                        _salvando ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 12),
