@@ -27,10 +27,25 @@ void main() {
         home: Scaffold(
             body: SystemTestRunPanel(service: service, token: 'token-test'))));
 
-    await tester.tap(find.byKey(const Key('system_test_group_selector')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tudo: fases 1 e 2').last);
-    await tester.pumpAndSettle();
+    final selector = find.byKey(const Key('system_test_group_selector'));
+    await tester.ensureVisible(selector);
+    final decorator = tester.widget<InputDecorator>(find.descendant(
+      of: selector,
+      matching: find.byType(InputDecorator),
+    ));
+    expect(decorator.decoration.fillColor, Colors.white);
+
+    final dropdown = tester.widget<DropdownButton<String>>(find.descendant(
+      of: selector,
+      matching: find.byType(DropdownButton<String>),
+    ));
+    final option = dropdown.items!
+        .map((item) => item.child)
+        .whereType<Text>()
+        .singleWhere((text) => text.data == 'Tudo: fases 1 e 2');
+    expect(option.style?.color, const Color(0xFF17211B));
+    dropdown.onChanged!('TODOS');
+    await tester.pump();
     await tester.tap(find.byKey(const Key('system_test_start_button')));
     await tester.pumpAndSettle();
 
@@ -38,6 +53,56 @@ void main() {
       'environment': 'HOMOLOGACAO',
       'groups': ['TODOS']
     });
+  });
+
+  testWidgets('mostra erro completo copiavel depois de continuar o fluxo',
+      (tester) async {
+    const error = 'POST /api/role retornou 400: Role duplicada';
+    final service = SystemTestRunService(client: MockClient((request) async {
+      if (request.method == 'POST') {
+        return http.Response(jsonEncode(_run('RUNNING')), 202);
+      }
+      if (request.url.path.endsWith('/events')) {
+        return http.Response(
+            jsonEncode([
+              {
+                'eventSequence': 13,
+                'stepName': 'Role - ERRO',
+                'level': 'ERROR',
+                'message': error,
+              },
+              {
+                'eventSequence': 14,
+                'stepName': 'Setor - POST',
+                'level': 'SUCCESS',
+                'message': 'Setor - POST concluido',
+              }
+            ]),
+            200);
+      }
+      return http.Response(
+          jsonEncode({
+            ..._run('FAILED'),
+            'progressPercent': 100,
+            'completedOperations': 10,
+            'failureCount': 1,
+            'skippedCount': 5,
+            'lastError': error,
+          }),
+          200);
+    }));
+
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SystemTestRunPanel(service: service, token: 'token-test'))));
+    await tester.tap(find.byKey(const Key('system_test_start_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('system_test_error_summary')), findsOneWidget);
+    expect(find.text(error), findsWidgets);
+    expect(find.text('Setor - POST'), findsOneWidget);
+    expect(find.text('Ignorados 5'), findsOneWidget);
+    expect(find.byKey(const Key('system_test_error_copy')), findsOneWidget);
   });
 }
 
