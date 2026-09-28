@@ -49,6 +49,25 @@ void main() {
             .having((e) => e.message, 'message', contains('400'))));
   });
 
+  test('retoma a execucao ativa devolvida com 409', () async {
+    final service = SystemTestRunService(
+        client: MockClient((_) async => http.Response(
+            jsonEncode({
+              'runId': 'run-active',
+              'marker': 'E2E-ACTIVE',
+              'environment': 'HOMOLOGACAO',
+              'status': 'RUNNING',
+              'progressPercent': 42,
+            }),
+            409)));
+
+    final run = await service.start('token', const ['FASE_1']);
+
+    expect(run.runId, 'run-active');
+    expect(run.progressPercent, 42);
+    expect(run.isActive, isTrue);
+  });
+
   test('envia grupo agregado da fase 2 sem alterar o ambiente', () async {
     late http.Request captured;
     final service = SystemTestRunService(client: MockClient((request) async {
