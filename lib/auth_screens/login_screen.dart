@@ -21,6 +21,7 @@ import '../../utils/security_matrix.dart';
 import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
+import 'trial_request_dialog.dart';
 
 const String _playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.appacademia.taskmanager';
@@ -1500,6 +1501,14 @@ class _ModuleCard extends StatelessWidget {
 }
 
 class _PricingBanner extends StatelessWidget {
+  void _showTrialDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const TrialRequestDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1559,6 +1568,29 @@ class _PricingBanner extends StatelessWidget {
               color: Color(0xFF64748B),
               fontSize: 10,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showTrialDialog(context),
+              icon: const Icon(Icons.rocket_launch, size: 16),
+              label: const Text('Experimente nossos pacotes - 30 dias grátis'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
+                ),
+              ),
             ),
           ),
         ],
