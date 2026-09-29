@@ -62,6 +62,62 @@ void main() {
     expect(payload['chatId'], 'empresa-1-parceiro-1751-chamado-33');
   });
 
+  test('anexo enviado aparece localmente e eco do WebSocket nao duplica', () {
+    final messages = <ChatMessage>[];
+    final payload = buildChatOutgoingPayload(
+      senderName: 'BRASIL MODA SURF LTDA',
+      senderEmail: 'brasilmodasurfltda@gmail.com',
+      content: 'Arquivo: contrato.pdf',
+      sector: 'Departamento Fiscal',
+      chatId: 'empresa-1-parceiro-1751',
+      type: 'file',
+      timestamp: DateTime.parse('2026-09-29T20:04:00'),
+      empresaId: 1,
+      parceiroId: 1751,
+      fileId: 321,
+      fileName: 'contrato.pdf',
+      fileUrl: '/api/arquivos/download/321',
+    );
+
+    final localMessage = appendOutgoingChatMessage(messages, payload);
+    final echoedMessage = appendOutgoingChatMessage(messages, {
+      ...payload,
+      'timestamp': '2026-09-29T20:04:01',
+      'uploadDate': '2026-09-29T20:04:01',
+    });
+
+    expect(localMessage, isNotNull);
+    expect(localMessage!.type, 'file');
+    expect(localMessage.fileId, 321);
+    expect(localMessage.fileName, 'contrato.pdf');
+    expect(messages, hasLength(1));
+    expect(echoedMessage, isNull);
+  });
+
+  test('confirmacao do chamado aparece imediatamente na conversa', () {
+    final messages = <ChatMessage>[];
+    final payload = buildChatOutgoingPayload(
+      senderName: 'BRASIL MODA SURF LTDA',
+      senderEmail: 'brasilmodasurfltda@gmail.com',
+      content:
+          'Chamado aberto numero #987. Para acompanhar, acesse a tela de chamados.',
+      sector: 'Departamento Fiscal',
+      chatId: 'empresa-1-parceiro-1751',
+      type: 'ticket',
+      timestamp: DateTime.parse('2026-09-29T20:05:00'),
+      empresaId: 1,
+      parceiroId: 1751,
+      ticketId: 987,
+    );
+
+    final localMessage = appendOutgoingChatMessage(messages, payload);
+
+    expect(localMessage, isNotNull);
+    expect(localMessage!.type, 'ticket');
+    expect(localMessage.content, contains('#987'));
+    expect(messages.single.content, contains('tela de chamados'));
+  });
+
   test('ChatMessage le parceiroId devolvido pelo WebSocket', () {
     final message = ChatMessage.fromJson({
       'sender': 'BRASIL MODA SURF LTDA',

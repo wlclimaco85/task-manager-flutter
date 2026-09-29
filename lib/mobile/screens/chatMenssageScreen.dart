@@ -82,8 +82,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   bool _isDuplicate(ChatMessage msg) {
-    return msg.chatId != null && _messages.any((m) =>
-      m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
+    return _messages.any((message) => chatMessagesAreEquivalent(message, msg));
   }
 
   void _adoptRealChatIdIfNeeded(ChatMessage msg) {
@@ -137,19 +136,24 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _scheduleReconnect() {
     _retryCount++;
     if (!mounted || _retryCount >= _maxRetries || _disposed) return;
-    final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
-    Future.delayed(delay, () { if (mounted && !_disposed) _connectWebSocket(); });
+    final delay = Duration(
+        seconds:
+            (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
+    Future.delayed(delay, () {
+      if (mounted && !_disposed) _connectWebSocket();
+    });
   }
 
   Future<void> _loadInitialMessages() async {
     if (mounted && !_disposed) setState(() => _isLoading = true);
     try {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
-      if (mounted && !_disposed) setState(() {
-        _messages
-          ..clear()
-          ..addAll(data.map(_normalizeMessage));
-      });
+      if (mounted && !_disposed)
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(data.map(_normalizeMessage));
+        });
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       _showSnack('Erro ao carregar mensagens: $e', error: true);
@@ -254,10 +258,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'userName': _loggedUserName,
         'sector': widget.sector,
         'chatId': _effectiveChatId,
-        if (currentEmpId > 0)
-          'empId': currentEmpId.toString(),
-        if (currentParceiroId > 0)
-          'parceiroId': currentParceiroId.toString(),
+        if (currentEmpId > 0) 'empId': currentEmpId.toString(),
+        if (currentParceiroId > 0) 'parceiroId': currentParceiroId.toString(),
         // Fix card #429: FileController.uploadFile exige estes 5 campos
         // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
         // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
@@ -297,21 +299,26 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         return;
       }
 
-      _channel!.sink.add(json.encode(buildChatOutgoingPayload(
+      final payload = buildChatOutgoingPayload(
         senderName: _loggedUserName,
         senderEmail: _loggedUserEmail,
         content: 'Arquivo: ${file.name}',
         sector: widget.sector,
         type: 'file',
         chatId: _effectiveChatId,
-        empresaId: TenantContext.empresaId,
-        parceiroId: TenantContext.parceiroId,
+        empresaId: currentEmpId > 0 ? currentEmpId : null,
+        parceiroId: currentParceiroId > 0 ? currentParceiroId : null,
         aplicativoId: TenantContext.aplicativoId,
         userId: TenantContext.userId,
         fileName: file.name,
         fileId: fileId,
         fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
-      )));
+      );
+      _channel!.sink.add(json.encode(payload));
+      if (mounted && !_disposed) {
+        setState(() => appendOutgoingChatMessage(_messages, payload));
+        _scrollToBottom();
+      }
       AppLogger.i.info(
         'Upload de chat concluido: fileId=$fileId, arquivo=${file.name}, chatId=$_effectiveChatId',
       );
@@ -344,8 +351,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         .where((m) =>
             m.type == 'file' &&
             m.fileId != null &&
-            extensoesImagem.contains(
-                (m.fileName ?? '').split('.').last.toLowerCase()))
+            extensoesImagem
+                .contains((m.fileName ?? '').split('.').last.toLowerCase()))
         .map((m) => {'fileId': m.fileId, 'fileName': m.fileName})
         .toList();
   }
@@ -377,23 +384,33 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
-    if (result == null || _channel == null || !mounted || _disposed) return;
-    try {
-      final id = (result as dynamic).id;
-      _channel!.sink.add(json.encode({
-        'sender': _loggedUserName,
-        'senderName': _loggedUserName,
-        'senderEmail': _loggedUserEmail,
-        'content':
-            'Chamado aberto número #$id. Para acompanhar, acesse a tela de chamados.',
-        'sector': widget.sector,
-        'type': 'ticket',
-        'ticketId': id,
-        'timestamp': DateTime.now().toIso8601String(),
-        'chatId': _effectiveChatId,
-        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-      }));
-    } catch (_) {}
+    if (result == null || !mounted || _disposed) return;
+    final id = (result as dynamic).id;
+    final mensagem =
+        'Chamado aberto número #$id. Para acompanhar, acesse a tela de chamados.';
+    final payload = buildChatOutgoingPayload(
+      senderName: _loggedUserName,
+      senderEmail: _loggedUserEmail,
+      content: mensagem,
+      sector: widget.sector,
+      type: 'ticket',
+      chatId: _effectiveChatId,
+      empresaId: TenantContext.empresaId,
+      parceiroId: TenantContext.parceiroId,
+      aplicativoId: TenantContext.aplicativoId,
+      userId: TenantContext.userId,
+      ticketId: id is int ? id : int.tryParse(id.toString()),
+    );
+    if (_channel != null) {
+      try {
+        _channel!.sink.add(json.encode(payload));
+      } catch (e) {
+        L.d('Erro ao enviar confirmação de chamado no chat: $e');
+      }
+    }
+    setState(() => appendOutgoingChatMessage(_messages, payload));
+    _scrollToBottom();
+    _showSnack(mensagem, error: false);
   }
 
   Future<void> _correctDraft() async {
@@ -477,7 +494,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             '${file.path} (fileId=$fileId).',
           );
         }
-        AppLogger.i.info('Download de chat concluido: fileId=$fileId -> ${file.path}');
+        AppLogger.i
+            .info('Download de chat concluido: fileId=$fileId -> ${file.path}');
         _showSnack('Arquivo salvo em: ${file.path}');
       } else {
         AppLogger.i.error(
@@ -534,7 +552,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   // existia, so faltava a ligacao com a tela real de chat.
   Future<void> _transferirChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de transferir.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de transferir.',
+          error: true);
       return;
     }
     final transferido = await showDialog<bool>(
@@ -549,7 +568,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   // Card #474 (Fase 3 fila de atendimento).
   Future<void> _incluirParticipante() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de incluir participante.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de incluir participante.',
+          error: true);
       return;
     }
     await showDialog<bool>(
@@ -560,7 +580,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _finalizarChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.',
+          error: true);
       return;
     }
 
@@ -575,12 +596,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (resultado == null || !mounted || _disposed) return;
 
     try {
-      final url = TenantContext.applyToUrl(
-          ApiLinks.chatFinalizarConversa(
-            _effectiveChatId,
-            satisfacao: resultado.satisfacao.valor,
-            nota: resultado.nota,
-          ));
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalizarConversa(
+        _effectiveChatId,
+        satisfacao: resultado.satisfacao.valor,
+        nota: resultado.nota,
+      ));
       final response = await http.put(
         Uri.parse(url),
         headers: TenantContext.headers,

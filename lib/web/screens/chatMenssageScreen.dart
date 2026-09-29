@@ -14,6 +14,7 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/anexo_preview_dialog.dart';
+import '../../../widgets/chat/chat_message_payload.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/chat_transfer_dialog.dart';
 import '../../../widgets/chat/chat_add_participant_dialog.dart';
@@ -77,8 +78,7 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
   }
 
   bool _isDuplicate(ChatMessage msg) {
-    return msg.chatId != null && _messages.any((m) =>
-      m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
+    return _messages.any((message) => chatMessagesAreEquivalent(message, msg));
   }
 
   void _adoptRealChatIdIfNeeded(ChatMessage msg) {
@@ -137,8 +137,12 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
   void _scheduleReconnect() {
     _retryCount++;
     if (!mounted || _retryCount >= _maxRetries) return;
-    final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
-    Future.delayed(delay, () { if (mounted) _connectWebSocket(); });
+    final delay = Duration(
+        seconds:
+            (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
+    Future.delayed(delay, () {
+      if (mounted) _connectWebSocket();
+    });
   }
 
   Future<void> _loadInitialMessages() async {
@@ -234,10 +238,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         'userName': _loggedUserName,
         'sector': widget.sector,
         'chatId': _effectiveChatId,
-        if (currentEmpId > 0)
-          'empId': currentEmpId.toString(),
-        if (currentParceiroId > 0)
-          'parceiroId': currentParceiroId.toString(),
+        if (currentEmpId > 0) 'empId': currentEmpId.toString(),
+        if (currentParceiroId > 0) 'parceiroId': currentParceiroId.toString(),
         'fileName': file.name,
         'fileType': (file.extension ?? '').toLowerCase(),
         'diretorio': '{"id":0}',
@@ -266,20 +268,26 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         return;
       }
 
-      _channel!.sink.add(json.encode({
-        'sender': _loggedUserName,
-        'senderName': _loggedUserName,
-        'senderEmail': _loggedUserEmail,
-        'content': 'Arquivo: ${file.name}',
-        'sector': widget.sector,
-        'type': 'file',
-        'fileName': file.name,
-        'fileId': fileId,
-        'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
-        'timestamp': DateTime.now().toIso8601String(),
-        'chatId': _effectiveChatId,
-        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-      }));
+      final payload = buildChatOutgoingPayload(
+        senderName: _loggedUserName,
+        senderEmail: _loggedUserEmail,
+        content: 'Arquivo: ${file.name}',
+        sector: widget.sector,
+        type: 'file',
+        chatId: _effectiveChatId,
+        empresaId: currentEmpId > 0 ? currentEmpId : null,
+        parceiroId: currentParceiroId > 0 ? currentParceiroId : null,
+        aplicativoId: TenantContext.aplicativoId,
+        userId: TenantContext.userId,
+        fileName: file.name,
+        fileId: fileId,
+        fileUrl: fileUrl ?? ApiLinks.publicFileUrl(fileId),
+      );
+      _channel!.sink.add(json.encode(payload));
+      if (mounted) {
+        setState(() => appendOutgoingChatMessage(_messages, payload));
+        _scrollToBottom();
+      }
     } catch (e) {
       _showSnack('Erro no upload: $e', error: true);
     }
@@ -305,8 +313,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         .where((m) =>
             m.type == 'file' &&
             m.fileId != null &&
-            extensoesImagem.contains(
-                (m.fileName ?? '').split('.').last.toLowerCase()))
+            extensoesImagem
+                .contains((m.fileName ?? '').split('.').last.toLowerCase()))
         .map((m) => {'fileId': m.fileId, 'fileName': m.fileName})
         .toList();
   }
@@ -331,33 +339,32 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     final mensagem =
         'Chamado aberto número #$id. Para acompanhar, acesse a tela de chamados.';
 
-    bool enviouNoChat = false;
+    final payload = buildChatOutgoingPayload(
+      senderName: _loggedUserName,
+      senderEmail: _loggedUserEmail,
+      content: mensagem,
+      sector: widget.sector,
+      type: 'ticket',
+      chatId: _effectiveChatId,
+      empresaId: TenantContext.empresaId,
+      parceiroId: TenantContext.parceiroId,
+      aplicativoId: TenantContext.aplicativoId,
+      userId: TenantContext.userId,
+      ticketId: id is int ? id : int.tryParse(id.toString()),
+    );
+
     if (_channel != null) {
       try {
-        _channel!.sink.add(json.encode({
-          'sender': _loggedUserName,
-          'senderName': _loggedUserName,
-          'senderEmail': _loggedUserEmail,
-          'content': mensagem,
-          'sector': widget.sector,
-          'type': 'ticket',
-          'ticketId': id,
-          'timestamp': DateTime.now().toIso8601String(),
-          'chatId': _effectiveChatId,
-          if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-        }));
-        enviouNoChat = true;
+        _channel!.sink.add(json.encode(payload));
       } catch (e) {
         L.d('Erro ao enviar confirmação de chamado no chat: $e');
       }
     }
 
     if (!mounted) return;
-    if (!enviouNoChat) {
-      // Fallback: garante que o usuário saiba do número do chamado mesmo se
-      // a conexão de chat tiver caído.
-      _showSnack(mensagem, error: false);
-    }
+    setState(() => appendOutgoingChatMessage(_messages, payload));
+    _scrollToBottom();
+    _showSnack(mensagem, error: false);
   }
 
   Future<void> _correctDraft() async {
@@ -419,7 +426,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
             .saveFile(name: fileName, bytes: response.bodyBytes);
         _showSnack('Arquivo $fileName baixado');
       } else {
-        _showSnack('Falha ao baixar o arquivo (${response.statusCode})', error: true);
+        _showSnack('Falha ao baixar o arquivo (${response.statusCode})',
+            error: true);
       }
     } catch (e) {
       _showSnack('Erro ao baixar o arquivo: $e', error: true);
@@ -469,7 +477,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
   // existia, so faltava a ligacao com a tela real de chat.
   Future<void> _transferirChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de transferir.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de transferir.',
+          error: true);
       return;
     }
     final transferido = await showDialog<bool>(
@@ -484,7 +493,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
   // Card #474 (Fase 3 fila de atendimento).
   Future<void> _incluirParticipante() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de incluir participante.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de incluir participante.',
+          error: true);
       return;
     }
     await showDialog<bool>(
@@ -495,7 +505,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
 
   Future<void> _finalizarChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
-      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.',
+          error: true);
       return;
     }
     // Fix card #444: popup de finalizar substituido por pesquisa de
@@ -508,13 +519,13 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     );
     if (resultado == null || !mounted) return;
     try {
-      final url = TenantContext.applyToUrl(
-          ApiLinks.chatFinalizarConversa(
-            _effectiveChatId,
-            satisfacao: resultado.satisfacao.valor,
-            nota: resultado.nota,
-          ));
-      final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalizarConversa(
+        _effectiveChatId,
+        satisfacao: resultado.satisfacao.valor,
+        nota: resultado.nota,
+      ));
+      final response =
+          await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 204) {
         _showSnack('Atendimento finalizado com sucesso.');
@@ -522,7 +533,8 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         // em vez de manter a conversa finalizada aberta.
         widget.onFinalized?.call();
       } else {
-        _showSnack('Não foi possível finalizar (${response.statusCode}).', error: true);
+        _showSnack('Não foi possível finalizar (${response.statusCode}).',
+            error: true);
       }
     } catch (e) {
       if (!mounted) return;

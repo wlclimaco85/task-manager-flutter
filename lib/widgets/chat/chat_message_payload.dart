@@ -1,3 +1,5 @@
+import '../../models/chat_model.dart';
+
 Map<String, dynamic> buildChatOutgoingPayload({
   required String senderName,
   required String senderEmail,
@@ -37,6 +39,37 @@ Map<String, dynamic> buildChatOutgoingPayload({
     if (fileUrl != null) 'fileUrl': fileUrl,
     if (ticketId != null) 'ticketId': ticketId,
   };
+}
+
+ChatMessage? appendOutgoingChatMessage(
+  List<ChatMessage> messages,
+  Map<String, dynamic> payload,
+) {
+  final candidate = ChatMessage.fromJson(payload);
+  if (messages
+      .any((message) => chatMessagesAreEquivalent(message, candidate))) {
+    return null;
+  }
+  messages.add(candidate);
+  return candidate;
+}
+
+bool chatMessagesAreEquivalent(ChatMessage current, ChatMessage candidate) {
+  if (current.type == 'file' &&
+      candidate.type == 'file' &&
+      current.fileId != null &&
+      candidate.fileId != null) {
+    return current.fileId == candidate.fileId;
+  }
+  if (current.type == 'ticket' && candidate.type == 'ticket') {
+    return current.chatId == candidate.chatId &&
+        current.sender == candidate.sender &&
+        current.content == candidate.content;
+  }
+  return current.chatId == candidate.chatId &&
+      current.sender == candidate.sender &&
+      current.content == candidate.content &&
+      current.timestamp == candidate.timestamp;
 }
 
 String resolveOutgoingChatId({
