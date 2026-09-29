@@ -10,6 +10,7 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/ged_file_type.dart';
+import '../../../utils/ged_upload_scope.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show RemoteDropdownSearchDialog;
@@ -276,8 +277,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       if (_descricaoChatUploadCtrl.text.trim().isNotEmpty) {
         req.fields['descricaoChat'] = _descricaoChatUploadCtrl.text.trim();
       }
-      if (_moduloOrigemFiltro != null)
-        req.fields['modulo'] = _moduloOrigemFiltro!;
+      req.fields['modulo'] = resolveGedUploadModule(_moduloOrigemFiltro);
       if (_idOrigemFiltro != null)
         req.fields['idOrigem'] = _idOrigemFiltro.toString();
 
@@ -703,8 +703,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: GridColors.primarySoft,
                 borderRadius: BorderRadius.circular(12),
@@ -723,23 +722,13 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         children: [
           LayoutBuilder(
             builder: (ctx, constraints) {
-              final largura = constraints.maxWidth;
-              final colunas =
-                  largura < 480 ? 2 : largura < 900 ? 3 : 4;
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(10),
-                gridDelegate:
-                    SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: colunas,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.65,
-                ),
+                gridDelegate: gedFileGridDelegate(constraints.maxWidth),
                 itemCount: itens.length,
-                itemBuilder: (context, index) =>
-                    _buildCard(itens[index]),
+                itemBuilder: (context, index) => _buildCard(itens[index]),
               );
             },
           ),
@@ -750,8 +739,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   // ── Card individual ───────────────────────────────────────────────────────
   Widget _buildCard(Map<String, dynamic> arq) {
-    final podeExcluir = arq['usuarioUploadId']?.toString() ==
-        TenantContext.userId?.toString();
+    final podeExcluir =
+        arq['usuarioUploadId']?.toString() == TenantContext.userId?.toString();
 
     return GedFileCard(
       arq: arq,

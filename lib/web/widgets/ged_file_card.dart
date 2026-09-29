@@ -3,6 +3,24 @@ import 'package:intl/intl.dart';
 
 import '../../utils/ged_file_type.dart';
 
+SliverGridDelegateWithFixedCrossAxisCount gedFileGridDelegate(
+  double availableWidth,
+) {
+  final columns = availableWidth < 520
+      ? 1
+      : availableWidth < 860
+          ? 2
+          : availableWidth < 1200
+              ? 3
+              : 4;
+  return SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: columns,
+    crossAxisSpacing: 10,
+    mainAxisSpacing: 10,
+    mainAxisExtent: 210,
+  );
+}
+
 /// Card de arquivo do GED (versão web), com ações de download, exclusão,
 /// renomear inline e classificação via IA.
 class GedFileCard extends StatefulWidget {

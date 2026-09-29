@@ -11,6 +11,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/ged_file_type.dart';
+import '../../../utils/ged_upload_scope.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
@@ -287,8 +288,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         req.fields['descricaoChat'] = _descricaoChatUploadCtrl.text.trim();
       }
       // H5-21: inclui módulo de origem no upload quando disponível
-      if (_moduloOrigemFiltro != null)
-        req.fields['modulo'] = _moduloOrigemFiltro!;
+      req.fields['modulo'] = resolveGedUploadModule(_moduloOrigemFiltro);
       if (_idOrigemFiltro != null)
         req.fields['idOrigem'] = _idOrigemFiltro.toString();
 
@@ -749,8 +749,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 padding: const EdgeInsets.all(4),
               ),
             // Deletar
-            if (!isEditando && arq['usuarioUploadId']?.toString() ==
-                TenantContext.userId?.toString())
+            if (!isEditando &&
+                arq['usuarioUploadId']?.toString() ==
+                    TenantContext.userId?.toString())
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Excluir',

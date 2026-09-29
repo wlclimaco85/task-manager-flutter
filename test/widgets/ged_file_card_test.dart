@@ -35,6 +35,57 @@ void main() {
     );
   }
 
+  test('grid GED adapta colunas e preserva altura dos cards', () {
+    final compacto = gedFileGridDelegate(420);
+    final medio = gedFileGridDelegate(700);
+    final largo = gedFileGridDelegate(1050);
+    final extraLargo = gedFileGridDelegate(1500);
+
+    expect(compacto.crossAxisCount, 1);
+    expect(medio.crossAxisCount, 2);
+    expect(largo.crossAxisCount, 3);
+    expect(extraLargo.crossAxisCount, 4);
+    expect(compacto.mainAxisExtent, 210);
+    expect(medio.mainAxisExtent, 210);
+    expect(largo.mainAxisExtent, 210);
+    expect(extraLargo.mainAxisExtent, 210);
+  });
+
+  testWidgets('grid GED intermediario renderiza cards sem overflow',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 1050,
+            height: 500,
+            child: GridView.builder(
+              gridDelegate: gedFileGridDelegate(1050),
+              itemCount: 3,
+              itemBuilder: (_, index) => GedFileCard(
+                arq: {
+                  ...arquivoBase(),
+                  'id': index,
+                  'fileName':
+                      'NFE_523_GAITEIRO_ALIMENTOS_LTDA_PESO_6220kg_$index.pdf',
+                },
+                podeExcluir: true,
+                onDownload: () {},
+                onDelete: () {},
+                onRename: (_) async => true,
+                onClassify: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renderiza nome do arquivo e chip de tipo', (tester) async {
     await tester.pumpWidget(buildCard());
 
@@ -80,8 +131,7 @@ void main() {
     expect(nomeRecebido, 'NovoNome');
   });
 
-  testWidgets(
-      'toca Renomear, confirma sem alterar o nome e não chama onRename',
+  testWidgets('toca Renomear, confirma sem alterar o nome e não chama onRename',
       (tester) async {
     var chamado = false;
 
