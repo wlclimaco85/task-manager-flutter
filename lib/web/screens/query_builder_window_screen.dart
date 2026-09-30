@@ -79,7 +79,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
         _carregandoSchemas = false;
         _mensagemErro = schemas.isEmpty ? 'Nenhum schema disponível' : null;
         if (schemas.isNotEmpty) {
-          _schemaSelecionado = schemas.first.toString();
+          _schemaSelecionado = QueryBuilderCaller.nomeSchema(schemas.first);
         }
       });
       if (_schemaSelecionado != null) {
@@ -107,9 +107,12 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       final tabelas = await QueryBuilderCaller.listarTabelas();
       if (!mounted) return;
       setState(() {
-        _tabelas = tabelas;
+        _tabelas = tabelas
+            .where((tabela) =>
+                QueryBuilderCaller.tabelaPertenceAoSchema(tabela, schema))
+            .toList();
         _carregandoTabelas = false;
-        if (tabelas.isEmpty) {
+        if (_tabelas.isEmpty) {
           _mensagemErro = 'Nenhuma tabela encontrada no schema $schema';
         }
       });
@@ -534,7 +537,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
                     : ListView(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         children: _schemas.map((schema) {
-                          final nome = schema.toString();
+                          final nome = QueryBuilderCaller.nomeSchema(schema);
                           final selecionado = nome == _schemaSelecionado;
                           return _buildSchemaNode(nome, selecionado);
                         }).toList(),
@@ -623,7 +626,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     }
 
     return _tabelas.map((tabela) {
-      final nome = tabela.toString();
+      final nome = QueryBuilderCaller.nomeTabela(tabela);
       final selecionada = nome == _tabelaSelecionada;
       return _buildTabelaNode(nome, selecionada);
     }).toList();

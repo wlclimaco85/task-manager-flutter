@@ -14,7 +14,7 @@ class QueryBuilderCaller {
       final NetworkResponse response =
           await NetworkCaller().getRequest(ApiLinks.queryBuilderSchemas);
       if (response.isSuccess && response.body != null) {
-        return _extrairLista(response.body!);
+        return extrairLista(response.body!);
       }
     } catch (e, st) {
       AppLogger.i.error('Erro ao listar schemas: $e', st);
@@ -30,7 +30,7 @@ class QueryBuilderCaller {
       final NetworkResponse response =
           await NetworkCaller().getRequest(ApiLinks.queryBuilderTabelas);
       if (response.isSuccess && response.body != null) {
-        return _extrairLista(response.body!);
+        return extrairLista(response.body!);
       }
     } catch (e, st) {
       AppLogger.i.error('Erro ao listar tabelas: $e', st);
@@ -48,7 +48,7 @@ class QueryBuilderCaller {
           Uri.encodeComponent(schema), Uri.encodeComponent(tabela));
       final NetworkResponse response = await NetworkCaller().getRequest(url);
       if (response.isSuccess && response.body != null) {
-        return _extrairLista(response.body!);
+        return extrairLista(response.body!);
       }
     } catch (e, st) {
       AppLogger.i.error('Erro ao listar colunas: $e', st);
@@ -118,7 +118,7 @@ class QueryBuilderCaller {
       final NetworkResponse response =
           await NetworkCaller().getRequest(ApiLinks.queryBuilderQueries);
       if (response.isSuccess && response.body != null) {
-        return _extrairLista(response.body!);
+        return extrairLista(response.body!);
       }
     } catch (e, st) {
       AppLogger.i.error('Erro ao listar queries salvas: $e', st);
@@ -155,14 +155,32 @@ class QueryBuilderCaller {
 
   // ── Helpers ────────────────────────────────────────────────────────────
 
-  /// Extrai uma lista do body de resposta, que pode vir como {data: [...]}
-  /// ou diretamente como lista (convertida pelo NetworkResponse).
-  static List<dynamic> _extrairLista(Map<String, dynamic> body) {
-    if (body.containsKey('data') && body['data'] is List) {
-      return body['data'] as List<dynamic>;
+  /// Extrai listas tanto de {data: [...]} quanto do envelope
+  /// {data: {data: [...]}} usado pelos endpoints de metadados.
+  static List<dynamic> extrairLista(Map<String, dynamic> body) {
+    dynamic atual = body;
+    while (atual is Map && atual.containsKey('data')) {
+      atual = atual['data'];
+      if (atual is List) return List<dynamic>.from(atual);
     }
-    // Alguns endpoints podem retornar a lista diretamente
-    // (NetworkResponse já faz o wrapping).
-    return [];
+    return const [];
+  }
+
+  static String nomeSchema(dynamic schema) {
+    if (schema is Map) {
+      return schema['schema_name']?.toString() ?? '';
+    }
+    return schema?.toString() ?? '';
+  }
+
+  static String nomeTabela(dynamic tabela) {
+    if (tabela is Map) {
+      return tabela['table_name']?.toString() ?? '';
+    }
+    return tabela?.toString() ?? '';
+  }
+
+  static bool tabelaPertenceAoSchema(dynamic tabela, String schema) {
+    return tabela is! Map || tabela['table_schema']?.toString() == schema;
   }
 }
