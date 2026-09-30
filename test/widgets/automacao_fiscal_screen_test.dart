@@ -42,4 +42,20 @@ void main() {
       expect(tipoDocumentoLabel('DESCONHECIDO'), 'Não identificado');
     });
   });
+
+  group('extrairCnpj', () {
+    test('extrai CNPJ formatado ou 14 digitos de mensagem de erro', () {
+      expect(
+        extrairCnpj('CNPJ do arquivo SINTEGRA (38504938000626) nao corresponde a empresa'),
+        '38504938000626',
+      );
+      expect(
+        extrairCnpj('Nenhum parceiro cadastrado para o CNPJ 11.222.333/0001-81 na base.'),
+        '11.222.333/0001-81',
+      );
+      expect(extrairCnpj('Erro desconhecido sem documento'), isNull);
+      expect(extrairCnpj(null), isNull);
+      expect(extrairCnpj(''), isNull);
+    });
+  });
 }

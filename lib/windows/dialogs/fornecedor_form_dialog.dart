@@ -6,8 +6,9 @@ import '../../../utils/grid_texts.dart';
 class FornecedorFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
   final VoidCallback onSaved;
+  final String? tituloOverride;
 
-  const FornecedorFormDialog({super.key, this.item, required this.onSaved});
+  const FornecedorFormDialog({super.key, this.item, required this.onSaved, this.tituloOverride});
 
   @override
   State<FornecedorFormDialog> createState() => _FornecedorFormDialogState();
@@ -105,7 +106,8 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final payload = _buildPayload();
-    final success = widget.item != null
+    final isEdicao = widget.item != null && widget.item!['id'] != null;
+    final success = isEdicao
         ? await FornecedorService.update(widget.item!['id'], payload)
         : await FornecedorService.create(payload);
     setState(() => _isLoading = false);
@@ -121,6 +123,9 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEdicao = widget.item != null && widget.item!['id'] != null;
+    final String titulo = widget.tituloOverride ?? (isEdicao ? 'Editar Fornecedor' : 'Novo Fornecedor');
+
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
       child: ConstrainedBox(
@@ -130,7 +135,7 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
           child: Column(
             children: [
               AppBar(
-                title: Text(widget.item != null ? 'Editar Fornecedor' : 'Novo Fornecedor'),
+                title: Text(titulo),
                 automaticallyImplyLeading: false,
                 actions: [
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),

@@ -5,6 +5,7 @@ import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_colors.dart';
+import '../windows/dialogs/fornecedor_form_dialog.dart';
 import 'nfce/nfce_notice_banner.dart';
 
 /// Rotulo legivel da origem do arquivo (BOLETO/SPED/SINTEGRA), como vem do
@@ -56,6 +57,17 @@ String tipoDocumentoLabel(String? tipo) {
     default:
       return 'Não identificado';
   }
+}
+
+/// Extrai o primeiro CNPJ (formatado ou 14 dígitos consecutivos) encontrado em um texto/motivo de erro.
+/// Funcao pura para facilitar testes automatizados.
+String? extrairCnpj(String? texto) {
+  if (texto == null || texto.isEmpty) return null;
+  final matchFmt = RegExp(r'\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b').firstMatch(texto);
+  if (matchFmt != null) return matchFmt.group(0);
+  final matchDigits = RegExp(r'\b\d{14}\b').firstMatch(texto);
+  if (matchDigits != null) return matchDigits.group(0);
+  return null;
 }
 
 /// Tela Sistema > Automacao Fiscal (card automacao-fiscal-pastas,
@@ -214,6 +226,114 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     } finally {
       if (mounted) setState(() => _executando = false);
     }
+  }
+
+  Future<void> _cadastrarParceiroReceitaWs(String cnpjRaw) async {
+    final cnpj = cnpjRaw.replaceAll(RegExp(r'\D'), '');
+    if (cnpj.length != 14) {
+      _snack('CNPJ inválido ($cnpjRaw)', error: true);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text('Consultando dados na ReceitaWS...')),
+          ],
+        ),
+      ),
+    );
+
+    Map<String, dynamic>? dadosReceita;
+    try {
+      // 1. Tenta endpoint backend /api/receitaws/cnpj/{cnpj}
+      var resp = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/receitaws/cnpj/$cnpj');
+      if (resp.isSuccess && resp.body != null && resp.body is Map) {
+        dadosReceita = Map<String, dynamic>.from(resp.body as Map);
+      } else {
+        // 2. Fallback: /api/parceiro/consulta-cnpj/{cnpj}
+        resp = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/parceiro/consulta-cnpj/$cnpj');
+        if (resp.isSuccess && resp.body != null && resp.body is Map) {
+          final b = resp.body as Map;
+          if (b['data'] != null && b['data'] is Map) {
+            dadosReceita = Map<String, dynamic>.from(b['data'] as Map);
+          }
+        }
+      }
+
+      // 3. Fallback direto se chamadas locais falharem
+      if (dadosReceita == null) {
+        final directResp = await NetworkCaller().getRequest('https://www.receitaws.com.br/v1/cnpj/$cnpj');
+        if (directResp.isSuccess && directResp.body != null && directResp.body is Map) {
+          final b = directResp.body as Map;
+          if (b['status'] == 'OK' || b['nome'] != null) {
+            dadosReceita = {
+              'nome': b['nome'],
+              'nomeFantasia': b['fantasia'],
+              'logradouro': b['logradouro'],
+              'numero': b['numero'],
+              'complemento': b['complemento'],
+              'bairro': b['bairro'],
+              'municipio': b['municipio'],
+              'uf': b['uf'],
+              'cep': b['cep'],
+              'telefone': b['telefone'],
+              'email': b['email'],
+            };
+          }
+        }
+      }
+    } catch (e) {
+      AppLogger.i.warn('[AutomacaoFiscal] Erro ao consultar ReceitaWS: $e');
+    } finally {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (!mounted) return;
+
+    final initialData = <String, dynamic>{
+      'nome': (dadosReceita?['nomeFantasia'] ?? dadosReceita?['nome'] ?? '').toString().trim(),
+      'razaoSocial': (dadosReceita?['nome'] ?? '').toString().trim(),
+      'cpf': cnpj,
+      'cnpj': cnpj,
+      'ie': '',
+      'incrMun': '',
+      'email': (dadosReceita?['email'] ?? '').toString().trim(),
+      'telefone1': (dadosReceita?['telefone'] ?? '').toString().trim(),
+      'telefone2': '',
+      'cep': (dadosReceita?['cep'] ?? '').toString().trim(),
+      'rua': (dadosReceita?['logradouro'] ?? '').toString().trim(),
+      'numero': (dadosReceita?['numero'] ?? '').toString().trim(),
+      'complemento': (dadosReceita?['complemento'] ?? '').toString().trim(),
+      'bairro': (dadosReceita?['bairro'] ?? '').toString().trim(),
+      'cidade': (dadosReceita?['municipio'] ?? '').toString().trim(),
+      'estado': (dadosReceita?['uf'] ?? '').toString().trim(),
+      'status': 'ATIVO',
+      'observacao': 'Cadastrado via Automação Fiscal (ReceitaWS)',
+    };
+
+    if (dadosReceita == null) {
+      _snack('Não foi possível obter dados na ReceitaWS. Preencha os campos no formulário.', error: true);
+    } else {
+      _snack('Dados do parceiro carregados da ReceitaWS com sucesso!');
+    }
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => FornecedorFormDialog(
+        item: initialData,
+        tituloOverride: 'Cadastrar Parceiro (ReceitaWS)',
+        onSaved: () async {
+          _snack('Parceiro cadastrado com sucesso! Execute a automação novamente.');
+          await _carregarLogs();
+        },
+      ),
+    );
   }
 
   void _snack(String message, {bool error = false}) {
@@ -571,9 +691,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           DataColumn(label: Text('Tipo')),
           DataColumn(label: Text('Status')),
           DataColumn(label: Text('Mensagem')),
+          DataColumn(label: Text('Ações')),
         ],
         rows: _logs.map((log) {
           final sucesso = log['status'] == 'SUCESSO';
+          final cnpj = extrairCnpj(log['mensagem']?.toString());
           return DataRow(cells: [
             DataCell(Text(origemLabel(log['origem']?.toString()))),
             DataCell(Text(log['arquivo']?.toString() ?? '')),
@@ -589,6 +711,21 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     color: sucesso ? GridColors.textSecondary : GridColors.error, fontSize: 12),
               ),
             )),
+            DataCell(
+              !sucesso && cnpj != null
+                  ? ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      icon: const Icon(Icons.person_add_alt_1, size: 14),
+                      label: const Text('Cadastrar (ReceitaWS)'),
+                      onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
+                    )
+                  : const Text('-'),
+            ),
           ]);
         }).toList(),
       ),
@@ -597,6 +734,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
 
   Widget _logCard(Map<String, dynamic> log) {
     final sucesso = log['status'] == 'SUCESSO';
+    final cnpj = extrairCnpj(log['mensagem']?.toString());
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -630,6 +768,24 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             const SizedBox(height: 6),
             Text(log['mensagem'].toString(),
                 style: const TextStyle(color: GridColors.error, fontSize: 12)),
+          ],
+          if (!sucesso && cnpj != null) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                icon: const Icon(Icons.person_add_alt_1, size: 16),
+                label: Text('Cadastrar Parceiro CNPJ $cnpj (ReceitaWS)',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
+              ),
+            ),
           ],
         ],
       ),
