@@ -20,12 +20,14 @@ String origemLabel(String? origem) {
       return 'SPED';
     case 'SINTEGRA':
       return 'Sintegra';
+    case 'XML':
+      return 'XML';
     default:
       return origem ?? '-';
   }
 }
 
-/// Rotulo legivel do tipo de documento (BoletoTipoDocumento.name() do
+/// Rotulo legivel do tipo de documento (BoletoTipoDocumento.name() ou tipo XML do
 /// backend). Funcao pura, mesmo motivo de origemLabel acima.
 String tipoDocumentoLabel(String? tipo) {
   switch (tipo) {
@@ -41,6 +43,14 @@ String tipoDocumentoLabel(String? tipo) {
       return 'Guia ISS';
     case 'COMPROVANTE_PAGAMENTO':
       return 'Comprovante de Pagamento';
+    case 'CTE':
+      return 'CT-e (Transporte)';
+    case 'NFE':
+      return 'NF-e (Entrada)';
+    case 'NFCE':
+      return 'NFC-e (Consumidor)';
+    case 'NFSE':
+      return 'NFS-e (Serviço)';
     case null:
       return '-';
     default:
@@ -310,22 +320,25 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             '<pasta raiz>\n'
             '├── boletos\\      (PDFs: boletos, guias de tributo, comprovantes)\n'
             '│    ├── sucesso\n'
-            '│    └── erro\n'
+            '│    └── erro       (com relatorio_erros.txt e detalhe de cada falha)\n'
             '├── speds\\        (arquivos .txt de SPED)\n'
             '│    ├── sucesso\n'
-            '│    └── erro\n'
-            '└── sintegra\\     (arquivos .txt de SINTEGRA)\n'
+            '│    └── erro       (com relatorio_erros.txt)\n'
+            '├── sintegra\\     (arquivos .txt de SINTEGRA)\n'
+            '│    ├── sucesso\n'
+            '│    └── erro       (com relatorio_erros.txt)\n'
+            '└── xmls\\         (arquivos .xml: NF-e, NFC-e, CT-e, NFS-e)\n'
             '     ├── sucesso\n'
-            '     └── erro',
+            '     └── erro       (com relatorio_erros.txt)',
             style: monoStyle,
           ),
           const SizedBox(height: 6),
           const Text(
-            'Os nomes "boletos", "speds", "sintegra", "sucesso" e "erro" são fixos '
+            'Os nomes "boletos", "speds", "sintegra", "xmls", "sucesso" e "erro" são fixos '
             '(minúsculo, sem acento) e criados automaticamente pelo sistema dentro da '
-            'pasta raiz. Basta colocar os arquivos direto em "boletos", "speds" ou '
-            '"sintegra" — as subpastas "sucesso"/"erro" são só de saída, não coloque '
-            'arquivos nelas.',
+            'pasta raiz. A configuração é individual por usuário. '
+            'Caso algum arquivo não seja importado, o sistema grava o motivo em "relatorio_erros.txt" '
+            'dentro da pasta "erro" correspondente.',
             style: TextStyle(fontSize: 12, color: GridColors.textMuted),
           ),
         ],
@@ -365,8 +378,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   labelText: 'Pasta raiz',
                   hintText: r'Ex.: C:\AutomacaoFiscal',
                   helperText:
-                      'Pasta no servidor onde o backend roda. Dentro dela serão lidas as '
-                      'subpastas "boletos", "speds" e "sintegra".',
+                      'Pasta no servidor/máquina do usuário. Dentro dela serão lidas as '
+                      'subpastas "boletos", "speds", "sintegra" e "xmls".',
                   helperMaxLines: 2,
                   prefixIcon: Icon(Icons.folder_outlined),
                   border: OutlineInputBorder(),

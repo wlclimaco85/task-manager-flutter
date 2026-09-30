@@ -10,10 +10,11 @@ import 'package:task_manager_flutter/widgets/automacao_fiscal_screen.dart';
 /// testados diretamente.
 void main() {
   group('origemLabel', () {
-    test('mapeia os 3 valores conhecidos do backend', () {
+    test('mapeia os valores conhecidos do backend', () {
       expect(origemLabel('BOLETO'), 'Boletos');
       expect(origemLabel('SPED'), 'SPED');
       expect(origemLabel('SINTEGRA'), 'Sintegra');
+      expect(origemLabel('XML'), 'XML');
     });
 
     test('valor desconhecido ou nulo cai no fallback', () {
@@ -30,6 +31,10 @@ void main() {
       expect(tipoDocumentoLabel('DARF_FEDERAL'), 'DARF Federal');
       expect(tipoDocumentoLabel('GUIA_ISS_MUNICIPAL'), 'Guia ISS');
       expect(tipoDocumentoLabel('COMPROVANTE_PAGAMENTO'), 'Comprovante de Pagamento');
+      expect(tipoDocumentoLabel('CTE'), 'CT-e (Transporte)');
+      expect(tipoDocumentoLabel('NFE'), 'NF-e (Entrada)');
+      expect(tipoDocumentoLabel('NFCE'), 'NFC-e (Consumidor)');
+      expect(tipoDocumentoLabel('NFSE'), 'NFS-e (Serviço)');
     });
 
     test('nulo vira traco, tipo desconhecido vira "Não identificado"', () {
