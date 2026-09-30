@@ -58,4 +58,58 @@ void main() {
       expect(extrairCnpj(''), isNull);
     });
   });
+
+  group('formatarRelatorioErrosParaClipboard', () {
+    test('formata lista de erros consolidada com detalhes para clipboard', () {
+      final logs = [
+        {
+          'status': 'ERRO',
+          'arquivo': 'nfe_1066.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFE',
+          'mensagem': 'Falha ao parsear XML da NF-e: Invalid byte 2 of 2-byte UTF-8 sequence.',
+        },
+        {
+          'status': 'SUCESSO',
+          'arquivo': 'nfe_1067.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFE',
+          'mensagem': 'Sucesso',
+        },
+        {
+          'status': 'ERRO',
+          'arquivo': 'nfce_26.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFCE',
+          'mensagem': 'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+        },
+      ];
+
+      final texto = formatarRelatorioErrosParaClipboard(
+        logs: logs,
+        dataHora: DateTime(2026, 9, 30, 15, 23),
+        pastaRaiz: 'C:\\AutomacaoFiscal',
+        ultimoResultado: '1 sucesso, 2 erro',
+      );
+
+      expect(texto, contains('RELATÓRIO DE ERROS / EXCEPTIONS'));
+      expect(texto, contains('Data/Hora: 30/09/2026 15:23:00'));
+      expect(texto, contains('Pasta Raiz: C:\\AutomacaoFiscal'));
+      expect(texto, contains('Total de arquivos com erro: 2'));
+      expect(texto, contains('Arquivo: nfe_1066.xml'));
+      expect(texto, contains('Invalid byte 2 of 2-byte UTF-8 sequence'));
+      expect(texto, contains('Arquivo: nfce_26.xml'));
+      expect(texto, contains('NF-e já importada'));
+      // Não deve incluir arquivos com sucesso
+      expect(texto, isNot(contains('nfe_1067.xml')));
+    });
+
+    test('quando nao ha erros retorna mensagem amigavel', () {
+      final texto = formatarRelatorioErrosParaClipboard(
+        logs: [],
+        ultimoResultado: '5 sucesso, 0 erro',
+      );
+      expect(texto, contains('Última execução: 5 sucesso, 0 erro'));
+    });
+  });
 }

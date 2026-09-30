@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../services/network_caller.dart';
@@ -68,6 +69,58 @@ String? extrairCnpj(String? texto) {
   final matchDigits = RegExp(r'\b\d{14}\b').firstMatch(texto);
   if (matchDigits != null) return matchDigits.group(0);
   return null;
+}
+
+/// Gera texto formatado e consolidado contendo todas as exceptions e erros da automação fiscal
+/// para cópia direta na área de transferência (Clipboard). Função pura para ser testável.
+String formatarRelatorioErrosParaClipboard({
+  required List<Map<String, dynamic>> logs,
+  DateTime? dataHora,
+  String? pastaRaiz,
+  String? ultimoResultado,
+}) {
+  final erros = logs.where((l) => l['status'] == 'ERRO').toList();
+  if (erros.isEmpty) {
+    if (ultimoResultado != null && ultimoResultado.trim().isNotEmpty) {
+      return 'Última execução: $ultimoResultado';
+    }
+    return 'Nenhum erro registrado na importação fiscal.';
+  }
+
+  final buffer = StringBuffer();
+  buffer.writeln('====================================================');
+  buffer.writeln('RELATÓRIO DE ERROS / EXCEPTIONS - AUTOMAÇÃO FISCAL');
+  buffer.writeln('====================================================');
+  if (dataHora != null) {
+    final fmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+    buffer.writeln('Data/Hora: ${fmt.format(dataHora)}');
+  }
+  if (pastaRaiz != null && pastaRaiz.trim().isNotEmpty) {
+    buffer.writeln('Pasta Raiz: ${pastaRaiz.trim()}');
+  }
+  if (ultimoResultado != null && ultimoResultado.trim().isNotEmpty) {
+    buffer.writeln('Resultado: ${ultimoResultado.trim()}');
+  }
+  buffer.writeln('Total de arquivos com erro: ${erros.length}');
+  buffer.writeln('----------------------------------------------------');
+
+  for (int i = 0; i < erros.length; i++) {
+    final item = erros[i];
+    final arquivo = item['arquivo'] ?? 'Desconhecido';
+    final origem = origemLabel(item['origem']?.toString());
+    final tipo = tipoDocumentoLabel(item['tipoDocumento']?.toString());
+    final msg = item['mensagem'] ?? 'Sem detalhes';
+    final dh = item['dhCreatedAt'] != null ? item['dhCreatedAt'].toString() : '';
+
+    buffer.writeln('[${i + 1}] Arquivo: $arquivo');
+    buffer.writeln('    Origem: $origem | Tipo: $tipo${dh.isNotEmpty ? " | Data: $dh" : ""}');
+    buffer.writeln('    Erro / Exception:');
+    buffer.writeln('    $msg');
+    buffer.writeln('');
+  }
+  buffer.writeln('====================================================');
+
+  return buffer.toString();
 }
 
 /// Tela Sistema > Automacao Fiscal (card automacao-fiscal-pastas,
@@ -144,6 +197,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         _ultimaExecucao =
             ultimaExecucaoStr != null ? DateTime.tryParse(ultimaExecucaoStr) : null;
         _ultimoResultado = body['ultimoResultado']?.toString();
+        if (body['ultimosLogs'] != null && body['ultimosLogs'] is List) {
+          _logs = List<Map<String, dynamic>>.from(
+              (body['ultimosLogs'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+        }
       } else if (!resp.isSuccess && resp.statusCode != 200) {
         _erroCarregamento = 'Erro ao carregar configuração (status ${resp.statusCode}).';
         AppLogger.i.warn(
@@ -163,9 +220,22 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     try {
       final resp =
           await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs');
-      if (resp.isSuccess && resp.body is List) {
-        _logs = List<Map<String, dynamic>>.from(
-            (resp.body as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+      if (resp.isSuccess) {
+        List? lista;
+        final dynamic raw = resp.body;
+        if (raw is List) {
+          lista = raw;
+        } else if (raw is Map && raw['data'] is List) {
+          lista = raw['data'] as List;
+        }
+        if (lista != null) {
+          setState(() {
+            _logs = List<Map<String, dynamic>>.from(
+                lista!.whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+          });
+        }
+      } else {
+        AppLogger.i.warn('[AutomacaoFiscal] Falha ao carregar logs (status ${resp.statusCode})');
       }
     } catch (e, st) {
       // Historico e' informativo -- nao trava o resto da tela se falhar,
@@ -212,13 +282,23 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       final resp = await NetworkCaller()
           .postRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/executar-agora', {});
       if (!mounted) return;
-      final Map<String, dynamic>? body = resp.body;
+      final Map<String, dynamic>? body = resp.body is Map ? Map<String, dynamic>.from(resp.body as Map) : null;
       if (resp.isSuccess) {
         String mensagem = 'Execução concluída.';
-        if (body != null && body['ultimoResultado'] != null) {
-          final res = body['ultimoResultado'].toString().trim();
-          if (res.isNotEmpty) {
-            mensagem = 'Execução concluída ($res).';
+        if (body != null) {
+          if (body['ultimoResultado'] != null) {
+            final res = body['ultimoResultado'].toString().trim();
+            if (res.isNotEmpty) {
+              mensagem = 'Execução concluída ($res).';
+              _ultimoResultado = res;
+            }
+          }
+          if (body['ultimaExecucao'] != null) {
+            _ultimaExecucao = DateTime.tryParse(body['ultimaExecucao'].toString());
+          }
+          if (body['ultimosLogs'] != null && body['ultimosLogs'] is List) {
+            _logs = List<Map<String, dynamic>>.from(
+                (body['ultimosLogs'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
           }
         }
         _snack(mensagem);
@@ -239,6 +319,30 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     } finally {
       if (mounted) setState(() => _executando = false);
     }
+  }
+
+  void _copiarTodosOsErros() {
+    final texto = formatarRelatorioErrosParaClipboard(
+      logs: _logs,
+      dataHora: _ultimaExecucao,
+      pastaRaiz: _pastaRaizCtrl.text,
+      ultimoResultado: _ultimoResultado,
+    );
+    Clipboard.setData(ClipboardData(text: texto));
+    final qtdErros = _logs.where((l) => l['status'] == 'ERRO').length;
+    _snack(qtdErros > 0
+        ? '$qtdErros erros/exceptions copiados para a área de transferência!'
+        : 'Resultado copiado para a área de transferência!');
+  }
+
+  void _copiarErroIndividual(Map<String, dynamic> log) {
+    final arquivo = log['arquivo'] ?? 'Arquivo';
+    final msg = log['mensagem'] ?? 'Sem detalhes';
+    final origem = origemLabel(log['origem']?.toString());
+    final tipo = tipoDocumentoLabel(log['tipoDocumento']?.toString());
+    final texto = 'Arquivo: $arquivo\nOrigem: $origem | Tipo: $tipo\nErro / Exception: $msg';
+    Clipboard.setData(ClipboardData(text: texto));
+    _snack('Erro de $arquivo copiado!');
   }
 
   Future<void> _cadastrarParceiroReceitaWs(String cnpjRaw) async {
@@ -635,7 +739,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       );
     }
 
-    final houveErro = (_ultimoResultado ?? '').contains(RegExp(r'[1-9]\d* erro'));
+    final houveErro = (_ultimoResultado ?? '').contains(RegExp(r'[1-9]\d* erro')) ||
+        _logs.any((l) => l['status'] == 'ERRO');
     return NfceNoticeBanner(
       icon: houveErro ? Icons.error_outline : Icons.check_circle_outline,
       backgroundColor: houveErro ? GridColors.errorLight : GridColors.filterBackground,
@@ -643,13 +748,28 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       textColor: houveErro ? GridColors.errorDark : GridColors.textSecondary,
       title: 'Última execução',
       message: '${_dataFmt.format(_ultimaExecucao!)} — ${_ultimoResultado ?? ''}'
-          '${houveErro ? '. Verifique o histórico abaixo.' : ''}',
+          '${houveErro ? '. Verifique os erros detalhados abaixo.' : ''}',
+      trailing: houveErro
+          ? ElevatedButton.icon(
+              key: const Key('btn_copiar_erros_banner'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.error,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              icon: const Icon(Icons.copy_all, size: 16),
+              label: const Text('Copiar Erros (Exceptions)',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              onPressed: _copiarTodosOsErros,
+            )
+          : null,
     );
   }
 
   // ── Histórico ────────────────────────────────────────────────────────
 
   Widget _historicoCard() {
+    final errosCount = _logs.where((l) => l['status'] == 'ERRO').length;
     return Card(
       elevation: 0,
       color: GridColors.card,
@@ -662,13 +782,39 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Histórico de execuções',
-              style: TextStyle(
-                color: GridColors.secondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              children: [
+                const Text(
+                  'Histórico de execuções',
+                  style: TextStyle(
+                    color: GridColors.secondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                if (errosCount > 0)
+                  OutlinedButton.icon(
+                    key: const Key('btn_copiar_erros_historico'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: GridColors.error,
+                      side: const BorderSide(color: GridColors.error),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    ),
+                    icon: const Icon(Icons.copy_all, size: 16),
+                    label: Text(
+                      'Copiar Erros ($errosCount)',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _copiarTodosOsErros,
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  tooltip: 'Recarregar histórico',
+                  onPressed: _carregarLogs,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (_carregandoLogs)
@@ -703,7 +849,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           DataColumn(label: Text('Arquivo')),
           DataColumn(label: Text('Tipo')),
           DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Mensagem')),
+          DataColumn(label: Text('Mensagem / Exception')),
           DataColumn(label: Text('Ações')),
         ],
         rows: _logs.map((log) {
@@ -715,7 +861,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             DataCell(_tipoChip(log['tipoDocumento']?.toString())),
             DataCell(_statusChip(sucesso)),
             DataCell(SizedBox(
-              width: 260,
+              width: 300,
               child: Text(
                 log['mensagem']?.toString() ?? '',
                 maxLines: 2,
@@ -724,21 +870,30 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     color: sucesso ? GridColors.textSecondary : GridColors.error, fontSize: 12),
               ),
             )),
-            DataCell(
-              !sucesso && cnpj != null
-                  ? ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: GridColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                      icon: const Icon(Icons.person_add_alt_1, size: 14),
-                      label: const Text('Cadastrar (ReceitaWS)'),
-                      onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
-                    )
-                  : const Text('-'),
-            ),
+            DataCell(Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!sucesso)
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16, color: GridColors.error),
+                    tooltip: 'Copiar mensagem/exception deste erro',
+                    onPressed: () => _copiarErroIndividual(log),
+                  ),
+                if (!sucesso && cnpj != null)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    icon: const Icon(Icons.person_add_alt_1, size: 14),
+                    label: const Text('Cadastrar (ReceitaWS)'),
+                    onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
+                  ),
+                if (sucesso) const Text('-'),
+              ],
+            )),
           ]);
         }).toList(),
       ),
@@ -779,8 +934,33 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           ],
           if (!sucesso && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(log['mensagem'].toString(),
-                style: const TextStyle(color: GridColors.error, fontSize: 12)),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: GridColors.errorLight,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: GridColors.error.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      log['mensagem'].toString(),
+                      style: const TextStyle(color: GridColors.errorDark, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16, color: GridColors.errorDark),
+                    tooltip: 'Copiar exception',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _copiarErroIndividual(log),
+                  ),
+                ],
+              ),
+            ),
           ],
           if (!sucesso && cnpj != null) ...[
             const SizedBox(height: 8),

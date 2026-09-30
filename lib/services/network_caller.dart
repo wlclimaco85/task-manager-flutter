@@ -68,7 +68,7 @@ class NetworkCaller {
           true,
           response.statusCode,
           response.bodyBytes.isNotEmpty
-              ? jsonDecode(utf8.decode(response.bodyBytes))
+              ? jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true))
               : null,
         );
       }
@@ -213,7 +213,7 @@ class NetworkCaller {
           true,
           response.statusCode,
           response.bodyBytes.isNotEmpty
-              ? jsonDecode(utf8.decode(response.bodyBytes))
+              ? jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true))
               : null,
         );
       } else {
@@ -242,7 +242,7 @@ class NetworkCaller {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         final responseBody = response.bodyBytes.isNotEmpty
-            ? jsonDecode(utf8.decode(response.bodyBytes))
+            ? jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true))
             : null;
         return NetworkResponse(
           true,
@@ -329,7 +329,7 @@ class NetworkCaller {
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(utf8.decode(response.bodyBytes)),
+          jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true)),
         );
       } else {
         if (!isAuthRequest) _handleUnauthorized(response.statusCode, enrichedUrl);
@@ -372,7 +372,7 @@ class NetworkCaller {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         final body = response.bodyBytes.isNotEmpty
-            ? jsonDecode(utf8.decode(response.bodyBytes))
+            ? jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true))
             : null;
         return NetworkResponse(true, response.statusCode, body);
       } else {
