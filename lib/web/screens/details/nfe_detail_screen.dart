@@ -493,10 +493,19 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post(
           '${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {});
       if (!mounted) return;
+      String msg = r.statusCode == 200
+          ? 'Contas a Pagar geradas com sucesso!'
+          : 'Erro ${r.statusCode}. Tente novamente.';
+      if (r.statusCode != 200) {
+        try {
+          final data = jsonDecode(r.body);
+          if (data is Map && data['message'] != null && data['message'].toString().isNotEmpty) {
+            msg = data['message'].toString();
+          }
+        } catch (_) {}
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200
-              ? 'Contas a Pagar geradas com sucesso!'
-              : 'Erro ${r.statusCode}. Tente novamente.'),
+          content: Text(msg),
           backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
       if (mounted)

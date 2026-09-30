@@ -212,13 +212,26 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       final resp = await NetworkCaller()
           .postRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/executar-agora', {});
       if (!mounted) return;
+      final Map<String, dynamic>? body = resp.body;
       if (resp.isSuccess) {
-        _snack('Execução concluída.');
+        String mensagem = 'Execução concluída.';
+        if (body != null && body['ultimoResultado'] != null) {
+          final res = body['ultimoResultado'].toString().trim();
+          if (res.isNotEmpty) {
+            mensagem = 'Execução concluída ($res).';
+          }
+        }
+        _snack(mensagem);
         await _carregar();
       } else {
-        _snack('Erro ao executar (status ${resp.statusCode}). Salve a configuração primeiro.',
-            error: true);
-        AppLogger.i.warn('[AutomacaoFiscal] Erro ao executar agora (status ${resp.statusCode})');
+        String msg = 'Erro ao executar (status ${resp.statusCode}).';
+        if (body != null && body['message'] != null && body['message'].toString().isNotEmpty) {
+          msg = body['message'].toString();
+        } else if (body != null && body['erro'] != null && body['erro'].toString().isNotEmpty) {
+          msg = body['erro'].toString();
+        }
+        _snack(msg, error: true);
+        AppLogger.i.warn('[AutomacaoFiscal] Erro ao executar agora (status ${resp.statusCode}): $msg');
       }
     } catch (e, st) {
       if (mounted) _snack('Erro ao executar: $e', error: true);
