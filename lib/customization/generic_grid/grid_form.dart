@@ -26,6 +26,7 @@ class GridFormDialog extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(Map<String, dynamic>? item)?
       dynamicAdditionalFormData;
+
   /// Hook opcional para ajustar o formData final (já com os valores dos
   /// controllers) antes do envio — ex.: copiar um campo do form para outro
   /// campo fixo do payload. Não afeta telas que não o utilizarem.
@@ -443,7 +444,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
                         .where((f) => f.size <= cfg.maxFileSize)
                         .toList();
                     if (valid.length != res.files.length) {
-                      _snack('Alguns arquivos excedem o tamanho permitido.', true);
+                      _snack(
+                          'Alguns arquivos excedem o tamanho permitido.', true);
                     }
                     setState(() {
                       _fileCache[c.fieldName] = valid;
@@ -553,33 +555,37 @@ class _GridFormDialogState extends State<GridFormDialog> {
             .map((o) => o[displayField]?.toString() ?? '')
             .join(', ');
         return InkWell(
-          onTap: () async {
-            final result = await showDialog<List<String>>(
-              context: context,
-              builder: (ctx) => _GridMultiSelectDialog(
-                title: c.label,
-                options: opts,
-                valueField: valueField,
-                displayField: displayField,
-                initialSelected: selectedValues,
-              ),
-            );
-            if (result != null) {
-              ctrl.text = result.join(', ');
-              setState(() {});
-            }
-          },
+          onTap: c.enabled
+              ? () async {
+                  final result = await showDialog<List<String>>(
+                    context: context,
+                    builder: (ctx) => _GridMultiSelectDialog(
+                      title: c.label,
+                      options: opts,
+                      valueField: valueField,
+                      displayField: displayField,
+                      initialSelected: selectedValues,
+                    ),
+                  );
+                  if (result != null) {
+                    ctrl.text = result.join(', ');
+                    setState(() {});
+                  }
+                }
+              : null,
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: c.label + (_req(c) ? ' *' : ''),
               labelStyle: const TextStyle(color: Color(0xFF757575)),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: c.enabled ? Colors.white : const Color(0xFFF5F5F5),
               border: _defaultBorder(),
               enabledBorder: _defaultBorder(),
               focusedBorder: _focusedBorder(),
-              suffixIcon:
-                  const Icon(Icons.arrow_drop_down, color: Color(0xFF757575)),
+              suffixIcon: c.enabled
+                  ? const Icon(Icons.arrow_drop_down, color: Color(0xFF757575))
+                  : const Icon(Icons.lock_outline,
+                      size: 16, color: Colors.grey),
             ),
             child: Text(
               labels.isEmpty ? 'Selecione...' : labels,
@@ -702,7 +708,9 @@ class _GridFormDialogState extends State<GridFormDialog> {
       for (final c
           in widget.fieldConfigs.where((x) => x.fieldType == FieldType.file)) {
         if (_req(c) && (_fileCache[c.fieldName]?.isEmpty ?? true)) {
-          _snack('${c.label} é obrigatório — selecione um arquivo antes de salvar.', true);
+          _snack(
+              '${c.label} é obrigatório — selecione um arquivo antes de salvar.',
+              true);
           if (mounted) setState(() => _saving = false);
           return;
         }
@@ -1075,7 +1083,8 @@ class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
 
   @override
   Widget build(BuildContext context) {
-    final effReq = widget.config.isRequired || (widget.config.requiredOnCreate && !widget.isEditing);
+    final effReq = widget.config.isRequired ||
+        (widget.config.requiredOnCreate && !widget.isEditing);
     final label = widget.config.label + (effReq ? ' *' : '');
     final display = _label ?? widget.controller.text;
     final isEmpty = display.isEmpty;

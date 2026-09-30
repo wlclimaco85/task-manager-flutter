@@ -59,6 +59,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(Map<String, dynamic>? item)?
       dynamicAdditionalFormData;
+
   /// Ver GridFormDialog.transformFormData — repassado como está.
   final Map<String, dynamic> Function(Map<String, dynamic> formData)?
       transformFormData;
@@ -69,6 +70,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
   final String? updateEndpointOverride;
   final String? deleteEndpointOverride;
   final bool showAppBar;
+  final String? tituloOverride;
 
   /// Sobrescreve a decisão automática (tela.useUserBannerAppBar || !kIsWeb).
   /// Use quando o chamador sabe com certeza que é uma tela mobile e quer
@@ -102,6 +104,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
     this.showAppBar = true,
+    this.tituloOverride,
     this.useUserBannerAppBar,
     this.suppressServerActions = false,
   });
@@ -257,8 +260,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             label: 'Tipo',
             fieldName: 'tipoAlvara',
             fieldType: TelaFieldType.dropdown,
-            dropdownEndpoint:
-                '/rest/dicionario/listar?tipo=TIPO_ALVARA',
+            dropdownEndpoint: '/rest/dicionario/listar?tipo=TIPO_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             fieldOrder: 3,
@@ -274,8 +276,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             label: 'Status',
             fieldName: 'status',
             fieldType: TelaFieldType.dropdown,
-            dropdownEndpoint:
-                '/rest/dicionario/listar?tipo=STATUS_ALVARA',
+            dropdownEndpoint: '/rest/dicionario/listar?tipo=STATUS_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             defaultValue: 'Pendente',
@@ -557,8 +558,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
   }
 
   FieldConfig _toFieldConfig(TelaField f) {
-    final isAutoDropdown =
-        (f.dropdownEndpoint?.isNotEmpty ?? false);
+    final isAutoDropdown = (f.dropdownEndpoint?.isNotEmpty ?? false);
     final isMulti = f.multiSelect || f.fieldType == TelaFieldType.multiselect;
 
     List<Map<String, dynamic>>? dropdownOptions;
@@ -876,7 +876,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
                   }).toList();
 
             return GenericMobileGridScreen(
-              title: tela.titulo,
+              title: widget.tituloOverride ?? tela.titulo,
               fetchEndpoint: _endpoint(
                 widget.fetchEndpointOverride,
                 tela.fetchEndpoint,

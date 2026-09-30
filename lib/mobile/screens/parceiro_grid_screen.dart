@@ -5,6 +5,7 @@ import '../../customization/generic_grid/grid_models.dart';
 import '../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
+import '../../utils/parceiro_form_rules.dart';
 
 class ParceiroGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -26,6 +27,7 @@ class ParceiroGridScreen extends StatelessWidget {
       deleteEndpointOverride: ApiLinks.deleteParceiro(':id'),
       onUserBannerTapped: onUserBannerTapped,
       fieldOverrides: [
+        ...ParceiroFormRules.mobileModuleSuppression(),
         FieldConfig(
           label: 'CEP',
           fieldName: 'cep',
