@@ -167,7 +167,10 @@ class PendenciaCadastro {
 /// Extrai a lista consolidada e desduplicada de pendências de cadastro de Parceiro (Sacado)
 /// e Fornecedor (Recebedor) a partir dos logs de erro da automação fiscal.
 /// Função pura para garantir 100% de testabilidade unitária sem efeitos colaterais.
-List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> logs) {
+List<PendenciaCadastro> extrairPendenciasCadastro(
+  List<Map<String, dynamic>> logs, [
+  Set<String>? cnpjsIgnorados,
+]) {
   final pendencias = <PendenciaCadastro>[];
   final chavesVistas = <String>{};
 
@@ -178,6 +181,16 @@ List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> log
     final arquivo = (l['arquivo'] ?? 'Arquivo').toString();
     final tipoDoc = l['tipoDocumento']?.toString();
     final origem = l['origem']?.toString();
+    final lower = msg.toLowerCase();
+
+    // Filtro anti-falso-positivo: se o erro for duplicidade, nota já importada, encoding, etc., NÃO É FALTA DE CADASTRO!
+    if (lower.contains('já importad') || lower.contains('ja importad') ||
+        lower.contains('já cadastrad') || lower.contains('ja cadastrad') ||
+        lower.contains('já existe') || lower.contains('ja existe') ||
+        lower.contains('invalid byte') || lower.contains('duplicad') ||
+        lower.contains('não reconhecido') || lower.contains('nao reconhecido')) {
+      continue;
+    }
 
     // 1. Tags explícitas geradas pelo backend: [FORNECEDOR: cnpj] e [SACADO: cnpj]
     final matchForn = RegExp(r'\[FORNECEDOR:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
@@ -188,7 +201,7 @@ List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> log
       achouTag = true;
       final raw = matchForn.group(1)?.trim() ?? '';
       final limpo = raw.replaceAll(RegExp(r'\D'), '');
-      if (limpo.length >= 11) {
+      if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
         final chave = 'FORNECEDOR_$limpo';
         if (chavesVistas.add(chave)) {
           pendencias.add(PendenciaCadastro(
@@ -207,7 +220,7 @@ List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> log
       achouTag = true;
       final raw = matchSac.group(1)?.trim() ?? '';
       final limpo = raw.replaceAll(RegExp(r'\D'), '');
-      if (limpo.length >= 11) {
+      if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
         final chave = 'SACADO_$limpo';
         if (chavesVistas.add(chave)) {
           pendencias.add(PendenciaCadastro(
@@ -222,28 +235,38 @@ List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> log
       }
     }
 
-    // 2. Se não achou tags estruturadas, verifica padrões textuais ou CNPJ avulso
+    // 2. Se não achou tags estruturadas, verifica padrões textuais
     if (!achouTag) {
-      final cnpjAvulso = extrairCnpj(msg);
-      if (cnpjAvulso != null) {
-        final limpo = cnpjAvulso.replaceAll(RegExp(r'\D'), '');
-        final lower = msg.toLowerCase();
-        final ehSacado = lower.contains('sacado') ||
-            lower.contains('parceiro') ||
-            lower.contains('destinatário') ||
-            lower.contains('destinatario') ||
-            lower.contains('tomador');
-        final papel = ehSacado ? PapelCadastro.sacado : PapelCadastro.fornecedor;
-        final chave = '${papel.name.toUpperCase()}_$limpo';
-        if (chavesVistas.add(chave)) {
-          pendencias.add(PendenciaCadastro(
-            cnpj: limpo,
-            papel: papel,
-            arquivo: arquivo,
-            tipoDocumento: tipoDoc,
-            origem: origem,
-            motivo: msg,
-          ));
+      final ehFaltaCadastro = lower.contains('cadastrad') ||
+          lower.contains('encontrad') ||
+          lower.contains('parceiro') ||
+          lower.contains('fornecedor') ||
+          lower.contains('sacado') ||
+          lower.contains('tomador') ||
+          lower.contains('destinat');
+      if (ehFaltaCadastro) {
+        final cnpjAvulso = extrairCnpj(msg);
+        if (cnpjAvulso != null) {
+          final limpo = cnpjAvulso.replaceAll(RegExp(r'\D'), '');
+          if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
+            final ehSacado = lower.contains('sacado') ||
+                lower.contains('parceiro') ||
+                lower.contains('destinatário') ||
+                lower.contains('destinatario') ||
+                lower.contains('tomador');
+            final papel = ehSacado ? PapelCadastro.sacado : PapelCadastro.fornecedor;
+            final chave = '${papel.name.toUpperCase()}_$limpo';
+            if (chavesVistas.add(chave)) {
+              pendencias.add(PendenciaCadastro(
+                cnpj: limpo,
+                papel: papel,
+                arquivo: arquivo,
+                tipoDocumento: tipoDoc,
+                origem: origem,
+                motivo: msg,
+              ));
+            }
+          }
         }
       }
     }
@@ -291,6 +314,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
 
   List<Map<String, dynamic>> _logs = [];
   bool _carregandoLogs = false;
+  final Set<String> _cnpjsAprovados = {};
+  List<PendenciaCadastro>? _pendenciasRemotas;
 
   final _dataFmt = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -366,6 +391,31 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       } else {
         AppLogger.i.warn('[AutomacaoFiscal] Falha ao carregar logs (status ${resp.statusCode})');
       }
+
+      // Busca pendências reais de cadastro já filtradas pelo banco no backend
+      try {
+        final pResp = await NetworkCaller()
+            .getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/pendencias-cadastro');
+        if (pResp.isSuccess && pResp.body is List) {
+          final list = (pResp.body as List).whereType<Map>().map((m) {
+            final map = Map<String, dynamic>.from(m);
+            final ehSac = (map['papel']?.toString().toUpperCase() == 'SACADO');
+            return PendenciaCadastro(
+              cnpj: (map['cnpj'] ?? '').toString(),
+              papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+              arquivo: (map['arquivo'] ?? 'Arquivo').toString(),
+              tipoDocumento: map['tipoDocumento']?.toString(),
+              origem: map['origem']?.toString(),
+              motivo: map['motivo']?.toString(),
+            );
+          }).toList();
+          if (mounted) {
+            setState(() {
+              _pendenciasRemotas = list;
+            });
+          }
+        }
+      } catch (_) {}
     } catch (e, st) {
       // Historico e' informativo -- nao trava o resto da tela se falhar,
       // mas precisa registrar pro Console de Logs (regra de monitoramento).
@@ -569,6 +619,27 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       return;
     }
 
+    // 0. Verifica previamente se já existe na base para não tentar duplicar
+    try {
+      final checkResp = await NetworkCaller().getRequest(
+        '${ApiLinks.baseUrl}/api/automacao-fiscal/consultar-existente?cnpj=$cnpj&papel=${pendencia.papelBadge}',
+      );
+      if (checkResp.isSuccess && checkResp.body != null && checkResp.body is Map) {
+        final Map body = checkResp.body as Map;
+        if (body['existe'] == true) {
+          final nome = (body['nome'] ?? body['razaoSocial'] ?? 'Existente').toString();
+          final id = body['id']?.toString() ?? '';
+          if (mounted) {
+            setState(() {
+              _cnpjsAprovados.add(cnpj);
+            });
+            _snack('${pendencia.papelTitulo} já existe na base de dados ($nome${id.isNotEmpty ? " - ID $id" : ""}). Pendência resolvida com sucesso!');
+          }
+          return;
+        }
+      }
+    } catch (_) {}
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -686,10 +757,18 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ApiLinks.insertParceiro,
                   parceiroPayload,
                 );
+                final respStr = resp.body?.toString().toLowerCase() ?? '';
+                if (!resp.isSuccess && respStr.contains('existe')) {
+                  // Já existe cadastrado na base
+                  return true;
+                }
                 return resp.isSuccess;
               }
             : null,
         onSaved: () async {
+          setState(() {
+            _cnpjsAprovados.add(cnpj);
+          });
           _snack(
             '${ehSacado ? "Parceiro" : "Fornecedor"} cadastrado e aprovado com sucesso! '
             'Agora clique em "Executar agora" para reprocessar os arquivos.',
@@ -1037,7 +1116,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   // ── Pendências de Aprovação de Parceiros e Fornecedores ─────────────
 
   Widget _pendenciasCadastroCard() {
-    final pendencias = extrairPendenciasCadastro(_logs);
+    final pendencias = (_pendenciasRemotas != null)
+        ? _pendenciasRemotas!
+            .where((p) => !_cnpjsAprovados.contains(p.cnpj.replaceAll(RegExp(r'\D'), '')))
+            .toList()
+        : extrairPendenciasCadastro(_logs, _cnpjsAprovados);
     if (pendencias.isEmpty) return const SizedBox.shrink();
 
     return Card(
@@ -1104,9 +1187,16 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: GridColors.filterBackground,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: GridColors.divider),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1137,16 +1227,17 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       p.cnpjFormatado,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: GridColors.textPrimary,
+                        fontSize: 15,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '• ${p.papelTitulo}',
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: GridColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
                       ),
                     ),
                   ],
@@ -1154,7 +1245,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Origem: ${p.arquivo} (${tipoDocumentoLabel(p.tipoDocumento)})',
-                  style: const TextStyle(fontSize: 12, color: GridColors.textMuted),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

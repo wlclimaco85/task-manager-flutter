@@ -203,6 +203,45 @@ void main() {
       final pendencias = extrairPendenciasCadastro(logs);
       expect(pendencias, isEmpty);
     });
+
+    test('ignora erros que nao sao de falta de cadastro (ja importada, duplicado, etc)', () {
+      final logs = [
+        {
+          'status': 'ERRO',
+          'arquivo': 'nfce_26.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFCE',
+          'mensagem': '[FORNECEDOR: 19364209000162] NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+        },
+        {
+          'status': 'ERRO',
+          'arquivo': 'NFSe_1.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFSE',
+          'mensagem': '[FORNECEDOR: 29911035000164] NFS-e ja importada.',
+        },
+      ];
+
+      final pendencias = extrairPendenciasCadastro(logs);
+      expect(pendencias, isEmpty);
+    });
+
+    test('ignora CNPJs passados no conjunto de aprovados na sessao', () {
+      final logs = [
+        {
+          'status': 'ERRO',
+          'arquivo': 'nfe_1066.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFE',
+          'mensagem': '[FORNECEDOR: 12.345.678/0001-99] Parceiro não cadastrado',
+        },
+      ];
+
+      expect(extrairPendenciasCadastro(logs).length, 1);
+
+      final pendencias = extrairPendenciasCadastro(logs, {'12345678000199'});
+      expect(pendencias, isEmpty);
+    });
   });
 
   group('Remoção de erros do histórico', () {

@@ -88,7 +88,7 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
 
   Map<String, dynamic> _buildPayload() {
     return {
-      if (widget.item?['caseid'] != null) 'id': widget.item!['id'],
+      if (widget.item?['id'] != null) 'id': widget.item!['id'],
       'nome': _nomeCtrl.text,
       'razaoSocial': _razaoSocialCtrl.text,
       'cpf': _cpfCnpjCtrl.text,
@@ -113,22 +113,35 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final payload = _buildPayload();
-    final bool success;
+    bool success;
     if (widget.customSaveHandler != null) {
       success = await widget.customSaveHandler!(payload);
     } else {
       final isEdicao = widget.item != null && widget.item!['id'] != null;
-      success = isEdicao
-          ? await FornecedorService.update(widget.item!['id'], payload)
-          : await FornecedorService.create(payload);
+      if (isEdicao) {
+        success = await FornecedorService.update(widget.item!['id'], payload);
+      } else {
+        success = await FornecedorService.create(payload);
+        // Se falhou porque já existe fornecedor com este CPF/CNPJ, tenta atualizar o existente
+        if (!success && (FornecedorService.ultimoErro ?? '').toLowerCase().contains('ja existe')) {
+          final existente = await FornecedorService.buscarPorCpf(_cpfCnpjCtrl.text);
+          if (existente != null && existente['id'] != null) {
+            success = await FornecedorService.update(existente['id'], payload);
+          } else {
+            // Já existe no banco, portanto a pendência de cadastro está resolvida!
+            success = true;
+          }
+        }
+      }
     }
     setState(() => _isLoading = false);
     if (success && mounted) {
       Navigator.pop(context);
       widget.onSaved();
     } else if (mounted) {
+      final msg = FornecedorService.ultimoErro ?? 'Erro ao salvar';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao salvar'), backgroundColor: Colors.red),
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
       );
     }
   }
