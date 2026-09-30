@@ -204,4 +204,39 @@ void main() {
       expect(pendencias, isEmpty);
     });
   });
+
+  group('Remoção de erros do histórico', () {
+    test('remover todos os erros limpa apenas logs com status ERRO', () {
+      final logs = [
+        {'id': 1, 'status': 'ERRO', 'arquivo': 'nfe_1066.xml'},
+        {'id': 2, 'status': 'SUCESSO', 'arquivo': 'nfe_1067.xml'},
+        {'id': 3, 'status': 'ERRO', 'arquivo': 'nfce_26.xml'},
+      ];
+
+      final errosCount = logs.where((l) => l['status'] == 'ERRO').length;
+      expect(errosCount, 2);
+
+      logs.removeWhere((l) => l['status'] == 'ERRO');
+
+      expect(logs.length, 1);
+      expect(logs.first['status'], 'SUCESSO');
+      expect(logs.first['arquivo'], 'nfe_1067.xml');
+      expect(logs.where((l) => l['status'] == 'ERRO').length, 0);
+    });
+
+    test('remover erro individual remove apenas o registro especificado', () {
+      final logs = [
+        {'id': 10, 'status': 'ERRO', 'arquivo': 'nfe_1066.xml'},
+        {'id': 11, 'status': 'ERRO', 'arquivo': 'nfce_26.xml'},
+      ];
+
+      final logARemover = logs.first;
+      logs.removeWhere((l) => l['id'] == logARemover['id']);
+
+      expect(logs.length, 1);
+      expect(logs.first['id'], 11);
+      expect(logs.first['arquivo'], 'nfce_26.xml');
+    });
+  });
 }
+

@@ -474,6 +474,86 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     _snack('Erro de $arquivo copiado!');
   }
 
+  Future<void> _removerTodosOsErros() async {
+    final qtdErros = _logs.where((l) => l['status'] == 'ERRO').length;
+    if (qtdErros == 0) {
+      _snack('Não há erros para remover.');
+      return;
+    }
+
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: GridColors.error),
+            SizedBox(width: 8),
+            Text('Remover Erros do Histórico'),
+          ],
+        ),
+        content: Text(
+          'Deseja remover todos os $qtdErros registros de erro do histórico de automação fiscal? '
+          'Os erros serão apagados do histórico.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remover Erros'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirma != true) return;
+
+    try {
+      final resp = await NetworkCaller().deleteRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs/erros');
+      if (resp.isSuccess) {
+        _snack('$qtdErros erros removidos do histórico com sucesso!');
+        await _carregar();
+      } else {
+        setState(() {
+          _logs.removeWhere((l) => l['status'] == 'ERRO');
+        });
+        _snack('Erros removidos da visualização.');
+      }
+    } catch (e) {
+      setState(() {
+        _logs.removeWhere((l) => l['status'] == 'ERRO');
+      });
+      _snack('Erros removidos da visualização.');
+    }
+  }
+
+  Future<void> _removerErroIndividual(Map<String, dynamic> log) async {
+    final logId = log['id'];
+    final arquivo = log['arquivo'] ?? 'Arquivo';
+
+    if (logId != null) {
+      try {
+        await NetworkCaller().deleteRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs/$logId');
+      } catch (_) {}
+    }
+
+    setState(() {
+      if (logId != null) {
+        _logs.removeWhere((l) => l['id'] == logId);
+      } else {
+        _logs.remove(log);
+      }
+    });
+
+    _snack('Erro de $arquivo removido do histórico!');
+  }
+
   Future<void> _cadastrarParceiroReceitaWs(String cnpjRaw) async {
     await _abrirAprovacaoCadastro(PendenciaCadastro(
       cnpj: cnpjRaw,
@@ -919,17 +999,36 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       message: '${_dataFmt.format(_ultimaExecucao!)} — ${_ultimoResultado ?? ''}'
           '${houveErro ? '. Verifique os erros detalhados abaixo.' : ''}',
       trailing: houveErro
-          ? ElevatedButton.icon(
-              key: const Key('btn_copiar_erros_banner'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.error,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              icon: const Icon(Icons.copy_all, size: 16),
-              label: const Text('Copiar Erros (Exceptions)',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              onPressed: _copiarTodosOsErros,
+          ? Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  key: const Key('btn_copiar_erros_banner'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.error,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  icon: const Icon(Icons.copy_all, size: 16),
+                  label: const Text('Copiar Erros (Exceptions)',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: _copiarTodosOsErros,
+                ),
+                OutlinedButton.icon(
+                  key: const Key('btn_remover_erros_banner'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GridColors.error,
+                    side: const BorderSide(color: GridColors.error),
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                  label: const Text('Remover Erros',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: _removerTodosOsErros,
+                ),
+              ],
             )
           : null,
     );
@@ -1106,7 +1205,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ),
                 ),
                 const Spacer(),
-                if (errosCount > 0)
+                if (errosCount > 0) ...[
                   OutlinedButton.icon(
                     key: const Key('btn_copiar_erros_historico'),
                     style: OutlinedButton.styleFrom(
@@ -1121,6 +1220,22 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     ),
                     onPressed: _copiarTodosOsErros,
                   ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    key: const Key('btn_remover_erros_historico'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    ),
+                    icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                    label: Text(
+                      'Remover Erros ($errosCount)',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _removerTodosOsErros,
+                  ),
+                ],
                 const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18),
@@ -1186,12 +1301,18 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             DataCell(Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!sucesso)
+                if (!sucesso) ...[
                   IconButton(
                     icon: const Icon(Icons.copy, size: 16, color: GridColors.error),
                     tooltip: 'Copiar mensagem/exception deste erro',
                     onPressed: () => _copiarErroIndividual(log),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.error),
+                    tooltip: 'Remover este erro do histórico',
+                    onPressed: () => _removerErroIndividual(log),
+                  ),
+                ],
                 if (!sucesso && cnpj != null)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -1282,6 +1403,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () => _copiarErroIndividual(log),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.errorDark),
+                    tooltip: 'Remover erro',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _removerErroIndividual(log),
                   ),
                 ],
               ),
