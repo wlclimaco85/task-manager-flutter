@@ -47,6 +47,30 @@ class _TrialRequestDialogState extends State<TrialRequestDialog> {
   bool _aceitouTermo = false;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      final response = await http.get(Uri.parse('https://ipwho.is/'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['city'] != null && data['region_code'] != null) {
+          if (mounted) {
+            setState(() {
+              _localizacaoController.text = '${data['city']}/${data['region_code']}';
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Ignora erro e mantém vazio para não travar o form
+    }
+  }
+
   double get _valorTotal {
     if (_modulosSelecionados.contains('Pacote completo')) {
       return 199.90;
@@ -209,8 +233,7 @@ class _TrialRequestDialogState extends State<TrialRequestDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _localizacaoController,
-                              decoration: const InputDecoration(labelText: 'Localização (Cidade/UF) *', border: OutlineInputBorder()),
-                              validator: (v) => v == null || v.isEmpty ? 'Campo obrigatório' : null,
+                              decoration: const InputDecoration(labelText: 'Localização (Cidade/UF)', border: OutlineInputBorder()),
                             ),
                           ),
                         ],
