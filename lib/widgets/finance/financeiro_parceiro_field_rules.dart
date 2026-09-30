@@ -15,7 +15,7 @@ class FinanceiroParceiroFieldRules {
       normalizarParceiroId(parceiroId) == null &&
       normalizarParceiroId(parcId) == null;
 
-  static bool fornecedorHabilitado({Object? parceiroId, Object? parcId}) =>
-      normalizarParceiroId(parceiroId) != null ||
-      normalizarParceiroId(parcId) != null;
+  /// Fornecedor (quem recebe o pagamento em contas a pagar ou quem deve em contas a receber)
+  /// deve ficar SEMPRE habilitado para seleção em cadastros e edições financeiras.
+  static bool fornecedorHabilitado({Object? parceiroId, Object? parcId}) => true;
 }

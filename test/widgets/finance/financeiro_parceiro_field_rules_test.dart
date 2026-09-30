@@ -5,17 +5,17 @@ import 'package:task_manager_flutter/widgets/finance/financeiro_parceiro_field_r
 void main() {
   group('FinanceiroParceiroFieldRules', () {
     test(
-        'habilita parceiro e bloqueia fornecedor quando nao existe parceiro no contexto',
+        'habilita parceiro e mantém fornecedor sempre habilitado quando nao existe parceiro no contexto',
         () {
       expect(FinanceiroParceiroFieldRules.parceiroHabilitado(parceiroId: null),
           isTrue);
       expect(
           FinanceiroParceiroFieldRules.fornecedorHabilitado(parceiroId: null),
-          isFalse);
+          isTrue);
     });
 
     test(
-        'bloqueia parceiro e habilita fornecedor quando existe parceiro no contexto',
+        'bloqueia parceiro e mantém fornecedor habilitado quando existe parceiro no contexto',
         () {
       expect(FinanceiroParceiroFieldRules.parceiroHabilitado(parceiroId: 1751),
           isFalse);
@@ -24,12 +24,12 @@ void main() {
           isTrue);
     });
 
-    test('trata zero como ausencia de parceiro', () {
+    test('trata zero como ausencia de parceiro e mantém fornecedor habilitado', () {
       expect(FinanceiroParceiroFieldRules.normalizarParceiroId(0), isNull);
       expect(FinanceiroParceiroFieldRules.parceiroHabilitado(parceiroId: 0),
           isTrue);
       expect(FinanceiroParceiroFieldRules.fornecedorHabilitado(parceiroId: 0),
-          isFalse);
+          isTrue);
     });
 
     test('aceita parcId como indicador de parceiro no localStorage', () {

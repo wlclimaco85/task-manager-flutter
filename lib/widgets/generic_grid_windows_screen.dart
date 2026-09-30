@@ -3249,6 +3249,11 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       enrichedFormData["file"] = {"id": fileId};
     }
 
+    if (enrichedFormData.containsKey('data_vencimento') &&
+        !enrichedFormData.containsKey('dataVencimento')) {
+      enrichedFormData['dataVencimento'] = enrichedFormData['data_vencimento'];
+    }
+
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
       normalizeEntityRelationships(enrichedFormData),
@@ -3436,6 +3441,11 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         filesToUpload,
       );
       adjustedFormData["file"] = {"id": fileId};
+    }
+
+    if (adjustedFormData.containsKey('data_vencimento') &&
+        !adjustedFormData.containsKey('dataVencimento')) {
+      adjustedFormData['dataVencimento'] = adjustedFormData['data_vencimento'];
     }
 
     final response = await NetworkCaller().putRequest(
