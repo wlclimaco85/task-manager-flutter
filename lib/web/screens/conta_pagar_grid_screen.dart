@@ -386,7 +386,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   label: 'Fornecedor',
                   isInForm: true,
                   isInGrid: true,
-                  isVisibleByDefault: false,
+                  isVisibleByDefault: true,
                   fieldType: FieldType.dropdown,
                   enabled: fornecedorHabilitado,
                   fieldOrder: 11,
