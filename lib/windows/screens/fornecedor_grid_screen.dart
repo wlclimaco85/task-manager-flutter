@@ -29,6 +29,7 @@ class WindowsFornecedorGridScreen extends StatelessWidget {
       detailScreenBuilder: (item) => WindowsParceiroDetailScreen(
         item: item,
         hasPermission: hasPermission,
+        titleOverride: 'Fornecedor',
       ),
     );
   }

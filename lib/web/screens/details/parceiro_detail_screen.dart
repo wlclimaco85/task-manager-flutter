@@ -17,9 +17,13 @@ import '../../../widgets/smtp_config_tab.dart';
 class WebParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
+  final String? titleOverride;
 
   const WebParceiroDetailScreen(
-      {super.key, required this.item, required this.hasPermission});
+      {super.key,
+      required this.item,
+      required this.hasPermission,
+      this.titleOverride});
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +46,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
     return GenericDetailFormScreen(
       item: item,
       telaNome: 'parceiro',
+      titleOverride: titleOverride,
       hasPermission: hasPermission,
       fieldOverrides: [
         FieldConfigWindows(

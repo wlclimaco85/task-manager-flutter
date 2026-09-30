@@ -29,6 +29,7 @@ class WebFornecedorGridScreen extends StatelessWidget {
       detailScreenBuilder: (item) => WebParceiroDetailScreen(
         item: item,
         hasPermission: hasPermission,
+        titleOverride: 'Fornecedor',
       ),
     );
   }

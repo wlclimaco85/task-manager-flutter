@@ -14,11 +14,13 @@ import 'modulo_cobranca_screen.dart';
 class WindowsParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
+  final String? titleOverride;
 
   const WindowsParceiroDetailScreen({
     super.key,
     required this.item,
     required this.hasPermission,
+    this.titleOverride,
   });
 
   @override
@@ -42,6 +44,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
     return GenericDetailFormScreen(
       item: item,
       telaNome: 'parceiro',
+      titleOverride: titleOverride,
       hasPermission: hasPermission,
       fieldOverrides: [
         FieldConfigWindows(

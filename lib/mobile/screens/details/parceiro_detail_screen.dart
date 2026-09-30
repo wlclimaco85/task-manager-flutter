@@ -6,14 +6,20 @@ import '../../../../customization/dynamic_grid_dynamic_screen.dart';
 class MobileWebParceiroDetailScreen extends StatelessWidget {
   final dynamic item;
   final bool Function(String)? hasPermission;
+  final String? titleOverride;
 
-  const MobileWebParceiroDetailScreen({super.key, this.item, this.hasPermission});
+  const MobileWebParceiroDetailScreen({
+    super.key,
+    this.item,
+    this.hasPermission,
+    this.titleOverride,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const UserBannerAppBar(
-        screenTitle: 'Parceiro',
+      appBar: UserBannerAppBar(
+        screenTitle: titleOverride ?? 'Parceiro',
         showFilterButton: false,
         showBackButton: true,
       ),
@@ -22,6 +28,7 @@ class MobileWebParceiroDetailScreen extends StatelessWidget {
             ? web.WebParceiroDetailScreen(
                 item: item as Map<String, dynamic>,
                 hasPermission: hasPermission ?? ((_) => true),
+                titleOverride: titleOverride,
               )
             : DynamicGridDynamicScreen(
                 telaNome: 'parceiro',

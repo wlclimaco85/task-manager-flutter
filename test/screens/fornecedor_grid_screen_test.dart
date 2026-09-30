@@ -29,8 +29,9 @@ void main() {
     _expectSupplierInsertRules(grid.fieldOverrides!);
     _expectSupplierTypeRemovedFromPayload(grid.transformFormData!);
     expect(grid.detailScreenBuilder, isNotNull);
-    expect(
-        grid.detailScreenBuilder!({'id': 1}), isA<WebParceiroDetailScreen>());
+    final detail = grid.detailScreenBuilder!({'id': 1})
+        as WebParceiroDetailScreen;
+    expect(detail.titleOverride, 'Fornecedor');
   });
 
   testWidgets(
@@ -48,10 +49,9 @@ void main() {
     _expectSupplierInsertRules(grid.fieldOverrides!);
     _expectSupplierTypeRemovedFromPayload(grid.transformFormData!);
     expect(grid.detailScreenBuilder, isNotNull);
-    expect(
-      grid.detailScreenBuilder!({'id': 1}),
-      isA<WindowsParceiroDetailScreen>(),
-    );
+    final detail = grid.detailScreenBuilder!({'id': 1})
+        as WindowsParceiroDetailScreen;
+    expect(detail.titleOverride, 'Fornecedor');
   });
 
   testWidgets('mobile usa o mesmo contrato restrito e oferece detalhe',
@@ -88,10 +88,9 @@ void main() {
       );
     }
     expect(grid.detailScreenBuilder, isNotNull);
-    expect(
-      grid.detailScreenBuilder!({'id': 1}),
-      isA<MobileWebParceiroDetailScreen>(),
-    );
+    final detail = grid.detailScreenBuilder!({'id': 1})
+        as MobileWebParceiroDetailScreen;
+    expect(detail.titleOverride, 'Fornecedor');
   });
 }
 

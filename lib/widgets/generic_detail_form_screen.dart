@@ -132,6 +132,7 @@ class GenericDetailFormScreen extends StatefulWidget {
   final String telaNome;
   final SecurityCheck hasPermission;
   final List<FieldConfigWindows>? fieldOverrides;
+  final String? titleOverride;
 
   /// Explicit related grid tabs (e.g. roles, chamados).
   final List<RelatedGridTab>? relatedTabs;
@@ -152,6 +153,7 @@ class GenericDetailFormScreen extends StatefulWidget {
     required this.telaNome,
     required this.hasPermission,
     this.fieldOverrides,
+    this.titleOverride,
     this.relatedTabs,
     this.onAfterSave,
     this.onBuscarCep,
@@ -684,7 +686,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         return Scaffold(
           backgroundColor: const Color(0xFFF6F8FB),
           appBar: AppBar(
-            title: Text(tela.titulo),
+            title: Text(widget.titleOverride ?? tela.titulo),
             backgroundColor: GridColors.primary,
             foregroundColor: Colors.white,
             elevation: 0,

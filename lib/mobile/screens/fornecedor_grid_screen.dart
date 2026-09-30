@@ -28,6 +28,7 @@ class MobileFornecedorGridScreen extends StatelessWidget {
       detailScreenBuilder: (item) => MobileWebParceiroDetailScreen(
         item: item,
         hasPermission: hasPermission ?? (p) => true,
+        titleOverride: 'Fornecedor',
       ),
       storageKey: 'mobile_dynamic_fornecedor',
       showAppBar: true,
