@@ -1,6 +1,7 @@
 // lib/data/customization/dynamic_grid_windows_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../utils/financial_account_form_rules.dart';
 
 import '../../services/network_caller.dart';
 import '../../services/tela_caller.dart';
@@ -347,11 +348,18 @@ class DynamicGridWindowsScreenState<T>
     final hasExplicit = converted.any((f) => f.fieldOrder != null);
     if (hasExplicit) {
       converted.sort((a, b) {
-        final oa = a.fieldOrder;
-        final ob = b.fieldOrder;
-        if (oa == null && ob == null) return 0;
-        if (oa == null) return 1;
-        if (ob == null) return -1;
+        final oa = financialAccountFormOrder(
+          screenName: widget.telaNome,
+          fieldName: a.fieldName,
+          backendOrder: a.fieldOrder ?? 9999,
+          isRequired: a.isRequired,
+        );
+        final ob = financialAccountFormOrder(
+          screenName: widget.telaNome,
+          fieldName: b.fieldName,
+          backendOrder: b.fieldOrder ?? 9999,
+          isRequired: b.isRequired,
+        );
         return oa.compareTo(ob);
       });
     }
