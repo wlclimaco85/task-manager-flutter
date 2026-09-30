@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/widgets/automacao_fiscal_screen.dart';
 
@@ -35,6 +36,7 @@ void main() {
       expect(tipoDocumentoLabel('NFE'), 'NF-e (Entrada)');
       expect(tipoDocumentoLabel('NFCE'), 'NFC-e (Consumidor)');
       expect(tipoDocumentoLabel('NFSE'), 'NFS-e (Serviço)');
+      expect(tipoDocumentoLabel('JA_IMPORTADO'), 'Já importado');
     });
 
     test('nulo vira traco, tipo desconhecido vira "Não identificado"', () {
@@ -89,19 +91,35 @@ void main() {
         logs: logs,
         dataHora: DateTime(2026, 9, 30, 15, 23),
         pastaRaiz: 'C:\\AutomacaoFiscal',
-        ultimoResultado: '1 sucesso, 2 erro',
+        ultimoResultado: '1 sucesso, 1 erro (1 já importados)',
       );
 
       expect(texto, contains('RELATÓRIO DE ERROS / EXCEPTIONS'));
       expect(texto, contains('Data/Hora: 30/09/2026 15:23:00'));
       expect(texto, contains('Pasta Raiz: C:\\AutomacaoFiscal'));
-      expect(texto, contains('Total de arquivos com erro: 2'));
+      // Arquivos já importados NÃO contam como erro!
+      expect(texto, contains('Total de arquivos com erro: 1'));
       expect(texto, contains('Arquivo: nfe_1066.xml'));
       expect(texto, contains('Invalid byte 2 of 2-byte UTF-8 sequence'));
-      expect(texto, contains('Arquivo: nfce_26.xml'));
-      expect(texto, contains('NF-e já importada'));
-      // Não deve incluir arquivos com sucesso
+      // Não deve incluir arquivos com sucesso nem arquivos já importados
       expect(texto, isNot(contains('nfe_1067.xml')));
+      expect(texto, isNot(contains('nfce_26.xml')));
+    });
+
+    test('quando ha apenas ja importados ou sucesso retorna mensagem amigavel', () {
+      final texto = formatarRelatorioErrosParaClipboard(
+        logs: [
+          {
+            'status': 'JA_IMPORTADO',
+            'arquivo': 'nfce_26.xml',
+            'origem': 'XML',
+            'tipoDocumento': 'JA_IMPORTADO',
+            'mensagem': 'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+          },
+        ],
+        ultimoResultado: '0 sucesso, 0 erro (1 já importados)',
+      );
+      expect(texto, contains('Última execução: 0 sucesso, 0 erro (1 já importados)'));
     });
 
     test('quando nao ha erros retorna mensagem amigavel', () {
@@ -275,6 +293,134 @@ void main() {
       expect(logs.length, 1);
       expect(logs.first['id'], 11);
       expect(logs.first['arquivo'], 'nfce_26.xml');
+    });
+  });
+
+  group('Rastreabilidade e Auditoria Fiscal', () {
+    testWidgets('exibe colunas e dados de rastreabilidade na tabela desktop', (tester) async {
+      final logsFixture = [
+        {
+          'id': 140,
+          'dhCreatedAt': '2026-09-30T19:25:39.56647',
+          'arquivo': 'nfe_1066.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFE_ENTRADA',
+          'status': 'JA_IMPORTADO',
+          'mensagem': 'NF-e já importada. Chave: 35260619364209000162550010000006511000045703',
+          'empresaId': 1,
+          'empresaNome': 'Empresa Demonstração',
+          'fornecedorId': 1751,
+          'fornecedorNome': 'BRASIL MODA SURF LTDA',
+          'parceiroId': 1751,
+          'parceiroNome': 'BRASIL MODA SURF LTDA',
+          'documentoId': 1108,
+          'documentoNumero': '651',
+          'produtosInfo': '[ID 55] Camiseta Surf; [ID 56] Bermuda Água',
+          'detalhesRastreabilidade': 'NF-e Entrada #651 importada previamente com sucesso.',
+        },
+      ];
+
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AutomacaoFiscalScreen(
+              logsPrecarregados: logsFixture,
+              showAppBar: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verifica cabeçalhos de rastreabilidade na tabela
+      expect(find.text('Data/Hora'), findsOneWidget);
+      expect(find.text('Empresa'), findsOneWidget);
+      expect(find.text('Fornecedor / Parceiro'), findsOneWidget);
+      expect(find.text('Doc / Produtos'), findsOneWidget);
+
+      // Verifica valores preenchidos na linha
+      expect(find.text('ID: 1'), findsOneWidget);
+      expect(find.text('Empresa Demonstração'), findsOneWidget);
+      expect(find.text('Forn #1751'), findsOneWidget);
+      expect(find.text('BRASIL MODA SURF LTDA'), findsOneWidget);
+      expect(find.textContaining('ID: 1108'), findsOneWidget);
+      expect(find.textContaining('[ID 55] Camiseta Surf'), findsOneWidget);
+
+      // Clica no botão de rastreabilidade da linha
+      final btnRastreabilidade = find.byKey(const Key('btn_rastreabilidade_140'));
+      expect(btnRastreabilidade, findsOneWidget);
+      await tester.ensureVisible(btnRastreabilidade);
+      await tester.tap(btnRastreabilidade);
+      await tester.pumpAndSettle();
+
+      // Modal de Auditoria e Rastreabilidade abre com detalhes
+      expect(find.text('Rastreabilidade & Auditoria Fiscal'), findsOneWidget);
+      expect(find.text('Empresa e Parceiros Vinculados'), findsOneWidget);
+      expect(find.text('Documento Gerado no Sistema'), findsOneWidget);
+      expect(find.text('Produtos Cadastrados / Vinculados'), findsOneWidget);
+      expect(find.textContaining('Data do Import: 30/09/2026'), findsOneWidget);
+      expect(find.text('Fechar'), findsOneWidget);
+
+      await tester.tap(find.text('Fechar'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('exibe informacoes de rastreabilidade nos cards mobile', (tester) async {
+      final logsFixture = [
+        {
+          'id': 140,
+          'dhCreatedAt': '2026-09-30T19:25:39.56647',
+          'arquivo': 'nfe_1066.xml',
+          'origem': 'XML',
+          'tipoDocumento': 'NFE_ENTRADA',
+          'status': 'JA_IMPORTADO',
+          'mensagem': 'NF-e já importada.',
+          'empresaId': 1,
+          'empresaNome': 'Empresa Demonstração',
+          'fornecedorId': 1751,
+          'fornecedorNome': 'BRASIL MODA SURF LTDA',
+          'documentoId': 1108,
+          'documentoNumero': '651',
+          'produtosInfo': '[ID 55] Camiseta Surf',
+        },
+      ];
+
+      // Tamanho mobile (< 680px)
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AutomacaoFiscalScreen(
+              logsPrecarregados: logsFixture,
+              showAppBar: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verifica dados no Card Mobile
+      expect(find.textContaining('Importado em:'), findsOneWidget);
+      expect(find.textContaining('[ID 1] Empresa Demonstração'), findsOneWidget);
+      expect(find.textContaining('[ID 1751] BRASIL MODA SURF LTDA'), findsOneWidget);
+      expect(find.textContaining('ID: 1108'), findsOneWidget);
+      expect(find.text('Ver Rastreabilidade Completa'), findsOneWidget);
+
+      // Clica em "Ver Rastreabilidade Completa"
+      final btnCard = find.byKey(const Key('btn_card_rastreabilidade_140'));
+      await tester.ensureVisible(btnCard);
+      await tester.tap(btnCard);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rastreabilidade & Auditoria Fiscal'), findsOneWidget);
+      expect(find.text('Fechar'), findsOneWidget);
+      await tester.tap(find.text('Fechar'));
+      await tester.pumpAndSettle();
     });
   });
 }

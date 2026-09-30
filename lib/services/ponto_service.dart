@@ -123,9 +123,11 @@ class PontoService {
 
   /// Registra ponto automático (alterna entrada/saída)
   static Future<bool> registrarPonto(int loginId,
-      {double? latitude, double? longitude}) async {
+      {double? latitude, double? longitude, double? lat, double? lng}) async {
     // Usa BuildContext fake — registra como ENTRADA por padrão
     // A lógica de alternância fica no backend
+    final latReal = latitude ?? lat;
+    final lngReal = longitude ?? lng;
     try {
       final login = AuthUtility.userInfo?.login;
       final body = {
@@ -133,8 +135,8 @@ class PontoService {
         "empresa": {"id": login?.empresa?.id},
         if (login?.parceiro != null) "parceiro": {"id": login?.parceiro?.id},
         "tipo": "ENTRADA",
-        if (latitude != null) "latitude": latitude,
-        if (longitude != null) "longitude": longitude,
+        if (latReal != null) "latitude": latReal,
+        if (lngReal != null) "longitude": lngReal,
       };
       final response =
           await NetworkCaller().postRequest(ApiLinks.pontoRegistrar, body);
@@ -168,13 +170,6 @@ class PontoService {
   /// Banco de horas do mês atual
   static Future<double?> bancoHoras(int loginId) async {
     return _caller.calcularBancoHoras(mes: DateTime.now());
-  }
-
-  static Future<Uint8List?> gerarEspelhoPdf(
-      int loginId, int mes, int ano) async {
-    final inicio = DateTime(ano, mes, 1);
-    final fim = DateTime(ano, mes + 1, 0);
-    return _caller.gerarPdf(inicio: inicio, fim: fim);
   }
 
   static Future<List<Map<String, dynamic>>> relatorioAbsenteismo(

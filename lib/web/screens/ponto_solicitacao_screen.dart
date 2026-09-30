@@ -34,8 +34,8 @@ class _WebPontoSolicitacaoScreenState extends State<WebPontoSolicitacaoScreen> {
     try {
       final id = AuthUtility.userInfo?.login?.id;
       final empresaId = TenantContext.empresaId;
-      final role = AuthUtility.userInfo?.roles ?? [];
-      final isMaster = role.contains('MASTER') || role.contains('GESTOR');
+      final roles = AuthUtility.userInfo?.login?.roles?.map((r) => r.role?.toUpperCase()).toList() ?? [];
+      final isMaster = roles.contains('MASTER') || roles.contains('GESTOR');
 
       String url = '${ApiLinks.baseUrl}/api/ponto-ajuste/solicitacoes';
       if (isMaster && empresaId != null) {
@@ -53,8 +53,8 @@ class _WebPontoSolicitacaoScreenState extends State<WebPontoSolicitacaoScreen> {
   }
 
   Future<void> _avaliarSolicitacao(Map<String, dynamic> solicitacao) async {
-    final role = AuthUtility.userInfo?.roles ?? [];
-    final isMaster = role.contains('MASTER') || role.contains('GESTOR');
+    final roles = AuthUtility.userInfo?.login?.roles?.map((r) => r.role?.toUpperCase()).toList() ?? [];
+    final isMaster = roles.contains('MASTER') || roles.contains('GESTOR');
     if (!isMaster || solicitacao['status'] != 'PENDENTE') return;
 
     final obsCtrl = TextEditingController();

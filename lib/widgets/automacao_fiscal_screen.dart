@@ -32,7 +32,12 @@ String origemLabel(String? origem) {
 /// Rotulo legivel do tipo de documento (BoletoTipoDocumento.name() ou tipo XML do
 /// backend). Funcao pura, mesmo motivo de origemLabel acima.
 String tipoDocumentoLabel(String? tipo) {
-  switch (tipo) {
+  if (tipo == null) return '-';
+  final upper = tipo.toUpperCase();
+  if (upper == 'JA_IMPORTADO' || upper.contains('JA_IMPORTAD') || upper.contains('JÁ IMPORTAD')) {
+    return 'Já importado';
+  }
+  switch (upper) {
     case 'BOLETO_FORNECEDOR':
       return 'Boleto Fornecedor';
     case 'FGTS':
@@ -53,8 +58,8 @@ String tipoDocumentoLabel(String? tipo) {
       return 'NFC-e (Consumidor)';
     case 'NFSE':
       return 'NFS-e (Serviço)';
-    case null:
-      return '-';
+    case 'XML':
+      return 'XML';
     default:
       return 'Não identificado';
   }
@@ -79,7 +84,16 @@ String formatarRelatorioErrosParaClipboard({
   String? pastaRaiz,
   String? ultimoResultado,
 }) {
-  final erros = logs.where((l) => l['status'] == 'ERRO').toList();
+  final erros = logs.where((l) {
+    final status = l['status']?.toString().toUpperCase();
+    if (status != 'ERRO') return false;
+    final msg = (l['mensagem'] ?? '').toString().toLowerCase();
+    if (msg.contains('já importad') || msg.contains('ja importad') ||
+        msg.contains('já cadastrad') || msg.contains('ja cadastrad')) {
+      return false;
+    }
+    return true;
+  }).toList();
   if (erros.isEmpty) {
     if (ultimoResultado != null && ultimoResultado.trim().isNotEmpty) {
       return 'Última execução: $ultimoResultado';
@@ -287,8 +301,13 @@ class AutomacaoFiscalScreen extends StatefulWidget {
   /// Sistema do admin_panel, que ja tem seu proprio AppBar/TabBar) -- evita
   /// Scaffold/AppBar duplicado.
   final bool showAppBar;
+  final List<Map<String, dynamic>>? logsPrecarregados;
 
-  const AutomacaoFiscalScreen({super.key, this.showAppBar = true});
+  const AutomacaoFiscalScreen({
+    super.key,
+    this.showAppBar = true,
+    this.logsPrecarregados,
+  });
 
   @override
   State<AutomacaoFiscalScreen> createState() => _AutomacaoFiscalScreenState();
@@ -322,7 +341,12 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   @override
   void initState() {
     super.initState();
-    _carregar();
+    if (widget.logsPrecarregados != null) {
+      _logs = List<Map<String, dynamic>>.from(widget.logsPrecarregados!);
+      _carregando = false;
+    } else {
+      _carregar();
+    }
   }
 
   @override
@@ -500,6 +524,22 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     }
   }
 
+  bool _ehJaImportado(Map<String, dynamic> log) {
+    final status = (log['status'] ?? '').toString().toUpperCase();
+    if (status == 'JA_IMPORTADO') return true;
+    final tipo = (log['tipoDocumento'] ?? '').toString().toUpperCase();
+    if (tipo == 'JA_IMPORTADO' || tipo.contains('JA_IMPORTAD') || tipo.contains('JÁ IMPORTAD')) return true;
+    final msg = (log['mensagem'] ?? '').toString().toLowerCase();
+    return msg.contains('já importad') || msg.contains('ja importad') ||
+        msg.contains('já cadastrad') || msg.contains('ja cadastrad');
+  }
+
+  bool _ehErroReal(Map<String, dynamic> log) {
+    final status = (log['status'] ?? '').toString().toUpperCase();
+    if (status != 'ERRO') return false;
+    return !_ehJaImportado(log);
+  }
+
   void _copiarTodosOsErros() {
     final texto = formatarRelatorioErrosParaClipboard(
       logs: _logs,
@@ -508,7 +548,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       ultimoResultado: _ultimoResultado,
     );
     Clipboard.setData(ClipboardData(text: texto));
-    final qtdErros = _logs.where((l) => l['status'] == 'ERRO').length;
+    final qtdErros = _logs.where(_ehErroReal).length;
     _snack(qtdErros > 0
         ? '$qtdErros erros/exceptions copiados para a área de transferência!'
         : 'Resultado copiado para a área de transferência!');
@@ -525,7 +565,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   }
 
   Future<void> _removerTodosOsErros() async {
-    final qtdErros = _logs.where((l) => l['status'] == 'ERRO').length;
+    final qtdErros = _logs.where(_ehErroReal).length;
     if (qtdErros == 0) {
       _snack('Não há erros para remover.');
       return;
@@ -571,13 +611,13 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         await _carregar();
       } else {
         setState(() {
-          _logs.removeWhere((l) => l['status'] == 'ERRO');
+          _logs.removeWhere(_ehErroReal);
         });
         _snack('Erros removidos da visualização.');
       }
     } catch (e) {
       setState(() {
-        _logs.removeWhere((l) => l['status'] == 'ERRO');
+        _logs.removeWhere(_ehErroReal);
       });
       _snack('Erros removidos da visualização.');
     }
@@ -957,45 +997,51 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
               const SizedBox(height: 16),
               LayoutBuilder(builder: (context, constraints) {
                 final compacto = constraints.maxWidth < _kCompactoBreakpoint;
-                final campos = [
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      controller: _intervaloValorCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'A cada',
-                        helperText: 'Intervalo entre uma varredura e outra.',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) {
-                        final n = int.tryParse((v ?? '').trim());
-                        if (n == null || n <= 0) return 'Informe um número maior que zero.';
-                        return null;
-                      },
-                    ),
+                final campoValor = TextFormField(
+                  controller: _intervaloValorCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'A cada',
+                    helperText: 'Intervalo entre uma varredura e outra.',
+                    border: OutlineInputBorder(),
                   ),
-                  SizedBox(width: compacto ? 0 : 12, height: compacto ? 12 : 0),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String>(
-                      value: _intervaloUnidade,
-                      decoration: const InputDecoration(
-                        labelText: 'Unidade',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'HORAS', child: Text('Horas')),
-                        DropdownMenuItem(value: 'DIAS', child: Text('Dias')),
-                        DropdownMenuItem(value: 'MESES', child: Text('Meses')),
-                      ],
-                      onChanged: (v) => setState(() => _intervaloUnidade = v ?? 'DIAS'),
-                    ),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    if (n == null || n <= 0) return 'Informe um número maior que zero.';
+                    return null;
+                  },
+                );
+                final campoUnidade = DropdownButtonFormField<String>(
+                  value: _intervaloUnidade,
+                  decoration: const InputDecoration(
+                    labelText: 'Unidade',
+                    border: OutlineInputBorder(),
                   ),
-                ];
+                  items: const [
+                    DropdownMenuItem(value: 'HORAS', child: Text('Horas')),
+                    DropdownMenuItem(value: 'DIAS', child: Text('Dias')),
+                    DropdownMenuItem(value: 'MESES', child: Text('Meses')),
+                  ],
+                  onChanged: (v) => setState(() => _intervaloUnidade = v ?? 'DIAS'),
+                );
+
                 return compacto
-                    ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: campos)
-                    : Row(crossAxisAlignment: CrossAxisAlignment.start, children: campos);
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          campoValor,
+                          const SizedBox(height: 12),
+                          campoUnidade,
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 1, child: campoValor),
+                          const SizedBox(width: 12),
+                          Expanded(flex: 2, child: campoUnidade),
+                        ],
+                      );
               }),
               const SizedBox(height: 8),
               SwitchListTile(
@@ -1068,7 +1114,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     }
 
     final houveErro = (_ultimoResultado ?? '').contains(RegExp(r'[1-9]\d* erro')) ||
-        _logs.any((l) => l['status'] == 'ERRO');
+        _logs.any(_ehErroReal);
     return NfceNoticeBanner(
       icon: houveErro ? Icons.error_outline : Icons.check_circle_outline,
       backgroundColor: houveErro ? GridColors.errorLight : GridColors.filterBackground,
@@ -1272,7 +1318,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   // ── Histórico ────────────────────────────────────────────────────────
 
   Widget _historicoCard() {
-    final errosCount = _logs.where((l) => l['status'] == 'ERRO').length;
+    final errosCount = _logs.where(_ehErroReal).length;
     return Card(
       elevation: 0,
       color: GridColors.card,
@@ -1285,7 +1331,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 const Text(
                   'Histórico de execuções',
@@ -1295,43 +1345,47 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const Spacer(),
-                if (errosCount > 0) ...[
-                  OutlinedButton.icon(
-                    key: const Key('btn_copiar_erros_historico'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: GridColors.error,
-                      side: const BorderSide(color: GridColors.error),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (errosCount > 0) ...[
+                      OutlinedButton.icon(
+                        key: const Key('btn_copiar_erros_historico'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: GridColors.error,
+                          side: const BorderSide(color: GridColors.error),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        icon: const Icon(Icons.copy_all, size: 16),
+                        label: Text(
+                          'Copiar Erros ($errosCount)',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: _copiarTodosOsErros,
+                      ),
+                      ElevatedButton.icon(
+                        key: const Key('btn_remover_erros_historico'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GridColors.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                        label: Text(
+                          'Remover Erros ($errosCount)',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: _removerTodosOsErros,
+                      ),
+                    ],
+                    IconButton(
+                      icon: const Icon(Icons.refresh, size: 18),
+                      tooltip: 'Recarregar histórico',
+                      onPressed: _carregarLogs,
                     ),
-                    icon: const Icon(Icons.copy_all, size: 16),
-                    label: Text(
-                      'Copiar Erros ($errosCount)',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: _copiarTodosOsErros,
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    key: const Key('btn_remover_erros_historico'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.error,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    ),
-                    icon: const Icon(Icons.delete_sweep_outlined, size: 16),
-                    label: Text(
-                      'Remover Erros ($errosCount)',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: _removerTodosOsErros,
-                  ),
-                ],
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 18),
-                  tooltip: 'Recarregar histórico',
-                  onPressed: _carregarLogs,
+                  ],
                 ),
               ],
             ),
@@ -1358,41 +1412,234 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     );
   }
 
+  String _formatarDataHora(dynamic dh) {
+    if (dh == null) return '-';
+    try {
+      final str = dh.toString();
+      final dt = DateTime.tryParse(str);
+      if (dt != null) {
+        return DateFormat('dd/MM/yyyy HH:mm:ss').format(dt);
+      }
+      return str;
+    } catch (_) {
+      return dh.toString();
+    }
+  }
+
+  Widget _empresaCell(Map<String, dynamic> log) {
+    final empId = log['empresaId'];
+    final empNome = log['empresaNome']?.toString();
+    if (empId == null) {
+      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+    }
+    return SizedBox(
+      width: 140,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: GridColors.filterBackground,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: GridColors.divider),
+            ),
+            child: Text(
+              'ID: $empId',
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+            ),
+          ),
+          if (empNome != null && empNome.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                empNome,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: GridColors.textSecondary),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _entidadesCell(Map<String, dynamic> log) {
+    final fornId = log['fornecedorId'];
+    final fornNome = log['fornecedorNome']?.toString();
+    final parcId = log['parceiroId'];
+    final parcNome = log['parceiroNome']?.toString();
+
+    if (fornId == null && parcId == null) {
+      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+    }
+
+    return SizedBox(
+      width: 190,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (fornId != null)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: GridColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    'Forn #$fornId',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    fornNome ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          if (parcId != null && (parcId != fornId || fornId == null))
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: GridColors.secondary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      'Parc #$parcId',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      parcNome ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _documentoProdutosCell(Map<String, dynamic> log) {
+    final docId = log['documentoId'];
+    final docNum = log['documentoNumero']?.toString();
+    final prods = log['produtosInfo']?.toString();
+
+    if (docId == null && (prods == null || prods.isEmpty)) {
+      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+    }
+
+    return SizedBox(
+      width: 220,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (docId != null)
+            Row(
+              children: [
+                const Icon(Icons.receipt_outlined, size: 13, color: GridColors.textSecondary),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${docNum != null && docNum.isNotEmpty ? "Nº $docNum " : ""}· ID: $docId',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          if (prods != null && prods.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                prods,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _logTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         headingRowColor: WidgetStateProperty.all(GridColors.gridHeader),
         columns: const [
+          DataColumn(label: Text('Data/Hora')),
           DataColumn(label: Text('Origem')),
           DataColumn(label: Text('Arquivo')),
           DataColumn(label: Text('Tipo')),
           DataColumn(label: Text('Status')),
+          DataColumn(label: Text('Empresa')),
+          DataColumn(label: Text('Fornecedor / Parceiro')),
+          DataColumn(label: Text('Doc / Produtos')),
           DataColumn(label: Text('Mensagem / Exception')),
           DataColumn(label: Text('Ações')),
         ],
         rows: _logs.map((log) {
+          final ehJaImportado = _ehJaImportado(log);
           final sucesso = log['status'] == 'SUCESSO';
+          final ehErroReal = !sucesso && !ehJaImportado;
           final cnpj = extrairCnpj(log['mensagem']?.toString());
+          final logIdStr = (log['id'] ?? log['arquivo'] ?? '').toString();
+
           return DataRow(cells: [
+            DataCell(Text(
+              _formatarDataHora(log['dhCreatedAt']),
+              style: const TextStyle(fontSize: 11, color: GridColors.textSecondary),
+            )),
             DataCell(Text(origemLabel(log['origem']?.toString()))),
             DataCell(Text(log['arquivo']?.toString() ?? '')),
-            DataCell(_tipoChip(log['tipoDocumento']?.toString())),
-            DataCell(_statusChip(sucesso)),
+            DataCell(_tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString())),
+            DataCell(_statusChip(sucesso: sucesso, jaImportado: ehJaImportado)),
+            DataCell(_empresaCell(log)),
+            DataCell(_entidadesCell(log)),
+            DataCell(_documentoProdutosCell(log)),
             DataCell(SizedBox(
-              width: 300,
+              width: 250,
               child: Text(
                 log['mensagem']?.toString() ?? '',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    color: sucesso ? GridColors.textSecondary : GridColors.error, fontSize: 12),
+                    color: ehErroReal ? GridColors.error : GridColors.textSecondary, fontSize: 12),
               ),
             )),
             DataCell(Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!sucesso) ...[
+                IconButton(
+                  key: Key('btn_rastreabilidade_$logIdStr'),
+                  icon: const Icon(Icons.manage_search_outlined, size: 18, color: GridColors.primary),
+                  tooltip: 'Auditoria & Rastreabilidade do Arquivo',
+                  onPressed: () => _abrirDialogRastreabilidade(log),
+                ),
+                if (ehErroReal) ...[
                   IconButton(
                     icon: const Icon(Icons.copy, size: 16, color: GridColors.error),
                     tooltip: 'Copiar mensagem/exception deste erro',
@@ -1404,7 +1651,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     onPressed: () => _removerErroIndividual(log),
                   ),
                 ],
-                if (!sucesso && cnpj != null)
+                if (ehErroReal && cnpj != null)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.primary,
@@ -1428,7 +1675,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       ));
                     },
                   ),
-                if (sucesso) const Text('-'),
               ],
             )),
           ]);
@@ -1438,14 +1684,29 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   }
 
   Widget _logCard(Map<String, dynamic> log) {
+    final ehJaImportado = _ehJaImportado(log);
     final sucesso = log['status'] == 'SUCESSO';
+    final ehErroReal = !sucesso && !ehJaImportado;
     final cnpj = extrairCnpj(log['mensagem']?.toString());
+    final logIdStr = (log['id'] ?? log['arquivo'] ?? '').toString();
+
+    final empId = log['empresaId'];
+    final empNome = log['empresaNome']?.toString();
+    final fornId = log['fornecedorId'];
+    final fornNome = log['fornecedorNome']?.toString();
+    final parcId = log['parceiroId'];
+    final parcNome = log['parceiroNome']?.toString();
+    final docId = log['documentoId'];
+    final docNum = log['documentoNumero']?.toString();
+    final prods = log['produtosInfo']?.toString();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: GridColors.divider),
+        color: Colors.white,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1462,14 +1723,139 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
-              _statusChip(sucesso),
+              _statusChip(sucesso: sucesso, jaImportado: ehJaImportado),
             ],
           ),
-          if (log['tipoDocumento'] != null) ...[
-            const SizedBox(height: 6),
-            _tipoChip(log['tipoDocumento']?.toString()),
+          const SizedBox(height: 4),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(Icons.schedule, size: 13, color: GridColors.textMuted),
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'Importado em: ${_formatarDataHora(log['dhCreatedAt'])}',
+                      style: const TextStyle(fontSize: 11, color: GridColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              if (log['tipoDocumento'] != null || ehJaImportado)
+                _tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString()),
+            ],
+          ),
+
+          // Informações de rastreabilidade no Card
+          if (empId != null || fornId != null || parcId != null || docId != null || (prods != null && prods.isNotEmpty)) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (empId != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Empresa: ',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: '[ID $empId] ${empNome ?? ""}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (fornId != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Fornecedor: ',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: '[ID $fornId] ${fornNome ?? ""}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.primary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (parcId != null && (parcId != fornId || fornId == null))
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Parceiro: ',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: '[ID $parcId] ${parcNome ?? ""}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.secondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (docId != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Documento: ',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: '${docNum != null && docNum.isNotEmpty ? "Nº $docNum " : ""}· ID: $docId',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (prods != null && prods.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Produtos: ',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+                          children: [
+                            TextSpan(
+                              text: prods,
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF334155)),
+                            ),
+                          ],
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
-          if (!sucesso && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
+
+          if (ehErroReal && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.all(8),
@@ -1506,43 +1892,367 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 ],
               ),
             ),
-          ],
-          if (!sucesso && cnpj != null) ...[
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GridColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-                icon: const Icon(Icons.verified_user_outlined, size: 16),
-                label: Text('Aprovar Cadastro CNPJ $cnpj (ReceitaWS)',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
-                      log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
-                      log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
-                  _abrirAprovacaoCadastro(PendenciaCadastro(
-                    cnpj: cnpj,
-                    papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
-                    arquivo: log['arquivo']?.toString() ?? 'Arquivo',
-                    tipoDocumento: log['tipoDocumento']?.toString(),
-                    origem: log['origem']?.toString(),
-                    motivo: log['mensagem']?.toString(),
-                  ));
-                },
+          ] else if (ehJaImportado && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F9FF),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFBAE6FD)),
+              ),
+              child: Text(
+                log['mensagem'].toString(),
+                style: const TextStyle(color: Color(0xFF0369A1), fontSize: 12),
               ),
             ),
           ],
+
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                key: Key('btn_card_rastreabilidade_$logIdStr'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.primary,
+                  side: const BorderSide(color: GridColors.primary),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+                icon: const Icon(Icons.manage_search_outlined, size: 16),
+                label: const Text('Ver Rastreabilidade Completa', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: () => _abrirDialogRastreabilidade(log),
+              ),
+              if (ehErroReal && cnpj != null)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  icon: const Icon(Icons.verified_user_outlined, size: 16),
+                  label: Text('Aprovar Cadastro CNPJ $cnpj (ReceitaWS)',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
+                        log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
+                        log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
+                    _abrirAprovacaoCadastro(PendenciaCadastro(
+                      cnpj: cnpj,
+                      papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+                      arquivo: log['arquivo']?.toString() ?? 'Arquivo',
+                      tipoDocumento: log['tipoDocumento']?.toString(),
+                      origem: log['origem']?.toString(),
+                      motivo: log['mensagem']?.toString(),
+                    ));
+                  },
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _statusChip(bool sucesso) {
+  void _abrirDialogRastreabilidade(Map<String, dynamic> log) {
+    final ehJaImportado = _ehJaImportado(log);
+    final sucesso = log['status'] == 'SUCESSO';
+    final arquivo = log['arquivo']?.toString() ?? 'Arquivo';
+    final dataHoraStr = _formatarDataHora(log['dhCreatedAt']);
+    final empId = log['empresaId'];
+    final empNome = log['empresaNome']?.toString();
+    final fornId = log['fornecedorId'];
+    final fornNome = log['fornecedorNome']?.toString();
+    final parcId = log['parceiroId'];
+    final parcNome = log['parceiroNome']?.toString();
+    final docId = log['documentoId'];
+    final docNum = log['documentoNumero']?.toString();
+    final prods = log['produtosInfo']?.toString();
+    final detalhes = log['detalhesRastreabilidade']?.toString();
+    final msg = log['mensagem']?.toString();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        title: Row(
+          children: [
+            const Icon(Icons.manage_search_outlined, color: GridColors.primary, size: 24),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Rastreabilidade & Auditoria Fiscal',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Cartão 1: Arquivo e Execução
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: GridColors.filterBackground,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GridColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              arquivo,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          _statusChip(sucesso: sucesso, jaImportado: ehJaImportado),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
+                        children: [
+                          Text('Data do Import: $dataHoraStr',
+                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary, fontWeight: FontWeight.w600)),
+                          Text('Origem: ${origemLabel(log['origem']?.toString())}',
+                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary)),
+                          Text('Tipo: ${tipoDocumentoLabel(ehJaImportado ? "JA_IMPORTADO" : log['tipoDocumento']?.toString())}',
+                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Cartão 2: Empresa & Entidades
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GridColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Empresa e Parceiros Vinculados',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                      ),
+                      const Divider(height: 12),
+                      _itemInfoRastreabilidade(
+                        label: 'Empresa:',
+                        valor: empId != null
+                            ? '[ID: $empId] ${empNome ?? ""}'
+                            : 'Não especificada',
+                      ),
+                      const SizedBox(height: 6),
+                      _itemInfoRastreabilidade(
+                        label: 'Fornecedor / Emitente:',
+                        valor: fornId != null
+                            ? '[ID: $fornId] ${fornNome ?? ""}'
+                            : 'Não identificado / Não cadastrado',
+                        corValor: fornId != null ? GridColors.primary : GridColors.textSecondary,
+                      ),
+                      const SizedBox(height: 6),
+                      _itemInfoRastreabilidade(
+                        label: 'Parceiro / Tomador / Sacado:',
+                        valor: parcId != null
+                            ? '[ID: $parcId] ${parcNome ?? ""}'
+                            : 'Não identificado / Não cadastrado',
+                        corValor: parcId != null ? GridColors.secondary : GridColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Cartão 3: Documento Gerado no Sistema
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GridColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Documento Gerado no Sistema',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                      ),
+                      const Divider(height: 12),
+                      _itemInfoRastreabilidade(
+                        label: 'Número do Doc:',
+                        valor: docNum != null && docNum.isNotEmpty ? docNum : 'Não registrado',
+                      ),
+                      const SizedBox(height: 6),
+                      _itemInfoRastreabilidade(
+                        label: 'ID no Banco:',
+                        valor: docId != null ? docId.toString() : 'Não registrado',
+                      ),
+                      if (log['contaPagarId'] != null) ...[
+                        const SizedBox(height: 6),
+                        _itemInfoRastreabilidade(
+                          label: 'Conta a Pagar ID:',
+                          valor: log['contaPagarId'].toString(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Cartão 4: Produtos & IDs Cadastrados
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: GridColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Produtos Cadastrados / Vinculados',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                      ),
+                      const Divider(height: 12),
+                      if (prods != null && prods.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: GridColors.filterBackground,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            prods,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), height: 1.4),
+                          ),
+                        )
+                      else
+                        const Text(
+                          'Nenhum produto individual identificado neste documento.',
+                          style: TextStyle(fontSize: 12, color: GridColors.textSecondary, fontStyle: FontStyle.italic),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Cartão 5: Detalhes da Auditoria / Mensagem
+                if ((detalhes != null && detalhes.isNotEmpty) || (msg != null && msg.isNotEmpty)) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: GridColors.divider),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Detalhes Técnicos & Auditoria',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                        ),
+                        const Divider(height: 12),
+                        if (detalhes != null && detalhes.isNotEmpty) ...[
+                          Text(
+                            detalhes,
+                            style: const TextStyle(fontSize: 12, color: GridColors.textPrimary, height: 1.3),
+                          ),
+                          if (msg != null && msg.isNotEmpty) const SizedBox(height: 8),
+                        ],
+                        if (msg != null && msg.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: GridColors.filterBackground,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              msg,
+                              style: const TextStyle(fontSize: 11, color: GridColors.textSecondary, fontFamily: 'monospace'),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.secondary, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _itemInfoRastreabilidade({required String label, required String valor, Color? corValor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text.rich(
+        TextSpan(
+          text: '$label ',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+          children: [
+            TextSpan(
+              text: valor,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: corValor ?? GridColors.textPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusChip({required bool sucesso, bool jaImportado = false}) {
+    if (jaImportado) {
+      return const Chip(
+        visualDensity: VisualDensity.compact,
+        backgroundColor: Color(0xFFE0F2FE),
+        label: Text(
+          'Já importado',
+          style: TextStyle(
+            color: Color(0xFF0369A1),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
     return Chip(
       visualDensity: VisualDensity.compact,
       backgroundColor: sucesso ? GridColors.successLight : GridColors.errorLight,

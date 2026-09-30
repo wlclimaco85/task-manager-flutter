@@ -310,6 +310,9 @@ class LoginModel {
   /// Permissões retornadas pelo backend no login — substitui security_matrix.dart
   List<RolePermissaoItem>? permissoes;
 
+  /// Retorna lista de roles (ou nomes) para compatibilidade
+  List<dynamic> get roles => login?.roles?.map((r) => r.role).toList() ?? [];
+
   LoginModel({this.status, this.token, this.data, this.login, this.permissoes});
 
   LoginModel.fromJson(Map<String, dynamic> json) {

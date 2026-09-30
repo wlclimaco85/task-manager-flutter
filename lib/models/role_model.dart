@@ -13,6 +13,8 @@ class Role {
   Aplicativo? aplicativo;
   String? moduloNecessario;
 
+  String? get role => description ?? key;
+
   Role({
     this.id,
     this.description,
