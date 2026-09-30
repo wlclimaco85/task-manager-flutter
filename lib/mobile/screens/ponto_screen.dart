@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 import 'package:task_manager_flutter/constants/custom_colors.dart';
@@ -14,6 +15,8 @@ import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
 
 import 'pdf_preview_dialog.dart';
+import 'relatorio_ponto_screen.dart';
+import 'ponto_solicitacao_screen.dart';
 
 class PontoScreen extends StatefulWidget {
   const PontoScreen({super.key});
@@ -58,7 +61,8 @@ class _PontoScreenState extends State<PontoScreen> {
     try {
       final url = TenantContext.applyToUrl(
           '${ApiLinks.baseUrl}/api/funcionario/por-login?userId=$userId');
-      final resp = await http.get(Uri.parse(url), headers: TenantContext.headers);
+      final resp =
+          await http.get(Uri.parse(url), headers: TenantContext.headers);
       if (resp.statusCode == 200 && mounted) {
         final body = jsonDecode(resp.body);
         setState(() {
@@ -89,9 +93,31 @@ class _PontoScreenState extends State<PontoScreen> {
       final loginId = AuthUtility.userInfo?.login?.id;
       if (loginId == null) {
         _mostrarSnack('Login não encontrado na sessão');
+        setState(() => _registering = false);
         return;
       }
-      final ok = await PontoService.registrarPonto(loginId);
+
+      double? lat;
+      double? lng;
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          final position = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.high);
+          lat = position.latitude;
+          lng = position.longitude;
+        }
+      }
+
+      final ok = await PontoService.registrarPonto(loginId, lat: lat, lng: lng);
       if (ok) {
         _mostrarSnack('Ponto registrado com sucesso!');
         await _carregarPontos();
@@ -197,7 +223,8 @@ class _PontoScreenState extends State<PontoScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               ),
               onPressed: _registering ? null : _registrarPonto,
               icon: const Icon(Icons.fingerprint, color: Colors.white),
@@ -267,9 +294,12 @@ class _PontoScreenState extends State<PontoScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildTimeBadge(Icons.login, m['entrada'] ?? '--:--', true),
-                              const Icon(Icons.swap_horiz, color: GridColors.textSecondary),
-                              _buildTimeBadge(Icons.logout, m['saida'] ?? '--:--', false),
+                              _buildTimeBadge(
+                                  Icons.login, m['entrada'] ?? '--:--', true),
+                              const Icon(Icons.swap_horiz,
+                                  color: GridColors.textSecondary),
+                              _buildTimeBadge(
+                                  Icons.logout, m['saida'] ?? '--:--', false),
                             ],
                           ),
                         ))
@@ -292,7 +322,8 @@ class _PontoScreenState extends State<PontoScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: start ? GridColors.success : GridColors.error, size: 18),
+          Icon(icon,
+              color: start ? GridColors.success : GridColors.error, size: 18),
           const SizedBox(width: 6),
           Text(
             time,
@@ -309,28 +340,52 @@ class _PontoScreenState extends State<PontoScreen> {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        ElevatedButton.icon(
-          onPressed: () async {
-            final loginId = AuthUtility.userInfo?.login?.id;
-            if (loginId == null) return;
-            final bytes = await PontoService.gerarPdf(loginId);
-            if (bytes == null) {
-              _mostrarSnack('Não foi possível gerar o PDF');
-              return;
-            }
-            if (!mounted) return;
-            showDialog(
-              context: context,
-              builder: (_) => PdfPreviewDialog(bytes: bytes),
-            );
-          },
-          icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-          label: const Text('Gerar PDF', style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: GridColors.buttonBackground,
-            minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const RelatorioPontoScreen()));
+                },
+                icon: const Icon(Icons.picture_as_pdf,
+                    color: Colors.white, size: 20),
+                label: const Text('Espelho',
+                    style: TextStyle(color: Colors.white, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.buttonBackground,
+                  minimumSize: const Size(0, 52),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const PontoSolicitacaoScreen()));
+                },
+                icon: const Icon(Icons.edit_calendar,
+                    color: Colors.white, size: 20),
+                label: const Text('Ajustes',
+                    style: TextStyle(color: Colors.white, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.secondary,
+                  minimumSize: const Size(0, 52),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
@@ -358,11 +413,13 @@ class _PontoScreenState extends State<PontoScreen> {
             );
           },
           icon: const Icon(Icons.timelapse, color: Colors.white),
-          label: const Text('Saldo do Banco de Horas', style: TextStyle(color: Colors.white)),
+          label: const Text('Saldo do Banco de Horas',
+              style: TextStyle(color: Colors.white)),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.success,
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ],

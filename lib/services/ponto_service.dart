@@ -13,6 +13,8 @@ class PontoCaller {
     BuildContext context, {
     required TipoRegistro tipo,
     String? observacao,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final login = AuthUtility.userInfo?.login;
@@ -20,11 +22,12 @@ class PontoCaller {
       final Map<String, dynamic> body = {
         "login": {"id": login?.id},
         "empresa": {"id": login?.empresa?.id},
-        if (login?.parceiro != null)
-          "parceiro": {"id": login?.parceiro?.id},
+        if (login?.parceiro != null) "parceiro": {"id": login?.parceiro?.id},
         "tipo": tipo.apiValue,
         if (observacao != null && observacao.isNotEmpty)
           "observacao": observacao,
+        if (latitude != null) "latitude": latitude,
+        if (longitude != null) "longitude": longitude,
       };
 
       final NetworkResponse response = await NetworkCaller().postRequest(
@@ -119,7 +122,8 @@ class PontoService {
   static final _caller = PontoCaller();
 
   /// Registra ponto automático (alterna entrada/saída)
-  static Future<bool> registrarPonto(int loginId) async {
+  static Future<bool> registrarPonto(int loginId,
+      {double? latitude, double? longitude}) async {
     // Usa BuildContext fake — registra como ENTRADA por padrão
     // A lógica de alternância fica no backend
     try {
@@ -129,8 +133,11 @@ class PontoService {
         "empresa": {"id": login?.empresa?.id},
         if (login?.parceiro != null) "parceiro": {"id": login?.parceiro?.id},
         "tipo": "ENTRADA",
+        if (latitude != null) "latitude": latitude,
+        if (longitude != null) "longitude": longitude,
       };
-      final response = await NetworkCaller().postRequest(ApiLinks.pontoRegistrar, body);
+      final response =
+          await NetworkCaller().postRequest(ApiLinks.pontoRegistrar, body);
       return response.isSuccess;
     } catch (_) {
       return false;
@@ -150,24 +157,35 @@ class PontoService {
     return _caller.gerarPdf(inicio: inicio, fim: fim);
   }
 
-  /// Banco de horas do mês atual
-  static Future<double?> bancoHoras(int loginId) async {
-    return _caller.calcularBancoHoras(mes: DateTime.now());
-  }
-
-  static Future<Uint8List?> gerarEspelhoPdf(int loginId, int mes, int ano) async {
+  /// Gera PDF de um mês e ano específicos
+  static Future<Uint8List?> gerarEspelhoPdf(
+      int loginId, int mes, int ano) async {
     final inicio = DateTime(ano, mes, 1);
     final fim = DateTime(ano, mes + 1, 0);
     return _caller.gerarPdf(inicio: inicio, fim: fim);
   }
 
-  static Future<List<Map<String, dynamic>>> relatorioAbsenteismo(int mes, int ano) async {
+  /// Banco de horas do mês atual
+  static Future<double?> bancoHoras(int loginId) async {
+    return _caller.calcularBancoHoras(mes: DateTime.now());
+  }
+
+  static Future<Uint8List?> gerarEspelhoPdf(
+      int loginId, int mes, int ano) async {
+    final inicio = DateTime(ano, mes, 1);
+    final fim = DateTime(ano, mes + 1, 0);
+    return _caller.gerarPdf(inicio: inicio, fim: fim);
+  }
+
+  static Future<List<Map<String, dynamic>>> relatorioAbsenteismo(
+      int mes, int ano) async {
     final inicio = DateTime(ano, mes, 1);
     final fim = DateTime(ano, mes + 1, 0);
     final i = inicio.toIso8601String().split("T")[0];
     final f = fim.toIso8601String().split("T")[0];
     try {
-      final response = await NetworkCaller().getRequest("${ApiLinks.baseUrl}/api/ponto/absenteismo?dataInicio=$i&dataFim=$f");
+      final response = await NetworkCaller().getRequest(
+          "${ApiLinks.baseUrl}/api/ponto/absenteismo?dataInicio=$i&dataFim=$f");
       if (response.statusCode == 200 && response.body != null) {
         final List lista = (response.body! as List<dynamic>).toList();
         return lista.map((e) => e as Map<String, dynamic>).toList();
