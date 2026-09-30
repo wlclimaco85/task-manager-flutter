@@ -7,8 +7,15 @@ class FornecedorFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
   final VoidCallback onSaved;
   final String? tituloOverride;
+  final Future<bool> Function(Map<String, dynamic> payload)? customSaveHandler;
 
-  const FornecedorFormDialog({super.key, this.item, required this.onSaved, this.tituloOverride});
+  const FornecedorFormDialog({
+    super.key,
+    this.item,
+    required this.onSaved,
+    this.tituloOverride,
+    this.customSaveHandler,
+  });
 
   @override
   State<FornecedorFormDialog> createState() => _FornecedorFormDialogState();
@@ -106,10 +113,15 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final payload = _buildPayload();
-    final isEdicao = widget.item != null && widget.item!['id'] != null;
-    final success = isEdicao
-        ? await FornecedorService.update(widget.item!['id'], payload)
-        : await FornecedorService.create(payload);
+    final bool success;
+    if (widget.customSaveHandler != null) {
+      success = await widget.customSaveHandler!(payload);
+    } else {
+      final isEdicao = widget.item != null && widget.item!['id'] != null;
+      success = isEdicao
+          ? await FornecedorService.update(widget.item!['id'], payload)
+          : await FornecedorService.create(payload);
+    }
     setState(() => _isLoading = false);
     if (success && mounted) {
       Navigator.pop(context);

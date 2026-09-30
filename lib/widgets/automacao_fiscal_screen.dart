@@ -123,6 +123,135 @@ String formatarRelatorioErrosParaClipboard({
   return buffer.toString();
 }
 
+/// Papel de cadastro identificado nos erros de automação fiscal
+enum PapelCadastro {
+  sacado, // Cliente / Parceiro
+  fornecedor, // Fornecedor / Recebedor
+}
+
+/// Representa um CNPJ pendente de aprovação de cadastro extraído dos logs de erro.
+class PendenciaCadastro {
+  final String cnpj;
+  final PapelCadastro papel;
+  final String arquivo;
+  final String? tipoDocumento;
+  final String? origem;
+  final String? motivo;
+
+  const PendenciaCadastro({
+    required this.cnpj,
+    required this.papel,
+    required this.arquivo,
+    this.tipoDocumento,
+    this.origem,
+    this.motivo,
+  });
+
+  String get papelTitulo => papel == PapelCadastro.sacado
+      ? 'Sacado (Parceiro / Cliente)'
+      : 'Recebedor (Fornecedor)';
+
+  String get papelBadge => papel == PapelCadastro.sacado ? 'SACADO' : 'RECEBEDOR';
+
+  Color get papelColor => papel == PapelCadastro.sacado ? GridColors.secondary : GridColors.warning;
+
+  String get cnpjFormatado {
+    final digitos = cnpj.replaceAll(RegExp(r'\D'), '');
+    if (digitos.length == 14) {
+      return '${digitos.substring(0, 2)}.${digitos.substring(2, 5)}.${digitos.substring(5, 8)}/${digitos.substring(8, 12)}-${digitos.substring(12, 14)}';
+    }
+    return cnpj;
+  }
+}
+
+/// Extrai a lista consolidada e desduplicada de pendências de cadastro de Parceiro (Sacado)
+/// e Fornecedor (Recebedor) a partir dos logs de erro da automação fiscal.
+/// Função pura para garantir 100% de testabilidade unitária sem efeitos colaterais.
+List<PendenciaCadastro> extrairPendenciasCadastro(List<Map<String, dynamic>> logs) {
+  final pendencias = <PendenciaCadastro>[];
+  final chavesVistas = <String>{};
+
+  final erros = logs.where((l) => l['status'] == 'ERRO').toList();
+
+  for (final l in erros) {
+    final msg = (l['mensagem'] ?? '').toString();
+    final arquivo = (l['arquivo'] ?? 'Arquivo').toString();
+    final tipoDoc = l['tipoDocumento']?.toString();
+    final origem = l['origem']?.toString();
+
+    // 1. Tags explícitas geradas pelo backend: [FORNECEDOR: cnpj] e [SACADO: cnpj]
+    final matchForn = RegExp(r'\[FORNECEDOR:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
+    final matchSac = RegExp(r'\[SACADO:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
+
+    bool achouTag = false;
+    if (matchForn != null) {
+      achouTag = true;
+      final raw = matchForn.group(1)?.trim() ?? '';
+      final limpo = raw.replaceAll(RegExp(r'\D'), '');
+      if (limpo.length >= 11) {
+        final chave = 'FORNECEDOR_$limpo';
+        if (chavesVistas.add(chave)) {
+          pendencias.add(PendenciaCadastro(
+            cnpj: limpo,
+            papel: PapelCadastro.fornecedor,
+            arquivo: arquivo,
+            tipoDocumento: tipoDoc,
+            origem: origem,
+            motivo: msg,
+          ));
+        }
+      }
+    }
+
+    if (matchSac != null) {
+      achouTag = true;
+      final raw = matchSac.group(1)?.trim() ?? '';
+      final limpo = raw.replaceAll(RegExp(r'\D'), '');
+      if (limpo.length >= 11) {
+        final chave = 'SACADO_$limpo';
+        if (chavesVistas.add(chave)) {
+          pendencias.add(PendenciaCadastro(
+            cnpj: limpo,
+            papel: PapelCadastro.sacado,
+            arquivo: arquivo,
+            tipoDocumento: tipoDoc,
+            origem: origem,
+            motivo: msg,
+          ));
+        }
+      }
+    }
+
+    // 2. Se não achou tags estruturadas, verifica padrões textuais ou CNPJ avulso
+    if (!achouTag) {
+      final cnpjAvulso = extrairCnpj(msg);
+      if (cnpjAvulso != null) {
+        final limpo = cnpjAvulso.replaceAll(RegExp(r'\D'), '');
+        final lower = msg.toLowerCase();
+        final ehSacado = lower.contains('sacado') ||
+            lower.contains('parceiro') ||
+            lower.contains('destinatário') ||
+            lower.contains('destinatario') ||
+            lower.contains('tomador');
+        final papel = ehSacado ? PapelCadastro.sacado : PapelCadastro.fornecedor;
+        final chave = '${papel.name.toUpperCase()}_$limpo';
+        if (chavesVistas.add(chave)) {
+          pendencias.add(PendenciaCadastro(
+            cnpj: limpo,
+            papel: papel,
+            arquivo: arquivo,
+            tipoDocumento: tipoDoc,
+            origem: origem,
+            motivo: msg,
+          ));
+        }
+      }
+    }
+  }
+
+  return pendencias;
+}
+
 /// Tela Sistema > Automacao Fiscal (card automacao-fiscal-pastas,
 /// 2026-09-10). Configura a pasta raiz + intervalo de execucao da
 /// automacao que escaneia boletos/speds/sintegra (cada uma com
@@ -346,21 +475,31 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   }
 
   Future<void> _cadastrarParceiroReceitaWs(String cnpjRaw) async {
-    final cnpj = cnpjRaw.replaceAll(RegExp(r'\D'), '');
-    if (cnpj.length != 14) {
-      _snack('CNPJ inválido ($cnpjRaw)', error: true);
+    await _abrirAprovacaoCadastro(PendenciaCadastro(
+      cnpj: cnpjRaw,
+      papel: PapelCadastro.sacado,
+      arquivo: 'Arquivo',
+    ));
+  }
+
+  Future<void> _abrirAprovacaoCadastro(PendenciaCadastro pendencia) async {
+    final cnpj = pendencia.cnpj.replaceAll(RegExp(r'\D'), '');
+    if (cnpj.length < 11) {
+      _snack('Documento inválido (${pendencia.cnpj})', error: true);
       return;
     }
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const AlertDialog(
+      builder: (ctx) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Expanded(child: Text('Consultando dados na ReceitaWS...')),
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text('Consultando dados na ReceitaWS para ${pendencia.papelTitulo} ($cnpj)...'),
+            ),
           ],
         ),
       ),
@@ -384,7 +523,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       }
 
       // 3. Fallback direto se chamadas locais falharem
-      if (dadosReceita == null) {
+      if (dadosReceita == null && cnpj.length == 14) {
         final directResp = await NetworkCaller().getRequest('https://www.receitaws.com.br/v1/cnpj/$cnpj');
         if (directResp.isSuccess && directResp.body != null && directResp.body is Map) {
           final b = directResp.body as Map;
@@ -431,22 +570,50 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       'cidade': (dadosReceita?['municipio'] ?? '').toString().trim(),
       'estado': (dadosReceita?['uf'] ?? '').toString().trim(),
       'status': 'ATIVO',
-      'observacao': 'Cadastrado via Automação Fiscal (ReceitaWS)',
+      'observacao': 'Cadastrado via Automação Fiscal (${pendencia.papelBadge} - ReceitaWS)',
     };
 
     if (dadosReceita == null) {
       _snack('Não foi possível obter dados na ReceitaWS. Preencha os campos no formulário.', error: true);
     } else {
-      _snack('Dados do parceiro carregados da ReceitaWS com sucesso!');
+      _snack('Dados de ${pendencia.papelBadge} carregados da ReceitaWS com sucesso!');
     }
+
+    final ehSacado = pendencia.papel == PapelCadastro.sacado;
+    final titulo = ehSacado
+        ? 'Aprovar Cadastro de Parceiro (Sacado)'
+        : 'Aprovar Cadastro de Fornecedor (Recebedor)';
 
     await showDialog(
       context: context,
       builder: (ctx) => FornecedorFormDialog(
         item: initialData,
-        tituloOverride: 'Cadastrar Parceiro (ReceitaWS)',
+        tituloOverride: titulo,
+        customSaveHandler: ehSacado
+            ? (payload) async {
+                final parceiroPayload = Map<String, dynamic>.from(payload);
+                parceiroPayload['tipoEstabelecimento'] = 'MATRIZ';
+                parceiroPayload['endereco'] = {
+                  'logradouro': payload['rua'],
+                  'numero': payload['numero'],
+                  'complemento': payload['complemento'],
+                  'bairro': payload['bairro'],
+                  'cidade': payload['cidade'],
+                  'estado': payload['estado'],
+                  'cep': payload['cep'],
+                };
+                final resp = await NetworkCaller().postRequest(
+                  ApiLinks.insertParceiro,
+                  parceiroPayload,
+                );
+                return resp.isSuccess;
+              }
+            : null,
         onSaved: () async {
-          _snack('Parceiro cadastrado com sucesso! Execute a automação novamente.');
+          _snack(
+            '${ehSacado ? "Parceiro" : "Fornecedor"} cadastrado e aprovado com sucesso! '
+            'Agora clique em "Executar agora" para reprocessar os arquivos.',
+          );
           await _carregarLogs();
         },
       ),
@@ -476,6 +643,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     _configCard(),
                     const SizedBox(height: 16),
                     _statusBanner(),
+                    const SizedBox(height: 16),
+                    _pendenciasCadastroCard(),
                     const SizedBox(height: 16),
                     _historicoCard(),
                   ],
@@ -766,6 +935,150 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     );
   }
 
+  // ── Pendências de Aprovação de Parceiros e Fornecedores ─────────────
+
+  Widget _pendenciasCadastroCard() {
+    final pendencias = extrairPendenciasCadastro(_logs);
+    if (pendencias.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 0,
+      color: GridColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: GridColors.warning, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.verified_user_outlined, color: GridColors.warning, size: 22),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Aprovação de Parceiros e Fornecedores (ReceitaWS)',
+                    style: TextStyle(
+                      color: GridColors.secondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: GridColors.warning.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${pendencias.length} pendência${pendencias.length > 1 ? "s" : ""}',
+                    style: const TextStyle(
+                      color: GridColors.secondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Identificamos CNPJs de Sacado (Cliente) ou Recebedor (Fornecedor) pendentes nos arquivos com erro. '
+              'Clique em "Ver / Aprovar Cadastro" para buscar os dados na ReceitaWS, conferir e aprovar. '
+              'Após salvar, clique em "Executar agora" para reprocessar.',
+              style: TextStyle(color: GridColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            ...pendencias.map(_itemPendenciaWidget),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _itemPendenciaWidget(PendenciaCadastro p) {
+    final ehSacado = p.papel == PapelCadastro.sacado;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: GridColors.filterBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: GridColors.divider),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: ehSacado ? GridColors.secondary : GridColors.primary,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              p.papelBadge,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      p.cnpjFormatado,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: GridColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '• ${p.papelTitulo}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: GridColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Origem: ${p.arquivo} (${tipoDocumentoLabel(p.tipoDocumento)})',
+                  style: const TextStyle(fontSize: 12, color: GridColors.textMuted),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            key: Key('btn_aprovar_${p.papelBadge.toLowerCase()}_${p.cnpj}'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ehSacado ? GridColors.secondary : GridColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            icon: const Icon(Icons.visibility, size: 16),
+            label: const Text('Ver / Aprovar Cadastro'),
+            onPressed: () => _abrirAprovacaoCadastro(p),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Histórico ────────────────────────────────────────────────────────
 
   Widget _historicoCard() {
@@ -887,9 +1200,21 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
-                    icon: const Icon(Icons.person_add_alt_1, size: 14),
-                    label: const Text('Cadastrar (ReceitaWS)'),
-                    onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
+                    icon: const Icon(Icons.verified_user_outlined, size: 14),
+                    label: const Text('Aprovar (ReceitaWS)'),
+                    onPressed: () {
+                      final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
+                          log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
+                          log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
+                      _abrirAprovacaoCadastro(PendenciaCadastro(
+                        cnpj: cnpj,
+                        papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+                        arquivo: log['arquivo']?.toString() ?? 'Arquivo',
+                        tipoDocumento: log['tipoDocumento']?.toString(),
+                        origem: log['origem']?.toString(),
+                        motivo: log['mensagem']?.toString(),
+                      ));
+                    },
                   ),
                 if (sucesso) const Text('-'),
               ],
@@ -973,10 +1298,22 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
-                icon: const Icon(Icons.person_add_alt_1, size: 16),
-                label: Text('Cadastrar Parceiro CNPJ $cnpj (ReceitaWS)',
+                icon: const Icon(Icons.verified_user_outlined, size: 16),
+                label: Text('Aprovar Cadastro CNPJ $cnpj (ReceitaWS)',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                onPressed: () => _cadastrarParceiroReceitaWs(cnpj),
+                onPressed: () {
+                  final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
+                      log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
+                      log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
+                  _abrirAprovacaoCadastro(PendenciaCadastro(
+                    cnpj: cnpj,
+                    papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+                    arquivo: log['arquivo']?.toString() ?? 'Arquivo',
+                    tipoDocumento: log['tipoDocumento']?.toString(),
+                    origem: log['origem']?.toString(),
+                    motivo: log['mensagem']?.toString(),
+                  ));
+                },
               ),
             ),
           ],
