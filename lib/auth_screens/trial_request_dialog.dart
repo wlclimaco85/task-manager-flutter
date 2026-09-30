@@ -75,7 +75,11 @@ class _TrialRequestDialogState extends State<TrialRequestDialog> {
     if (_modulosSelecionados.contains('Pacote completo')) {
       return 199.90;
     }
-    return _modulosSelecionados.length * 99.90;
+    int quantidadeCobrada = _modulosSelecionados.length;
+    if (quantidadeCobrada > 3) {
+      quantidadeCobrada = 3; // Cobra no máximo 3 módulos
+    }
+    return quantidadeCobrada * 99.90;
   }
 
   Future<void> _submit() async {
