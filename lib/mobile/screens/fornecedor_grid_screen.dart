@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../customization/dynamic_grid_dynamic_screen.dart';
+import '../../utils/api_links.dart';
+import 'details/parceiro_detail_screen.dart';
 
 /// Tela mobile de Fornecedores — usa DynamicGridDynamicScreen (layout vertical nativo em cards).
 class MobileFornecedorGridScreen extends StatelessWidget {
@@ -10,8 +12,16 @@ class MobileFornecedorGridScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicGridDynamicScreen(
       key: const ValueKey('mobile_grid_fornecedor'),
-      telaNome: 'fornecedor',
+      telaNome: 'parceiro',
       hasPermission: hasPermission ?? (p) => true,
+      fetchEndpointOverride: ApiLinks.allFornecedores,
+      createEndpointOverride: ApiLinks.createFornecedor,
+      updateEndpointOverride: ApiLinks.updateFornecedor(':id'),
+      deleteEndpointOverride: ApiLinks.deleteFornecedor(':id'),
+      detailScreenBuilder: (item) => MobileWebParceiroDetailScreen(
+        item: item,
+        hasPermission: hasPermission ?? (p) => true,
+      ),
       storageKey: 'mobile_dynamic_fornecedor',
       showAppBar: true,
       useUserBannerAppBar: true,

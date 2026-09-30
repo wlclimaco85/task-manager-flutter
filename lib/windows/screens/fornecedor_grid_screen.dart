@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/api_links.dart';
+import 'details/parceiro_detail_screen.dart';
 
 class WindowsFornecedorGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -18,6 +19,10 @@ class WindowsFornecedorGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createFornecedor,
       updateEndpointOverride: ApiLinks.updateFornecedor(''),
       deleteEndpointOverride: ApiLinks.deleteFornecedor(''),
+      detailScreenBuilder: (item) => WindowsParceiroDetailScreen(
+        item: item,
+        hasPermission: hasPermission,
+      ),
     );
   }
 }
