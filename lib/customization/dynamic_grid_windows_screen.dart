@@ -22,6 +22,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 
 import '../models/telas_model.dart';
 import '../config/screen_field_overrides.dart';
+import '../../../utils/financial_account_form_rules.dart';
 
 typedef SecurityCheck = bool Function(String permission);
 typedef CustomActionsBuilder<T> = List<CustomAction<T>> Function();
@@ -183,6 +184,19 @@ class DynamicGridWindowsScreenState<T>
       final fnLower = fn.toLowerCase();
       final fnNorm = fnLower.replaceAll('_', '');
 
+      // ── 0. Campos internos financeiros (modulo_id, contrato_id) ─────────
+      if (isFinancialInternalFormField(widget.telaNome, fn)) {
+        converted.add(FieldConfigWindows(
+          fieldName: fn,
+          label: '',
+          isInForm: false,
+          isInGrid: false,
+          isVisibleByDefault: false,
+          isRequired: false,
+        ));
+        continue;
+      }
+
       // ── 1. Campo suprimido explicitamente ─────────────────────────────
       // Match exacto (toLowerCase) OU normalizado sem underscores (camelCase ↔ snake_case)
       final suppressEntry = suppressMap[fnLower] ?? suppressMapNorm[fnNorm];
@@ -328,7 +342,12 @@ class DynamicGridWindowsScreenState<T>
                 fileFieldName: f.fileFieldName)
             : null,
         dropdownSelectedValue: f.defaultValue,
-        fieldOrder: f.fieldOrder > 0 ? f.fieldOrder : null,
+        fieldOrder: financialAccountFormOrder(
+          screenName: widget.telaNome,
+          fieldName: fn,
+          backendOrder: f.fieldOrder > 0 ? f.fieldOrder : 50,
+          isRequired: f.isRequired,
+        ),
       ));
     }
 

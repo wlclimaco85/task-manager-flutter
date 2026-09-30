@@ -24,6 +24,7 @@ import '../../services/network_caller.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
 import 'package:task_manager_flutter/models/tela_ajuda_model.dart';
 import 'package:task_manager_flutter/services/tela_ajuda_service.dart';
+import '../utils/financial_account_form_rules.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
@@ -2744,6 +2745,7 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   return false;
                 }
                 if (!config.isInForm) return false;
+                if (isFinancialInternalFormField(widget.telaNome, config.fieldName)) return false;
                 // visibleWhen: só mostra o campo se o campo referenciado tiver o valor esperado
                 if (config.visibleWhenField != null) {
                   final depCtrl = controllers[config.visibleWhenField!];
@@ -2917,7 +2919,10 @@ class GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     BuildContext context,
   ) async {
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => c.isInForm && c.isRequired,
+      (c) =>
+          c.isInForm &&
+          c.isRequired &&
+          !isFinancialInternalFormField(widget.telaNome, c.fieldName),
     )) {
       // Não valida o campo ID no insert
       if (item == null && config.fieldName == widget.idFieldName) continue;
