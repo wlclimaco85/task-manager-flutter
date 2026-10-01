@@ -166,8 +166,10 @@ class _ConfiguracoesSistemaScreenState
                     'importação automática periódica.',
                 icon: Icons.folder_special_outlined,
                 color: _green,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const AutomacaoFiscalScreen()))),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AutomacaoFiscalScreen()))),
           ]),
           const SizedBox(height: 20),
           _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
@@ -746,7 +748,8 @@ class _ConfiguracoesSistemaScreenState
     await _executar(
         'limpar_base_preservar',
         () => TenantContext.post(
-            '${ApiLinks.baseUrl}/api/admin/limpar-base-preservar-empresas', {}));
+            '${ApiLinks.baseUrl}/api/admin/limpar-base-preservar-empresas',
+            {}));
   }
 
   Future<void> _gerarSeed() async {
@@ -930,7 +933,9 @@ class _JobsSectionState extends State<_JobsSection> {
       if (resp.statusCode < 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(forcar ? 'Job $nome iniciado (FORÇADO)' : 'Job $nome iniciado'),
+              content: Text(forcar
+                  ? 'Job $nome iniciado (FORÇADO)'
+                  : 'Job $nome iniciado'),
               backgroundColor: forcar ? Colors.orange : _green));
         }
         await Future.delayed(const Duration(seconds: 3));
@@ -1183,7 +1188,8 @@ class _JobsSectionState extends State<_JobsSection> {
                                 strokeWidth: 2, color: Colors.orange)))
                     : IconButton(
                         icon: const Icon(Icons.bolt, size: 22),
-                        tooltip: 'Forçar coleta completa (ignora cache de contagem)',
+                        tooltip:
+                            'Forçar coleta completa (ignora cache de contagem)',
                         color: Colors.orange,
                         onPressed: () => _executar(nome, forcar: true)),
             ]),

@@ -156,8 +156,10 @@ class _ConfiguracoesSistemaScreenState
                     'importação automática periódica.',
                 icon: Icons.folder_special_outlined,
                 color: _green,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const AutomacaoFiscalScreen()))),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AutomacaoFiscalScreen()))),
           ]),
           const SizedBox(height: 20),
           _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
@@ -739,7 +741,8 @@ class _ConfiguracoesSistemaScreenState
     await _executar(
         'limpar_base_preservar',
         () => TenantContext.post(
-            '${ApiLinks.baseUrl}/api/admin/limpar-base-preservar-empresas', {}));
+            '${ApiLinks.baseUrl}/api/admin/limpar-base-preservar-empresas',
+            {}));
   }
 
   Future<void> _gerarSeed() async {
