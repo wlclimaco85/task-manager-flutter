@@ -2,8 +2,9 @@ class NetworkResponse {
   final bool isSuccess;
   final int statusCode;
   final Map<String, dynamic>? body;
+  final String? errorMessage;
 
-  NetworkResponse(this.isSuccess, this.statusCode, dynamic rawBody)
+  NetworkResponse(this.isSuccess, this.statusCode, dynamic rawBody, [this.errorMessage])
       : body = _toMap(rawBody);
 
   /// Converte qualquer resposta JSON para Map<String, dynamic>.
@@ -16,3 +17,4 @@ class NetworkResponse {
     return {'data': raw};
   }
 }
+

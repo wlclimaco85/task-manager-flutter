@@ -62,7 +62,7 @@ void main() {
       expect(model.dataFormatada, '04/08/2026');
     });
 
-    test('valorFormatado retorna formato R$ #,##', () {
+    test('valorFormatado retorna formato R\$ #,##', () {
       final model = NfeListItemModel.fromJson({
         ...sampleJson,
         'valor': 1000.00,

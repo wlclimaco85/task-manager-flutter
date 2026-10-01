@@ -27,7 +27,9 @@ class ExtratoImportCaller {
   static Future<ExtratoImportResult> preview({
     required int contaBancariaId,
     required PlatformFile arquivo,
+    http.Client? client,
   }) async {
+    final httpClient = client ?? http.Client();
     try {
       final url = TenantContext.applyToUrl(ApiLinks.extratoPreview);
       final token = AuthUtility.userInfo?.token;
@@ -49,15 +51,20 @@ class ExtratoImportCaller {
         );
       }
 
+      // BUG produção: o campo multipart era enviado como "file", mas
+      // ExtratoImportacaoController.preview espera
+      // @RequestParam("arquivo") MultipartFile arquivo -- o backend nunca
+      // reconhecia o arquivo enviado (500 "Required part 'arquivo' is not
+      // present.").
       request.files.add(http.MultipartFile.fromBytes(
-        'file',
+        'arquivo',
         fileBytes,
         filename: arquivo.name,
       ));
       request.fields['contaBancariaId'] = contaBancariaId.toString();
       request.fields['empresaId'] = TenantContext.empresaId?.toString() ?? '0';
 
-      final streamed = await request.send();
+      final streamed = await httpClient.send(request);
       final resp = await http.Response.fromStream(streamed);
 
       if (resp.statusCode == 200 || resp.statusCode == 201) {
@@ -89,13 +96,17 @@ class ExtratoImportCaller {
         success: false,
         message: 'Erro ao conectar: $e',
       );
+    } finally {
+      if (client == null) httpClient.close();
     }
   }
 
   static Future<ExtratoImportResult> confirmar({
     required int contaBancariaId,
     required PlatformFile arquivo,
+    http.Client? client,
   }) async {
+    final httpClient = client ?? http.Client();
     try {
       final url = TenantContext.applyToUrl(ApiLinks.extratoConfirmar);
       final token = AuthUtility.userInfo?.token;
@@ -117,15 +128,20 @@ class ExtratoImportCaller {
         );
       }
 
+      // BUG produção: o campo multipart era enviado como "file", mas
+      // ExtratoImportacaoController.confirmar espera
+      // @RequestParam("arquivo") MultipartFile arquivo -- 500 "Required
+      // part 'arquivo' is not present." em toda tentativa de confirmar
+      // importação de extrato bancário.
       request.files.add(http.MultipartFile.fromBytes(
-        'file',
+        'arquivo',
         fileBytes,
         filename: arquivo.name,
       ));
       request.fields['contaBancariaId'] = contaBancariaId.toString();
       request.fields['empresaId'] = TenantContext.empresaId?.toString() ?? '0';
 
-      final streamed = await request.send();
+      final streamed = await httpClient.send(request);
       final resp = await http.Response.fromStream(streamed);
 
       if (resp.statusCode == 200 || resp.statusCode == 201) {
@@ -157,6 +173,8 @@ class ExtratoImportCaller {
         success: false,
         message: 'Erro ao conectar: $e',
       );
+    } finally {
+      if (client == null) httpClient.close();
     }
   }
 

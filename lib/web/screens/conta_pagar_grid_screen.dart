@@ -209,6 +209,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             child: DropdownButtonFormField<String>(
               value: _statusFilter,
               isDense: true,
+              isExpanded: true,
               decoration: const InputDecoration(
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 8, vertical: 4),

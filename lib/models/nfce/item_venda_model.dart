@@ -26,13 +26,36 @@ class ItemVendaModel {
 }
 
 class PagamentoModel {
-  final String formaPagamento; // DINHEIRO, CARTAO_CREDITO, CARTAO_DEBITO, PIX, OUTRO
+  // DINHEIRO, CARTAO_CREDITO, CARTAO_DEBITO, PIX, OUTRO ou codigo SEFAZ.
+  final String formaPagamento;
   double valor;
 
   PagamentoModel({required this.formaPagamento, required this.valor});
 
+  String get codigoSefaz {
+    switch (formaPagamento.toUpperCase()) {
+      case 'DINHEIRO':
+        return '01';
+      case 'CHEQUE':
+        return '02';
+      case 'CARTAO_CREDITO':
+        return '03';
+      case 'CARTAO_DEBITO':
+        return '04';
+      case 'PIX':
+        return '17';
+      case 'OUTRO':
+      case 'OUTROS':
+        return '99';
+      default:
+        return RegExp(r'^\d{2}$').hasMatch(formaPagamento)
+            ? formaPagamento
+            : '99';
+    }
+  }
+
   Map<String, dynamic> toJson() => {
-        'formaPagamento': formaPagamento,
+        'formaPagamento': codigoSefaz,
         'valor': valor,
       };
 }

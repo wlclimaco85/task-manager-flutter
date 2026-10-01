@@ -88,7 +88,14 @@ class NfeFilterModel {
 
   /// Remove todos os filtros de data
   NfeFilterModel clearDateRange() {
-    return copyWith(dataInicio: null, dataFim: null);
+    return NfeFilterModel(
+      status: status,
+      dataInicio: null,
+      dataFim: null,
+      empresaId: empresaId,
+      sortBy: sortBy,
+      sortAscending: sortAscending,
+    );
   }
 
   /// Retorna true se há filtros ativos (além de status=all)

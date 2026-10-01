@@ -35,8 +35,9 @@ class _DpEsocialImportScreenState extends State<DpEsocialImportScreen> {
     try {
       final res = await NetworkCaller().postRequest(
         ApiLinks.dpEsocialImportar,
-        body: xml,
+        {'xml': xml},
       );
+
 
       if (res.isSuccess && res.body != null) {
         final data = res.body!['data'];

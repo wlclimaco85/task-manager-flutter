@@ -113,6 +113,7 @@ class ContaExtratoOperacionalItem {
   final String tipoLancamento;
   final int? tituloId;
   final String descricao;
+  final String? numeroNota;
   final int? contaId;
   final String contaNome;
   final bool realizado;
@@ -125,6 +126,7 @@ class ContaExtratoOperacionalItem {
     required this.tipoLancamento,
     required this.tituloId,
     required this.descricao,
+    this.numeroNota,
     required this.contaId,
     required this.contaNome,
     required this.realizado,
@@ -139,6 +141,7 @@ class ContaExtratoOperacionalItem {
       tipoLancamento: _toStringValue(j['tipoLancamento']),
       tituloId: _toNullableInt(j['tituloId']),
       descricao: _toStringValue(j['descricao']),
+      numeroNota: _toNullableString(j['numeroNota']),
       contaId: _toNullableInt(j['contaId']),
       contaNome: _toStringValue(j['contaNome']),
       realizado: _toBool(j['realizado']),
@@ -148,6 +151,7 @@ class ContaExtratoOperacionalItem {
     );
   }
 }
+
 
 int _toInt(dynamic value) {
   if (value == null) return 0;
@@ -187,3 +191,9 @@ String _toStringValue(dynamic value, [String fallback = '']) {
   final text = value?.toString();
   return text ?? fallback;
 }
+
+String? _toNullableString(dynamic value) {
+  final text = value?.toString();
+  return (text == null || text.trim().isEmpty) ? null : text.trim();
+}
+

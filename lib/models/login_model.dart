@@ -32,7 +32,7 @@ class Login {
     this.nome,
     this.cpfCnpj,
     this.foto,
-    this.ativo = true,
+    this.ativo,
     this.roles,
     this.tipoLogin,
     this.empresa,
@@ -53,7 +53,7 @@ class Login {
       'cpfCnpj': cpfCnpj,
       'cpf_cnpj': cpfCnpj,
       'foto': foto,
-      'ativo': ativo ?? true,
+      'ativo': ativo,
       'roles': roles?.map((role) => role.toJson()).toList(),
       'tipoLogin': tipoVal,
       'tipo_login': tipoVal,
@@ -77,7 +77,13 @@ class Login {
       nome = json['nome']?.toString();
       cpfCnpj = (json['cpfCnpj'] ?? json['cpf_cnpj'])?.toString();
       foto = json['foto']?.toString();
-      ativo = json['ativo'] == true || (json['ativo'] == null && (json['is_ativo'] == true || json['isAtivo'] == true || json['is_ativo'] == null));
+      ativo = json['ativo'] is bool
+          ? json['ativo'] as bool
+          : (json['is_ativo'] is bool
+              ? json['is_ativo'] as bool
+              : (json['isAtivo'] is bool
+                  ? json['isAtivo'] as bool
+                  : null));
 
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()

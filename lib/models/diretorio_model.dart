@@ -22,8 +22,8 @@ class Diretorio {
   factory Diretorio.fromJson(Map<String, dynamic> json) {
     return Diretorio(
       id: json['id'],
-      nome: json['nome'],
-      descricao: json['descricao'],
+      nome: json['nome']?.toString() ?? '',
+      descricao: json['descricao']?.toString() ?? '',
       empresa:
           json['empresa'] != null ? Empresa.fromJson(json['empresa']) : null,
     );

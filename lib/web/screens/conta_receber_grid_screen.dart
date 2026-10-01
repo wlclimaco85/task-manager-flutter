@@ -224,6 +224,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
             child: DropdownButtonFormField<String>(
               value: _statusFilter,
               isDense: true,
+              isExpanded: true,
               decoration: const InputDecoration(
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 8, vertical: 4),

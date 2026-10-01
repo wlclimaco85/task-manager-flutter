@@ -73,7 +73,8 @@ class _DpFechamentoFolhaScreenState extends State<DpFechamentoFolhaScreen> {
     setState(() => _processing = true);
     try {
       final compId = _selectedComp!['id'];
-      final res = await NetworkCaller().postRequest(ApiLinks.dpFolhaProcessar(compId), body: {});
+      final res = await NetworkCaller().postRequest(ApiLinks.dpFolhaProcessar(compId), {});
+
       if (res.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Folha calculada com sucesso para todos os funcionários!'), backgroundColor: Colors.green),

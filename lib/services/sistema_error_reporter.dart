@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../utils/api_links.dart';
@@ -75,6 +76,11 @@ class SistemaErrorReporter {
     };
 
     _buffer.add(payload);
+
+    if (const bool.fromEnvironment('FLUTTER_TEST') ||
+        (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST'))) {
+      return;
+    }
 
     _timerEnvio?.cancel();
     _timerEnvio = Timer(const Duration(milliseconds: 1500), _descarregarBuffer);

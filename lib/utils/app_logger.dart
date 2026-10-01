@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
+import '../services/sistema_error_reporter.dart';
 
 // ====== Dependências opcionais p/ exportar & abrir/compartilhar ======
 // Adicione ao pubspec.yaml se quiser habilitar os botões de exportar/abrir/compartilhar.
@@ -117,6 +118,11 @@ class AppLogger {
     if (_initialized) return;
     _initialized = true;
 
+    if (const bool.fromEnvironment('FLUTTER_TEST') ||
+        Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+
     // Captura debugPrint/print
     final originalDebugPrint = debugPrint;
     debugPrint = (String? msg, {int? wrapWidth}) {
@@ -173,10 +179,28 @@ class AppLogger {
       add(AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.debug));
   void success(String msg) => add(
       AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.success));
-  void warn(String msg) => add(
-      AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.warning));
-  void error(String msg, [StackTrace? st]) => add(AppLogEntry(
-      ts: DateTime.now(), message: msg, level: LogLevel.error, stack: st));
+  void warn(String msg) {
+    add(AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.warning));
+    try {
+      SistemaErrorReporter.instance.reportarErro(
+        mensagem: msg,
+        nivel: 'WARN',
+        classeOuRota: 'AppLogger.warn',
+      );
+    } catch (_) {}
+  }
+
+  void error(String msg, [StackTrace? st]) {
+    add(AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.error, stack: st));
+    try {
+      SistemaErrorReporter.instance.reportarErro(
+        mensagem: msg,
+        detalhes: st?.toString(),
+        nivel: 'ERROR',
+        classeOuRota: 'AppLogger.error',
+      );
+    } catch (_) {}
+  }
 
   void clear() {
     _logs.clear();
