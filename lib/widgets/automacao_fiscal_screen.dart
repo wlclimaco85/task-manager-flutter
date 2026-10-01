@@ -34,7 +34,9 @@ String origemLabel(String? origem) {
 String tipoDocumentoLabel(String? tipo) {
   if (tipo == null) return '-';
   final upper = tipo.toUpperCase();
-  if (upper == 'JA_IMPORTADO' || upper.contains('JA_IMPORTAD') || upper.contains('JÁ IMPORTAD')) {
+  if (upper == 'JA_IMPORTADO' ||
+      upper.contains('JA_IMPORTAD') ||
+      upper.contains('JÁ IMPORTAD')) {
     return 'Já importado';
   }
   switch (upper) {
@@ -69,15 +71,31 @@ String tipoDocumentoLabel(String? tipo) {
 /// Funcao pura para facilitar testes automatizados.
 String? extrairCnpj(String? texto) {
   if (texto == null || texto.isEmpty) return null;
-  final matchFmt = RegExp(r'\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b').firstMatch(texto);
+  final matchFmt =
+      RegExp(r'\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b').firstMatch(texto);
   if (matchFmt != null) return matchFmt.group(0);
   final matchDigits = RegExp(r'\b\d{14}\b').firstMatch(texto);
   if (matchDigits != null) return matchDigits.group(0);
   return null;
 }
 
+String formatarEntidadeRastreabilidade({
+  required dynamic id,
+  required String? nome,
+  required String fallback,
+}) {
+  final nomeNormalizado = nome?.trim();
+  final temNome = nomeNormalizado != null && nomeNormalizado.isNotEmpty;
+
+  if (id != null && temNome) return '[ID: $id] $nomeNormalizado';
+  if (id != null) return '[ID: $id]';
+  if (temNome) return nomeNormalizado;
+  return fallback;
+}
+
 /// Monta o contrato de ParceiroDTO usado pelo cadastro vindo da ReceitaWS.
-Map<String, dynamic> montarPayloadParceiroAutomacaoFiscal(Map<String, dynamic> payload) {
+Map<String, dynamic> montarPayloadParceiroAutomacaoFiscal(
+    Map<String, dynamic> payload) {
   return {...payload, 'tipoEstabelecimento': 'MATRIZ'}..remove('endereco');
 }
 
@@ -93,8 +111,10 @@ String formatarRelatorioErrosParaClipboard({
     final status = l['status']?.toString().toUpperCase();
     if (status != 'ERRO') return false;
     final msg = (l['mensagem'] ?? '').toString().toLowerCase();
-    if (msg.contains('já importad') || msg.contains('ja importad') ||
-        msg.contains('já cadastrad') || msg.contains('ja cadastrad')) {
+    if (msg.contains('já importad') ||
+        msg.contains('ja importad') ||
+        msg.contains('já cadastrad') ||
+        msg.contains('ja cadastrad')) {
       return false;
     }
     return true;
@@ -129,10 +149,12 @@ String formatarRelatorioErrosParaClipboard({
     final origem = origemLabel(item['origem']?.toString());
     final tipo = tipoDocumentoLabel(item['tipoDocumento']?.toString());
     final msg = item['mensagem'] ?? 'Sem detalhes';
-    final dh = item['dhCreatedAt'] != null ? item['dhCreatedAt'].toString() : '';
+    final dh =
+        item['dhCreatedAt'] != null ? item['dhCreatedAt'].toString() : '';
 
     buffer.writeln('[${i + 1}] Arquivo: $arquivo');
-    buffer.writeln('    Origem: $origem | Tipo: $tipo${dh.isNotEmpty ? " | Data: $dh" : ""}');
+    buffer.writeln(
+        '    Origem: $origem | Tipo: $tipo${dh.isNotEmpty ? " | Data: $dh" : ""}');
     buffer.writeln('    Erro / Exception:');
     buffer.writeln('    $msg');
     buffer.writeln('');
@@ -170,9 +192,11 @@ class PendenciaCadastro {
       ? 'Sacado (Parceiro / Cliente)'
       : 'Recebedor (Fornecedor)';
 
-  String get papelBadge => papel == PapelCadastro.sacado ? 'SACADO' : 'RECEBEDOR';
+  String get papelBadge =>
+      papel == PapelCadastro.sacado ? 'SACADO' : 'RECEBEDOR';
 
-  Color get papelColor => papel == PapelCadastro.sacado ? GridColors.secondary : GridColors.warning;
+  Color get papelColor =>
+      papel == PapelCadastro.sacado ? GridColors.secondary : GridColors.warning;
 
   String get cnpjFormatado {
     final digitos = cnpj.replaceAll(RegExp(r'\D'), '');
@@ -203,24 +227,33 @@ List<PendenciaCadastro> extrairPendenciasCadastro(
     final lower = msg.toLowerCase();
 
     // Filtro anti-falso-positivo: se o erro for duplicidade, nota já importada, encoding, etc., NÃO É FALTA DE CADASTRO!
-    if (lower.contains('já importad') || lower.contains('ja importad') ||
-        lower.contains('já cadastrad') || lower.contains('ja cadastrad') ||
-        lower.contains('já existe') || lower.contains('ja existe') ||
-        lower.contains('invalid byte') || lower.contains('duplicad') ||
-        lower.contains('não reconhecido') || lower.contains('nao reconhecido')) {
+    if (lower.contains('já importad') ||
+        lower.contains('ja importad') ||
+        lower.contains('já cadastrad') ||
+        lower.contains('ja cadastrad') ||
+        lower.contains('já existe') ||
+        lower.contains('ja existe') ||
+        lower.contains('invalid byte') ||
+        lower.contains('duplicad') ||
+        lower.contains('não reconhecido') ||
+        lower.contains('nao reconhecido')) {
       continue;
     }
 
     // 1. Tags explícitas geradas pelo backend: [FORNECEDOR: cnpj] e [SACADO: cnpj]
-    final matchForn = RegExp(r'\[FORNECEDOR:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
-    final matchSac = RegExp(r'\[SACADO:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
+    final matchForn =
+        RegExp(r'\[FORNECEDOR:\s*([^\]]+)\]', caseSensitive: false)
+            .firstMatch(msg);
+    final matchSac =
+        RegExp(r'\[SACADO:\s*([^\]]+)\]', caseSensitive: false).firstMatch(msg);
 
     bool achouTag = false;
     if (matchForn != null) {
       achouTag = true;
       final raw = matchForn.group(1)?.trim() ?? '';
       final limpo = raw.replaceAll(RegExp(r'\D'), '');
-      if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
+      if (limpo.length >= 11 &&
+          (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
         final chave = 'FORNECEDOR_$limpo';
         if (chavesVistas.add(chave)) {
           pendencias.add(PendenciaCadastro(
@@ -239,7 +272,8 @@ List<PendenciaCadastro> extrairPendenciasCadastro(
       achouTag = true;
       final raw = matchSac.group(1)?.trim() ?? '';
       final limpo = raw.replaceAll(RegExp(r'\D'), '');
-      if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
+      if (limpo.length >= 11 &&
+          (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
         final chave = 'SACADO_$limpo';
         if (chavesVistas.add(chave)) {
           pendencias.add(PendenciaCadastro(
@@ -267,13 +301,15 @@ List<PendenciaCadastro> extrairPendenciasCadastro(
         final cnpjAvulso = extrairCnpj(msg);
         if (cnpjAvulso != null) {
           final limpo = cnpjAvulso.replaceAll(RegExp(r'\D'), '');
-          if (limpo.length >= 11 && (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
+          if (limpo.length >= 11 &&
+              (cnpjsIgnorados == null || !cnpjsIgnorados.contains(limpo))) {
             final ehSacado = lower.contains('sacado') ||
                 lower.contains('parceiro') ||
                 lower.contains('destinatário') ||
                 lower.contains('destinatario') ||
                 lower.contains('tomador');
-            final papel = ehSacado ? PapelCadastro.sacado : PapelCadastro.fornecedor;
+            final papel =
+                ehSacado ? PapelCadastro.sacado : PapelCadastro.fornecedor;
             final chave = '${papel.name.toUpperCase()}_$limpo';
             if (chavesVistas.add(chave)) {
               pendencias.add(PendenciaCadastro(
@@ -367,8 +403,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       _erroCarregamento = null;
     });
     try {
-      final resp =
-          await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/config');
+      final resp = await NetworkCaller()
+          .getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/config');
       final rawBody = resp.body;
       if (resp.isSuccess && rawBody != null) {
         final body = Map<String, dynamic>.from(rawBody);
@@ -377,15 +413,18 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         _intervaloUnidade = (body['intervaloUnidade'] ?? 'DIAS').toString();
         _ativo = body['ativo'] == true;
         final ultimaExecucaoStr = body['ultimaExecucao']?.toString();
-        _ultimaExecucao =
-            ultimaExecucaoStr != null ? DateTime.tryParse(ultimaExecucaoStr) : null;
+        _ultimaExecucao = ultimaExecucaoStr != null
+            ? DateTime.tryParse(ultimaExecucaoStr)
+            : null;
         _ultimoResultado = body['ultimoResultado']?.toString();
         if (body['ultimosLogs'] != null && body['ultimosLogs'] is List) {
-          _logs = List<Map<String, dynamic>>.from(
-              (body['ultimosLogs'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+          _logs = List<Map<String, dynamic>>.from((body['ultimosLogs'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e)));
         }
       } else if (!resp.isSuccess && resp.statusCode != 200) {
-        _erroCarregamento = 'Erro ao carregar configuração (status ${resp.statusCode}).';
+        _erroCarregamento =
+            'Erro ao carregar configuração (status ${resp.statusCode}).';
         AppLogger.i.warn(
             '[AutomacaoFiscal] Erro ao carregar config (status ${resp.statusCode})');
       }
@@ -401,8 +440,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   Future<void> _carregarLogs() async {
     setState(() => _carregandoLogs = true);
     try {
-      final resp =
-          await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs');
+      final resp = await NetworkCaller()
+          .getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs');
       if (resp.isSuccess) {
         List? lista;
         final dynamic raw = resp.body;
@@ -413,18 +452,20 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         }
         if (lista != null) {
           setState(() {
-            _logs = List<Map<String, dynamic>>.from(
-                lista!.whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+            _logs = List<Map<String, dynamic>>.from(lista!
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e)));
           });
         }
       } else {
-        AppLogger.i.warn('[AutomacaoFiscal] Falha ao carregar logs (status ${resp.statusCode})');
+        AppLogger.i.warn(
+            '[AutomacaoFiscal] Falha ao carregar logs (status ${resp.statusCode})');
       }
 
       // Busca pendências reais de cadastro já filtradas pelo banco no backend
       try {
-        final pResp = await NetworkCaller()
-            .getRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/pendencias-cadastro');
+        final pResp = await NetworkCaller().getRequest(
+            '${ApiLinks.baseUrl}/api/automacao-fiscal/pendencias-cadastro');
         if (pResp.isSuccess && pResp.body is List) {
           final list = (pResp.body as List).whereType<Map>().map((m) {
             final map = Map<String, dynamic>.from(m);
@@ -474,7 +515,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         await _carregar();
       } else {
         _snack('Erro ao salvar (status ${resp.statusCode}).', error: true);
-        AppLogger.i.warn('[AutomacaoFiscal] Erro ao salvar config (status ${resp.statusCode})');
+        AppLogger.i.warn(
+            '[AutomacaoFiscal] Erro ao salvar config (status ${resp.statusCode})');
       }
     } catch (e, st) {
       if (mounted) _snack('Erro ao salvar: $e', error: true);
@@ -487,10 +529,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   Future<void> _executarAgora() async {
     setState(() => _executando = true);
     try {
-      final resp = await NetworkCaller()
-          .postRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/executar-agora', {});
+      final resp = await NetworkCaller().postRequest(
+          '${ApiLinks.baseUrl}/api/automacao-fiscal/executar-agora', {});
       if (!mounted) return;
-      final Map<String, dynamic>? body = resp.body is Map ? Map<String, dynamic>.from(resp.body as Map) : null;
+      final Map<String, dynamic>? body =
+          resp.body is Map ? Map<String, dynamic>.from(resp.body as Map) : null;
       if (resp.isSuccess) {
         String mensagem = 'Execução concluída.';
         if (body != null) {
@@ -502,24 +545,32 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             }
           }
           if (body['ultimaExecucao'] != null) {
-            _ultimaExecucao = DateTime.tryParse(body['ultimaExecucao'].toString());
+            _ultimaExecucao =
+                DateTime.tryParse(body['ultimaExecucao'].toString());
           }
           if (body['ultimosLogs'] != null && body['ultimosLogs'] is List) {
             _logs = List<Map<String, dynamic>>.from(
-                (body['ultimosLogs'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)));
+                (body['ultimosLogs'] as List)
+                    .whereType<Map>()
+                    .map((e) => Map<String, dynamic>.from(e)));
           }
         }
         _snack(mensagem);
         await _carregar();
       } else {
         String msg = 'Erro ao executar (status ${resp.statusCode}).';
-        if (body != null && body['message'] != null && body['message'].toString().isNotEmpty) {
+        if (body != null &&
+            body['message'] != null &&
+            body['message'].toString().isNotEmpty) {
           msg = body['message'].toString();
-        } else if (body != null && body['erro'] != null && body['erro'].toString().isNotEmpty) {
+        } else if (body != null &&
+            body['erro'] != null &&
+            body['erro'].toString().isNotEmpty) {
           msg = body['erro'].toString();
         }
         _snack(msg, error: true);
-        AppLogger.i.warn('[AutomacaoFiscal] Erro ao executar agora (status ${resp.statusCode}): $msg');
+        AppLogger.i.warn(
+            '[AutomacaoFiscal] Erro ao executar agora (status ${resp.statusCode}): $msg');
       }
     } catch (e, st) {
       if (mounted) _snack('Erro ao executar: $e', error: true);
@@ -533,10 +584,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final status = (log['status'] ?? '').toString().toUpperCase();
     if (status == 'JA_IMPORTADO') return true;
     final tipo = (log['tipoDocumento'] ?? '').toString().toUpperCase();
-    if (tipo == 'JA_IMPORTADO' || tipo.contains('JA_IMPORTAD') || tipo.contains('JÁ IMPORTAD')) return true;
+    if (tipo == 'JA_IMPORTADO' ||
+        tipo.contains('JA_IMPORTAD') ||
+        tipo.contains('JÁ IMPORTAD')) return true;
     final msg = (log['mensagem'] ?? '').toString().toLowerCase();
-    return msg.contains('já importad') || msg.contains('ja importad') ||
-        msg.contains('já cadastrad') || msg.contains('ja cadastrad');
+    return msg.contains('já importad') ||
+        msg.contains('ja importad') ||
+        msg.contains('já cadastrad') ||
+        msg.contains('ja cadastrad');
   }
 
   bool _ehErroReal(Map<String, dynamic> log) {
@@ -564,7 +619,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final msg = log['mensagem'] ?? 'Sem detalhes';
     final origem = origemLabel(log['origem']?.toString());
     final tipo = tipoDocumentoLabel(log['tipoDocumento']?.toString());
-    final texto = 'Arquivo: $arquivo\nOrigem: $origem | Tipo: $tipo\nErro / Exception: $msg';
+    final texto =
+        'Arquivo: $arquivo\nOrigem: $origem | Tipo: $tipo\nErro / Exception: $msg';
     Clipboard.setData(ClipboardData(text: texto));
     _snack('Erro de $arquivo copiado!');
   }
@@ -610,7 +666,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     if (confirma != true) return;
 
     try {
-      final resp = await NetworkCaller().deleteRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs/erros');
+      final resp = await NetworkCaller()
+          .deleteRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs/erros');
       if (resp.isSuccess) {
         _snack('$qtdErros erros removidos do histórico com sucesso!');
         await _carregar();
@@ -634,7 +691,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
 
     if (logId != null) {
       try {
-        await NetworkCaller().deleteRequest('${ApiLinks.baseUrl}/api/automacao-fiscal/logs/$logId');
+        await NetworkCaller().deleteRequest(
+            '${ApiLinks.baseUrl}/api/automacao-fiscal/logs/$logId');
       } catch (_) {}
     }
 
@@ -669,16 +727,20 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       final checkResp = await NetworkCaller().getRequest(
         '${ApiLinks.baseUrl}/api/automacao-fiscal/consultar-existente?cnpj=$cnpj&papel=${pendencia.papelBadge}',
       );
-      if (checkResp.isSuccess && checkResp.body != null && checkResp.body is Map) {
+      if (checkResp.isSuccess &&
+          checkResp.body != null &&
+          checkResp.body is Map) {
         final Map body = checkResp.body as Map;
         if (body['existe'] == true) {
-          final nome = (body['nome'] ?? body['razaoSocial'] ?? 'Existente').toString();
+          final nome =
+              (body['nome'] ?? body['razaoSocial'] ?? 'Existente').toString();
           final id = body['id']?.toString() ?? '';
           if (mounted) {
             setState(() {
               _cnpjsAprovados.add(cnpj);
             });
-            _snack('${pendencia.papelTitulo} já existe na base de dados ($nome${id.isNotEmpty ? " - ID $id" : ""}). Pendência resolvida com sucesso!');
+            _snack(
+                '${pendencia.papelTitulo} já existe na base de dados ($nome${id.isNotEmpty ? " - ID $id" : ""}). Pendência resolvida com sucesso!');
           }
           return;
         }
@@ -694,7 +756,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             const CircularProgressIndicator(),
             const SizedBox(width: 16),
             Expanded(
-              child: Text('Consultando dados na ReceitaWS para ${pendencia.papelTitulo} ($cnpj)...'),
+              child: Text(
+                  'Consultando dados na ReceitaWS para ${pendencia.papelTitulo} ($cnpj)...'),
             ),
           ],
         ),
@@ -704,12 +767,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     Map<String, dynamic>? dadosReceita;
     try {
       // 1. Tenta endpoint backend /api/receitaws/cnpj/{cnpj}
-      var resp = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/receitaws/cnpj/$cnpj');
+      var resp = await NetworkCaller()
+          .getRequest('${ApiLinks.baseUrl}/api/receitaws/cnpj/$cnpj');
       if (resp.isSuccess && resp.body != null && resp.body is Map) {
         dadosReceita = Map<String, dynamic>.from(resp.body as Map);
       } else {
         // 2. Fallback: /api/parceiro/consulta-cnpj/{cnpj}
-        resp = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/parceiro/consulta-cnpj/$cnpj');
+        resp = await NetworkCaller()
+            .getRequest('${ApiLinks.baseUrl}/api/parceiro/consulta-cnpj/$cnpj');
         if (resp.isSuccess && resp.body != null && resp.body is Map) {
           final b = resp.body as Map;
           if (b['data'] != null && b['data'] is Map) {
@@ -720,8 +785,11 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
 
       // 3. Fallback direto se chamadas locais falharem
       if (dadosReceita == null && cnpj.length == 14) {
-        final directResp = await NetworkCaller().getRequest('https://www.receitaws.com.br/v1/cnpj/$cnpj');
-        if (directResp.isSuccess && directResp.body != null && directResp.body is Map) {
+        final directResp = await NetworkCaller()
+            .getRequest('https://www.receitaws.com.br/v1/cnpj/$cnpj');
+        if (directResp.isSuccess &&
+            directResp.body != null &&
+            directResp.body is Map) {
           final b = directResp.body as Map;
           if (b['status'] == 'OK' || b['nome'] != null) {
             dadosReceita = {
@@ -749,7 +817,9 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     if (!mounted) return;
 
     final initialData = <String, dynamic>{
-      'nome': (dadosReceita?['nomeFantasia'] ?? dadosReceita?['nome'] ?? '').toString().trim(),
+      'nome': (dadosReceita?['nomeFantasia'] ?? dadosReceita?['nome'] ?? '')
+          .toString()
+          .trim(),
       'razaoSocial': (dadosReceita?['nome'] ?? '').toString().trim(),
       'cpf': cnpj,
       'cnpj': cnpj,
@@ -766,13 +836,17 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       'cidade': (dadosReceita?['municipio'] ?? '').toString().trim(),
       'estado': (dadosReceita?['uf'] ?? '').toString().trim(),
       'status': 'ATIVO',
-      'observacao': 'Cadastrado via Automação Fiscal (${pendencia.papelBadge} - ReceitaWS)',
+      'observacao':
+          'Cadastrado via Automação Fiscal (${pendencia.papelBadge} - ReceitaWS)',
     };
 
     if (dadosReceita == null) {
-      _snack('Não foi possível obter dados na ReceitaWS. Preencha os campos no formulário.', error: true);
+      _snack(
+          'Não foi possível obter dados na ReceitaWS. Preencha os campos no formulário.',
+          error: true);
     } else {
-      _snack('Dados de ${pendencia.papelBadge} carregados da ReceitaWS com sucesso!');
+      _snack(
+          'Dados de ${pendencia.papelBadge} carregados da ReceitaWS com sucesso!');
     }
 
     final ehSacado = pendencia.papel == PapelCadastro.sacado;
@@ -787,7 +861,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         tituloOverride: titulo,
         customSaveHandler: ehSacado
             ? (payload) async {
-                final parceiroPayload = montarPayloadParceiroAutomacaoFiscal(payload);
+                final parceiroPayload =
+                    montarPayloadParceiroAutomacaoFiscal(payload);
                 final resp = await NetworkCaller().postRequest(
                   ApiLinks.insertParceiro,
                   parceiroPayload,
@@ -984,8 +1059,9 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   prefixIcon: Icon(Icons.folder_outlined),
                   border: OutlineInputBorder(),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Informe o caminho da pasta raiz.' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Informe o caminho da pasta raiz.'
+                    : null,
               ),
               const SizedBox(height: 10),
               _hierarquiaObservacao(),
@@ -1002,7 +1078,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ),
                   validator: (v) {
                     final n = int.tryParse((v ?? '').trim());
-                    if (n == null || n <= 0) return 'Informe um número maior que zero.';
+                    if (n == null || n <= 0)
+                      return 'Informe um número maior que zero.';
                     return null;
                   },
                 );
@@ -1017,7 +1094,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     DropdownMenuItem(value: 'DIAS', child: Text('Dias')),
                     DropdownMenuItem(value: 'MESES', child: Text('Meses')),
                   ],
-                  onChanged: (v) => setState(() => _intervaloUnidade = v ?? 'DIAS'),
+                  onChanged: (v) =>
+                      setState(() => _intervaloUnidade = v ?? 'DIAS'),
                 );
 
                 return compacto
@@ -1059,7 +1137,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.save),
                   label: Text(_salvando ? 'Salvando...' : 'Salvar'),
                   style: ElevatedButton.styleFrom(
@@ -1076,7 +1155,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.bolt_outlined),
                   label: Text(_executando ? 'Executando...' : 'Executar agora'),
-                  style: OutlinedButton.styleFrom(foregroundColor: GridColors.info),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: GridColors.info),
                 );
                 return compacto
                     ? Column(children: [
@@ -1103,20 +1183,24 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         borderColor: GridColors.divider,
         textColor: GridColors.textSecondary,
         title: 'Última execução',
-        message: 'Ainda não houve nenhuma execução. Use "Executar agora" para testar a '
+        message:
+            'Ainda não houve nenhuma execução. Use "Executar agora" para testar a '
             'configuração.',
       );
     }
 
-    final houveErro = (_ultimoResultado ?? '').contains(RegExp(r'[1-9]\d* erro')) ||
-        _logs.any(_ehErroReal);
+    final houveErro =
+        (_ultimoResultado ?? '').contains(RegExp(r'[1-9]\d* erro')) ||
+            _logs.any(_ehErroReal);
     return NfceNoticeBanner(
       icon: houveErro ? Icons.error_outline : Icons.check_circle_outline,
-      backgroundColor: houveErro ? GridColors.errorLight : GridColors.filterBackground,
+      backgroundColor:
+          houveErro ? GridColors.errorLight : GridColors.filterBackground,
       borderColor: houveErro ? GridColors.error : GridColors.divider,
       textColor: houveErro ? GridColors.errorDark : GridColors.textSecondary,
       title: 'Última execução',
-      message: '${_dataFmt.format(_ultimaExecucao!)} — ${_ultimoResultado ?? ''}'
+      message:
+          '${_dataFmt.format(_ultimaExecucao!)} — ${_ultimoResultado ?? ''}'
           '${houveErro ? '. Verifique os erros detalhados abaixo.' : ''}',
       trailing: houveErro
           ? Wrap(
@@ -1128,11 +1212,13 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.error,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   icon: const Icon(Icons.copy_all, size: 16),
                   label: const Text('Copiar Erros (Exceptions)',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: _copiarTodosOsErros,
                 ),
                 OutlinedButton.icon(
@@ -1141,11 +1227,13 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     foregroundColor: GridColors.error,
                     side: const BorderSide(color: GridColors.error),
                     backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   icon: const Icon(Icons.delete_sweep_outlined, size: 16),
                   label: const Text('Remover Erros',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: _removerTodosOsErros,
                 ),
               ],
@@ -1159,7 +1247,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   Widget _pendenciasCadastroCard() {
     final pendencias = (_pendenciasRemotas != null)
         ? _pendenciasRemotas!
-            .where((p) => !_cnpjsAprovados.contains(p.cnpj.replaceAll(RegExp(r'\D'), '')))
+            .where((p) =>
+                !_cnpjsAprovados.contains(p.cnpj.replaceAll(RegExp(r'\D'), '')))
             .toList()
         : extrairPendenciasCadastro(_logs, _cnpjsAprovados);
     if (pendencias.isEmpty) return const SizedBox.shrink();
@@ -1178,7 +1267,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.verified_user_outlined, color: GridColors.warning, size: 22),
+                const Icon(Icons.verified_user_outlined,
+                    color: GridColors.warning, size: 22),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -1191,7 +1281,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: GridColors.warning.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -1286,7 +1377,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Origem: ${p.arquivo} (${tipoDocumentoLabel(p.tipoDocumento)})',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -1296,10 +1388,12 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           ElevatedButton.icon(
             key: Key('btn_aprovar_${p.papelBadge.toLowerCase()}_${p.cnpj}'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: ehSacado ? GridColors.secondary : GridColors.primary,
+              backgroundColor:
+                  ehSacado ? GridColors.secondary : GridColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              textStyle:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
             icon: const Icon(Icons.visibility, size: 16),
             label: const Text('Ver / Aprovar Cadastro'),
@@ -1351,12 +1445,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: GridColors.error,
                           side: const BorderSide(color: GridColors.error),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                         ),
                         icon: const Icon(Icons.copy_all, size: 16),
                         label: Text(
                           'Copiar Erros ($errosCount)',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         onPressed: _copiarTodosOsErros,
                       ),
@@ -1365,12 +1461,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: GridColors.error,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                         ),
                         icon: const Icon(Icons.delete_sweep_outlined, size: 16),
                         label: Text(
                           'Remover Erros ($errosCount)',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         onPressed: _removerTodosOsErros,
                       ),
@@ -1386,7 +1484,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             ),
             const SizedBox(height: 12),
             if (_carregandoLogs)
-              const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+              const Center(
+                  child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator()))
             else if (_logs.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
@@ -1425,7 +1526,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final empId = log['empresaId'];
     final empNome = log['empresaNome']?.toString();
     if (empId == null) {
-      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+      return const Text('-',
+          style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
     }
     return SizedBox(
       width: 140,
@@ -1442,7 +1544,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             ),
             child: Text(
               'ID: $empId',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.textPrimary),
             ),
           ),
           if (empNome != null && empNome.isNotEmpty)
@@ -1452,7 +1557,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 empNome,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: GridColors.textSecondary),
+                style: const TextStyle(
+                    fontSize: 11, color: GridColors.textSecondary),
               ),
             ),
         ],
@@ -1467,7 +1573,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final parcNome = log['parceiroNome']?.toString();
 
     if (fornId == null && parcId == null) {
-      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+      return const Text('-',
+          style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
     }
 
     return SizedBox(
@@ -1480,14 +1587,18 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: GridColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Text(
                     'Forn #$fornId',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.primary),
+                    style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: GridColors.primary),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -1496,7 +1607,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     fornNome ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF334155),
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -1507,14 +1621,18 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
                       color: GridColors.secondary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
                       'Parc #$parcId',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: GridColors.secondary),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -1523,7 +1641,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       parcNome ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF334155),
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -1540,7 +1661,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final prods = log['produtosInfo']?.toString();
 
     if (docId == null && (prods == null || prods.isEmpty)) {
-      return const Text('-', style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
+      return const Text('-',
+          style: TextStyle(color: GridColors.textSecondary, fontSize: 11));
     }
 
     return SizedBox(
@@ -1552,12 +1674,16 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           if (docId != null)
             Row(
               children: [
-                const Icon(Icons.receipt_outlined, size: 13, color: GridColors.textSecondary),
+                const Icon(Icons.receipt_outlined,
+                    size: 13, color: GridColors.textSecondary),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '${docNum != null && docNum.isNotEmpty ? "Nº $docNum " : ""}· ID: $docId',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: GridColors.textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1603,11 +1729,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           return DataRow(cells: [
             DataCell(Text(
               _formatarDataHora(log['dhCreatedAt']),
-              style: const TextStyle(fontSize: 11, color: GridColors.textSecondary),
+              style: const TextStyle(
+                  fontSize: 11, color: GridColors.textSecondary),
             )),
             DataCell(Text(origemLabel(log['origem']?.toString()))),
             DataCell(Text(log['arquivo']?.toString() ?? '')),
-            DataCell(_tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString())),
+            DataCell(_tipoChip(ehJaImportado
+                ? 'JA_IMPORTADO'
+                : log['tipoDocumento']?.toString())),
             DataCell(_statusChip(sucesso: sucesso, jaImportado: ehJaImportado)),
             DataCell(SizedBox(
               width: 250,
@@ -1616,7 +1745,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    color: ehErroReal ? GridColors.error : GridColors.textSecondary, fontSize: 12),
+                    color: ehErroReal
+                        ? GridColors.error
+                        : GridColors.textSecondary,
+                    fontSize: 12),
               ),
             )),
             DataCell(Row(
@@ -1624,18 +1756,21 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
               children: [
                 TextButton.icon(
                   key: Key('btn_rastreabilidade_$logIdStr'),
-                  icon: const Icon(Icons.manage_search_outlined, size: 18, color: GridColors.primary),
+                  icon: const Icon(Icons.manage_search_outlined,
+                      size: 18, color: GridColors.primary),
                   label: const Text('Ver detalhes'),
                   onPressed: () => _abrirDialogRastreabilidade(log),
                 ),
                 if (ehErroReal) ...[
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 16, color: GridColors.error),
+                    icon: const Icon(Icons.copy,
+                        size: 16, color: GridColors.error),
                     tooltip: 'Copiar mensagem/exception deste erro',
                     onPressed: () => _copiarErroIndividual(log),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.error),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 16, color: GridColors.error),
                     tooltip: 'Remover este erro do histórico',
                     onPressed: () => _removerErroIndividual(log),
                   ),
@@ -1645,18 +1780,34 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      textStyle: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                     icon: const Icon(Icons.verified_user_outlined, size: 14),
                     label: const Text('Aprovar (ReceitaWS)'),
                     onPressed: () {
-                      final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
-                          log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
-                          log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
+                      final ehSac = (log['mensagem']
+                                  ?.toString()
+                                  .toLowerCase()
+                                  .contains('sacado') ==
+                              true ||
+                          log['mensagem']
+                                  ?.toString()
+                                  .toLowerCase()
+                                  .contains('parceiro') ==
+                              true ||
+                          log['mensagem']
+                                  ?.toString()
+                                  .toLowerCase()
+                                  .contains('destinatario') ==
+                              true);
                       _abrirAprovacaoCadastro(PendenciaCadastro(
                         cnpj: cnpj,
-                        papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+                        papel: ehSac
+                            ? PapelCadastro.sacado
+                            : PapelCadastro.fornecedor,
                         arquivo: log['arquivo']?.toString() ?? 'Arquivo',
                         tipoDocumento: log['tipoDocumento']?.toString(),
                         origem: log['origem']?.toString(),
@@ -1692,7 +1843,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.folder_outlined, size: 18, color: GridColors.textMuted),
+              const Icon(Icons.folder_outlined,
+                  size: 18, color: GridColors.textMuted),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1718,21 +1870,27 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       alignment: PlaceholderAlignment.middle,
                       child: Padding(
                         padding: EdgeInsets.only(right: 4),
-                        child: Icon(Icons.schedule, size: 13, color: GridColors.textMuted),
+                        child: Icon(Icons.schedule,
+                            size: 13, color: GridColors.textMuted),
                       ),
                     ),
                     TextSpan(
-                      text: 'Importado em: ${_formatarDataHora(log['dhCreatedAt'])}',
-                      style: const TextStyle(fontSize: 11, color: GridColors.textSecondary, fontWeight: FontWeight.w500),
+                      text:
+                          'Importado em: ${_formatarDataHora(log['dhCreatedAt'])}',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: GridColors.textSecondary,
+                          fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
               if (log['tipoDocumento'] != null || ehJaImportado)
-                _tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString()),
+                _tipoChip(ehJaImportado
+                    ? 'JA_IMPORTADO'
+                    : log['tipoDocumento']?.toString()),
             ],
           ),
-
           if (ehErroReal && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
@@ -1740,7 +1898,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
               decoration: BoxDecoration(
                 color: GridColors.errorLight,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: GridColors.error.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: GridColors.error.withValues(alpha: 0.3)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1748,12 +1907,14 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   Expanded(
                     child: Text(
                       log['mensagem'].toString(),
-                      style: const TextStyle(color: GridColors.errorDark, fontSize: 12),
+                      style: const TextStyle(
+                          color: GridColors.errorDark, fontSize: 12),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 16, color: GridColors.errorDark),
+                    icon: const Icon(Icons.copy,
+                        size: 16, color: GridColors.errorDark),
                     tooltip: 'Copiar exception',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1761,7 +1922,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.errorDark),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 16, color: GridColors.errorDark),
                     tooltip: 'Remover erro',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1770,7 +1932,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 ],
               ),
             ),
-          ] else if (ehJaImportado && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
+          ] else if (ehJaImportado &&
+              (log['mensagem'] ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.all(8),
@@ -1785,7 +1948,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
               ),
             ),
           ],
-
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1797,10 +1959,13 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.primary,
                   side: const BorderSide(color: GridColors.primary),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 icon: const Icon(Icons.manage_search_outlined, size: 16),
-                label: const Text('Ver detalhes', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: const Text('Ver detalhes',
+                    style:
+                        TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 onPressed: () => _abrirDialogRastreabilidade(log),
               ),
               if (ehErroReal && cnpj != null)
@@ -1808,19 +1973,36 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
                   ),
                   icon: const Icon(Icons.verified_user_outlined, size: 16),
                   label: Text('Aprovar Cadastro CNPJ $cnpj (ReceitaWS)',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () {
-                    final ehSac = (log['mensagem']?.toString().toLowerCase().contains('sacado') == true ||
-                        log['mensagem']?.toString().toLowerCase().contains('parceiro') == true ||
-                        log['mensagem']?.toString().toLowerCase().contains('destinatario') == true);
+                    final ehSac = (log['mensagem']
+                                ?.toString()
+                                .toLowerCase()
+                                .contains('sacado') ==
+                            true ||
+                        log['mensagem']
+                                ?.toString()
+                                .toLowerCase()
+                                .contains('parceiro') ==
+                            true ||
+                        log['mensagem']
+                                ?.toString()
+                                .toLowerCase()
+                                .contains('destinatario') ==
+                            true);
                     _abrirAprovacaoCadastro(PendenciaCadastro(
                       cnpj: cnpj,
-                      papel: ehSac ? PapelCadastro.sacado : PapelCadastro.fornecedor,
+                      papel: ehSac
+                          ? PapelCadastro.sacado
+                          : PapelCadastro.fornecedor,
                       arquivo: log['arquivo']?.toString() ?? 'Arquivo',
                       tipoDocumento: log['tipoDocumento']?.toString(),
                       origem: log['origem']?.toString(),
@@ -1860,12 +2042,16 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         title: Row(
           children: [
-            const Icon(Icons.manage_search_outlined, color: GridColors.primary, size: 24),
+            const Icon(Icons.manage_search_outlined,
+                color: GridColors.primary, size: 24),
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
                 'Rastreabilidade & Auditoria Fiscal',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.textPrimary),
               ),
             ),
             IconButton(
@@ -1898,11 +2084,13 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                           Expanded(
                             child: Text(
                               arquivo,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          _statusChip(sucesso: sucesso, jaImportado: ehJaImportado),
+                          _statusChip(
+                              sucesso: sucesso, jaImportado: ehJaImportado),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -1911,11 +2099,20 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                         runSpacing: 4,
                         children: [
                           Text('Data do Import: $dataHoraStr',
-                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary, fontWeight: FontWeight.w600)),
-                          Text('Origem: ${origemLabel(log['origem']?.toString())}',
-                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary)),
-                          Text('Tipo: ${tipoDocumentoLabel(ehJaImportado ? "JA_IMPORTADO" : log['tipoDocumento']?.toString())}',
-                              style: const TextStyle(fontSize: 12, color: GridColors.textSecondary)),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: GridColors.textSecondary,
+                                  fontWeight: FontWeight.w600)),
+                          Text(
+                              'Origem: ${origemLabel(log['origem']?.toString())}',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: GridColors.textSecondary)),
+                          Text(
+                              'Tipo: ${tipoDocumentoLabel(ehJaImportado ? "JA_IMPORTADO" : log['tipoDocumento']?.toString())}',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: GridColors.textSecondary)),
                         ],
                       ),
                     ],
@@ -1935,31 +2132,46 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Empresa e Parceiros Vinculados',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                        'Empresa e Parceiro',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: GridColors.secondary),
                       ),
                       const Divider(height: 12),
                       _itemInfoRastreabilidade(
                         label: 'Empresa:',
-                        valor: empId != null
-                            ? '[ID: $empId] ${empNome ?? ""}'
-                            : 'Não especificada',
+                        valor: formatarEntidadeRastreabilidade(
+                          id: empId,
+                          nome: empNome,
+                          fallback: 'Não especificada',
+                        ),
                       ),
                       const SizedBox(height: 6),
                       _itemInfoRastreabilidade(
                         label: 'Fornecedor / Emitente:',
-                        valor: fornId != null
-                            ? '[ID: $fornId] ${fornNome ?? ""}'
-                            : 'Não identificado / Não cadastrado',
-                        corValor: fornId != null ? GridColors.primary : GridColors.textSecondary,
+                        valor: formatarEntidadeRastreabilidade(
+                          id: fornId,
+                          nome: fornNome,
+                          fallback: 'Não identificado / Não cadastrado',
+                        ),
+                        corValor: fornId != null ||
+                                fornNome?.trim().isNotEmpty == true
+                            ? GridColors.primary
+                            : GridColors.textSecondary,
                       ),
                       const SizedBox(height: 6),
                       _itemInfoRastreabilidade(
-                        label: 'Parceiro / Tomador / Sacado:',
-                        valor: parcId != null
-                            ? '[ID: $parcId] ${parcNome ?? ""}'
-                            : 'Não identificado / Não cadastrado',
-                        corValor: parcId != null ? GridColors.secondary : GridColors.textSecondary,
+                        label: 'Parceiro:',
+                        valor: formatarEntidadeRastreabilidade(
+                          id: parcId,
+                          nome: parcNome,
+                          fallback: 'Não identificado / Não cadastrado',
+                        ),
+                        corValor: parcId != null ||
+                                parcNome?.trim().isNotEmpty == true
+                            ? GridColors.secondary
+                            : GridColors.textSecondary,
                       ),
                     ],
                   ),
@@ -1979,17 +2191,23 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     children: [
                       const Text(
                         'Documento Gerado no Sistema',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: GridColors.secondary),
                       ),
                       const Divider(height: 12),
                       _itemInfoRastreabilidade(
                         label: 'Número do Doc:',
-                        valor: docNum != null && docNum.isNotEmpty ? docNum : 'Não registrado',
+                        valor: docNum != null && docNum.isNotEmpty
+                            ? docNum
+                            : 'Não registrado',
                       ),
                       const SizedBox(height: 6),
                       _itemInfoRastreabilidade(
                         label: 'ID no Banco:',
-                        valor: docId != null ? docId.toString() : 'Não registrado',
+                        valor:
+                            docId != null ? docId.toString() : 'Não registrado',
                       ),
                       if (log['contaPagarId'] != null) ...[
                         const SizedBox(height: 6),
@@ -2016,7 +2234,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                     children: [
                       const Text(
                         'Produtos Cadastrados / Vinculados',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: GridColors.secondary),
                       ),
                       const Divider(height: 12),
                       if (prods != null && prods.isNotEmpty)
@@ -2029,20 +2250,27 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                           ),
                           child: Text(
                             prods,
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), height: 1.4),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF1E293B),
+                                height: 1.4),
                           ),
                         )
                       else
                         const Text(
                           'Nenhum produto individual identificado neste documento.',
-                          style: TextStyle(fontSize: 12, color: GridColors.textSecondary, fontStyle: FontStyle.italic),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: GridColors.textSecondary,
+                              fontStyle: FontStyle.italic),
                         ),
                     ],
                   ),
                 ),
 
                 // Cartão 5: Detalhes da Auditoria / Mensagem
-                if ((detalhes != null && detalhes.isNotEmpty) || (msg != null && msg.isNotEmpty)) ...[
+                if ((detalhes != null && detalhes.isNotEmpty) ||
+                    (msg != null && msg.isNotEmpty)) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -2056,15 +2284,22 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                       children: [
                         const Text(
                           'Detalhes Técnicos & Auditoria',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: GridColors.secondary),
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: GridColors.secondary),
                         ),
                         const Divider(height: 12),
                         if (detalhes != null && detalhes.isNotEmpty) ...[
                           Text(
                             detalhes,
-                            style: const TextStyle(fontSize: 12, color: GridColors.textPrimary, height: 1.3),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: GridColors.textPrimary,
+                                height: 1.3),
                           ),
-                          if (msg != null && msg.isNotEmpty) const SizedBox(height: 8),
+                          if (msg != null && msg.isNotEmpty)
+                            const SizedBox(height: 8),
                         ],
                         if (msg != null && msg.isNotEmpty)
                           Container(
@@ -2076,7 +2311,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                             ),
                             child: Text(
                               msg,
-                              style: const TextStyle(fontSize: 11, color: GridColors.textSecondary, fontFamily: 'monospace'),
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: GridColors.textSecondary,
+                                  fontFamily: 'monospace'),
                             ),
                           ),
                       ],
@@ -2089,7 +2327,9 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: GridColors.secondary, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.secondary,
+                foregroundColor: Colors.white),
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Fechar'),
           ),
@@ -2098,17 +2338,24 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     );
   }
 
-  Widget _itemInfoRastreabilidade({required String label, required String valor, Color? corValor}) {
+  Widget _itemInfoRastreabilidade(
+      {required String label, required String valor, Color? corValor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text.rich(
         TextSpan(
           text: '$label ',
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
+          style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: GridColors.textSecondary),
           children: [
             TextSpan(
               text: valor,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: corValor ?? GridColors.textPrimary),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: corValor ?? GridColors.textPrimary),
             ),
           ],
         ),
@@ -2133,7 +2380,8 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     }
     return Chip(
       visualDensity: VisualDensity.compact,
-      backgroundColor: sucesso ? GridColors.successLight : GridColors.errorLight,
+      backgroundColor:
+          sucesso ? GridColors.successLight : GridColors.errorLight,
       label: Text(
         sucesso ? 'Sucesso' : 'Erro',
         style: TextStyle(
@@ -2155,5 +2403,4 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       ),
     );
   }
-
 }
