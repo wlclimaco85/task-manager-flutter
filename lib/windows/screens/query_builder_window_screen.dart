@@ -79,7 +79,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
         _carregandoSchemas = false;
         _mensagemErro = schemas.isEmpty ? 'Nenhum schema disponível' : null;
         if (schemas.isNotEmpty) {
-          _schemaSelecionado = schemas.first.toString();
+          _schemaSelecionado = QueryBuilderCaller.nomeSchema(schemas.first);
         }
       });
       if (_schemaSelecionado != null) {
@@ -107,9 +107,12 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       final tabelas = await QueryBuilderCaller.listarTabelas();
       if (!mounted) return;
       setState(() {
-        _tabelas = tabelas;
+        _tabelas = tabelas
+            .where((tabela) =>
+                QueryBuilderCaller.tabelaPertenceAoSchema(tabela, schema))
+            .toList();
         _carregandoTabelas = false;
-        if (tabelas.isEmpty) {
+        if (_tabelas.isEmpty) {
           _mensagemErro = 'Nenhuma tabela encontrada no schema $schema';
         }
       });
@@ -197,9 +200,29 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       // Colunas do resultado
       final cols = dados['colunas'];
       if (cols is List) {
-        _colunasResultado = cols
-            .map((c) => c is Map<String, dynamic> ? c : {'nome': c.toString()})
-            .toList();
+        _colunasResultado = cols.map((c) {
+          if (c is Map) {
+            final m = Map<String, dynamic>.from(c);
+            final nome =
+                (m['column_name'] ?? m['nome'] ?? m['name'] ?? '?').toString();
+            final tipo =
+                (m['data_type'] ?? m['tipo'] ?? m['type'] ?? '').toString();
+            return {
+              ...m,
+              'nome': nome,
+              'column_name': nome,
+              'tipo': tipo,
+              'data_type': tipo,
+            };
+          }
+          final str = c.toString();
+          return {
+            'nome': str,
+            'column_name': str,
+            'tipo': '',
+            'data_type': '',
+          };
+        }).toList();
       } else {
         _colunasResultado = [];
       }
@@ -210,10 +233,10 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
         _linhasResultado = linhas.map((linha) {
           if (linha is List) return linha;
           if (linha is Map<String, dynamic>) {
-            return _colunasResultado
-                .map((c) =>
-                    linha.containsKey(c['nome']) ? linha[c['nome']] : null)
-                .toList();
+            return _colunasResultado.map((c) {
+              final k = c['column_name'] ?? c['nome'];
+              return linha.containsKey(k) ? linha[k] : null;
+            }).toList();
           }
           return <dynamic>[];
         }).toList();
@@ -233,7 +256,10 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     // Monta rowData a partir do resultado
     final Map<String, dynamic> rowData = {};
     for (int i = 0; i < _colunasResultado.length; i++) {
-      final nomeCol = _colunasResultado[i]['nome']?.toString() ?? 'col_$i';
+      final nomeCol = (_colunasResultado[i]['column_name'] ??
+              _colunasResultado[i]['nome'] ??
+              'col_$i')
+          .toString();
       rowData[nomeCol] = i < _linhasResultado[rowIndex].length
           ? _linhasResultado[rowIndex][i]
           : null;
@@ -280,7 +306,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
       // Cabeçalho
       final headers = _colunasResultado
-          .map((c) => _escaparCsv(c['nome']?.toString() ?? ''))
+          .map((c) => _escaparCsv((c['column_name'] ?? c['nome'] ?? '').toString()))
           .join(',');
       buffer.writeln(headers);
 
@@ -534,7 +560,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
                     : ListView(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         children: _schemas.map((schema) {
-                          final nome = schema.toString();
+                          final nome = QueryBuilderCaller.nomeSchema(schema);
                           final selecionado = nome == _schemaSelecionado;
                           return _buildSchemaNode(nome, selecionado);
                         }).toList(),
@@ -623,7 +649,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     }
 
     return _tabelas.map((tabela) {
-      final nome = tabela.toString();
+      final nome = QueryBuilderCaller.nomeTabela(tabela);
       final selecionada = nome == _tabelaSelecionada;
       return _buildTabelaNode(nome, selecionada);
     }).toList();
@@ -1044,8 +1070,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
             ),
             // Colunas do resultado
             ..._colunasResultado.map((col) {
-              final nome = col['nome']?.toString() ?? '?';
-              final tipo = col['tipo']?.toString() ?? '';
+              final nome = (col['column_name'] ?? col['nome'] ?? col['name'] ?? '?').toString();
+              final tipo = (col['data_type'] ?? col['tipo'] ?? col['type'] ?? '').toString();
               return DataColumn(
                 label: Tooltip(
                   message: tipo.isNotEmpty ? '$nome ($tipo)' : nome,
