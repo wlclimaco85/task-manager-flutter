@@ -61,6 +61,18 @@ void main() {
     });
   });
 
+  test('payload de parceiro mantem cidade textual fora de endereco', () {
+    final payload = montarPayloadParceiroAutomacaoFiscal({
+      'cidade': 'UBERABA',
+      'estado': 'MG',
+      'rua': 'Rua Teste',
+      'endereco': {'cidade': 'UBERABA'},
+    });
+    expect(payload['cidade'], 'UBERABA');
+    expect(payload['tipoEstabelecimento'], 'MATRIZ');
+    expect(payload.containsKey('endereco'), isFalse);
+  });
+
   group('formatarRelatorioErrosParaClipboard', () {
     test('formata lista de erros consolidada com detalhes para clipboard', () {
       final logs = [
@@ -297,7 +309,7 @@ void main() {
   });
 
   group('Rastreabilidade e Auditoria Fiscal', () {
-    testWidgets('exibe colunas e dados de rastreabilidade na tabela desktop', (tester) async {
+    testWidgets('mantem tabela compacta e abre rastreabilidade no popup', (tester) async {
       final logsFixture = [
         {
           'id': 140,
@@ -335,19 +347,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verifica cabeçalhos de rastreabilidade na tabela
+      // Os dados extensos não ocupam colunas; ficam no popup.
       expect(find.text('Data/Hora'), findsOneWidget);
-      expect(find.text('Empresa'), findsOneWidget);
-      expect(find.text('Fornecedor / Parceiro'), findsOneWidget);
-      expect(find.text('Doc / Produtos'), findsOneWidget);
-
-      // Verifica valores preenchidos na linha
-      expect(find.text('ID: 1'), findsOneWidget);
-      expect(find.text('Empresa Demonstração'), findsOneWidget);
-      expect(find.text('Forn #1751'), findsOneWidget);
-      expect(find.text('BRASIL MODA SURF LTDA'), findsOneWidget);
-      expect(find.textContaining('ID: 1108'), findsOneWidget);
-      expect(find.textContaining('[ID 55] Camiseta Surf'), findsOneWidget);
+      expect(find.text('Empresa'), findsNothing);
+      expect(find.text('Fornecedor / Parceiro'), findsNothing);
+      expect(find.text('Doc / Produtos'), findsNothing);
+      expect(find.text('Empresa Demonstração'), findsNothing);
+      expect(find.text('Ver detalhes'), findsOneWidget);
 
       // Clica no botão de rastreabilidade da linha
       final btnRastreabilidade = find.byKey(const Key('btn_rastreabilidade_140'));
@@ -361,6 +367,8 @@ void main() {
       expect(find.text('Empresa e Parceiros Vinculados'), findsOneWidget);
       expect(find.text('Documento Gerado no Sistema'), findsOneWidget);
       expect(find.text('Produtos Cadastrados / Vinculados'), findsOneWidget);
+      expect(find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
+      expect(find.textContaining('[ID 55] Camiseta Surf'), findsOneWidget);
       expect(find.textContaining('Data do Import: 30/09/2026'), findsOneWidget);
       expect(find.text('Fechar'), findsOneWidget);
 
@@ -368,7 +376,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('exibe informacoes de rastreabilidade nos cards mobile', (tester) async {
+    testWidgets('mantem card mobile compacto e abre detalhes no popup', (tester) async {
       final logsFixture = [
         {
           'id': 140,
@@ -404,12 +412,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verifica dados no Card Mobile
+      // Verifica resumo sem os metadados extensos.
       expect(find.textContaining('Importado em:'), findsOneWidget);
-      expect(find.textContaining('[ID 1] Empresa Demonstração'), findsOneWidget);
-      expect(find.textContaining('[ID 1751] BRASIL MODA SURF LTDA'), findsOneWidget);
-      expect(find.textContaining('ID: 1108'), findsOneWidget);
-      expect(find.text('Ver Rastreabilidade Completa'), findsOneWidget);
+      expect(find.textContaining('[ID 1] Empresa Demonstração'), findsNothing);
+      expect(find.textContaining('[ID 1751] BRASIL MODA SURF LTDA'), findsNothing);
+      expect(find.textContaining('ID: 1108'), findsNothing);
+      expect(find.text('Ver detalhes'), findsOneWidget);
 
       // Clica em "Ver Rastreabilidade Completa"
       final btnCard = find.byKey(const Key('btn_card_rastreabilidade_140'));
@@ -418,6 +426,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Rastreabilidade & Auditoria Fiscal'), findsOneWidget);
+      expect(find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
+      expect(find.textContaining('[ID: 1751] BRASIL MODA SURF LTDA'), findsOneWidget);
       expect(find.text('Fechar'), findsOneWidget);
       await tester.tap(find.text('Fechar'));
       await tester.pumpAndSettle();

@@ -76,6 +76,11 @@ String? extrairCnpj(String? texto) {
   return null;
 }
 
+/// Monta o contrato de ParceiroDTO usado pelo cadastro vindo da ReceitaWS.
+Map<String, dynamic> montarPayloadParceiroAutomacaoFiscal(Map<String, dynamic> payload) {
+  return {...payload, 'tipoEstabelecimento': 'MATRIZ'}..remove('endereco');
+}
+
 /// Gera texto formatado e consolidado contendo todas as exceptions e erros da automação fiscal
 /// para cópia direta na área de transferência (Clipboard). Função pura para ser testável.
 String formatarRelatorioErrosParaClipboard({
@@ -782,17 +787,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
         tituloOverride: titulo,
         customSaveHandler: ehSacado
             ? (payload) async {
-                final parceiroPayload = Map<String, dynamic>.from(payload);
-                parceiroPayload['tipoEstabelecimento'] = 'MATRIZ';
-                parceiroPayload['endereco'] = {
-                  'logradouro': payload['rua'],
-                  'numero': payload['numero'],
-                  'complemento': payload['complemento'],
-                  'bairro': payload['bairro'],
-                  'cidade': payload['cidade'],
-                  'estado': payload['estado'],
-                  'cep': payload['cep'],
-                };
+                final parceiroPayload = montarPayloadParceiroAutomacaoFiscal(payload);
                 final resp = await NetworkCaller().postRequest(
                   ApiLinks.insertParceiro,
                   parceiroPayload,
@@ -1595,9 +1590,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
           DataColumn(label: Text('Arquivo')),
           DataColumn(label: Text('Tipo')),
           DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Empresa')),
-          DataColumn(label: Text('Fornecedor / Parceiro')),
-          DataColumn(label: Text('Doc / Produtos')),
           DataColumn(label: Text('Mensagem / Exception')),
           DataColumn(label: Text('Ações')),
         ],
@@ -1617,9 +1609,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             DataCell(Text(log['arquivo']?.toString() ?? '')),
             DataCell(_tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString())),
             DataCell(_statusChip(sucesso: sucesso, jaImportado: ehJaImportado)),
-            DataCell(_empresaCell(log)),
-            DataCell(_entidadesCell(log)),
-            DataCell(_documentoProdutosCell(log)),
             DataCell(SizedBox(
               width: 250,
               child: Text(
@@ -1633,10 +1622,10 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
             DataCell(Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
+                TextButton.icon(
                   key: Key('btn_rastreabilidade_$logIdStr'),
                   icon: const Icon(Icons.manage_search_outlined, size: 18, color: GridColors.primary),
-                  tooltip: 'Auditoria & Rastreabilidade do Arquivo',
+                  label: const Text('Ver detalhes'),
                   onPressed: () => _abrirDialogRastreabilidade(log),
                 ),
                 if (ehErroReal) ...[
@@ -1689,16 +1678,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
     final ehErroReal = !sucesso && !ehJaImportado;
     final cnpj = extrairCnpj(log['mensagem']?.toString());
     final logIdStr = (log['id'] ?? log['arquivo'] ?? '').toString();
-
-    final empId = log['empresaId'];
-    final empNome = log['empresaNome']?.toString();
-    final fornId = log['fornecedorId'];
-    final fornNome = log['fornecedorNome']?.toString();
-    final parcId = log['parceiroId'];
-    final parcNome = log['parceiroNome']?.toString();
-    final docId = log['documentoId'];
-    final docNum = log['documentoNumero']?.toString();
-    final prods = log['produtosInfo']?.toString();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1753,107 +1732,6 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 _tipoChip(ehJaImportado ? 'JA_IMPORTADO' : log['tipoDocumento']?.toString()),
             ],
           ),
-
-          // Informações de rastreabilidade no Card
-          if (empId != null || fornId != null || parcId != null || docId != null || (prods != null && prods.isNotEmpty)) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (empId != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'Empresa: ',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
-                          children: [
-                            TextSpan(
-                              text: '[ID $empId] ${empNome ?? ""}',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.textPrimary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (fornId != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'Fornecedor: ',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
-                          children: [
-                            TextSpan(
-                              text: '[ID $fornId] ${fornNome ?? ""}',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.primary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (parcId != null && (parcId != fornId || fornId == null))
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'Parceiro: ',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
-                          children: [
-                            TextSpan(
-                              text: '[ID $parcId] ${parcNome ?? ""}',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GridColors.secondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (docId != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'Documento: ',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
-                          children: [
-                            TextSpan(
-                              text: '${docNum != null && docNum.isNotEmpty ? "Nº $docNum " : ""}· ID: $docId',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textPrimary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (prods != null && prods.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'Produtos: ',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: GridColors.textSecondary),
-                          children: [
-                            TextSpan(
-                              text: prods,
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF334155)),
-                            ),
-                          ],
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
 
           if (ehErroReal && (log['mensagem'] ?? '').toString().isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -1922,7 +1800,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 icon: const Icon(Icons.manage_search_outlined, size: 16),
-                label: const Text('Ver Rastreabilidade Completa', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: const Text('Ver detalhes', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 onPressed: () => _abrirDialogRastreabilidade(log),
               ),
               if (ehErroReal && cnpj != null)
