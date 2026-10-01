@@ -6,6 +6,7 @@ import '../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/parceiro_form_rules.dart';
+import '../../widgets/parceiro_faturamento_dialog.dart';
 
 class ParceiroGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -26,6 +27,28 @@ class ParceiroGridScreen extends StatelessWidget {
       updateEndpointOverride: ApiLinks.updateParceiro(':id'),
       deleteEndpointOverride: ApiLinks.deleteParceiro(':id'),
       onUserBannerTapped: onUserBannerTapped,
+      customActions: () => [
+        CustomAction(
+          icon: Icons.receipt_long,
+          label: 'Faturar',
+          onPressed: (context, item) => showParceiroFaturamentoDialog(
+            context,
+            parceiroIds: [int.parse(item['id'].toString())],
+            todos: false,
+          ),
+        ),
+      ],
+      headerActions: [
+        IconButton(
+          tooltip: 'Faturar todos',
+          onPressed: () => showParceiroFaturamentoDialog(
+            context,
+            parceiroIds: const [],
+            todos: true,
+          ),
+          icon: const Icon(Icons.receipt_long),
+        ),
+      ],
       fieldOverrides: [
         ...ParceiroFormRules.mobileModuleSuppression(),
         FieldConfig(

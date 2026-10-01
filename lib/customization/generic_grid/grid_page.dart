@@ -31,6 +31,7 @@ class GenericMobileGridScreen extends StatefulWidget {
   final void Function(Map<String, dynamic> item, BuildContext context)?
       onItemTap;
   final List<CustomAction> Function()? customActions;
+  final List<Widget>? headerActions;
 
   final bool enableSearch;
   final Map<String, dynamic>? initialFilters;
@@ -76,6 +77,7 @@ class GenericMobileGridScreen extends StatefulWidget {
     this.paginationConfig = const PaginationConfig(),
     this.onItemTap,
     this.customActions,
+    this.headerActions,
     this.enableSearch = true,
     this.initialFilters,
     this.storageKey = 'generic_mobile_grid_settings',
@@ -559,6 +561,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       foregroundColor: cs.onPrimary,
       elevation: 3,
       actions: [
+        ...?widget.headerActions,
         IconButton(
           onPressed: _loading ? null : () => _loadItems(reset: true),
           icon: _loading
