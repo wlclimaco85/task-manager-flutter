@@ -25,13 +25,15 @@ void main() {
   });
 
   group('tipoDocumentoLabel', () {
-    test('mapeia todos os tipos reconhecidos pelo classificador do backend', () {
+    test('mapeia todos os tipos reconhecidos pelo classificador do backend',
+        () {
       expect(tipoDocumentoLabel('BOLETO_FORNECEDOR'), 'Boleto Fornecedor');
       expect(tipoDocumentoLabel('FGTS'), 'FGTS');
       expect(tipoDocumentoLabel('DAE_ICMS'), 'DAE ICMS');
       expect(tipoDocumentoLabel('DARF_FEDERAL'), 'DARF Federal');
       expect(tipoDocumentoLabel('GUIA_ISS_MUNICIPAL'), 'Guia ISS');
-      expect(tipoDocumentoLabel('COMPROVANTE_PAGAMENTO'), 'Comprovante de Pagamento');
+      expect(tipoDocumentoLabel('COMPROVANTE_PAGAMENTO'),
+          'Comprovante de Pagamento');
       expect(tipoDocumentoLabel('CTE'), 'CT-e (Transporte)');
       expect(tipoDocumentoLabel('NFE'), 'NF-e (Entrada)');
       expect(tipoDocumentoLabel('NFCE'), 'NFC-e (Consumidor)');
@@ -48,16 +50,44 @@ void main() {
   group('extrairCnpj', () {
     test('extrai CNPJ formatado ou 14 digitos de mensagem de erro', () {
       expect(
-        extrairCnpj('CNPJ do arquivo SINTEGRA (38504938000626) nao corresponde a empresa'),
+        extrairCnpj(
+            'CNPJ do arquivo SINTEGRA (38504938000626) nao corresponde a empresa'),
         '38504938000626',
       );
       expect(
-        extrairCnpj('Nenhum parceiro cadastrado para o CNPJ 11.222.333/0001-81 na base.'),
+        extrairCnpj(
+            'Nenhum parceiro cadastrado para o CNPJ 11.222.333/0001-81 na base.'),
         '11.222.333/0001-81',
       );
       expect(extrairCnpj('Erro desconhecido sem documento'), isNull);
       expect(extrairCnpj(null), isNull);
       expect(extrairCnpj(''), isNull);
+    });
+  });
+
+  group('formatarEntidadeRastreabilidade', () {
+    test(
+        'mantem empresa ou parceiro quando apenas nome ou id estiver disponivel',
+        () {
+      expect(
+        formatarEntidadeRastreabilidade(
+            id: 1, nome: 'Empresa Teste', fallback: '-'),
+        '[ID: 1] Empresa Teste',
+      );
+      expect(
+        formatarEntidadeRastreabilidade(
+            id: null, nome: 'Parceiro Teste', fallback: '-'),
+        'Parceiro Teste',
+      );
+      expect(
+        formatarEntidadeRastreabilidade(id: 42, nome: null, fallback: '-'),
+        '[ID: 42]',
+      );
+      expect(
+        formatarEntidadeRastreabilidade(
+            id: null, nome: '  ', fallback: 'Não informado'),
+        'Não informado',
+      );
     });
   });
 
@@ -81,7 +111,8 @@ void main() {
           'arquivo': 'nfe_1066.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFE',
-          'mensagem': 'Falha ao parsear XML da NF-e: Invalid byte 2 of 2-byte UTF-8 sequence.',
+          'mensagem':
+              'Falha ao parsear XML da NF-e: Invalid byte 2 of 2-byte UTF-8 sequence.',
         },
         {
           'status': 'SUCESSO',
@@ -95,7 +126,8 @@ void main() {
           'arquivo': 'nfce_26.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFCE',
-          'mensagem': 'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+          'mensagem':
+              'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
         },
       ];
 
@@ -118,7 +150,8 @@ void main() {
       expect(texto, isNot(contains('nfce_26.xml')));
     });
 
-    test('quando ha apenas ja importados ou sucesso retorna mensagem amigavel', () {
+    test('quando ha apenas ja importados ou sucesso retorna mensagem amigavel',
+        () {
       final texto = formatarRelatorioErrosParaClipboard(
         logs: [
           {
@@ -126,12 +159,14 @@ void main() {
             'arquivo': 'nfce_26.xml',
             'origem': 'XML',
             'tipoDocumento': 'JA_IMPORTADO',
-            'mensagem': 'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+            'mensagem':
+                'NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
           },
         ],
         ultimoResultado: '0 sucesso, 0 erro (1 já importados)',
       );
-      expect(texto, contains('Última execução: 0 sucesso, 0 erro (1 já importados)'));
+      expect(texto,
+          contains('Última execução: 0 sucesso, 0 erro (1 já importados)'));
     });
 
     test('quando nao ha erros retorna mensagem amigavel', () {
@@ -144,21 +179,25 @@ void main() {
   });
 
   group('extrairPendenciasCadastro', () {
-    test('extrai pendencias de sacado e fornecedor a partir de tags estruturadas do backend', () {
+    test(
+        'extrai pendencias de sacado e fornecedor a partir de tags estruturadas do backend',
+        () {
       final logs = [
         {
           'status': 'ERRO',
           'arquivo': 'nfe_1066.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFE',
-          'mensagem': '[FORNECEDOR: 12.345.678/0001-99] [SACADO: 98.765.432/0001-88] Falha ao importar: Parceiro não cadastrado',
+          'mensagem':
+              '[FORNECEDOR: 12.345.678/0001-99] [SACADO: 98.765.432/0001-88] Falha ao importar: Parceiro não cadastrado',
         },
         {
           'status': 'ERRO',
           'arquivo': 'guia_icms.pdf',
           'origem': 'BOLETO',
           'tipoDocumento': 'DAE_ICMS',
-          'mensagem': '[SACADO: 98765432000188] Parceiro do documento não encontrado no tenant.',
+          'mensagem':
+              '[SACADO: 98765432000188] Parceiro do documento não encontrado no tenant.',
         },
         {
           'status': 'SUCESSO',
@@ -174,7 +213,8 @@ void main() {
       // Deve ter exatamente 2 pendências (1 fornecedor e 1 sacado), pois o sacado do segundo log é duplicado
       expect(pendencias.length, 2);
 
-      final forn = pendencias.firstWhere((p) => p.papel == PapelCadastro.fornecedor);
+      final forn =
+          pendencias.firstWhere((p) => p.papel == PapelCadastro.fornecedor);
       expect(forn.cnpj, '12345678000199');
       expect(forn.cnpjFormatado, '12.345.678/0001-99');
       expect(forn.papelBadge, 'RECEBEDOR');
@@ -188,21 +228,24 @@ void main() {
       expect(sac.papelTitulo, contains('Sacado (Parceiro / Cliente)'));
     });
 
-    test('extrai pendencia quando ha CNPJ no texto do erro sem tag especifica', () {
+    test('extrai pendencia quando ha CNPJ no texto do erro sem tag especifica',
+        () {
       final logs = [
         {
           'status': 'ERRO',
           'arquivo': 'boleto_123.pdf',
           'origem': 'BOLETO',
           'tipoDocumento': 'BOLETO_FORNECEDOR',
-          'mensagem': 'Nenhum fornecedor cadastrado para o CNPJ 11.222.333/0001-81 na base.',
+          'mensagem':
+              'Nenhum fornecedor cadastrado para o CNPJ 11.222.333/0001-81 na base.',
         },
         {
           'status': 'ERRO',
           'arquivo': 'tomador_servico.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFSE',
-          'mensagem': 'Nenhum parceiro destinatario/tomador encontrado com CNPJ 55.666.777/0001-44.',
+          'mensagem':
+              'Nenhum parceiro destinatario/tomador encontrado com CNPJ 55.666.777/0001-44.',
         },
       ];
 
@@ -234,14 +277,17 @@ void main() {
       expect(pendencias, isEmpty);
     });
 
-    test('ignora erros que nao sao de falta de cadastro (ja importada, duplicado, etc)', () {
+    test(
+        'ignora erros que nao sao de falta de cadastro (ja importada, duplicado, etc)',
+        () {
       final logs = [
         {
           'status': 'ERRO',
           'arquivo': 'nfce_26.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFCE',
-          'mensagem': '[FORNECEDOR: 19364209000162] NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
+          'mensagem':
+              '[FORNECEDOR: 19364209000162] NF-e já importada. Chave: 31260919364209000162650010000000251758778562',
         },
         {
           'status': 'ERRO',
@@ -263,7 +309,8 @@ void main() {
           'arquivo': 'nfe_1066.xml',
           'origem': 'XML',
           'tipoDocumento': 'NFE',
-          'mensagem': '[FORNECEDOR: 12.345.678/0001-99] Parceiro não cadastrado',
+          'mensagem':
+              '[FORNECEDOR: 12.345.678/0001-99] Parceiro não cadastrado',
         },
       ];
 
@@ -309,7 +356,8 @@ void main() {
   });
 
   group('Rastreabilidade e Auditoria Fiscal', () {
-    testWidgets('mantem tabela compacta e abre rastreabilidade no popup', (tester) async {
+    testWidgets('mantem tabela compacta e abre rastreabilidade no popup',
+        (tester) async {
       final logsFixture = [
         {
           'id': 140,
@@ -318,7 +366,8 @@ void main() {
           'origem': 'XML',
           'tipoDocumento': 'NFE_ENTRADA',
           'status': 'JA_IMPORTADO',
-          'mensagem': 'NF-e já importada. Chave: 35260619364209000162550010000006511000045703',
+          'mensagem':
+              'NF-e já importada. Chave: 35260619364209000162550010000006511000045703',
           'empresaId': 1,
           'empresaNome': 'Empresa Demonstração',
           'fornecedorId': 1751,
@@ -328,7 +377,8 @@ void main() {
           'documentoId': 1108,
           'documentoNumero': '651',
           'produtosInfo': '[ID 55] Camiseta Surf; [ID 56] Bermuda Água',
-          'detalhesRastreabilidade': 'NF-e Entrada #651 importada previamente com sucesso.',
+          'detalhesRastreabilidade':
+              'NF-e Entrada #651 importada previamente com sucesso.',
         },
       ];
 
@@ -356,7 +406,8 @@ void main() {
       expect(find.text('Ver detalhes'), findsOneWidget);
 
       // Clica no botão de rastreabilidade da linha
-      final btnRastreabilidade = find.byKey(const Key('btn_rastreabilidade_140'));
+      final btnRastreabilidade =
+          find.byKey(const Key('btn_rastreabilidade_140'));
       expect(btnRastreabilidade, findsOneWidget);
       await tester.ensureVisible(btnRastreabilidade);
       await tester.tap(btnRastreabilidade);
@@ -364,10 +415,15 @@ void main() {
 
       // Modal de Auditoria e Rastreabilidade abre com detalhes
       expect(find.text('Rastreabilidade & Auditoria Fiscal'), findsOneWidget);
-      expect(find.text('Empresa e Parceiros Vinculados'), findsOneWidget);
+      expect(find.text('Empresa e Parceiro'), findsOneWidget);
+      expect(
+          find.textContaining('Empresa:', findRichText: true), findsOneWidget);
+      expect(
+          find.textContaining('Parceiro:', findRichText: true), findsOneWidget);
       expect(find.text('Documento Gerado no Sistema'), findsOneWidget);
       expect(find.text('Produtos Cadastrados / Vinculados'), findsOneWidget);
-      expect(find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
+      expect(
+          find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
       expect(find.textContaining('[ID 55] Camiseta Surf'), findsOneWidget);
       expect(find.textContaining('Data do Import: 30/09/2026'), findsOneWidget);
       expect(find.text('Fechar'), findsOneWidget);
@@ -376,7 +432,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('mantem card mobile compacto e abre detalhes no popup', (tester) async {
+    testWidgets('mantem card mobile compacto e abre detalhes no popup',
+        (tester) async {
       final logsFixture = [
         {
           'id': 140,
@@ -390,6 +447,7 @@ void main() {
           'empresaNome': 'Empresa Demonstração',
           'fornecedorId': 1751,
           'fornecedorNome': 'BRASIL MODA SURF LTDA',
+          'parceiroNome': 'Parceiro sem ID',
           'documentoId': 1108,
           'documentoNumero': '651',
           'produtosInfo': '[ID 55] Camiseta Surf',
@@ -415,7 +473,8 @@ void main() {
       // Verifica resumo sem os metadados extensos.
       expect(find.textContaining('Importado em:'), findsOneWidget);
       expect(find.textContaining('[ID 1] Empresa Demonstração'), findsNothing);
-      expect(find.textContaining('[ID 1751] BRASIL MODA SURF LTDA'), findsNothing);
+      expect(
+          find.textContaining('[ID 1751] BRASIL MODA SURF LTDA'), findsNothing);
       expect(find.textContaining('ID: 1108'), findsNothing);
       expect(find.text('Ver detalhes'), findsOneWidget);
 
@@ -426,12 +485,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Rastreabilidade & Auditoria Fiscal'), findsOneWidget);
-      expect(find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
-      expect(find.textContaining('[ID: 1751] BRASIL MODA SURF LTDA'), findsOneWidget);
+      expect(
+          find.textContaining('[ID: 1] Empresa Demonstração'), findsOneWidget);
+      expect(
+          find.textContaining('Empresa:', findRichText: true), findsOneWidget);
+      expect(
+          find.textContaining('Parceiro:', findRichText: true), findsOneWidget);
+      expect(
+        find.textContaining('Parceiro sem ID', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.text('Fechar'), findsOneWidget);
       await tester.tap(find.text('Fechar'));
       await tester.pumpAndSettle();
     });
   });
 }
-
