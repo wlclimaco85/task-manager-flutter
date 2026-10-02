@@ -500,4 +500,23 @@ void main() {
       await tester.pumpAndSettle();
     });
   });
+
+  group('Envio de arquivos em lote para ambiente em nuvem', () {
+    testWidgets('exibe botao para enviar arquivos da maquina no card de configuracao', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AutomacaoFiscalScreen(showAppBar: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('btn_enviar_arquivos_locais')), findsOneWidget);
+      expect(find.text('Enviar arquivos da minha máquina'), findsOneWidget);
+    });
+  });
 }

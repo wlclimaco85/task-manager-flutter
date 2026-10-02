@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'dart:io' as io;
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../models/auth_utility.dart';
@@ -7,6 +13,7 @@ import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_colors.dart';
+import '../utils/tenant_context.dart';
 import '../windows/dialogs/fornecedor_form_dialog.dart';
 import 'nfce/nfce_notice_banner.dart';
 
@@ -380,6 +387,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
   bool _carregando = true;
   bool _salvando = false;
   bool _executando = false;
+  bool _enviandoArquivos = false;
   String? _erroCarregamento;
 
   DateTime? _ultimaExecucao;
@@ -590,6 +598,81 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
       AppLogger.i.error('[AutomacaoFiscal] Erro ao executar agora: $e', st);
     } finally {
       if (mounted) setState(() => _executando = false);
+    }
+  }
+
+  Future<void> _enviarArquivosLocais() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        allowMultiple: true,
+        withData: true,
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'xml', 'txt'],
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      setState(() => _enviandoArquivos = true);
+      _snack('Enviando ${result.files.length} arquivo(s) para o servidor e processando...');
+
+      final uri = Uri.parse('${ApiLinks.baseUrl}/api/automacao-fiscal/upload-lote');
+      final request = http.MultipartRequest('POST', uri);
+
+      final token = AuthUtility.userInfo?.token;
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      final tenantHeaders = Map<String, String>.from(TenantContext.headers);
+      request.headers.addAll(tenantHeaders);
+
+      for (final arq in result.files) {
+        Uint8List bytes;
+        if (arq.bytes != null) {
+          bytes = arq.bytes!;
+        } else if (arq.path != null) {
+          bytes = await io.File(arq.path!).readAsBytes();
+        } else {
+          continue;
+        }
+        request.files.add(http.MultipartFile.fromBytes(
+          'files',
+          bytes,
+          filename: arq.name,
+        ));
+      }
+
+      final streamed = await request.send();
+      final bodyStr = await streamed.stream.bytesToString();
+      if (!mounted) return;
+
+      if (streamed.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(bodyStr);
+        String mensagem = 'Execução concluída com sucesso!';
+        if (body['ultimoResultado'] != null) {
+          final res = body['ultimoResultado'].toString().trim();
+          if (res.isNotEmpty) {
+            mensagem = 'Execução concluída ($res).';
+            _ultimoResultado = res;
+          }
+        }
+        if (body['ultimaExecucao'] != null) {
+          _ultimaExecucao = DateTime.tryParse(body['ultimaExecucao'].toString());
+        }
+        if (body['ultimosLogs'] != null && body['ultimosLogs'] is List) {
+          _logs = List<Map<String, dynamic>>.from(
+              (body['ultimosLogs'] as List)
+                  .whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e)));
+        }
+        _snack(mensagem);
+        await _carregar();
+      } else {
+        _snack('Erro no envio (status ${streamed.statusCode}): $bodyStr', error: true);
+      }
+    } catch (e, st) {
+      if (mounted) _snack('Erro ao enviar arquivos: $e', error: true);
+      AppLogger.i.error('[AutomacaoFiscal] Erro no upload em lote: $e', st);
+    } finally {
+      if (mounted) setState(() => _enviandoArquivos = false);
     }
   }
 
@@ -1161,11 +1244,31 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                         'será executada.'),
                 onChanged: (v) => setState(() => _ativo = v),
               ),
-              const SizedBox(height: 12),
+              _avisoServidorNuvem(),
               LayoutBuilder(builder: (context, constraints) {
                 final compacto = constraints.maxWidth < _kCompactoBreakpoint;
+                final enviarArquivos = ElevatedButton.icon(
+                  key: const Key('btn_enviar_arquivos_locais'),
+                  onPressed: (_enviandoArquivos || _executando || _salvando)
+                      ? null
+                      : _enviarArquivosLocais,
+                  icon: _enviandoArquivos
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.cloud_upload_outlined),
+                  label: Text(_enviandoArquivos
+                      ? 'Processando...'
+                      : 'Enviar arquivos da minha máquina'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                );
                 final salvar = ElevatedButton.icon(
-                  onPressed: _salvando ? null : _salvar,
+                  onPressed: (_salvando || _enviandoArquivos) ? null : _salvar,
                   icon: _salvando
                       ? const SizedBox(
                           width: 16,
@@ -1180,7 +1283,7 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                   ),
                 );
                 final executar = OutlinedButton.icon(
-                  onPressed: _executando ? null : _executarAgora,
+                  onPressed: (_executando || _enviandoArquivos) ? null : _executarAgora,
                   icon: _executando
                       ? const SizedBox(
                           width: 16,
@@ -1193,15 +1296,48 @@ class _AutomacaoFiscalScreenState extends State<AutomacaoFiscalScreen> {
                 );
                 return compacto
                     ? Column(children: [
+                        SizedBox(width: double.infinity, child: enviarArquivos),
+                        const SizedBox(height: 8),
                         SizedBox(width: double.infinity, child: salvar),
                         const SizedBox(height: 8),
                         SizedBox(width: double.infinity, child: executar),
                       ])
-                    : Wrap(spacing: 12, children: [salvar, executar]);
+                    : Wrap(spacing: 12, runSpacing: 8, children: [enviarArquivos, salvar, executar]);
               }),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _avisoServidorNuvem() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: GridColors.info.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: GridColors.info.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.cloud_outlined, color: GridColors.info, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Aviso de Nuvem / Servidor Remoto: Quando o sistema está no servidor web/nuvem, ele não tem acesso '
+              'ao disco rígido local (C:\\...) do seu computador. Use o botão "Enviar arquivos da minha máquina" '
+              'para carregar e processar imediatamente os boletos, XMLs e SPEDs salvos no seu PC.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: GridColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
