@@ -27,8 +27,13 @@ void main() {
     // Botao de download do Windows no rodape
     expect(find.byKey(const Key('login_footer_download_windows')), findsOneWidget);
 
-    // Texto de download windows aparece na tela
+    // Botao de download do PDV Windows na lateral e no rodape
+    expect(find.byKey(const Key('login_sidebar_download_pdv_windows')), findsOneWidget);
+    expect(find.byKey(const Key('login_footer_download_pdv_windows')), findsOneWidget);
+
+    // Texto de download windows e pdv windows aparecem na tela
     expect(find.text(GridTexts.downloadWindows), findsAtLeastNWidgets(1));
+    expect(find.text(GridTexts.downloadPdvWindows), findsAtLeastNWidgets(1));
 
     // Botao da Play Store tambem continua presente
     expect(find.text('Baixar App na Play Store'), findsOneWidget);

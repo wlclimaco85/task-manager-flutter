@@ -15,6 +15,7 @@ class GridTexts {
   static const String footerPhone = '(34) 3321-6689';
   static const String footerHours = 'Seg-Sex: 09:00 - 18:00';
   static const String downloadWindows = 'Download Windows';
+  static const String downloadPdvWindows = 'Download PDV Windows';
   static const String downloadOpenError = 'Não foi possível abrir o download.';
 
   static const String loginUserHint = 'Usuário';

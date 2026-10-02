@@ -139,6 +139,14 @@ class ApiLinks {
   static String get windowsDownloadUrl => _windowsDownloadUrl.isNotEmpty
       ? _windowsDownloadUrl
       : '$_baseUrlNew/api/downloads/windows';
+
+  static const String _pdvWindowsDownloadUrl = String.fromEnvironment(
+    'PDV_WINDOWS_DOWNLOAD_URL',
+    defaultValue: '',
+  );
+  static String get pdvWindowsDownloadUrl => _pdvWindowsDownloadUrl.isNotEmpty
+      ? _pdvWindowsDownloadUrl
+      : '$_baseUrlNew/api/downloads/pdv-windows';
   static String get createNoticia => '$_baseUrlNew/api/noticias';
   static String updateNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
   static String deleteNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
