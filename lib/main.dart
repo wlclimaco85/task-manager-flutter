@@ -14,6 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
+import 'services/alerta_polling_service.dart';
 import 'services/session_expired_handler.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
@@ -138,6 +139,12 @@ void main() {
         _log('ModuloAccess.load ok');
       } catch (e, s) {
         _logErr('ModuloAccess.load', e, s);
+      }
+      try {
+        await AlertaPollingService.instance.iniciar();
+        _log('AlertaPollingService.iniciar ok');
+      } catch (e, s) {
+        _logErr('AlertaPollingService.iniciar', e, s);
       }
     }
 

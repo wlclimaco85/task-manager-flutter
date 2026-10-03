@@ -18,6 +18,7 @@ import '../../utils/assets_utils.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
+import '../services/alerta_polling_service.dart';
 import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
@@ -209,6 +210,11 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthUtility.setUserInfo(model);
       ModuloAccess.reset();
       await ModuloAccess.load();
+      try {
+        await AlertaPollingService.instance.iniciar();
+      } catch (e) {
+        debugPrint('[Login] erro ao iniciar AlertaPollingService: $e');
+      }
 
       if (mounted) {
         setState(() => _loginStepMessage = 'Conectando serviços e notificações...');
