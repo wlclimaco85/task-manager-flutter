@@ -2,6 +2,7 @@ import '../models/network_response.dart';
 import '../utils/api_links.dart';
 import '../utils/dropdown_helpers.dart';
 import '../utils/parceiro_faturamento_utils.dart';
+import '../utils/tenant_context.dart';
 import '../widgets/searchable_dropdown.dart';
 import 'network_caller.dart';
 
@@ -24,8 +25,14 @@ class ParceiroFaturamentoService {
 
   static Future<List<Map<String, dynamic>>> buscarSeries(String busca) async {
     final query = busca.trim();
-    final url = '${ApiLinks.allNfseSerie}?pagina=0&tamanho=200'
-        '${query.isEmpty ? '' : '&serie=${Uri.encodeQueryComponent(query)}'}';
+    final params = <String>[
+      'pagina=0',
+      'tamanho=200',
+      if (TenantContext.empresaId != null) 'empId=${TenantContext.empresaId}',
+      if (TenantContext.parceiroId != null) 'parceiroId=${TenantContext.parceiroId}',
+      if (query.isNotEmpty) 'serie=${Uri.encodeQueryComponent(query)}',
+    ];
+    final url = '${ApiLinks.allNfseSerie}?${params.join('&')}';
     final response = await NetworkCaller().getRequest(url);
     if (!response.isSuccess || response.body == null) return [];
     final series = _extrairLista(response.body);
