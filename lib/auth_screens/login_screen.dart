@@ -183,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
         'password': _passwordController.text
       });
     } catch (e) {
-      setState(() => _loginInProgress = false);
+      if (mounted) setState(() => _loginInProgress = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Erro ao conectar: $e',
@@ -194,11 +194,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() => _loginInProgress = false);
     if (resp.isSuccess && resp.body != null) {
       final model = LoginModel.fromJson(resp.body!);
       if ((model.token ?? '').isEmpty) {
         if (mounted) {
+          setState(() => _loginInProgress = false);
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text(GridTexts.loginTokenMissing)));
         }
@@ -222,6 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
+        setState(() => _loginInProgress = false);
         final email = model.login?.email ?? '';
         if (email.isNotEmpty) {
           await _showTrocarSenhaDialog(email);
@@ -230,6 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       _goHome();
     } else if (mounted) {
+      setState(() => _loginInProgress = false);
       _passwordController.clear();
       final msg = resp.statusCode == 400 || resp.statusCode == 401
           ? GridTexts.loginInvalidCredentials
