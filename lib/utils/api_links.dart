@@ -1086,6 +1086,8 @@ class ApiLinks {
   static String nfeById(String id) => '$_baseUrlNew/api/nfe/$id';
   static String updateNfe(String id) => '$_baseUrlNew/api/nfe/$id';
   static String get allNfeTipoOperacao => '$_baseUrlNew/api/nfe-tipo-operacao';
+  static String get allNfeSerie => '$_baseUrlNew/api/nfe_serie';
+  static String nfeSerie(String id) => '$_baseUrlNew/api/nfe_serie/$id';
 
   // NFe XML Import
   // Bug de producao: apontava para '/api/fiscal/nfe-importacao/...', rota

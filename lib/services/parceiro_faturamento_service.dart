@@ -32,13 +32,42 @@ class ParceiroFaturamentoService {
       if (TenantContext.parceiroId != null) 'parceiroId=${TenantContext.parceiroId}',
       if (query.isNotEmpty) 'serie=${Uri.encodeQueryComponent(query)}',
     ];
-    final url = '${ApiLinks.allNfseSerie}?${params.join('&')}';
-    final response = await NetworkCaller().getRequest(url);
-    if (!response.isSuccess || response.body == null) return [];
-    final series = _extrairLista(response.body);
-    if (query.isEmpty) return series;
+
+    final queryString = params.join('&');
+    final urlNfse = '${ApiLinks.allNfseSerie}?$queryString';
+    final urlNfe = '${ApiLinks.allNfeSerie}?$queryString';
+
+    final resNfse = await NetworkCaller().getRequest(urlNfse);
+    final resNfe = await NetworkCaller().getRequest(urlNfe);
+
+    final seriesNfse = (resNfse.isSuccess && resNfse.body != null)
+        ? _extrairLista(resNfse.body)
+        : <Map<String, dynamic>>[];
+    final seriesNfe = (resNfe.isSuccess && resNfe.body != null)
+        ? _extrairLista(resNfe.body)
+        : <Map<String, dynamic>>[];
+
+    // Filtrar séries de NFe que sejam do tipo 'NFS-e' (ou sem tipo especificado)
+    final seriesNfeFiltradas = seriesNfe.where((item) {
+      final tipo = item['tipo']?.toString().toUpperCase();
+      return tipo == null || tipo.isEmpty || tipo == 'NFS-E' || tipo == 'NFSE';
+    }).toList();
+
+    // Combinar evitando duplicatas de id
+    final idsVistos = <String>{};
+    final combinadas = <Map<String, dynamic>>[];
+
+    for (final item in [...seriesNfse, ...seriesNfeFiltradas]) {
+      final idKey = '${item['id']}_${item['serie']}';
+      if (!idsVistos.contains(idKey)) {
+        idsVistos.add(idKey);
+        combinadas.add(item);
+      }
+    }
+
+    if (query.isEmpty) return combinadas;
     final termo = query.toLowerCase();
-    return series.where((item) {
+    return combinadas.where((item) {
       final serie = item['serie']?.toString().toLowerCase() ?? '';
       final descricao = item['descricao']?.toString().toLowerCase() ?? '';
       return serie.contains(termo) || descricao.contains(termo);
