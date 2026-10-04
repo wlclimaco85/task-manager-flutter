@@ -723,7 +723,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
-    if (_statusAtual != 'CONFIRMADA') return;
+    if (_statusAtual == 'AUTORIZADA') return;
     setState(() => _enviando = true);
     try {
       final r =
@@ -1072,7 +1072,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               label: const Text('Confirmar NFS-e',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
-          if (_statusAtual == 'CONFIRMADA')
+          if (_statusAtual == 'CONFIRMADA' ||
+              _statusAtual == 'REJEITADA' ||
+              _statusAtual == 'ERRO' ||
+              _statusAtual == 'FALHA')
             TextButton.icon(
               onPressed: !_enviando ? _enviarNfse : null,
               icon: _enviando
@@ -1082,8 +1085,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send, size: 16, color: Colors.white),
-              label: const Text('Emitir NFS-e',
-                  style: TextStyle(color: Colors.white, fontSize: 12)),
+              label: Text(_statusAtual == 'CONFIRMADA' ? 'Emitir NFS-e' : 'Reenviar NFS-e',
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
             ),
           if (_podeCancelar)
             TextButton.icon(
