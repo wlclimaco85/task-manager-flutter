@@ -94,7 +94,7 @@ class _ParceiroFaturamentoDialogState extends State<ParceiroFaturamentoDialog> {
                 label: 'Serie NFS-e',
                 value: _serieId,
                 valueField: 'id',
-                displayField: 'serie',
+                displayField: 'display',
                 isRequired: true,
                 onSearch: ParceiroFaturamentoService.buscarSeries,
                 validator: (value) => value == null || value.isEmpty

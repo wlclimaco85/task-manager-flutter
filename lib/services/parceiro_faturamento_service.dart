@@ -65,12 +65,24 @@ class ParceiroFaturamentoService {
       }
     }
 
+    // Montar rotulo de exibicao 'display' com formato "serie - descricao" (ex: "001 - Nota de serviço")
+    for (final item in combinadas) {
+      final s = item['serie']?.toString().trim() ?? '';
+      final d = item['descricao']?.toString().trim() ?? '';
+      if (d.isNotEmpty) {
+        item['display'] = '$s - $d';
+      } else {
+        item['display'] = s;
+      }
+    }
+
     if (query.isEmpty) return combinadas;
     final termo = query.toLowerCase();
     return combinadas.where((item) {
+      final display = item['display']?.toString().toLowerCase() ?? '';
       final serie = item['serie']?.toString().toLowerCase() ?? '';
       final descricao = item['descricao']?.toString().toLowerCase() ?? '';
-      return serie.contains(termo) || descricao.contains(termo);
+      return display.contains(termo) || serie.contains(termo) || descricao.contains(termo);
     }).toList();
   }
 
