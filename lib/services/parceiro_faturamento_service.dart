@@ -65,7 +65,7 @@ class ParceiroFaturamentoService {
       }
     }
 
-    // Montar rotulo de exibicao 'display' com formato "serie - descricao [Empresa: ... / Parceiro: ...]"
+    // Montar rotulo de exibicao 'display' com formato "serie - descricao (Parceiro: ...)" ou "serie - descricao (Empresa: ...)"
     for (final item in combinadas) {
       final s = item['serie']?.toString().trim() ?? '';
       final d = item['descricao']?.toString().trim() ?? '';
@@ -74,12 +74,10 @@ class ParceiroFaturamentoService {
       final emp = item['empresa']?['nome'] ?? item['empresa']?['razaoSocial'] ?? item['empresaNome'];
       final parc = item['parceiro']?['nome'] ?? item['parceiro']?['razaoSocial'] ?? item['parceiroNome'];
 
-      final det = <String>[];
-      if (emp != null && emp.toString().isNotEmpty) det.add('Empresa: $emp');
-      if (parc != null && parc.toString().isNotEmpty) det.add('Parceiro: $parc');
-
-      if (det.isNotEmpty) {
-        label += ' (${det.join(' / ')})';
+      if (parc != null && parc.toString().isNotEmpty) {
+        label += ' (Parceiro: $parc)';
+      } else if (emp != null && emp.toString().isNotEmpty) {
+        label += ' (Empresa: $emp)';
       }
 
       item['display'] = label;
