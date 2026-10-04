@@ -65,15 +65,24 @@ class ParceiroFaturamentoService {
       }
     }
 
-    // Montar rotulo de exibicao 'display' com formato "serie - descricao" (ex: "001 - Nota de serviço")
+    // Montar rotulo de exibicao 'display' com formato "serie - descricao [Empresa: ... / Parceiro: ...]"
     for (final item in combinadas) {
       final s = item['serie']?.toString().trim() ?? '';
       final d = item['descricao']?.toString().trim() ?? '';
-      if (d.isNotEmpty) {
-        item['display'] = '$s - $d';
-      } else {
-        item['display'] = s;
+      String label = d.isNotEmpty ? '$s - $d' : s;
+
+      final emp = item['empresa']?['nome'] ?? item['empresa']?['razaoSocial'] ?? item['empresaNome'];
+      final parc = item['parceiro']?['nome'] ?? item['parceiro']?['razaoSocial'] ?? item['parceiroNome'];
+
+      final det = <String>[];
+      if (emp != null && emp.toString().isNotEmpty) det.add('Empresa: $emp');
+      if (parc != null && parc.toString().isNotEmpty) det.add('Parceiro: $parc');
+
+      if (det.isNotEmpty) {
+        label += ' (${det.join(' / ')})';
       }
+
+      item['display'] = label;
     }
 
     if (query.isEmpty) return combinadas;
