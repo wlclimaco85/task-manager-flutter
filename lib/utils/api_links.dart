@@ -1136,6 +1136,7 @@ class ApiLinks {
   static String get allNfse => '$_baseUrlNew/api/nfse';
   static String nfse(String id) => '$_baseUrlNew/api/nfse/$id';
   static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
+  static String get allNfeSerie => '$_baseUrlNew/api/nfe_serie';
   static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
