@@ -1073,6 +1073,8 @@ class ApiLinks {
       '$_baseUrlNew/api/nfse/$nfseId/confirmar';
   static String danfseNfse(String nfseId) =>
       '$_baseUrlNew/api/nfse/$nfseId/danfse';
+  static String cancelarNfseNacional(String nfseId) =>
+      '$_baseUrlNew/api/nfse/$nfseId/cancelar-nacional';
   static String aceitarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
@@ -1086,8 +1088,6 @@ class ApiLinks {
   static String nfeById(String id) => '$_baseUrlNew/api/nfe/$id';
   static String updateNfe(String id) => '$_baseUrlNew/api/nfe/$id';
   static String get allNfeTipoOperacao => '$_baseUrlNew/api/nfe-tipo-operacao';
-  static String get allNfeSerie => '$_baseUrlNew/api/nfe_serie';
-  static String nfeSerie(String id) => '$_baseUrlNew/api/nfe_serie/$id';
 
   // NFe XML Import
   // Bug de producao: apontava para '/api/fiscal/nfe-importacao/...', rota
