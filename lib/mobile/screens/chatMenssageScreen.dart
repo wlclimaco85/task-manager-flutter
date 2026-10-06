@@ -184,23 +184,46 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
-    if (content.isEmpty || _channel == null) return;
+    if (content.isEmpty) return;
 
-    _channel!.sink.add(json.encode({
-      'sender': _loggedUserName,
-      'senderName': _loggedUserName,
-      'senderEmail': _loggedUserEmail,
-      'content': content,
-      'sector': widget.sector,
-      'type': 'text',
-      'timestamp': DateTime.now().toIso8601String(),
-      'chatId': _effectiveChatId,
-      if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-      if (TenantContext.aplicativoId != null)
-        'codApp': TenantContext.aplicativoId,
-    }));
+    // Bug real (2026-10-06, ver bugs.md): usuario digitava e clicava
+    // enviar e a mensagem nunca aparecia na conversa, sem nenhum erro
+    // visivel. Causa: `_channel` fica nao-nulo assim que o canal e'
+    // criado (so' construtor, nao espera o handshake), entao o guard
+    // antigo `_channel == null` nunca pegava um socket que falhou/caiu
+    // depois de criado -- e o `sink.add()` nao tinha try/catch, entao se
+    // o socket ja estivesse fechado/quebrado a excecao sumia e o texto
+    // digitado nunca era limpo nem reenviado. `_wsConnected` (atualizado
+    // em onError/onDone) reflete o estado real da conexao; e o sink.add()
+    // agora reporta falha via AppLogger + SnackBar em vez de falhar
+    // silenciosamente.
+    if (_channel == null || !_wsConnected) {
+      AppLogger.i.warn(
+          'Chat: tentativa de envio sem WebSocket ativo (setor=${widget.sector}, chatId=$_effectiveChatId)');
+      _showSnack('Sem conexao com o chat. Tentando reconectar...',
+          error: true);
+      return;
+    }
 
-    _messageController.clear();
+    try {
+      _channel!.sink.add(json.encode({
+        'sender': _loggedUserName,
+        'senderName': _loggedUserName,
+        'senderEmail': _loggedUserEmail,
+        'content': content,
+        'sector': widget.sector,
+        'type': 'text',
+        'timestamp': DateTime.now().toIso8601String(),
+        'chatId': _effectiveChatId,
+        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+        if (TenantContext.aplicativoId != null)
+          'codApp': TenantContext.aplicativoId,
+      }));
+      _messageController.clear();
+    } catch (e, st) {
+      AppLogger.i.error('Chat: falha ao enviar mensagem via WebSocket: $e', st);
+      _showSnack('Falha ao enviar mensagem: $e', error: true);
+    }
   }
 
   Future<void> _uploadAndSendFile() async {
