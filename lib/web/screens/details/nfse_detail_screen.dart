@@ -198,7 +198,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
     final status = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
     _statusVal = status;
-    _numeroCtrl.text = i['numero']?.toString() ?? '';
+    _numeroCtrl.text = status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
     _serieCtrl.text = i['serie']?.toString() ?? '';
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
@@ -327,31 +327,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       // cadastrada nunca aparecia aqui porque vinha da tabela errada.
       _loadList(
           '${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(() {
-                _series = d.where((s) {
-                  final tipo = s['tipo']?.toString().trim();
-                  final normalizado = tipo?.replaceAll('_', '-').toUpperCase();
-                  return normalizado == 'NFS-E' || normalizado == 'NFSE';
-                }).toList();
-                if (_serieCtrl.text.isNotEmpty) {
-                  final match = _series.firstWhere(
-                    (s) =>
-                        s['serie']?.toString().trim() == _serieCtrl.text.trim() ||
-                        s['id']?.toString() == _serieId,
-                    orElse: () => {},
-                  );
-                  if (match.isNotEmpty) {
-                    _serieId = match['id']?.toString();
-                    _serieCtrl.text = match['serie']?.toString() ?? _serieCtrl.text;
-                    if (_numeroCtrl.text.isEmpty) {
-                      final proxNum = _numeroAtualSerie(match);
-                      if (proxNum != null) {
-                        _numeroCtrl.text = proxNum.toString();
-                      }
-                    }
-                  }
-                }
-              })),
+          (d) => setState(() => _series = d.where((s) {
+                final tipo = s['tipo']?.toString().trim();
+                final normalizado = tipo?.replaceAll('_', '-').toUpperCase();
+                return normalizado == 'NFS-E' || normalizado == 'NFSE';
+              }).toList())),
       // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
       // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
       // carregar tudo e filtrar no cliente truncava a lista e a busca por
@@ -631,16 +611,6 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             .toList();
         for (final item in itens) {
           _normalizarServicoItem(item);
-          final prodId = (item['produto'] is Map
-                  ? item['produto']['id']
-                  : item['produto_id'])
-              ?.toString();
-          if ((item['aliquotaIss'] == null ||
-                  _num(item['aliquotaIss']) == 0) &&
-              prodId != null &&
-              prodId.isNotEmpty) {
-            await _carregarImpostosServico(item, prodId);
-          }
         }
         setState(() => _itens = itens);
       }
@@ -652,7 +622,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   Future<bool> _salvarCabecalho({bool showFeedback = true}) async {
     final body = <String, dynamic>{
       if (!_isNovo) 'id': _item['id'],
-      if (_numeroCtrl.text.isNotEmpty)
+      if ((_statusAtual == 'AUTORIZADA' || _statusVal == 'AUTORIZADA') &&
+          _numeroCtrl.text.isNotEmpty)
         'numero': _numeroCtrl.text,
       'serie': _serieCtrl.text,
       'municipioPrestacao': _municipioCtrl.text,
@@ -752,11 +723,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   /// e o backend so tinha um fluxo mockado que sempre "funcionava" sem
   /// transmitir nada de verdade.
   Future<void> _enviarNfse() async {
-    if (_statusAtual == 'AUTORIZADA') return;
-    if (!_isNovo) {
-      final salvo = await _salvarCabecalho(showFeedback: false);
-      if (!salvo || !mounted) return;
-    }
+    if (_statusAtual != 'CONFIRMADA' && _statusAtual != 'REJEITADA') return;
     setState(() => _enviando = true);
     try {
       final r =
@@ -1042,19 +1009,22 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             selected['codigo_tributacao_municipal']?.toString() ??
             item['codigoTributacaoMunicipal'] ??
             '';
-
-    final aliqDireta = selected['aliquotaIss'] ??
-        selected['aliquota_iss'] ??
-        selected['aliqIss'] ??
-        selected['aliq_iss'];
-    if (aliqDireta != null && _num(aliqDireta) > 0) {
-      item['aliquotaIss'] = aliqDireta.toString();
-      item['aliquota_iss'] = aliqDireta.toString();
-    }
-
-    if (id != null && id.isNotEmpty) {
-      _carregarImpostosServico(item, id);
+            
+    final temIss = selected['temIss'] == true || selected['tem_iss'] == true;
+    
+    if (temIss) {
+      if (id != null) {
+        _carregarImpostosServico(item, id);
+      } else {
+        _recalcularServicoItem(item);
+      }
     } else {
+      item['aliquotaIss'] = '0.00';
+      item['aliquota_iss'] = '0.00';
+      item['valorIss'] = '0.00';
+      item['valor_iss'] = '0.00';
+      item['codigoTributacaoMunicipal'] = '';
+      item['codigo_tributacao_municipal'] = '';
       _recalcularServicoItem(item);
     }
   }
@@ -1070,22 +1040,13 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       final imp = Map<String, dynamic>.from(raw.first as Map);
       if (!mounted) return;
       setState(() {
-        final aliq = imp['aliqIss'] ??
-            imp['aliquotaIss'] ??
-            imp['aliq_iss'] ??
-            imp['aliquota_iss'];
-        if (aliq != null && aliq.toString().isNotEmpty) {
-          item['aliquotaIss'] = aliq.toString();
-          item['aliquota_iss'] = aliq.toString();
-        }
-        final codTrib = imp['codTribIss'] ??
-            imp['codigoTributacaoMunicipal'] ??
-            imp['cod_trib_iss'] ??
-            imp['codigo_tributacao_municipal'];
-        if (codTrib != null && codTrib.toString().isNotEmpty) {
-          item['codigoTributacaoMunicipal'] = codTrib.toString();
-          item['codigo_tributacao_municipal'] = codTrib.toString();
-        }
+        item['aliquotaIss'] =
+            (imp['aliqIss'] ?? imp['aliquotaIss'] ?? item['aliquotaIss'])
+                ?.toString();
+        item['codigoTributacaoMunicipal'] = (imp['codTribIss'] ??
+                imp['codigoTributacaoMunicipal'] ??
+                item['codigoTributacaoMunicipal'])
+            ?.toString();
         _recalcularServicoItem(item);
       });
     } catch (_) {}
@@ -1103,7 +1064,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE')
+          if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE' || _statusAtual == 'REJEITADA' || _statusAtual == 'DIGITACAO' || _statusAtual == 'CRIADA')
             TextButton.icon(
               onPressed: !_enviando ? _confirmarNfse : null,
               icon:
@@ -1111,10 +1072,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               label: const Text('Confirmar NFS-e',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
-          if (_statusAtual == 'CONFIRMADA' ||
-              _statusAtual == 'REJEITADA' ||
-              _statusAtual == 'ERRO' ||
-              _statusAtual == 'FALHA')
+          if (_statusAtual == 'CONFIRMADA' || _statusAtual == 'REJEITADA')
             TextButton.icon(
               onPressed: !_enviando ? _enviarNfse : null,
               icon: _enviando
@@ -1124,7 +1082,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send, size: 16, color: Colors.white),
-              label: Text(_statusAtual == 'CONFIRMADA' ? 'Emitir NFS-e' : 'Reenviar NFS-e',
+              label: Text(_statusAtual == 'REJEITADA' ? 'Reenviar NFS-e' : 'Emitir NFS-e',
                   style: const TextStyle(color: Colors.white, fontSize: 12)),
             ),
           if (_podeCancelar)
@@ -1144,9 +1102,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           if (_statusAtual == 'AUTORIZADA')
             TextButton.icon(
               onPressed: _baixarPdf,
-              icon: const Icon(Icons.picture_as_pdf,
+              icon: const Icon(Icons.print,
                   size: 16, color: Colors.white),
-              label: const Text('Baixar PDF',
+              label: const Text('Imprimir',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
           const SizedBox(width: 8),
@@ -1250,14 +1208,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               _ddSerie(),
               _inpDisabledText(
                   'Número',
-                  _numeroCtrl.text.isNotEmpty
+                  (_statusVal == 'AUTORIZADA' || _statusAtual == 'AUTORIZADA')
                       ? _numeroCtrl.text
-                      : (_serieId != null
-                          ? (_numeroAtualSerie(_series.firstWhere(
-                                      (s) => s['id']?.toString() == _serieId,
-                                      orElse: () => {}))?.toString() ??
-                                  '')
-                          : '')),
+                      : ''),
               _dateField('Data Emissão', _dataEmissao,
                   (d) => setState(() => _dataEmissao = d)),
               _dateField('Data Competência', _dataCompetencia,
@@ -1404,18 +1357,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         nullable: true,
         nullLabel: '— Selecione —',
         onChanged: (v) {
-          setState(() {
-            _serieId = v;
-            final s = _series.firstWhere((o) => o['id']?.toString() == v,
-                orElse: () => {});
-            if (s.isNotEmpty) {
-              _serieCtrl.text = s['serie']?.toString() ?? '';
-              final proxNum = _numeroAtualSerie(s);
-              if (proxNum != null) {
-                _numeroCtrl.text = proxNum.toString();
-              }
-            }
-          });
+          setState(() => _serieId = v);
+          final s = _series.firstWhere((o) => o['id']?.toString() == v,
+              orElse: () => {});
+          if (s.isNotEmpty) {
+            _serieCtrl.text = s['serie']?.toString() ?? '';
+          }
         },
       ),
     );

@@ -8,15 +8,15 @@ void main() {
         .readAsStringSync();
 
     expect(source, contains('_tomadorNome'));
-    expect(source, contains('_parceiroEmissorId'));
+    expect(source, contains('TenantContext.hasParceiro'));
     expect(source, contains("replaceAll('_', '-').toUpperCase()"));
     expect(source, contains("normalizado == 'NFS-E'"));
     expect(source, contains("serie['numeroAtual'] ?? serie['numero_atual']"));
     expect(
         source,
         contains(
-            "if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE')"));
-    expect(source, contains("if (_statusAtual == 'CONFIRMADA'"));
+            "if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE' || _statusAtual == 'REJEITADA' || _statusAtual == 'DIGITACAO' || _statusAtual == 'CRIADA')"));
+    expect(source, contains("if (_statusAtual == 'CONFIRMADA' || _statusAtual == 'REJEITADA')"));
     expect(source, contains('ApiLinks.confirmarNfse(_nfseId)'));
     expect(source, contains('ApiLinks.emitirNfseNacional(_nfseId)'));
     expect(source, contains("'observacao': _observacaoCtrl.text"));
