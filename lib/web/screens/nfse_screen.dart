@@ -583,9 +583,11 @@ class _NfseScreenState extends State<NfseScreen> {
       ));
   }
 
-  /// Cancela (`POST /api/fiscal/nfse/cancelar`) item a item, pedindo o motivo
-  /// UMA ÚNICA VEZ (aplicado a todas as selecionadas) — mesmo endpoint/corpo
-  /// usado por `nfse_detail_screen.dart._cancelarNfse`.
+  /// Cancela (`POST /api/nfse/{id}/cancelar-nacional`) item a item, pedindo o
+  /// motivo UMA ÚNICA VEZ (aplicado a todas as selecionadas) — mesmo endpoint
+  /// real usado por `nfse_detail_screen.dart._cancelarNfse` (bug real
+  /// 2026-10-06: endpoint legado `/api/fiscal/nfse/cancelar` dava 403 sempre
+  /// e usava adapter mockado; ver bugs.md).
   Future<void> _bulkCancelar(
     BuildContext context,
     List<Map<String, dynamic>> items,
@@ -646,13 +648,23 @@ class _NfseScreenState extends State<NfseScreen> {
         continue;
       }
       try {
-        final r = await TenantContext.post(ApiLinks.nfseCancelar, {
-          'empresaId': item['empresaId'],
-          'municipio': item['municipioPrestacao'] ?? item['municipio'],
-          'nfseNumber': item['numero'],
-          'motivo': motivo,
-          'nfseId': int.tryParse(id),
-        });
+        // Bug real (2026-10-06, ver bugs.md): o endpoint legado
+        // POST /api/fiscal/nfse/cancelar (NfseAppController/NfseFacade) exige
+        // 'empresaId' no corpo (@NotNull), mas o item da grid so' tem o campo
+        // aninhado 'empresa': {'id': ...} -- nunca um 'empresaId' plano. O
+        // corpo sempre ia com empresaId=null; como nao ha' validacao Bean
+        // Validation no classpath (@Valid vira no-op), isso nunca dava 400 --
+        // ia direto pro @PreAuthorize, que chama tenantSecurity.canAccess(null)
+        // => sempre false => 403 "Acesso negado" pra TODO cancelamento. Alem
+        // disso esse endpoint usa o adapter MOCKADO (SafeMockAdapter), entao
+        // mesmo corrigindo o corpo ele so' fingiria cancelar sem avisar a
+        // prefeitura -- risco real de imposto gerado numa nota "cancelada".
+        // Trocado pelo endpoint real ja' testado em producao contra o WebISS
+        // Uberaba (POST /api/nfse/{id}/cancelar-nacional, bugs.md 2026-10-05).
+        final r = await TenantContext.post(
+          '${ApiLinks.cancelarNfseNacional(id)}?motivo=${Uri.encodeComponent(motivo)}',
+          {},
+        );
         if (r.statusCode == 200 || r.statusCode == 201) {
           ok++;
         } else {

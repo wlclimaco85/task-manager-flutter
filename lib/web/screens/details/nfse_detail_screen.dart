@@ -827,13 +827,20 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     if (!mounted || motivo == null || motivo.isEmpty) return;
 
     try {
-      final r = await TenantContext.post(ApiLinks.nfseCancelar, {
-        'empresaId': int.tryParse(_empresaId ?? '') ?? 0,
-        'municipio': _municipioCtrl.text,
-        'nfseNumber': _numeroCtrl.text,
-        'motivo': motivo,
-        'nfseId': int.tryParse(_nfseId),
-      });
+      // Bug real (2026-10-06, ver bugs.md): o endpoint legado
+      // POST /api/fiscal/nfse/cancelar exige 'empresaId' no corpo, mas
+      // '_empresaId' nem sempre reflete o empresaId REAL da NFSe (cai pro
+      // default 0 quando vazio) -- o backend comparava 0 contra o
+      // empresaId da sessao e negava com 403 pra TODO cancelamento. Alem
+      // disso esse endpoint usa o adapter MOCKADO (SafeMockAdapter): mesmo
+      // corrigindo o corpo, so' fingiria cancelar sem avisar a prefeitura.
+      // Trocado pelo endpoint real ja' testado em producao contra o
+      // WebISS Uberaba (POST /api/nfse/{id}/cancelar-nacional, bugs.md
+      // 2026-10-05), que resolve a NFSe e o empresaId direto no backend.
+      final r = await TenantContext.post(
+        '${ApiLinks.cancelarNfseNacional(_nfseId)}?motivo=${Uri.encodeComponent(motivo)}',
+        {},
+      );
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() {
