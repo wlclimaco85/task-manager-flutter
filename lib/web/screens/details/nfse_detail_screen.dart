@@ -199,7 +199,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final status = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
     _statusVal = status;
     _numeroCtrl.text = status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
-    _serieCtrl.text = i['serie']?.toString() ?? '';
+    if (_serieId == null) _serieCtrl.text = i['serie']?.toString() ?? '';
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
     _codigoServicoCtrl.text = _codigoServicoMunicipalInicial(i);
@@ -215,11 +215,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     _parceiroEmissorNome = login?.parceiro?.nome ??
         login?.parceiro?.razaoSocial ??
         (_parceiroEmissorId == null ? null : 'Parceiro $_parceiroEmissorId');
-    final cidadeParceiro =
-        login?.parceiro?.cidade ?? login?.parceiro?.endereco?.cidade?.nome;
-    if (_isNovo && _municipioCtrl.text.isEmpty && cidadeParceiro != null) {
-      _municipioCtrl.text = cidadeParceiro;
-    }
+    // Municipio de prestacao: default vem da empresa prestadora
+    // (_aplicarMunicipioDaEmpresa), nao do parceiro logado.
     final ambienteParceiro = resolveNfseTomadorDefaults({
       'ambiente': login?.parceiro?.ambiente,
     }).ambiente;
@@ -244,7 +241,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     if (i['serie'] is Map) {
       _serieId = i['serie']['id']?.toString();
       _serieCtrl.text = i['serie']['serie']?.toString() ?? '';
-    } else {
+    } else if (_serieId == null) {
       _serieCtrl.text = i['serie']?.toString() ?? '';
     }
 
@@ -340,6 +337,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
+    _sincronizarSerieIdComNumero();
+    await _aplicarMunicipioDaEmpresa();
     if (_parceiroEmissorId != null && _parceiroEmissorId!.isNotEmpty) {
       await _carregarDadosParceiroEmissor();
     } else {
@@ -529,6 +528,58 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       AppLogger.i.error(
           'Erro ao carregar ambiente/municipio da empresa $_empresaId para nova NFS-e: $e',
           stack);
+    }
+  }
+
+  /// Municipio de prestacao padrao = cidade da EMPRESA prestadora (nunca a do
+  /// parceiro logado/emissor, que gerava "Ituiutaba" para tomador de Uberaba).
+  Future<void> _aplicarMunicipioDaEmpresa() async {
+    if (!_isNovo || _municipioCtrl.text.trim().isNotEmpty) return;
+    final nome = _login?.empresa?.cidade?.trim();
+    if (nome == null || nome.isEmpty) return;
+    Map<String, dynamic>? encontrada;
+    try {
+      final resultados = await _buscarCidadesServidor(nome);
+      for (final cidade in resultados) {
+        if (cidade['nome']?.toString().trim().toUpperCase() ==
+            nome.toUpperCase()) {
+          encontrada = cidade;
+          break;
+        }
+      }
+    } catch (e, stack) {
+      AppLogger.i.error(
+          'Erro ao localizar cidade da empresa "$nome" para a NFS-e: $e', stack);
+    }
+    if (!mounted || _municipioCtrl.text.trim().isNotEmpty) return;
+    setState(() {
+      _municipioCtrl.text = nome;
+      final id = encontrada?['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        _cidadeId = id;
+        if (!_cidades.any((c) => c['id']?.toString() == id)) {
+          _cidades = [_cidadeDropdownItem(encontrada!), ..._cidades];
+        }
+        if (_codigoServicoCtrl.text.trim().isEmpty) {
+          _codigoServicoCtrl.text =
+              _codigoServicoMunicipalDaCidade(encontrada!);
+        }
+      }
+    });
+  }
+
+  /// A serie de uma NFS-e ja salva chega como texto ("001"), nao como objeto:
+  /// resolve o id da serie pelo numero para o campo Serie nao ficar
+  /// "— Selecione —" (e para nao perder o numero ao reabrir/recarregar).
+  void _sincronizarSerieIdComNumero() {
+    if (_serieId != null) return;
+    final numero = _serieCtrl.text.trim();
+    if (numero.isEmpty) return;
+    for (final s in _series) {
+      if (s['serie']?.toString().trim() == numero) {
+        setState(() => _serieId = s['id']?.toString());
+        return;
+      }
     }
   }
 
