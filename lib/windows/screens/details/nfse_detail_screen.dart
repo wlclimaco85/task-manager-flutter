@@ -87,7 +87,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String get _statusAtual => (_statusVal ?? 'RASCUNHO').toUpperCase();
   bool get _podeExcluir =>
       !_isNovo &&
-      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE'}.contains(_statusAtual);
+      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE', 'REJEITADA'}.contains(_statusAtual);
   bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
   dynamic get _login =>
       AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;

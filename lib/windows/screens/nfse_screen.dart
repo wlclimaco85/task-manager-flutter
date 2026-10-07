@@ -569,6 +569,7 @@ class _NfseScreenState extends State<NfseScreen> {
         AppLogger.i.error('Ação em massa "Enviar" NFS-e #$id: $e', st);
       }
     }
+    _dynamicGridKey.currentState?.reload(); // status mudou no servidor (ex.: REJEITADA)
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -674,6 +675,7 @@ class _NfseScreenState extends State<NfseScreen> {
         AppLogger.i.error('Ação em massa "Cancelar" NFS-e #$id: $e', st);
       }
     }
+    _dynamicGridKey.currentState?.reload(); // status mudou no servidor (ex.: REJEITADA)
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(falhas.isEmpty
