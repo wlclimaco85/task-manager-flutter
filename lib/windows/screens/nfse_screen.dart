@@ -8,6 +8,7 @@ import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
+import '../../widgets/nfse_faturar_dialog.dart';
 import '../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, BulkAction;
 import '../../widgets/searchable_dropdown.dart';
@@ -706,6 +707,13 @@ class _NfseScreenState extends State<NfseScreen> {
             ),
           ),
           const Spacer(),
+          IconButton(
+            key: const Key('nfse_faturar_botao'),
+            icon: const Icon(Icons.request_quote, color: Colors.white),
+            tooltip: 'Faturar',
+            onPressed: () => showNfseFaturarDialog(context,
+                onConcluido: () => _dynamicGridKey.currentState?.reload()),
+          ),
           IconButton(
             icon: Icon(
               _filtrosVisiveis ? Icons.filter_alt : Icons.filter_alt_outlined,

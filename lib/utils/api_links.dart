@@ -1075,6 +1075,10 @@ class ApiLinks {
       '$_baseUrlNew/api/nfse/$nfseId/danfse';
   static String cancelarNfseNacional(String nfseId) =>
       '$_baseUrlNew/api/nfse/$nfseId/cancelar-nacional';
+  // Acao "Faturar" da NFS-e (mensalidade + contas + GED + emissao numa transacao)
+  static String get nfseFaturar => '$_baseUrlNew/api/nfse/faturar';
+  static String nfseFaturarResumo(int tomadorId, int mes, int ano) =>
+      '$_baseUrlNew/api/nfse/faturar/resumo?tomadorId=$tomadorId&mes=$mes&ano=$ano';
   static String aceitarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
