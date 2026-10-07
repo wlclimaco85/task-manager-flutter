@@ -15,6 +15,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
         FileConfig,
         FieldType,
         GenericGridScreen,
+        OnItemTap,
         GenericGridScreenState,
         ExportConfig,
         PaginationConfig,
@@ -68,6 +69,10 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   /// estão, sem lógica própria neste nível (só plumbing).
   final Future<Map<String, dynamic>> Function(T item)? prefetchExtraFields;
 
+  /// Clique numa linha (repassado ao GenericGridScreen.onItemTap) — permite a
+  /// tela hospedeira editar o registro no proprio espaco da grid, sem popup.
+  final OnItemTap<T>? onItemTap;
+
   const DynamicGridWindowsScreen({
     super.key,
     required this.telaNome,
@@ -92,6 +97,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.onAfterSave,
     this.onSelectedRowsChanged,
     this.prefetchExtraFields,
+    this.onItemTap,
   });
 
   @override
@@ -552,6 +558,7 @@ class DynamicGridWindowsScreenState<T>
           onAfterSave: widget.onAfterSave,
           onSelectedRowsChanged: widget.onSelectedRowsChanged,
           prefetchExtraFields: widget.prefetchExtraFields,
+          onItemTap: widget.onItemTap,
         );
       },
     );
