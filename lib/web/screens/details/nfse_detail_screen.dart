@@ -1768,15 +1768,39 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
 
   Widget _gridSemHeader(
       {required String telaNome, Map<String, dynamic>? extraParams}) {
+    // Itens: editar acontece no proprio espaco do painel (formulario _iForm),
+    // nunca no popup generico "Editar item" -- por isso 'edit' fica desligado e
+    // o clique na linha troca o painel para o formulario do item.
+    final ehItem = telaNome == 'nfse_item';
     return DynamicGridWindowsScreen<Map<String, dynamic>>(
       key: ValueKey('${telaNome}_$_nfseId'),
       telaNome: telaNome,
-      hasPermission: (p) => p == 'create' ? false : true,
+      hasPermission: (p) =>
+          p == 'create' || (ehItem && p == 'edit') ? false : true,
       fromJson: (json) => json,
       toJson: (a) => a,
       extraParams: extraParams,
       showAppBar: false,
+      onItemTap: ehItem ? (item, context) => _editarItemNoPainel(item) : null,
     );
+  }
+
+  /// Abre o item clicado na grid no formulario do painel (sem popup).
+  Future<void> _editarItemNoPainel(Map<String, dynamic> linha) async {
+    final id = linha['id']?.toString();
+    int indice = _itens.indexWhere((i) => i['id']?.toString() == id);
+    if (indice < 0) {
+      await _loadItens();
+      indice = _itens.indexWhere((i) => i['id']?.toString() == id);
+    }
+    if (indice < 0 || !mounted) {
+      AppLogger.i.warn('NFS-e #$_nfseId: item $id nao encontrado para edicao');
+      return;
+    }
+    setState(() {
+      _selItem = indice;
+      _itensGrid = false;
+    });
   }
 
   Widget _togBtn(IconData ic, bool on, VoidCallback cb) => InkWell(
