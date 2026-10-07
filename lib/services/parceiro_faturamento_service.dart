@@ -99,6 +99,8 @@ class ParceiroFaturamentoService {
     required int produtoId,
     required int serieId,
     required String observacao,
+    int? mesReferencia,
+    int? anoReferencia,
   }) {
     return NetworkCaller().postRequest(
       '${ApiLinks.baseUrl}/api/parceiros/faturamento-nfse',
@@ -108,6 +110,8 @@ class ParceiroFaturamentoService {
         produtoId: produtoId,
         serieId: serieId,
         observacao: observacao,
+        mesReferencia: mesReferencia,
+        anoReferencia: anoReferencia,
       ),
     );
   }
