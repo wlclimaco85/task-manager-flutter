@@ -65,7 +65,7 @@ echo  [C] Subir um Flutter especifico no Chrome
 echo  [D] Subir um Flutter especifico no Android/simulador
 echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
-echo  [G] Build Android APK de um projeto (backend local)
+echo  [G] Build Android APK de um projeto (Local ou Remoto)
 echo  [H] Atualizar todos os repositorios (git pull)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
@@ -643,10 +643,28 @@ if errorlevel 1 exit /b 1
 call :DETECT_HOST_IP
 call :PICK_FLUTTER_PROJECT_FULL
 if errorlevel 1 exit /b 1
+
+echo.
+echo Escolha o ambiente (Backend) do APK:
+echo  [1] Local (http://127.0.0.1:%BACKEND_PORT%)
+echo  [2] Remoto (Railway - %DEPLOY_BACKEND_URL%)
+echo  [0] Voltar
+choice /c 120 /n /m "Ambiente: "
+if "!ERRORLEVEL!"=="3" exit /b 1
+set "BACKEND_CHOICE=!ERRORLEVEL!"
+
 call :ENSURE_BLUESTACKS_ADB
 if errorlevel 1 exit /b 1
+
+if "!BACKEND_CHOICE!"=="2" (
+    set "BUILD_BACKEND_URL=%DEPLOY_BACKEND_URL%"
+    set "BUILD_WS_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+    call :BUILD_ANDROID_PROJECT_DEPLOY "%PROJECT_LABEL%" "%PROJECT_DIR%" "%PROJECT_APK_PREFIX%" "%PROJECT_PACKAGE%"
+    exit /b !ERRORLEVEL!
+)
+
 call :BUILD_ANDROID_PROJECT_LOCAL "%PROJECT_LABEL%" "%PROJECT_DIR%" "%PROJECT_APK_PREFIX%" "%PROJECT_PACKAGE%"
-exit /b %ERRORLEVEL%
+exit /b !ERRORLEVEL!
 
 :PICK_FLUTTER_PROJECT_FULL
 echo.
