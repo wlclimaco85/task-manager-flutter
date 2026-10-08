@@ -1547,17 +1547,16 @@ exit /b 0
 :V003_MOBILE_LOCAL
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
-call :ENSURE_ANDROID_DEVICE
+call :DETECT_HOST_IP
+call :ENSURE_BLUESTACKS_ADB
 if errorlevel 1 exit /b 1
-start "AppAcademia-MeuTreinoV003-Android-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
-echo Meu Treino V003 iniciando no Android apontando para backend local.
+call :BUILD_ANDROID_PROJECT_LOCAL "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
 exit /b 0
 
 :V003_MOBILE_RAILWAY
-call :ENSURE_ANDROID_DEVICE
+call :ENSURE_BLUESTACKS_ADB
 if errorlevel 1 exit /b 1
-start "AppAcademia-MeuTreinoV003-Android-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
-echo Meu Treino V003 iniciando no Android apontando para Railway.
+call :BUILD_ANDROID_PROJECT_DEPLOY "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
 exit /b 0
 exit /b 0
 
