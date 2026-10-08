@@ -73,6 +73,7 @@ echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
 echo  [M] Subir o App do Dono (Admin Panel no Chrome)
+echo  [N] Subir Meu Treino (V003) - Web/Mobile (Local ou Railway)
 echo  [0] Sair
 echo.
 set "OP="
@@ -173,6 +174,10 @@ if /i "%OP%"=="L" (
 )
 if /i "%OP%"=="M" (
     call :START_ADMIN_PANEL
+    goto END_MENU
+)
+if /i "%OP%"=="N" (
+    call :START_V003_CUSTOM
     goto END_MENU
 )
 goto MENU
@@ -1499,3 +1504,60 @@ echo.
 call :START_BACKEND_ONLY
 call :START_FLUTTER_WEB "AdminPanel" "%FLUTTER_ADMIN_DIR%" 8083
 exit /b 0
+
+:START_V003_CUSTOM
+call :CHECK_PATHS
+if errorlevel 1 exit /b 1
+if not exist "%FLUTTER_V003_DIR%" (
+    echo [ERRO] Pasta nao encontrada: %FLUTTER_V003_DIR%
+    exit /b 1
+)
+
+:MENU_V003_OPCOES
+echo.
+echo ============================================
+echo  Meu Treino (V003) - Escolha de Ambiente
+echo ============================================
+echo  [1] Web (Chrome) - Backend Local (http://localhost:9001)
+echo  [2] Web (Chrome) - Servidor Railway (Deploy)
+echo  [3] Mobile (Android) - Backend Local (%ANDROID_BACKEND_URL%)
+echo  [4] Mobile (Android) - Servidor Railway (Deploy)
+echo  [0] Voltar ao Menu
+echo ============================================
+choice /c 12340 /n /m "Escolha: "
+if "%ERRORLEVEL%"=="5" exit /b 0
+if "%ERRORLEVEL%"=="4" call :V003_MOBILE_RAILWAY
+if "%ERRORLEVEL%"=="3" call :V003_MOBILE_LOCAL
+if "%ERRORLEVEL%"=="2" call :V003_WEB_RAILWAY
+if "%ERRORLEVEL%"=="1" call :V003_WEB_LOCAL
+exit /b 0
+
+:V003_WEB_LOCAL
+call :START_BACKEND_ONLY
+if errorlevel 1 exit /b 1
+start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
+echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para backend local.
+exit /b 0
+
+:V003_WEB_RAILWAY
+start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para Railway.
+exit /b 0
+
+:V003_MOBILE_LOCAL
+call :START_BACKEND_ONLY
+if errorlevel 1 exit /b 1
+call :ENSURE_ANDROID_DEVICE
+if errorlevel 1 exit /b 1
+start "AppAcademia-MeuTreinoV003-Android-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+echo Meu Treino V003 iniciando no Android apontando para backend local.
+exit /b 0
+
+:V003_MOBILE_RAILWAY
+call :ENSURE_ANDROID_DEVICE
+if errorlevel 1 exit /b 1
+start "AppAcademia-MeuTreinoV003-Android-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+echo Meu Treino V003 iniciando no Android apontando para Railway.
+exit /b 0
+exit /b 0
+
