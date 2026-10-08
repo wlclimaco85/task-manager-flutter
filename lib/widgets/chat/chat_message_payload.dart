@@ -66,10 +66,29 @@ bool chatMessagesAreEquivalent(ChatMessage current, ChatMessage candidate) {
         current.sender == candidate.sender &&
         current.content == candidate.content;
   }
-  return current.chatId == candidate.chatId &&
+  // Para mensagens de texto (ou outros tipos sem arquivo):
+  // Se o conteúdo, remetente e chatId forem iguais, tratamos como equivalente
+  // para evitar duplicação entre o envio local otimista e o eco do WebSocket.
+  if (current.chatId == candidate.chatId &&
       current.sender == candidate.sender &&
-      current.content == candidate.content &&
-      current.timestamp == candidate.timestamp;
+      current.content == candidate.content) {
+    if (current.timestamp == candidate.timestamp ||
+        current.timestamp == null ||
+        candidate.timestamp == null) {
+      return true;
+    }
+    // Caso ambos tenham timestamp mas com formato ligeiramente diferente,
+    // verifica se a diferença é menor que 5 segundos.
+    try {
+      final t1 = DateTime.tryParse(current.timestamp!);
+      final t2 = DateTime.tryParse(candidate.timestamp!);
+      if (t1 != null && t2 != null) {
+        return t1.difference(t2).abs().inSeconds <= 5;
+      }
+    } catch (_) {}
+    return true;
+  }
+  return false;
 }
 
 String resolveOutgoingChatId({

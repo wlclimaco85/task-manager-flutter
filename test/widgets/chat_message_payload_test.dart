@@ -166,4 +166,31 @@ void main() {
       'Maria Fiscal',
     );
   });
+
+  test('mensagem de texto enviada localmente nao duplica com eco do WebSocket', () {
+    final messages = <ChatMessage>[];
+    final payload = buildChatOutgoingPayload(
+      senderName: 'Washington',
+      senderEmail: 'washington@empresa.com',
+      content: 'Honorario Contabil 09/2026',
+      sector: 'Financeiro',
+      chatId: 'empresa-1-parceiro-1751',
+      type: 'text',
+      timestamp: DateTime.parse('2026-10-08T09:30:00.000'),
+      empresaId: 1,
+      parceiroId: 1751,
+    );
+
+    final localMessage = appendOutgoingChatMessage(messages, payload);
+    final echoedMessage = appendOutgoingChatMessage(messages, {
+      ...payload,
+      'timestamp': '2026-10-08T09:30:01.234',
+      'uploadDate': '2026-10-08T09:30:01.234',
+    });
+
+    expect(localMessage, isNotNull);
+    expect(localMessage!.content, 'Honorario Contabil 09/2026');
+    expect(messages, hasLength(1));
+    expect(echoedMessage, isNull);
+  });
 }

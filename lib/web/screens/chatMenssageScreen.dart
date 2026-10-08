@@ -205,21 +205,26 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
       return;
     }
 
+    final payload = buildChatOutgoingPayload(
+      senderName: _loggedUserName,
+      senderEmail: _loggedUserEmail,
+      content: content,
+      sector: widget.sector,
+      type: 'text',
+      chatId: _effectiveChatId,
+      empresaId: TenantContext.empresaId,
+      parceiroId: TenantContext.parceiroId,
+      aplicativoId: TenantContext.aplicativoId,
+      userId: TenantContext.userId,
+    );
+
     try {
-      _channel!.sink.add(json.encode({
-        'sender': _loggedUserName,
-        'senderName': _loggedUserName,
-        'senderEmail': _loggedUserEmail,
-        'content': content,
-        'sector': widget.sector,
-        'type': 'text',
-        'timestamp': DateTime.now().toIso8601String(),
-        'chatId': _effectiveChatId,
-        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-        if (TenantContext.aplicativoId != null)
-          'codApp': TenantContext.aplicativoId,
-      }));
+      _channel!.sink.add(json.encode(payload));
       _messageController.clear();
+      if (mounted) {
+        setState(() => appendOutgoingChatMessage(_messages, payload));
+        _scrollToBottom();
+      }
     } catch (e, st) {
       AppLogger.i.error('Chat: falha ao enviar mensagem via WebSocket: $e', st);
       _showSnack('Falha ao enviar mensagem: $e', error: true);
