@@ -1139,7 +1139,7 @@ if errorlevel 1 (
     echo [ERRO] flutter pub get falhou em %BUILD_APP_LABEL%.
     exit /b 1
 )
-call flutter build apk --debug --dart-define=BACKEND_URL=%BUILD_BACKEND_URL% --dart-define=WS_BACKEND_URL=%BUILD_WS_URL%
+call flutter build apk --debug --dart-define=BACKEND_URL=%BUILD_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=%BUILD_WS_URL%
 if errorlevel 1 (
     echo [ERRO] Build falhou em %BUILD_APP_LABEL%.
     exit /b 1
@@ -1338,7 +1338,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/4] Buildando AAB release...
-call flutter build appbundle --release --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos
+call flutter build appbundle --release --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos
 if errorlevel 1 (
     echo [ERRO] Build AAB falhou.
     exit /b 1
@@ -1376,7 +1376,7 @@ if not exist "%FLUTTER_DIR%" (
     echo [ERRO] Pasta Flutter nao encontrada: %FLUTTER_DIR%
     exit /b 1
 )
-start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Flutter iniciando no Chrome apontando para Railway.
 echo URL Railway: %DEPLOY_BACKEND_URL%
 exit /b 0
@@ -1558,7 +1558,7 @@ echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para backend loc
 exit /b 0
 
 :V003_WEB_RAILWAY
-start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para Railway.
 exit /b 0
 
