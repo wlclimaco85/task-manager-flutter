@@ -153,7 +153,6 @@ import 'sessoes_screen.dart';
 import 'anamnese_screen.dart';
 import 'trading_screens.dart';
 import 'regra_fiscal_screen.dart';
-import 'mensalidade_grid_screen.dart';
 import 'dashboard_mensalidade_screen.dart';
 import 'system_test_screen.dart';
 import 'relatorio_ponto_screen.dart';
@@ -619,6 +618,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     }
 
     // 4. PERMISSÕES VIA SECURITYMATRIX (fallback para perfis legados sem permissões do backend):
+    // REGRA DE OURO: 'ponto' é registro de jornada e NUNCA deve ser liberado por fallback genérico de escritório.
+    // Exige permissão explícita ou role específica de ponto.
+    if (menuItemId == 'ponto' || appScreen == AppScreen.ponto) {
+      if (PermissionService().hasPermissoes) {
+        return PermissionService().canViewScreen('ponto');
+      }
+      return sec.hasRoleKey('ROLE_PONTO') || sec.profile == UserProfile.ponto;
+    }
+
     if (appScreen != null) {
       return sec.canView(appScreen);
     }
