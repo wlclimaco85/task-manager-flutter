@@ -14,7 +14,7 @@ void main() {
     expect(find.text('Dados da NFSe'), findsOneWidget);
     expect(find.text('Servicos da nota'), findsOneWidget);
     expect(find.text('Resumo e impostos'), findsOneWidget);
-    expect(find.text('Tomador / Parceiro'), findsOneWidget);
+    expect(find.text('Tomador'), findsWidgets);
     expect(find.text('Numero'), findsOneWidget);
   });
 

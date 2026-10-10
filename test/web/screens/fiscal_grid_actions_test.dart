@@ -173,7 +173,8 @@ void main() {
 
     expect(cancelAction.isEnabled!([{'status': 'AUTORIZADA'}]), isTrue);
     expect(cancelAction.isEnabled!([{'status': 'PENDENTE'}]), isFalse);
-    expect(enviarAction.isEnabled!([{'status': 'DIGITACAO'}]), isTrue);
+    expect(enviarAction.isEnabled!([{'status': 'CONFIRMADA'}]), isTrue);
+    expect(enviarAction.isEnabled!([{'status': 'DIGITACAO'}]), isFalse);
     expect(enviarAction.isEnabled!([{'status': 'AUTORIZADA'}]), isFalse);
 
     // Drena eventuais timers de rede/log assíncronos

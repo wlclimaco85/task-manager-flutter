@@ -1114,7 +1114,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         if (_parceiroEmissorId != null)
           _inpDisabledText('Parceiro Emissor',
               _parceiroEmissorNome ?? 'Parceiro $_parceiroEmissorId'),
-        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) {
+        _ddObj('Tomador', _tomadorId, _tomadores, 'nome', (v) {
           setState(() {
             _tomadorId = v;
             final tomadorMap = _tomadores
