@@ -1101,10 +1101,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     required List<String> labelKeys,
   }) async {
     final response = await NetworkCaller().getRequest(endpoint);
-    final raw = response.body?['data']?['dados'] ??
-        response.body?['data'] ??
-        response.body?['content'] ??
-        response.body;
+    final body = response.body;
+    dynamic raw = body;
+    if (body is Map) {
+      raw = body?['data']?['dados'] ?? body?['data'] ?? body?['content'] ?? body;
+    }
     if (!response.isSuccess || raw is! List) return [];
 
     return raw
@@ -2458,7 +2459,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
     // Define os grupos de módulos com seus itens (gateados por permissão)
     final modulos = <_ModuloGroup>[
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temComercial)
+      if (!ModuloAccess.hasModulosConfigurados || temComercial)
         _ModuloGroup(
           'Comercial',
           Icons.business,
@@ -2487,7 +2488,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.trending_up, 'Dashboard Comercial'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temFinanceiro)
+      if (!ModuloAccess.hasModulosConfigurados || temFinanceiro)
         _ModuloGroup(
           'Financeiro',
           Icons.account_balance,
@@ -2521,7 +2522,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.account_balance_wallet, 'Dashboard Financeiro'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temNfce)
+      if (!ModuloAccess.hasModulosConfigurados || temNfce)
         _ModuloGroup(
           'Fiscal',
           Icons.receipt,
@@ -2546,7 +2547,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temNfse)
+      if (!ModuloAccess.hasModulosConfigurados || temNfse)
         _ModuloGroup(
           'NFS-e',
           Icons.description,
@@ -2561,7 +2562,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               _MoreMenuAction(Icons.settings, 'Config ISS'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temDp)
+      if (!ModuloAccess.hasModulosConfigurados || temDp)
         _ModuloGroup(
           'Departamento Pessoal',
           Icons.badge,
@@ -2577,7 +2578,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.analytics, 'Relatórios DP/RH'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temContabil)
+      if (!ModuloAccess.hasModulosConfigurados || temContabil)
         _ModuloGroup(
           'Contábil & IA',
           Icons.account_tree,
@@ -2590,7 +2591,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.psychology, 'Assistente IA'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temSuporte)
+      if (!ModuloAccess.hasModulosConfigurados || temSuporte)
         _ModuloGroup(
           'Suporte & Comunicação',
           Icons.support_agent,
@@ -2603,7 +2604,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.camera_alt, 'Instagram Monitor'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temAcademia)
+      if (!ModuloAccess.hasModulosConfigurados || temAcademia)
         _ModuloGroup(
           'Academia & Saúde',
           Icons.fitness_center,
@@ -2623,7 +2624,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.assignment, 'Anamnese'),
           ],
         ),
-      if (!ModuloAccess.hasModulosConfigurados || sec.isMaster || temTrading)
+      if (!ModuloAccess.hasModulosConfigurados || temTrading)
         _ModuloGroup(
           'Bolsa de Valores',
           Icons.show_chart,

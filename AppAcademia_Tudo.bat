@@ -65,7 +65,7 @@ echo  [C] Subir um Flutter especifico no Chrome
 echo  [D] Subir um Flutter especifico no Android/simulador
 echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
-echo  [G] Build Android APK de um projeto (backend local)
+echo  [G] Build Android APK de um projeto (Local ou Remoto)
 echo  [H] Atualizar todos os repositorios (git pull)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
@@ -73,6 +73,7 @@ echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
 echo  [M] Subir o App do Dono (Admin Panel no Chrome)
+echo  [N] Subir Meu Treino (V003) - Web/Mobile (Local ou Railway)
 echo  [0] Sair
 echo.
 set "OP="
@@ -173,6 +174,10 @@ if /i "%OP%"=="L" (
 )
 if /i "%OP%"=="M" (
     call :START_ADMIN_PANEL
+    goto END_MENU
+)
+if /i "%OP%"=="N" (
+    call :START_V003_CUSTOM
     goto END_MENU
 )
 goto MENU
@@ -638,10 +643,28 @@ if errorlevel 1 exit /b 1
 call :DETECT_HOST_IP
 call :PICK_FLUTTER_PROJECT_FULL
 if errorlevel 1 exit /b 1
+
+echo.
+echo Escolha o ambiente (Backend) do APK:
+echo  [1] Local (http://127.0.0.1:%BACKEND_PORT%)
+echo  [2] Remoto (Railway - %DEPLOY_BACKEND_URL%)
+echo  [0] Voltar
+choice /c 120 /n /m "Ambiente: "
+if "!ERRORLEVEL!"=="3" exit /b 1
+set "BACKEND_CHOICE=!ERRORLEVEL!"
+
 call :ENSURE_BLUESTACKS_ADB
 if errorlevel 1 exit /b 1
+
+if "!BACKEND_CHOICE!"=="2" (
+    set "BUILD_BACKEND_URL=%DEPLOY_BACKEND_URL%"
+    set "BUILD_WS_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+    call :BUILD_ANDROID_PROJECT_DEPLOY "%PROJECT_LABEL%" "%PROJECT_DIR%" "%PROJECT_APK_PREFIX%" "%PROJECT_PACKAGE%"
+    exit /b !ERRORLEVEL!
+)
+
 call :BUILD_ANDROID_PROJECT_LOCAL "%PROJECT_LABEL%" "%PROJECT_DIR%" "%PROJECT_APK_PREFIX%" "%PROJECT_PACKAGE%"
-exit /b %ERRORLEVEL%
+exit /b !ERRORLEVEL!
 
 :PICK_FLUTTER_PROJECT_FULL
 echo.
@@ -1116,7 +1139,7 @@ if errorlevel 1 (
     echo [ERRO] flutter pub get falhou em %BUILD_APP_LABEL%.
     exit /b 1
 )
-call flutter build apk --debug --dart-define=BACKEND_URL=%BUILD_BACKEND_URL% --dart-define=WS_BACKEND_URL=%BUILD_WS_URL%
+call flutter build apk --debug --dart-define=BACKEND_URL=%BUILD_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=%BUILD_WS_URL%
 if errorlevel 1 (
     echo [ERRO] Build falhou em %BUILD_APP_LABEL%.
     exit /b 1
@@ -1315,7 +1338,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/4] Buildando AAB release...
-call flutter build appbundle --release --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos
+call flutter build appbundle --release --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos
 if errorlevel 1 (
     echo [ERRO] Build AAB falhou.
     exit /b 1
@@ -1353,7 +1376,7 @@ if not exist "%FLUTTER_DIR%" (
     echo [ERRO] Pasta Flutter nao encontrada: %FLUTTER_DIR%
     exit /b 1
 )
-start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Flutter iniciando no Chrome apontando para Railway.
 echo URL Railway: %DEPLOY_BACKEND_URL%
 exit /b 0
@@ -1499,3 +1522,59 @@ echo.
 call :START_BACKEND_ONLY
 call :START_FLUTTER_WEB "AdminPanel" "%FLUTTER_ADMIN_DIR%" 8083
 exit /b 0
+
+:START_V003_CUSTOM
+call :CHECK_PATHS
+if errorlevel 1 exit /b 1
+if not exist "%FLUTTER_V003_DIR%" (
+    echo [ERRO] Pasta nao encontrada: %FLUTTER_V003_DIR%
+    exit /b 1
+)
+
+:MENU_V003_OPCOES
+echo.
+echo ============================================
+echo  Meu Treino (V003) - Escolha de Ambiente
+echo ============================================
+echo  [1] Web (Chrome) - Backend Local (http://localhost:9001)
+echo  [2] Web (Chrome) - Servidor Railway (Deploy)
+echo  [3] Mobile (Android) - Backend Local (%ANDROID_BACKEND_URL%)
+echo  [4] Mobile (Android) - Servidor Railway (Deploy)
+echo  [0] Voltar ao Menu
+echo ============================================
+choice /c 12340 /n /m "Escolha: "
+if "%ERRORLEVEL%"=="5" exit /b 0
+if "%ERRORLEVEL%"=="4" call :V003_MOBILE_RAILWAY
+if "%ERRORLEVEL%"=="3" call :V003_MOBILE_LOCAL
+if "%ERRORLEVEL%"=="2" call :V003_WEB_RAILWAY
+if "%ERRORLEVEL%"=="1" call :V003_WEB_LOCAL
+exit /b 0
+
+:V003_WEB_LOCAL
+call :START_BACKEND_ONLY
+if errorlevel 1 exit /b 1
+start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
+echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para backend local.
+exit /b 0
+
+:V003_WEB_RAILWAY
+start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para Railway.
+exit /b 0
+
+:V003_MOBILE_LOCAL
+call :START_BACKEND_ONLY
+if errorlevel 1 exit /b 1
+call :DETECT_HOST_IP
+call :ENSURE_BLUESTACKS_ADB
+if errorlevel 1 exit /b 1
+call :BUILD_ANDROID_PROJECT_LOCAL "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
+exit /b 0
+
+:V003_MOBILE_RAILWAY
+call :ENSURE_BLUESTACKS_ADB
+if errorlevel 1 exit /b 1
+call :BUILD_ANDROID_PROJECT_DEPLOY "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
+exit /b 0
+exit /b 0
+
