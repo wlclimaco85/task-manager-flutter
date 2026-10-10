@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:task_manager_flutter/mobile/screens/dashboard_financeiro_screen.dart';
@@ -73,17 +75,24 @@ void main() {
 
     testWidgets('Filtros de empresa e periodo sao renderizados',
         (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: DashboardFinanceiroMobileScreen(),
-        ),
-      );
+      // Backend simulado: respostas vazias (200) para todas as chamadas.
+      final client = MockClient((_) async => http.Response('{"data": {"dados": [], "totalElements": 0}}', 200,
+          headers: {'content-type': 'application/json'}));
+      await http.runWithClient(() async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: DashboardFinanceiroMobileScreen(),
+          ),
+        );
 
-      // Aguarda carregamento inicial
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+        // Aguarda carregamento inicial
+        await tester.pumpAndSettle(const Duration(seconds: 5));
 
-      // Verificar se algum dropdown ou card de filtro existe
-      expect(find.byType(Card), findsWidgets);
+        // Cards de KPI renderizados (layout atual usa containers proprios).
+        expect(find.text('Saldo Projetado'), findsOneWidget);
+        expect(find.text('A Receber'), findsOneWidget);
+        expect(find.text('A Pagar'), findsOneWidget);
+      }, () => client);
     });
 
     testWidgets('Exibe botao de retry em caso de erro',
