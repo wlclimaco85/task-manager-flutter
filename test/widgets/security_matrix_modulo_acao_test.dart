@@ -145,12 +145,12 @@ void main() {
       expect(matrix.canView(AppScreen.dashComercialArea), isTrue);
     });
 
-    test('cliente SEM Comercial NAO pode VER dashComercialArea', () {
+    test('cliente COM Comercial pode VER produto e isMenuItemAllowed produtos e true', () {
       final info = buildCliente(
-        modulosContratados: ['Financeiro'],
+        modulosContratados: ['Comercial'],
         permissoes: [
           RolePermissaoItem(
-              telaNome: 'dashComercialArea',
+              telaNome: 'Produtos',
               podeVer: true,
               podeInserir: false,
               podeEditar: false,
@@ -159,7 +159,28 @@ void main() {
         ],
       );
       final matrix = SecurityMatrix.of(info);
-      expect(matrix.canView(AppScreen.dashComercialArea), isFalse);
+      expect(matrix.canView(AppScreen.produto), isTrue);
+      expect(ModuloAccess.isMenuItemAllowed('produtos'), isTrue);
+    });
+
+    test('cliente COM Notas Fiscais (sem Comercial) pode VER produto e isMenuItemAllowed produtos e true', () {
+      final info = buildCliente(
+        modulosContratados: ['Notas Fiscais'],
+        permissoes: [
+          RolePermissaoItem(
+              telaNome: 'Produtos',
+              podeVer: true,
+              podeInserir: false,
+              podeEditar: false,
+              podeDeletar: false,
+              podeBaixar: false),
+        ],
+      );
+      final matrix = SecurityMatrix.of(info);
+      expect(matrix.canView(AppScreen.produto), isTrue);
+      expect(ModuloAccess.isMenuItemAllowed('produtos'), isTrue);
+      expect(ModuloAccess.isMenuItemAllowed('catalogo_produto'), isTrue);
+      expect(ModuloAccess.isMenuItemAllowed('unidade_medida'), isTrue);
     });
   });
 

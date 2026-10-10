@@ -2467,14 +2467,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
     // Define os grupos de módulos com seus itens (gateados por permissão)
     final modulos = <_ModuloGroup>[
-      if (!ModuloAccess.hasModulosConfigurados || temComercial)
+      if (!ModuloAccess.hasModulosConfigurados || temComercial || temNfce)
         _ModuloGroup(
           'Comercial',
           Icons.business,
           [
             if (temNfce && _canSeeOption('PDV', sec))
               _MoreMenuAction(Icons.point_of_sale, 'PDV'),
-            if (temComercial && _canSeeOption('Produtos', sec))
+            if ((temComercial || temNfce) && _canSeeOption('Produtos', sec))
               _MoreMenuAction(Icons.inventory, 'Produtos'),
             _MoreMenuAction(Icons.people, 'Parceiros'),
             _MoreMenuAction(Icons.local_shipping, 'Fornecedores'),
