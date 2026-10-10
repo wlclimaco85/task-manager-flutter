@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import '../../lib/mobile/screens/dashboard_financeiro_screen.dart';
-import '../../lib/services/dashboard_financeiro_caller.dart';
-import '../../lib/services/conta_bancaria_caller.dart';
-import '../../lib/services/empresa_caller.dart';
+import 'package:task_manager_flutter/mobile/screens/dashboard_financeiro_screen.dart';
+import 'package:task_manager_flutter/services/dashboard_financeiro_caller.dart';
+import 'package:task_manager_flutter/services/conta_bancaria_caller.dart';
+import 'package:task_manager_flutter/services/empresa_caller.dart';
 
 @GenerateMocks([
   DashboardFinanceiroCaller,
