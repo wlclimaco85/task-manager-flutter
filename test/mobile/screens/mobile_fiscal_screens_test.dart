@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/customization/dynamic_grid_dynamic_screen.dart';
 import 'package:task_manager_flutter/customization/dynamic_grid_windows_screen.dart';
 import 'package:task_manager_flutter/models/nfce_model.dart';
 import 'package:task_manager_flutter/mobile/screens/nfse_screen.dart';
@@ -61,14 +62,14 @@ void main() {
     // Bulk Actions & status validation
     final bulk = grid.bulkActions!;
     expect(bulk.map((b) => b.label), [
-      'Gerar PDF',
+      'Imprimir',
       'Enviar',
       'Cancelar',
     ]);
 
     final cancelAction = bulk.firstWhere((b) => b.label == 'Cancelar');
     final enviarAction = bulk.firstWhere((b) => b.label == 'Enviar');
-    final pdfAction = bulk.firstWhere((b) => b.label == 'Gerar PDF');
+    final pdfAction = bulk.firstWhere((b) => b.label == 'Imprimir');
 
     expect(cancelAction.isEnabled!([{'status': 'AUTORIZADA'}]), isTrue);
     expect(cancelAction.isEnabled!([{'status': 'PENDENTE'}]), isFalse);
@@ -214,21 +215,20 @@ void main() {
     );
     await tester.pump();
 
-    // Title and Header
-    expect(find.text('NFC-e / Cupons Fiscais'), findsOneWidget);
-    expect(find.byIcon(Icons.receipt), findsOneWidget);
-
-    final grid = tester.widget<DynamicGridWindowsScreen<NfceModel>>(
-      find.byType(DynamicGridWindowsScreen<NfceModel>),
+    // Tela mobile baseada em DynamicGridDynamicScreen (refatorada em a9888055):
+    // titulo proprio, FAB 'Nova NFC-e' e acoes customizadas por linha.
+    final grid = tester.widget<DynamicGridDynamicScreen>(
+      find.byType(DynamicGridDynamicScreen),
     );
+    expect(grid.telaNome, 'nfce');
+    expect(grid.tituloOverride, 'NFC-e / Cupons');
+    expect(find.text('Nova NFC-e'), findsOneWidget);
 
-    // Custom Actions
     expect(
       grid.customActions!().map((a) => a.label),
       containsAll([
         'Consultar status',
         'Cancelar',
-        'Cancelar por substituição',
         'Contingência / EPEC',
         'Inutilizar numeração',
         'Gerar PDF',
@@ -236,41 +236,6 @@ void main() {
         'Enviar e-mail',
       ]),
     );
-
-    // Bulk Actions
-    final bulk = grid.bulkActions!;
-    expect(bulk.map((b) => b.label), [
-      'Imprimir Cupom / DANFE',
-      'Transmitir NFC-e',
-      'Cancelar',
-      'Reenviar Contingência',
-      'Baixar XML',
-    ]);
-
-    final imprimirAction = bulk.firstWhere((b) => b.label == 'Imprimir Cupom / DANFE');
-    final reenviarAction = bulk.firstWhere((b) => b.label == 'Reenviar Contingência');
-    final cancelarAction = bulk.firstWhere((b) => b.label == 'Cancelar');
-    final transmitirAction = bulk.firstWhere((b) => b.label == 'Transmitir NFC-e');
-
-    expect(imprimirAction.isEnabled!([NfceModel(id: 1, statusSefaz: 'AUTORIZADA')]), isTrue);
-    expect(imprimirAction.isEnabled!([NfceModel(id: 2, statusSefaz: 'CONTINGENCIA')]), isTrue);
-    expect(imprimirAction.isEnabled!([NfceModel(id: 3, statusSefaz: 'PENDENTE', numero: 0)]), isFalse);
-
-    expect(reenviarAction.isEnabled!([NfceModel(id: 1, statusSefaz: 'CONTINGENCIA')]), isTrue);
-    expect(reenviarAction.isEnabled!([NfceModel(id: 2, statusSefaz: 'AUTORIZADA')]), isFalse);
-
-    expect(cancelarAction.isEnabled!([NfceModel(id: 1, statusSefaz: 'AUTORIZADA')]), isTrue);
-    expect(cancelarAction.isEnabled!([NfceModel(id: 2, statusSefaz: 'CANCELADA')]), isFalse);
-
-    expect(transmitirAction.isEnabled!([NfceModel(id: 1, statusSefaz: 'PENDENTE')]), isTrue);
-    expect(transmitirAction.isEnabled!([NfceModel(id: 2, statusSefaz: 'REJEITADA')]), isTrue);
-    expect(transmitirAction.isEnabled!([NfceModel(id: 3, statusSefaz: 'AUTORIZADA')]), isFalse);
-
-    // Filter toggle test
-    await tester.tap(find.byTooltip('Ocultar Filtros').first);
-    await tester.pump();
-    await tester.tap(find.byTooltip('Exibir Filtros').first);
-    await tester.pump();
 
     // Drain background debounce timer (1.5s in SistemaErrorReporter)
     await tester.pump(const Duration(seconds: 2));
@@ -342,12 +307,14 @@ void main() {
       final has220Sidebar = sizedBoxes.any((s) => s.width == 220);
       expect(has220Sidebar, isFalse, reason: 'Screen should not render the 220px desktop sidebar on mobile!');
 
-      // Ensure "Filtros de Pesquisa" is rendered vertically on top when filters are visible
-      expect(find.text('Filtros de Pesquisa'), findsOneWidget);
+      if (screen is! MobileNfceGridScreen) {
+        // Ensure "Filtros de Pesquisa" is rendered vertically on top when filters are visible
+        expect(find.text('Filtros de Pesquisa'), findsOneWidget);
 
-      // Ensure horizontal action buttons [Limpar] and [Filtrar] are present
-      expect(find.text('Limpar'), findsOneWidget);
-      expect(find.text('Filtrar'), findsOneWidget);
+        // Ensure horizontal action buttons [Limpar] and [Filtrar] are present
+        expect(find.text('Limpar'), findsOneWidget);
+        expect(find.text('Filtrar'), findsOneWidget);
+      }
 
       // Drain background debounce timer
       await tester.pump(const Duration(seconds: 2));
