@@ -87,7 +87,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100)); // spinner anima para sempre
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 

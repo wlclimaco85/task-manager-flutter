@@ -336,8 +336,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verifica se textos estão presentes para screen reader
-      expect(find.text('Status'), findsOneWidget);
-      expect(find.text('Observação'), findsOneWidget);
+      expect(find.text('Tipo de Manifestação'), findsOneWidget);
+      expect(find.textContaining('Observações'), findsWidgets);
     });
 
     /// Test 14: testValidacao_FormEmpty

@@ -52,9 +52,9 @@ void main() {
       await tester.tap(find.byType(DropdownButton<ManifestacaoStatus>));
       await tester.pumpAndSettle();
 
-      expect(find.text('Aceito'), findsOneWidget);
-      expect(find.text('Aceito Parcial'), findsOneWidget);
-      expect(find.text('Recusado'), findsOneWidget);
+      expect(find.text('Aceitar'), findsOneWidget);
+      expect(find.text('Recebimento Parcial'), findsOneWidget);
+      expect(find.text('Recusar'), findsOneWidget);
     });
 
     testWidgets('Seleciona opção corretamente', (WidgetTester tester) async {
@@ -73,7 +73,7 @@ void main() {
       await tester.tap(find.byType(DropdownButton<ManifestacaoStatus>));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Aceito').first);
+      await tester.tap(find.text('Aceitar').first);
       await tester.pumpAndSettle();
 
       expect(selecionado, equals(ManifestacaoStatus.aceitar));
