@@ -166,7 +166,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String get _statusAtual => (_statusVal ?? 'RASCUNHO').toUpperCase();
   bool get _podeExcluir =>
       !_isNovo &&
-      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE', 'REJEITADA'}.contains(_statusAtual);
+      const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE', 'REJEITADA'}
+          .contains(_statusAtual);
   bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
   dynamic get _login =>
       AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
@@ -196,9 +197,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final i = _item;
     final login = _login;
 
-    final status = _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
+    final status =
+        _isNovo ? 'RASCUNHO' : (i['status']?.toString() ?? 'RASCUNHO');
     _statusVal = status;
-    _numeroCtrl.text = status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
+    _numeroCtrl.text =
+        status == 'AUTORIZADA' ? (i['numero']?.toString() ?? '') : '';
     if (_serieId == null) _serieCtrl.text = i['serie']?.toString() ?? '';
     _municipioCtrl.text =
         i['municipioPrestacao']?.toString() ?? i['municipio']?.toString() ?? '';
@@ -549,7 +552,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       }
     } catch (e, stack) {
       AppLogger.i.error(
-          'Erro ao localizar cidade da empresa "$nome" para a NFS-e: $e', stack);
+          'Erro ao localizar cidade da empresa "$nome" para a NFS-e: $e',
+          stack);
     }
     if (!mounted || _municipioCtrl.text.trim().isNotEmpty) return;
     setState(() {
@@ -1067,9 +1071,9 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             selected['codigo_tributacao_municipal']?.toString() ??
             item['codigoTributacaoMunicipal'] ??
             '';
-            
+
     final temIss = selected['temIss'] == true || selected['tem_iss'] == true;
-    
+
     if (temIss) {
       if (id != null) {
         _carregarImpostosServico(item, id);
@@ -1122,7 +1126,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         title: Text('NFSe #$_nfseId',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: [
-          if (_statusAtual == 'RASCUNHO' || _statusAtual == 'PENDENTE' || _statusAtual == 'REJEITADA' || _statusAtual == 'DIGITACAO' || _statusAtual == 'CRIADA')
+          if (_statusAtual == 'RASCUNHO' ||
+              _statusAtual == 'PENDENTE' ||
+              _statusAtual == 'REJEITADA' ||
+              _statusAtual == 'DIGITACAO' ||
+              _statusAtual == 'CRIADA')
             TextButton.icon(
               onPressed: !_enviando ? _confirmarNfse : null,
               icon:
@@ -1140,7 +1148,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send, size: 16, color: Colors.white),
-              label: Text(_statusAtual == 'REJEITADA' ? 'Reenviar NFS-e' : 'Emitir NFS-e',
+              label: Text(
+                  _statusAtual == 'REJEITADA'
+                      ? 'Reenviar NFS-e'
+                      : 'Emitir NFS-e',
                   style: const TextStyle(color: Colors.white, fontSize: 12)),
             ),
           if (_podeCancelar)
@@ -1160,8 +1171,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           if (_statusAtual == 'AUTORIZADA')
             TextButton.icon(
               onPressed: _baixarPdf,
-              icon: const Icon(Icons.print,
-                  size: 16, color: Colors.white),
+              icon: const Icon(Icons.print, size: 16, color: Colors.white),
               label: const Text('Imprimir',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
@@ -1668,14 +1678,17 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _iInp('Cód. Tributação Municipal', item, 'codigoTributacaoMunicipal'),
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            dense: true,
-            title: const Text('ISS Retido pelo Tomador',
-                style: TextStyle(fontSize: 12, color: _dark)),
-            value: item['issRetido'] == true || item['iss_retido'] == true,
-            onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+          child: Material(
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              dense: true,
+              title: const Text('ISS Retido pelo Tomador',
+                  style: TextStyle(fontSize: 12, color: _dark)),
+              value: item['issRetido'] == true || item['iss_retido'] == true,
+              onChanged: (v) => setState(() => item['issRetido'] = v ?? false),
+            ),
           ),
         ),
         Padding(

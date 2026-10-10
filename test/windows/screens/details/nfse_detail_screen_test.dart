@@ -82,7 +82,7 @@ void main() {
   }
 
   group('NfseDetailScreen — layout reorganizado em seções', () {
-    testWidgets('Renderiza Scaffold, AppBar e as 4 seções principais',
+    testWidgets('Renderiza Scaffold, AppBar e as 3 seções principais',
         (WidgetTester tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       tester.view.physicalSize = const Size(1400, 1200);
@@ -97,16 +97,10 @@ void main() {
       expect(find.byType(Scaffold), findsWidgets);
       expect(find.byType(AppBar), findsOneWidget);
 
-      // As 4 seções sequenciais devem existir, na ordem esperada.
-      expect(find.byKey(const Key('secao_dados_nota')), findsOneWidget);
-      expect(find.byKey(const Key('secao_itens')), findsOneWidget);
-      expect(find.byKey(const Key('secao_impostos')), findsOneWidget);
-      expect(find.byKey(const Key('secao_totais')), findsOneWidget);
-
-      expect(find.text('Dados da Nota'), findsOneWidget);
-      expect(find.text('Itens (Serviços)'), findsOneWidget);
-      expect(find.text('Impostos'), findsOneWidget);
-      expect(find.text('Totais'), findsOneWidget);
+      // As 3 seções sequenciais (layout atual): dados da nota, serviços e resumo.
+      expect(find.text('Dados da NFSe'), findsOneWidget);
+      expect(find.text('Servicos da nota'), findsOneWidget);
+      expect(find.text('Resumo e impostos'), findsOneWidget);
     });
 
     testWidgets('Seções aparecem em Column vertical única (sem split lateral)',
@@ -119,22 +113,16 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      final dadosNota =
-          tester.getTopLeft(find.byKey(const Key('secao_dados_nota')));
-      final itens = tester.getTopLeft(find.byKey(const Key('secao_itens')));
-      final impostos =
-          tester.getTopLeft(find.byKey(const Key('secao_impostos')));
-      final totais = tester.getTopLeft(find.byKey(const Key('secao_totais')));
+      final dadosNota = tester.getTopLeft(find.text('Dados da NFSe'));
+      final itens = tester.getTopLeft(find.text('Servicos da nota'));
+      final resumo = tester.getTopLeft(find.text('Resumo e impostos'));
 
-      // Navegação cabeçalho → itens → impostos → totais: cada seção fica
-      // abaixo da anterior (mesma coluna X, Y crescente) — evidência de que
-      // o layout não usa mais Row lateral (cabeçalho estreito + grid ao lado).
+      // Navegação cabeçalho → serviços → resumo: cada seção fica abaixo da
+      // anterior (mesma coluna X, Y crescente), sem Row lateral.
       expect(dadosNota.dx, itens.dx);
-      expect(itens.dx, impostos.dx);
-      expect(impostos.dx, totais.dx);
+      expect(itens.dx, resumo.dx);
       expect(itens.dy, greaterThan(dadosNota.dy));
-      expect(impostos.dy, greaterThan(itens.dy));
-      expect(totais.dy, greaterThan(impostos.dy));
+      expect(resumo.dy, greaterThan(itens.dy));
     });
 
     testWidgets(
