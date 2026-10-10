@@ -10,6 +10,7 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/nfse_ux_helper.dart';
 import '../../../utils/nfse_tax_calculator.dart';
 import '../../../services/nfse_caller.dart';
 import '../../../widgets/searchable_dropdown.dart';
@@ -169,6 +170,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE', 'REJEITADA'}
           .contains(_statusAtual);
   bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
+
+  /// Status devolvido pela prefeitura indicando nota ja cancelada (ex.: CANCELLED).
+  bool get _statusJaCancelado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal) ==
+      'Cancelada na prefeitura';
   dynamic get _login =>
       AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
 
@@ -1161,6 +1167,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               label: const Text('Cancelar',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
+          if (_statusJaCancelado)
+            OutlinedButton(
+              onPressed: null,
+              child: const Text('Já cancelada',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+            ),
           if (_podeExcluir)
             TextButton.icon(
               onPressed: _excluirNfse,
@@ -1178,40 +1190,45 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(children: [
-        Expanded(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: _cabWidth, child: _cabecalho()),
-            GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(
-                  () => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
-              child: MouseRegion(
-                cursor: SystemMouseCursors.resizeColumn,
-                child: Container(
-                    width: 6,
-                    color: _bord,
-                    child: const Center(
-                        child: Icon(Icons.drag_indicator,
-                            size: 14, color: _grey))),
+      // Responsivo: em telas estreitas o cabecalho nao pode passar de metade da largura.
+      body: LayoutBuilder(builder: (context, constraints) {
+        final limiteCab = constraints.maxWidth * 0.5;
+        final cabWidth = _cabWidth < limiteCab ? _cabWidth : limiteCab;
+        return Column(children: [
+          Expanded(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SizedBox(width: cabWidth, child: _cabecalho()),
+              GestureDetector(
+                onHorizontalDragUpdate: (d) => setState(
+                    () => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.resizeColumn,
+                  child: Container(
+                      width: 6,
+                      color: _bord,
+                      child: const Center(
+                          child: Icon(Icons.drag_indicator,
+                              size: 14, color: _grey))),
+                ),
               ),
-            ),
-            Expanded(child: _itensPanel()),
-          ]),
-        ),
-        GestureDetector(
-          onVerticalDragUpdate: (d) => setState(() =>
-              _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.resizeRow,
-            child: Container(
-                height: 6,
-                color: _bord,
-                child: const Center(
-                    child: Icon(Icons.drag_handle, size: 14, color: _grey))),
+              Expanded(child: _itensPanel()),
+            ]),
           ),
-        ),
-        SizedBox(height: _rodapeHeight, child: _rodape()),
-      ]),
+          GestureDetector(
+            onVerticalDragUpdate: (d) => setState(() =>
+                _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeRow,
+              child: Container(
+                  height: 6,
+                  color: _bord,
+                  child: const Center(
+                      child: Icon(Icons.drag_handle, size: 14, color: _grey))),
+            ),
+          ),
+          SizedBox(height: _rodapeHeight, child: _rodape()),
+        ]);
+      }),
     );
   }
 
@@ -1286,7 +1303,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               _ddCidade(),
               _inp('Código de Serviço Municipal', _codigoServicoCtrl),
               _textArea('Observação', _observacaoCtrl),
-              _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
+              _inpDisabledText(
+                  'Status',
+                  _statusVal == null
+                      ? 'RASCUNHO'
+                      : NfseUxHelper.statusPrefeituraLabel(_statusVal)),
               _parceiroEmissorId != null
                   ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
                   : _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],
@@ -1535,59 +1556,65 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           color: const Color(0xFFF8F8F8),
-          child: Row(children: [
-            const Text('Itens (Serviços)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(width: 8),
-            _togBtn(Icons.view_list, _itensGrid,
-                () => setState(() => _itensGrid = true)),
-            const SizedBox(width: 4),
-            _togBtn(Icons.edit_note, !_itensGrid,
-                () => setState(() => _itensGrid = false)),
-            const SizedBox(width: 8),
-            SizedBox(
-                height: 24,
-                child: ElevatedButton.icon(
-                    onPressed: _novoItem,
-                    icon: const Icon(Icons.add, size: 12),
-                    label: const Text('Novo', style: TextStyle(fontSize: 11)),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: _green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10)))),
-            if (!_itensGrid && _itens.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              SizedBox(
-                  height: 24,
-                  child: ElevatedButton.icon(
-                      onPressed: () => _salvarItem(_itens[_selItem]),
-                      icon: const Icon(Icons.save, size: 12),
-                      label:
-                          const Text('Salvar', style: TextStyle(fontSize: 11)),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: _green,
-                          padding: const EdgeInsets.symmetric(horizontal: 8)))),
-            ],
-            const Spacer(),
-            if (!_itensGrid && _itens.isNotEmpty) ...[
-              _nb(Icons.first_page, () => setState(() => _selItem = 0)),
-              _nb(
-                  Icons.chevron_left,
-                  () => setState(() {
-                        if (_selItem > 0) _selItem--;
-                      })),
-              Text(' ${_selItem + 1}/${_itens.length} ',
-                  style: const TextStyle(fontSize: 11)),
-              _nb(
-                  Icons.chevron_right,
-                  () => setState(() {
-                        if (_selItem < _itens.length - 1) _selItem++;
-                      })),
-              _nb(Icons.last_page,
-                  () => setState(() => _selItem = _itens.length - 1)),
-            ],
-          ]),
+          child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                const Text('Itens (Serviços)',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(width: 8),
+                _togBtn(Icons.view_list, _itensGrid,
+                    () => setState(() => _itensGrid = true)),
+                const SizedBox(width: 4),
+                _togBtn(Icons.edit_note, !_itensGrid,
+                    () => setState(() => _itensGrid = false)),
+                const SizedBox(width: 8),
+                SizedBox(
+                    height: 24,
+                    child: ElevatedButton.icon(
+                        onPressed: _novoItem,
+                        icon: const Icon(Icons.add, size: 12),
+                        label:
+                            const Text('Novo', style: TextStyle(fontSize: 11)),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: _green,
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10)))),
+                if (!_itensGrid && _itens.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  SizedBox(
+                      height: 24,
+                      child: ElevatedButton.icon(
+                          onPressed: () => _salvarItem(_itens[_selItem]),
+                          icon: const Icon(Icons.save, size: 12),
+                          label: const Text('Salvar',
+                              style: TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: _green,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8)))),
+                ],
+                const SizedBox(width: 16),
+                if (!_itensGrid && _itens.isNotEmpty) ...[
+                  _nb(Icons.first_page, () => setState(() => _selItem = 0)),
+                  _nb(
+                      Icons.chevron_left,
+                      () => setState(() {
+                            if (_selItem > 0) _selItem--;
+                          })),
+                  Text(' ${_selItem + 1}/${_itens.length} ',
+                      style: const TextStyle(fontSize: 11)),
+                  _nb(
+                      Icons.chevron_right,
+                      () => setState(() {
+                            if (_selItem < _itens.length - 1) _selItem++;
+                          })),
+                  _nb(Icons.last_page,
+                      () => setState(() => _selItem = _itens.length - 1)),
+                ],
+              ])),
         ),
         Container(height: 1, color: _bord),
         Expanded(
@@ -1841,10 +1868,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     return Column(children: [
       Container(
           color: const Color(0xFFF0F0F0),
-          child: Row(children: [
-            const SizedBox(width: 8),
-            ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
-          ])),
+          child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                const SizedBox(width: 8),
+                ...tabs.asMap().entries.map((e) => _tabBtn(e.key, e.value)),
+              ]))),
       Container(height: 1, color: _bord),
       Expanded(child: _tabContent()),
     ]);
@@ -1885,8 +1914,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
     final vt = _item['valorTotal']?.toString() ?? '0,00';
     return Padding(
       padding: const EdgeInsets.all(10),
-      child:
-          Row(children: [_card('Vlr. NFSe', vt), _card('Total Serviços', vt)]),
+      child: Wrap(children: [
+        _card('Vlr. NFSe', vt),
+        _card('Total Serviços', vt),
+      ]),
     );
   }
 

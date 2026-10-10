@@ -10,6 +10,7 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/nfse_tax_calculator.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/nfse_ux_helper.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
 const _red = GridColors.primary;
@@ -90,6 +91,10 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       const {'RASCUNHO', 'CONFIRMADA', 'PENDENTE', 'REJEITADA'}
           .contains(_statusAtual);
   bool get _podeCancelar => _statusAtual == 'AUTORIZADA';
+
+  /// Status devolvido pela prefeitura indicando nota ja cancelada (ex.: CANCELLED).
+  bool get _statusJaCancelado =>
+      NfseUxHelper.statusPrefeituraLabel(_statusVal) == 'Cancelada na prefeitura';
   dynamic get _login =>
       AuthUtility.userInfo?.login ?? AuthUtility.userInfo?.data?.login;
 
@@ -1033,6 +1038,12 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
               label: const Text('Cancelar',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
+          if (_statusJaCancelado)
+            OutlinedButton(
+              onPressed: null,
+              child: const Text('Já cancelada',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+            ),
           if (_podeExcluir)
             TextButton.icon(
               onPressed: _excluirNfse,
@@ -1103,7 +1114,7 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         if (_parceiroEmissorId != null)
           _inpDisabledText('Parceiro Emissor',
               _parceiroEmissorNome ?? 'Parceiro $_parceiroEmissorId'),
-        _ddObj('Tomador', _tomadorId, _tomadores, 'nome', (v) {
+        _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) {
           setState(() {
             _tomadorId = v;
             final tomadorMap = _tomadores
@@ -1132,7 +1143,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         _ddCidade(),
         _inp('Codigo de Servico Municipal', _codigoServicoCtrl),
         _textArea('Observacao', _observacaoCtrl),
-        _inpDisabledText('Status', _statusVal ?? 'RASCUNHO'),
+        _inpDisabledText(
+            'Status',
+            _statusVal == null
+                ? 'RASCUNHO'
+                : NfseUxHelper.statusPrefeituraLabel(_statusVal)),
         _parceiroEmissorId != null
             ? _inpDisabledText('Ambiente', _ambienteVal ?? '')
             : _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'],

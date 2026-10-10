@@ -9,9 +9,10 @@ void main() {
     testWidgets('NfseDetailScreen renders in mobile layout (< 600px)',
         (WidgetTester tester) async {
       // Simula tela mobile (600px width)
-      tester.binding.window.physicalSizeTestValue =
-          const Size(600, 800);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+      tester.view.physicalSize = const Size(600, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -31,9 +32,10 @@ void main() {
     testWidgets('NfseDetailScreen renders in tablet layout (600-1000px)',
         (WidgetTester tester) async {
       // Simula tela tablet (800px width)
-      tester.binding.window.physicalSizeTestValue =
-          const Size(800, 1000);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -43,7 +45,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(NfseDetailScreen), findsOneWidget);
     });
 
@@ -51,9 +53,10 @@ void main() {
     testWidgets('NfseDetailScreen renders in desktop layout (>= 1000px)',
         (WidgetTester tester) async {
       // Simula tela desktop (1920px width)
-      tester.binding.window.physicalSizeTestValue =
-          const Size(1920, 1080);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -63,7 +66,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Desktop deve ter Row layout
       expect(find.byType(Row), findsWidgets);
@@ -73,9 +76,10 @@ void main() {
     // Teste: AppBar presente em todos os breakpoints
     testWidgets('NfseDetailScreen AppBar is always visible',
         (WidgetTester tester) async {
-      tester.binding.window.physicalSizeTestValue =
-          const Size(1920, 1080);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -92,9 +96,10 @@ void main() {
     // Teste: LayoutBuilder adapta maxWidth
     testWidgets('NfseDetailScreen LayoutBuilder constrains maxWidth',
         (WidgetTester tester) async {
-      tester.binding.window.physicalSizeTestValue =
-          const Size(2000, 1080);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+      tester.view.physicalSize = const Size(2000, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -104,7 +109,7 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verifica que ConstrainedBox está presente (limita width em desktop)
       expect(find.byType(ConstrainedBox), findsWidgets);

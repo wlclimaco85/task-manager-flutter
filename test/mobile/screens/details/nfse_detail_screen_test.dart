@@ -16,11 +16,12 @@ void main() {
       ));
       await tester.pump();
 
-      expect(find.text('Dados da nota'), findsOneWidget);
-      expect(find.text('Cliente / Tomador'), findsOneWidget);
-      expect(find.text('Serviços da nota'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Emitir'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Cancelar'), findsOneWidget);
+      // Mobile reutiliza a tela de detalhe web: secoes e acoes atuais.
+      expect(find.text('Cabeçalho'), findsOneWidget);
+      expect(find.text('Tomador'), findsOneWidget);
+      expect(find.text('Itens (Serviços)'), findsOneWidget);
+      expect(find.text('Totais'), findsOneWidget);
+      expect(find.text('Salvar'), findsOneWidget);
     });
 
     testWidgets('traduz status retornado pela prefeitura no mobile',
