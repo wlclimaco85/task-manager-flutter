@@ -14,6 +14,47 @@ void main() {
       expect(PermissionService().canViewScreen('nfe_entrada'), false);
     });
 
+    test('produtos aceita telaNome Produtos e tambem o singular produto da role', () {
+      for (final nome in ['Produtos', 'produtos', 'produto']) {
+        PermissionService().setPermissoes([
+          RolePermissaoItem(
+            telaNome: nome,
+            podeVer: true,
+            podeInserir: false,
+            podeEditar: false,
+            podeDeletar: false,
+          ),
+        ]);
+        expect(PermissionService().canViewScreen('produtos'), true,
+            reason: 'role com telaNome=$nome deve ver Produtos');
+        expect(PermissionService().getPermission('produtos')?.telaNome, nome);
+      }
+    });
+
+    test('ponto exige permissao explicita: role sem Ponto nao ve (mesmo com outras telas)', () {
+      PermissionService().setPermissoes([
+        RolePermissaoItem(
+          telaNome: 'Produtos',
+          podeVer: true,
+          podeInserir: false,
+          podeEditar: false,
+          podeDeletar: false,
+        ),
+      ]);
+      expect(PermissionService().canViewScreen('ponto'), false);
+
+      PermissionService().setPermissoes([
+        RolePermissaoItem(
+          telaNome: 'Ponto',
+          podeVer: true,
+          podeInserir: true,
+          podeEditar: false,
+          podeDeletar: false,
+        ),
+      ]);
+      expect(PermissionService().canViewScreen('ponto'), true);
+    });
+
     test('canViewScreen retorna false se podeVer é false', () {
       final permissoes = [
         RolePermissaoItem(
