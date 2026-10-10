@@ -37,10 +37,10 @@ class TabletBreakpointStyles {
   static const int gridColumns = 8;
 
   /// Altura padrão de button em tablet
-  static const double buttonHeight = 44.0;
+  static const double buttonHeight = 48.0;
 
   /// Altura padrão de input/text field em tablet
-  static const double inputHeight = 44.0;
+  static const double inputHeight = 48.0;
 
   /// Borda padrão em tablet
   static const double borderRadius = 6.0;

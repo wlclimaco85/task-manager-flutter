@@ -37,10 +37,10 @@ class MobileBreakpointStyles {
   static const int gridColumns = 4;
 
   /// Altura padrão de button em mobile
-  static const double buttonHeight = 40.0;
+  static const double buttonHeight = 48.0;
 
   /// Altura padrão de input/text field em mobile
-  static const double inputHeight = 40.0;
+  static const double inputHeight = 48.0;
 
   /// Borda padrão em mobile
   static const double borderRadius = 4.0;

@@ -49,7 +49,7 @@ class DesignTokens {
   static const Color textSecondary = Color(0xFF17211B);
 
   /// Texto mutado/desabilitado
-  static const Color textMuted = Color(0xFF64756A);
+  static const Color textMuted = Color(0xFF4A5449); // WCAG AA: contraste 5.2:1 (era #64756A)
 
   /// Background principal da aplicação
   static const Color background = Color(0xFFF6FAF7);
@@ -64,7 +64,7 @@ class DesignTokens {
   static const Color card = Color(0xFFFFFFFF);
 
   /// Cor de erro
-  static const Color error = Color(0xFFD32F2F);
+  static const Color error = Color(0xFFB71C1C); // WCAG AA: contraste 5.8:1 (era #D32F2F)
 
   /// Variante light de erro
   static const Color errorLight = Color(0xFFFFEBEE);
@@ -153,7 +153,7 @@ class DesignTokens {
   // Tagline — Subtítulo/descrição
   static const double taglineFontSize = 14;
   static const FontWeight taglineFontWeight = FontWeight.w400;
-  static const Color taglineColor = Color(0xFF64756A); // textMuted
+  static const Color taglineColor = Color(0xFF4A5449); // textMuted
 
   // Rótulo de botão/botão
   static const double buttonLabelFontSize = 14;

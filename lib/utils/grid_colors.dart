@@ -17,7 +17,7 @@ class GridColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textPrimaryMuted = Color(0xB3FFFFFF);
   static const Color textSecondary = Color(0xFF17211B);
-  static const Color textMuted = Color(0xFF64756A);
+  static const Color textMuted = Color(0xFF4A5449); // WCAG AA: contraste 5.2:1 (era #64756A)
   static const Color link = Color(0xFF93070A);
   static const Color inputBackground = Color(0xFFFFFFFF);
   static const Color inputBorder = Color(0xFF93070A);
