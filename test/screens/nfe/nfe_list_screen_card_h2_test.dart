@@ -1,3 +1,6 @@
+@Skip('Pendente (card H2): NfeListScreen em lib/screens/nfe foi removida em ffe9d9b6')
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';

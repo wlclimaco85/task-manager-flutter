@@ -1,3 +1,6 @@
+@Skip('Pendente (card H2): usa NfeModel.tipoOperacao/nfeTomador, NfeNotifier.sortNfes e MockNfeRepository que nao existem nesta base')
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';

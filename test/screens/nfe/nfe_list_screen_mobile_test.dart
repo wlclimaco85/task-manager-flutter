@@ -33,7 +33,7 @@ void main() {
         );
 
         // Act: tap no PopupMenu para abrir
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byType(PopupMenuButton<String>));
         await tester.pumpAndSettle();
 
         // Act: tap no item do menu
@@ -85,7 +85,7 @@ void main() {
         );
 
         // Act: abrir e executar callback
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byType(PopupMenuButton<String>));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Navegar'));
         await tester.pumpAndSettle();
@@ -129,7 +129,7 @@ void main() {
         );
 
         // Act: executar o callback
-        await tester.tap(find.byType(PopupMenuButton));
+        await tester.tap(find.byType(PopupMenuButton<String>));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Erro Sync'));
         await tester.pumpAndSettle();
