@@ -1,5 +1,8 @@
 ﻿// test/services/chat_noticias_service_test.dart
 // Chat, Notícias, Cotações: apenas GET → devem retornar 200
+@Tags(['integracao'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/utils/api_links.dart';
