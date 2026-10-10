@@ -59,9 +59,9 @@ void main() {
       // Grupos vazios são removidos
       expect(filtered.every((g) => g.items.isNotEmpty), true);
 
-      // Comercial (contém NFeEntrada) deve estar presente
+      // NF-e (contém NFeEntrada) deve estar presente
       expect(
-        filtered.any((g) => g.id == 'comercial'),
+        filtered.any((g) => g.id == 'nfe'),
         true,
       );
     });
