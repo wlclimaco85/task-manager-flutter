@@ -42,8 +42,10 @@ class NfeRepository {
         queryParameters: params,
       );
 
-      // Trata resposta: pode ser list direta ou wrapped em 'content' (pagination)
-      final List items = response.data?['content'] ?? response.data ?? [];
+      // Trata resposta: pode ser list direta ou wrapped em 'content' (pagination).
+      // Checa o tipo antes de indexar: list['content'] lancaria TypeError.
+      final dados = response.data;
+      final List items = dados is Map ? (dados['content'] ?? []) : (dados ?? []);
       final nfes = items
           .cast<Map<String, dynamic>>()
           .map((json) => NfeModel.fromJson(json))

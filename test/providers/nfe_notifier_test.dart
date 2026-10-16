@@ -1,920 +1,199 @@
-@Skip('Pendente (card H2): usa NfeModel.tipoOperacao/nfeTomador, NfeNotifier.sortNfes e MockNfeRepository que nao existem nesta base')
-library;
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
-import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_exceptions.dart';
-import 'package:task_manager_flutter/models/nfe/nfe_status.dart';
-import 'package:task_manager_flutter/models/nfe/nfe_tomador_model.dart';
-import 'package:task_manager_flutter/models/nfe/valores_nfe_model.dart';
+import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
+import 'package:task_manager_flutter/models/nfe_state.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
 import 'package:task_manager_flutter/repositories/nfe_repository.dart';
 
-@GenerateMocks([NfeRepository])
+import '../helpers/fake_nfe_repository.dart';
+import '../helpers/nfe_fixtures.dart';
+
+NfeModel _nfe(int id) => NfeModel.fromJson(nfeJson(id));
+
+List<NfeModel> _nfes(int quantidade) => List.generate(quantidade, (i) => _nfe(i + 1));
+
+NfeState _estado({
+  List<NfeModel> nfes = const [],
+  int currentPage = 1,
+  int pageSize = 10,
+  String? errorMessage,
+}) =>
+    NfeState(
+      nfes: nfes,
+      isLoading: false,
+      currentPage: currentPage,
+      pageSize: pageSize,
+      errorMessage: errorMessage,
+    );
+
 void main() {
-  group('NfeNotifier', () {
-    late MockNfeRepository mockRepository;
-    late NfeNotifier notifier;
+  late FakeNfeRepository repository;
+  late NfeNotifier notifier;
 
-    // Helper para criar NfeModel de teste
-    NfeModel createTestNfe({
-      required int id,
-      required String numero,
-      required int serie,
-      required String cnpj,
-      required NfeStatus status,
-      required DateTime dataHora,
-      String? tipoOperacao,
-    }) {
-      return NfeModel(
-        id: id,
-        empresaId: 1,
-        numero: numero,
-        serie: serie,
-        dataHora: dataHora,
-        statusNfe: status,
-        cnpjEmitente: '12345678901234',
-        uf: 'SP',
-        ambiente: 'HOMOLOGACAO',
-        tomador: NfeTomadorModel(
-          cnpjCpf: cnpj,
-          razaoSocial: 'Cliente $id',
-          endereco: 'Rua Teste',
-          numero: '123',
-          bairro: 'Centro',
-          cep: '01234567',
-          uf: 'SP',
-          municipio: 'São Paulo',
-        ),
-        itens: [],
-        valores: ValoresNfeModel(
-          subtotal: 1000.0,
-          totalIcms: 180.0,
-          totalPis: 65.0,
-          totalCofins: 76.5,
-          desconto: 0,
-          total: 1000.0,
-        ),
-        criadoEm: DateTime.now(),
-        tipoOperacao: tipoOperacao,
+  setUp(() {
+    repository = FakeNfeRepository();
+    notifier = NfeNotifier(repository);
+  });
+
+  group('NfeNotifier.listarNfe', () {
+    test('carrega as NFes, guarda pagina e tamanho e encerra o loading', () async {
+      repository.nfesParaListar = [_nfe(1), _nfe(2)];
+
+      await notifier.listarNfe(page: 2, pageSize: 5);
+
+      expect(notifier.state.nfes.map((n) => n.id), [1, 2]);
+      expect(notifier.state.currentPage, 2);
+      expect(notifier.state.pageSize, 5);
+      expect(notifier.state.isLoading, isFalse);
+      expect(notifier.state.hasError, isFalse);
+    });
+
+    test('repassa status e CNPJ do cliente ao repositorio', () async {
+      await notifier.listarNfe(status: 'AUTORIZADA', clienteCnpj: '12345678000199');
+
+      expect(repository.ultimoStatus, 'AUTORIZADA');
+      expect(repository.ultimoCnpj, '12345678000199');
+    });
+
+    test('erro do repositorio vira errorMessage e esvazia a lista', () async {
+      repository.nfesParaListar = [_nfe(1)];
+      await notifier.listarNfe();
+      repository.erroAoListar = NfeRepositoryException('timeout');
+
+      await notifier.listarNfe();
+
+      expect(notifier.state.errorMessage, contains('timeout'));
+      expect(notifier.state.nfes, isEmpty);
+      expect(notifier.state.isLoading, isFalse);
+    });
+
+    test('erro inesperado vira mensagem generica', () async {
+      repository.erroAoListar = StateError('boom');
+
+      await notifier.listarNfe();
+
+      expect(notifier.state.errorMessage, startsWith('Erro inesperado ao listar NFes'));
+    });
+
+    test('nova listagem bem-sucedida limpa o erro anterior', () async {
+      repository.erroAoListar = NfeRepositoryException('falha');
+      await notifier.listarNfe();
+      expect(notifier.state.hasError, isTrue);
+
+      repository.erroAoListar = null;
+      repository.nfesParaListar = [_nfe(1)];
+      await notifier.listarNfe();
+
+      expect(notifier.state.errorMessage, isNull);
+      expect(notifier.state.nfes, hasLength(1));
+    });
+  });
+
+  group('NfeNotifier.obterNfe', () {
+    test('preenche selected com a NFe encontrada', () async {
+      repository.nfeParaObter = _nfe(7);
+
+      await notifier.obterNfe(7);
+
+      expect(notifier.state.selected?.id, 7);
+      expect(notifier.state.errorMessage, isNull);
+    });
+
+    test('NFe inexistente limpa selected e informa o erro', () async {
+      repository.nfeParaObter = _nfe(7);
+      await notifier.obterNfe(7);
+      repository.erroAoObter = NfeNotFoundException('NFe #7');
+
+      await notifier.obterNfe(7);
+
+      expect(notifier.state.selected, isNull);
+      expect(notifier.state.errorMessage, contains('não encontrada'));
+    });
+  });
+
+  group('NfeNotifier.criarNfe', () {
+    test('devolve a NFe criada e a deixa selecionada', () async {
+      repository.nfeParaCriar = _nfe(9);
+
+      final criada = await notifier.criarNfe({'serie': 1});
+
+      expect(criada.id, 9);
+      expect(notifier.state.selected?.id, 9);
+      expect(repository.ultimosDadosCriados, {'serie': 1});
+    });
+
+    test('erro do repositorio e relancado e vira errorMessage', () async {
+      repository.erroAoCriar = NfeRepositoryException('CNPJ inválido');
+
+      await expectLater(
+        notifier.criarNfe({}),
+        throwsA(isA<NfeRepositoryException>()),
       );
-    }
+      expect(notifier.state.errorMessage, contains('CNPJ inválido'));
+    });
+  });
 
-    setUp(() {
-      mockRepository = MockNfeRepository();
-      notifier = NfeNotifier(mockRepository);
+  group('estado local', () {
+    test('removerNfeLocal tira a NFe da lista sem chamar o repositorio', () {
+      notifier.setTestState(_estado(nfes: [_nfe(1), _nfe(2)]));
+
+      notifier.removerNfeLocal(1);
+
+      expect(notifier.state.nfes.map((n) => n.id), [2]);
+      expect(repository.chamadasListar, 0);
     });
 
-    tearDown(() {
-      notifier.dispose();
+    test('limparErro zera a mensagem de erro', () {
+      notifier.setTestState(_estado(errorMessage: 'falha'));
+
+      notifier.limparErro();
+
+      expect(notifier.state.errorMessage, isNull);
     });
 
-    group('sortNfes', () {
-      test('sortNfes_cnpj_ascending ordena por CNPJ A→Z', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '99999999999999',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
+    test('resetarEstado volta ao estado inicial', () {
+      notifier.setTestState(_estado(nfes: _nfes(3), currentPage: 3, pageSize: 25));
 
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
+      notifier.resetarEstado();
 
-        // Act
-        await notifier.sortNfes('cnpj', ascending: true);
+      expect(notifier.state.nfes, isEmpty);
+      expect(notifier.state.currentPage, 1);
+      expect(notifier.state.pageSize, 10);
+    });
+  });
 
-        // Assert
-        expect(notifier.state.nfes.length, 2);
-        expect(notifier.state.nfes[0].nfeTomador?.cnpjCpf, '11111111111111');
-        expect(notifier.state.nfes[1].nfeTomador?.cnpjCpf, '99999999999999');
-      });
+  group('paginacao', () {
+    test('proximaPagina busca a pagina seguinte quando ela existe', () async {
+      repository.nfesParaListar = _nfes(15);
+      notifier.setTestState(_estado(nfes: _nfes(15), currentPage: 1));
 
-      test('sortNfes_cnpj_descending ordena por CNPJ Z→A', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '99999999999999',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
+      await notifier.proximaPagina();
 
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.sortNfes('cnpj', ascending: false);
-
-        // Assert
-        expect(notifier.state.nfes[0].nfeTomador?.cnpjCpf, '99999999999999');
-        expect(notifier.state.nfes[1].nfeTomador?.cnpjCpf, '11111111111111');
-      });
-
-      test('sortNfes_data_ascending ordena por data antiga→nova', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 10),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.sortNfes('data', ascending: true);
-
-        // Assert
-        expect(notifier.state.nfes[0].numero, '002');
-        expect(notifier.state.nfes[1].numero, '001');
-      });
-
-      test('sortNfes_numero_ascending ordena por número', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '100',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '005',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.sortNfes('numero', ascending: true);
-
-        // Assert
-        expect(notifier.state.nfes[0].numero, '005');
-        expect(notifier.state.nfes[1].numero, '100');
-      });
-
-      test('sortNfes_serie_ascending ordena por série', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 5,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 2,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.sortNfes('serie', ascending: true);
-
-        // Assert
-        expect(notifier.state.nfes[0].serie, 2);
-        expect(notifier.state.nfes[1].serie, 5);
-      });
-
-      test('sortNfes_status_ascending ordena por status A→Z', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.rascunho,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.sortNfes('status', ascending: true);
-
-        // Assert
-        expect(notifier.state.nfes[0].statusNfe, NfeStatus.autorizada);
-        expect(notifier.state.nfes[1].statusNfe, NfeStatus.rascunho);
-      });
-
-      test('sortNfes_invalid_field logs warning and returns', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-        final originalList = notifier.state.nfes;
-
-        // Act
-        await notifier.sortNfes('campo_invalido', ascending: true);
-
-        // Assert - lista deve permanecer igual
-        expect(notifier.state.nfes, originalList);
-      });
+      expect(repository.ultimaPaginaListada, 2);
     });
 
-    group('filterByStatus', () {
-      test('filterByStatus_autorizada retorna só autorizadas', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.cancelada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-        final nfe3 = createTestNfe(
-          id: 3,
-          numero: '003',
-          serie: 1,
-          cnpj: '33333333333333',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 3),
-        );
+    test('proximaPagina nao faz nada na ultima pagina', () async {
+      notifier.setTestState(_estado(nfes: _nfes(15), currentPage: 2));
 
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2, nfe3]));
+      await notifier.proximaPagina();
 
-        // Act
-        await notifier.filterByStatus('AUTORIZADA');
-
-        // Assert
-        expect(notifier.state.nfes.length, 2);
-        expect(notifier.state.nfes.every((nfe) => nfe.statusNfe == NfeStatus.autorizada), true);
-      });
-
-      test('filterByStatus_cancelada retorna só canceladas', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.cancelada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.filterByStatus('CANCELADA');
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].statusNfe, NfeStatus.cancelada);
-      });
-
-      test('filterByStatus_nenhuma_correspondencia retorna vazio', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-
-        // Act
-        await notifier.filterByStatus('REJEITADA');
-
-        // Assert
-        expect(notifier.state.nfes.isEmpty, true);
-      });
+      expect(repository.chamadasListar, 0);
     });
 
-    group('filterByTipoOperacao', () {
-      test('filterByTipoOperacao_saida retorna só saidas', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-          tipoOperacao: 'SAIDA',
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-          tipoOperacao: 'ENTRADA',
-        );
-        final nfe3 = createTestNfe(
-          id: 3,
-          numero: '003',
-          serie: 1,
-          cnpj: '33333333333333',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 3),
-          tipoOperacao: 'SAIDA',
-        );
+    test('paginaAnterior nao vai abaixo da pagina 1', () async {
+      notifier.setTestState(_estado(nfes: _nfes(15), currentPage: 1));
 
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2, nfe3]));
+      await notifier.paginaAnterior();
 
-        // Act
-        await notifier.filterByTipoOperacao('SAIDA');
-
-        // Assert
-        expect(notifier.state.nfes.length, 2);
-        expect(notifier.state.nfes.every((nfe) => nfe.tipoOperacao == 'SAIDA'), true);
-      });
-
-      test('filterByTipoOperacao_entrada retorna só entradas', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-          tipoOperacao: 'SAIDA',
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-          tipoOperacao: 'ENTRADA',
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.filterByTipoOperacao('ENTRADA');
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].tipoOperacao, 'ENTRADA');
-      });
-
-      test('filterByTipoOperacao_case_insensitive', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-          tipoOperacao: 'SAIDA',
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-
-        // Act
-        await notifier.filterByTipoOperacao('saida');
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].tipoOperacao, 'SAIDA');
-      });
+      expect(repository.chamadasListar, 0);
     });
 
-    group('filterByDateRange', () {
-      test('filterByDateRange_valido filtra corretamente', () async {
-        // Arrange
-        final inicio = DateTime(2026, 8, 5);
-        final fim = DateTime(2026, 8, 15);
+    test('paginaAnterior busca a pagina anterior', () async {
+      notifier.setTestState(_estado(nfes: _nfes(15), currentPage: 2));
 
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 10),
-        );
-        final nfe3 = createTestNfe(
-          id: 3,
-          numero: '003',
-          serie: 1,
-          cnpj: '33333333333333',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 20),
-        );
+      await notifier.paginaAnterior();
 
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2, nfe3]));
-
-        // Act
-        await notifier.filterByDateRange(inicio, fim);
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].numero, '002');
-      });
-
-      test('filterByDateRange_vazio sem correspondencias', () async {
-        // Arrange
-        final inicio = DateTime(2026, 9, 1);
-        final fim = DateTime(2026, 9, 30);
-
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-
-        // Act
-        await notifier.filterByDateRange(inicio, fim);
-
-        // Assert
-        expect(notifier.state.nfes.isEmpty, true);
-      });
-
-      test('filterByDateRange_apenas_inicio', () async {
-        // Arrange
-        final inicio = DateTime(2026, 8, 5);
-
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 10),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.filterByDateRange(inicio, null);
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].numero, '002');
-      });
-    });
-
-    group('applyFiltersAndSort', () {
-      test('applyFiltersAndSort_combined filtro + ordenação', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '100',
-          serie: 1,
-          cnpj: '99999999999999',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-          tipoOperacao: 'SAIDA',
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '005',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-          tipoOperacao: 'SAIDA',
-        );
-        final nfe3 = createTestNfe(
-          id: 3,
-          numero: '003',
-          serie: 1,
-          cnpj: '55555555555555',
-          status: NfeStatus.cancelada,
-          dataHora: DateTime(2026, 8, 3),
-          tipoOperacao: 'ENTRADA',
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2, nfe3]));
-
-        // Act
-        await notifier.applyFiltersAndSort(
-          statusFilter: 'AUTORIZADA',
-          tipoOperacaoFilter: 'SAIDA',
-          sortBy: 'numero',
-          sortAscending: true,
-        );
-
-        // Assert
-        expect(notifier.state.nfes.length, 2);
-        expect(notifier.state.nfes[0].numero, '005');
-        expect(notifier.state.nfes[1].numero, '100');
-      });
-
-      test('applyFiltersAndSort_apenas filtro', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.cancelada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.applyFiltersAndSort(statusFilter: 'AUTORIZADA');
-
-        // Assert
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.nfes[0].statusNfe, NfeStatus.autorizada);
-      });
-
-      test('applyFiltersAndSort_apenas sort', () async {
-        // Arrange
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '100',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfe2 = createTestNfe(
-          id: 2,
-          numero: '005',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1, nfe2]));
-
-        // Act
-        await notifier.applyFiltersAndSort(sortBy: 'numero', sortAscending: true);
-
-        // Assert
-        expect(notifier.state.nfes.length, 2);
-        expect(notifier.state.nfes[0].numero, '005');
-        expect(notifier.state.nfes[1].numero, '100');
-      });
-    });
-
-    group('clearFilters', () {
-      test('clearFilters_chama listarNfe e restaura estado', () async {
-        // Arrange
-        final nfesOriginais = [
-          createTestNfe(
-            id: 1,
-            numero: '001',
-            serie: 1,
-            cnpj: '11111111111111',
-            status: NfeStatus.autorizada,
-            dataHora: DateTime(2026, 8, 1),
-          ),
-          createTestNfe(
-            id: 2,
-            numero: '002',
-            serie: 1,
-            cnpj: '22222222222222',
-            status: NfeStatus.autorizada,
-            dataHora: DateTime(2026, 8, 2),
-          ),
-        ];
-
-        when(mockRepository.listarNfe(
-          page: anyNamed('page'),
-          pageSize: anyNamed('pageSize'),
-          status: anyNamed('status'),
-          tipoOperacao: anyNamed('tipoOperacao'),
-          dataInicio: anyNamed('dataInicio'),
-          dataFim: anyNamed('dataFim'),
-          clienteCnpj: anyNamed('clienteCnpj'),
-        )).thenAnswer((_) async => {'items': nfesOriginais, 'totalRecords': nfesOriginais.length});
-
-        // Act
-        await notifier.clearFilters();
-
-        // Assert
-        verify(mockRepository.listarNfe(
-          page: 1,
-          pageSize: 10,
-          status: null,
-          tipoOperacao: null,
-          dataInicio: null,
-          dataFim: null,
-          clienteCnpj: null,
-        )).called(1);
-        expect(notifier.state.nfes.length, 2);
-      });
-    });
-
-    group('listarNfe error handling', () {
-      test('listarNfe_handles_401_error', () async {
-        // Arrange
-        when(mockRepository.listarNfe(
-          page: anyNamed('page'),
-          pageSize: anyNamed('pageSize'),
-          status: anyNamed('status'),
-          tipoOperacao: anyNamed('tipoOperacao'),
-          dataInicio: anyNamed('dataInicio'),
-          dataFim: anyNamed('dataFim'),
-          clienteCnpj: anyNamed('clienteCnpj'),
-        )).thenThrow(NfeApiException('Não autorizado (401)', statusCode: 401));
-
-        // Act
-        await notifier.listarNfe(page: 1, pageSize: 10);
-
-        // Assert
-        expect(notifier.state.hasError, true);
-        expect(notifier.state.errorMessage, isNotNull);
-        expect(notifier.state.isLoading, false);
-        expect(notifier.state.nfes.isEmpty, true);
-      });
-
-      test('listarNfe_handles_500_error', () async {
-        // Arrange
-        when(mockRepository.listarNfe(
-          page: anyNamed('page'),
-          pageSize: anyNamed('pageSize'),
-          status: anyNamed('status'),
-          tipoOperacao: anyNamed('tipoOperacao'),
-          dataInicio: anyNamed('dataInicio'),
-          dataFim: anyNamed('dataFim'),
-          clienteCnpj: anyNamed('clienteCnpj'),
-        )).thenThrow(NfeRepositoryException('Server error'));
-
-        // Act
-        await notifier.listarNfe(page: 1, pageSize: 10);
-
-        // Assert
-        expect(notifier.state.hasError, true);
-        expect(notifier.state.errorMessage, contains('Server error'));
-        expect(notifier.state.isLoading, false);
-      });
-
-      test('listarNfe_handles_generic_error', () async {
-        // Arrange
-        when(mockRepository.listarNfe(
-          page: anyNamed('page'),
-          pageSize: anyNamed('pageSize'),
-          status: anyNamed('status'),
-          tipoOperacao: anyNamed('tipoOperacao'),
-          dataInicio: anyNamed('dataInicio'),
-          dataFim: anyNamed('dataFim'),
-          clienteCnpj: anyNamed('clienteCnpj'),
-        )).thenThrow(Exception('Unexpected error'));
-
-        // Act
-        await notifier.listarNfe(page: 1, pageSize: 10);
-
-        // Assert
-        expect(notifier.state.hasError, true);
-        expect(notifier.state.isLoading, false);
-      });
-    });
-
-    group('filterBy refetch', () {
-      test('filterBy_refetch_com_status muda página para 1 e refetch', () async {
-        // Arrange
-        final nfeAutorizada = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-        final nfeRascunho = createTestNfe(
-          id: 2,
-          numero: '002',
-          serie: 1,
-          cnpj: '22222222222222',
-          status: NfeStatus.rascunho,
-          dataHora: DateTime(2026, 8, 2),
-        );
-
-        when(mockRepository.listarNfe(
-          page: 1,
-          pageSize: 10,
-          status: 'AUTORIZADA',
-          tipoOperacao: null,
-          dataInicio: null,
-          dataFim: null,
-          clienteCnpj: null,
-        )).thenAnswer((_) async => {
-          'items': [nfeAutorizada],
-          'totalRecords': 1,
-        });
-
-        // Act
-        await notifier.filterBy(status: 'AUTORIZADA');
-
-        // Assert
-        verify(mockRepository.listarNfe(
-          page: 1,
-          pageSize: 10,
-          status: 'AUTORIZADA',
-          tipoOperacao: null,
-          dataInicio: null,
-          dataFim: null,
-          clienteCnpj: null,
-        )).called(1);
-        expect(notifier.state.currentPage, 1);
-        expect(notifier.state.nfes.length, 1);
-        expect(notifier.state.totalRecords, 1);
-      });
-
-      test('filterBy_refetch_com_data_range', () async {
-        // Arrange
-        final nfe = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 15),
-        );
-        final inicio = DateTime(2026, 8, 1);
-        final fim = DateTime(2026, 8, 31);
-
-        when(mockRepository.listarNfe(
-          page: 1,
-          pageSize: 10,
-          status: null,
-          tipoOperacao: null,
-          dataInicio: inicio,
-          dataFim: fim,
-          clienteCnpj: null,
-        )).thenAnswer((_) async => {
-          'items': [nfe],
-          'totalRecords': 1,
-        });
-
-        // Act
-        await notifier.filterBy(dataInicio: inicio, dataFim: fim);
-
-        // Assert
-        verify(mockRepository.listarNfe(
-          page: 1,
-          pageSize: 10,
-          status: null,
-          tipoOperacao: null,
-          dataInicio: inicio,
-          dataFim: fim,
-          clienteCnpj: null,
-        )).called(1);
-        expect(notifier.state.currentPage, 1);
-        expect(notifier.state.nfes.length, 1);
-      });
-    });
-
-    group('notifyListeners', () {
-      test('sortNfes notifica listeners', () async {
-        // Arrange
-        var notified = false;
-        notifier.addListener(() {
-          notified = true;
-        });
-
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-        notified = false;
-
-        // Act
-        await notifier.sortNfes('numero');
-
-        // Assert
-        expect(notified, true);
-      });
-
-      test('filterByStatus notifica listeners', () async {
-        // Arrange
-        var notified = false;
-        notifier.addListener(() {
-          notified = true;
-        });
-
-        final nfe1 = createTestNfe(
-          id: 1,
-          numero: '001',
-          serie: 1,
-          cnpj: '11111111111111',
-          status: NfeStatus.autorizada,
-          dataHora: DateTime(2026, 8, 1),
-        );
-
-        notifier.setTestState(notifier.state.copyWith(nfes: [nfe1]));
-        notified = false;
-
-        // Act
-        await notifier.filterByStatus('AUTORIZADA');
-
-        // Assert
-        expect(notified, true);
-      });
+      expect(repository.ultimaPaginaListada, 1);
     });
   });
 }
