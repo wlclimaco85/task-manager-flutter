@@ -1603,6 +1603,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
+  final bool editUsesDetailScreen;
   final Map<String, dynamic>? extraParams;
   final bool showAppBar;
   final List<Widget>? headerActions;
@@ -1656,6 +1657,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.initialFilters,
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.showAppBar = true,
     this.headerActions,
@@ -4231,7 +4233,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   itemBuilder: (_) => menuItems,
                   onSelected: (value) {
                     if (value == '__edit__') {
-                      _openForm(item: item);
+                      if (widget.editUsesDetailScreen &&
+                          widget.detailScreenBuilder != null) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    widget.detailScreenBuilder!(item)));
+                      } else {
+                        _openForm(item: item);
+                      }
                     } else if (value == '__view__') {
                       Navigator.push(
                           context,

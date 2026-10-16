@@ -7,6 +7,8 @@ import '../models/auth_utility.dart';
 import '../models/nfce/nfce_resultado_model.dart';
 import '../models/nfce/nfce_status_model.dart';
 import '../utils/api_links.dart';
+import '../utils/api_response_helpers.dart';
+import '../utils/app_logger.dart';
 import '../utils/tenant_context.dart';
 
 /// Serviço responsável pelas chamadas HTTP relacionadas a NFC-e.
@@ -29,6 +31,28 @@ class NfceService {
     }
     throw NfceException(
       _extractErrorMessage(response, 'Falha ao emitir NFC-e'),
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<Map<String, dynamic>> buscarNfcePorId(int nfceId) async {
+    final url = ApiLinks.nfceBuscarPorId(nfceId);
+    final response = await http.get(
+      Uri.parse(TenantContext.applyToUrl(url)),
+      headers: TenantContext.headers,
+    );
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body is Map<String, dynamic>) {
+        if (body.containsKey('data') && body['data'] is Map<String, dynamic>) {
+          return body['data'] as Map<String, dynamic>;
+        }
+        return body;
+      }
+      return <String, dynamic>{};
+    }
+    throw NfceException(
+      _extractErrorMessage(response, 'Falha ao buscar detalhes do cupom NFC-e'),
       statusCode: response.statusCode,
     );
   }
@@ -106,6 +130,36 @@ class NfceService {
     );
   }
 
+  Future<void> reenviarContingencia(int nfceId) async {
+    final url = ApiLinks.reenviarContingenciaNfce(nfceId);
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(url)),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode({'empresaId': TenantContext.empresaId ?? 0}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw NfceException(
+        _extractErrorMessage(response, 'Falha ao reenviar NFC-e em contingência'),
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Future<void> enviarEmail(int nfceId, String destinatario) async {
+    final url = ApiLinks.enviarEmailNfce(nfceId);
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(url)),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode({'destinatario': destinatario}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw NfceException(
+        _extractErrorMessage(response, 'Falha ao enviar email da NFC-e'),
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
   Future<void> cancelarNfce(
     int nfceId,
     String justificativa, {
@@ -156,9 +210,8 @@ class NfceService {
     }
 
     final ufNormalizada = uf.trim().toUpperCase();
-    final ambienteNormalizado = ambiente.trim().isEmpty
-        ? 'HOMOLOGACAO'
-        : ambiente.trim().toUpperCase();
+    final ambienteNormalizado =
+        ambiente.trim().isEmpty ? 'HOMOLOGACAO' : ambiente.trim().toUpperCase();
     final url = ApiLinks.nfceHealth(
       empresaId,
       ufNormalizada,
@@ -204,6 +257,7 @@ class NfceService {
     required String fileName,
     required String senha,
     required int empresaId,
+    int? parceiroId,
     required String uf,
     String ambiente = 'HOMOLOGACAO',
   }) async {
@@ -215,6 +269,7 @@ class NfceService {
       fields: {
         'senha': senha,
         'empresaId': empresaId.toString(),
+        if (parceiroId != null) 'parceiroId': parceiroId.toString(),
         'uf': uf.trim().toUpperCase(),
         'ambiente': ambiente.trim().isEmpty
             ? 'HOMOLOGACAO'
@@ -229,8 +284,11 @@ class NfceService {
     }
   }
 
-  Future<Map<String, dynamic>> buscarConfigFiscal(int empresaId) async {
-    final url = ApiLinks.configFiscal(empresaId);
+  Future<Map<String, dynamic>> buscarConfigFiscal(
+    int empresaId, {
+    int? parceiroId,
+  }) async {
+    final url = ApiLinks.configFiscal(empresaId, parceiroId: parceiroId);
     final response = await http.get(
       Uri.parse(TenantContext.applyToUrl(url)),
       headers: TenantContext.headers,
@@ -260,26 +318,96 @@ class NfceService {
     }
   }
 
+  Future<Map<String, dynamic>> criarConfigFiscal(
+    Map<String, dynamic> config,
+  ) async {
+    final response = await http.post(
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.createConfigFiscal())),
+      headers: TenantContext.jsonHeaders,
+      body: jsonEncode(config),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw NfceException(
+      _extractErrorMessage(response, 'Falha ao criar configuração fiscal'),
+      statusCode: response.statusCode,
+    );
+  }
+
   Future<List<Map<String, dynamic>>> buscarProdutos({
     required String query,
     required int empresaId,
+    int page = 0,
+    int tamanho = 20,
   }) async {
-    final url =
-        '${ApiLinks.baseUrl}/api/produto?nome=${Uri.encodeComponent(query)}&empresa=$empresaId';
-    final response = await http.get(
-      Uri.parse(TenantContext.applyToUrl(url)),
-      headers: TenantContext.headers,
+    final paginado = await buscarProdutosPaginado(
+      query: query,
+      empresaId: empresaId,
+      page: page,
+      tamanho: tamanho,
     );
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body is List) {
-        return body.cast<Map<String, dynamic>>();
+    return paginado.itens.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  Future<ResultadoPaginadoSpring> buscarProdutosPaginado({
+    required String query,
+    required int empresaId,
+    int page = 0,
+    int tamanho = 20,
+  }) async {
+    final termo = query.trim();
+    // 1. Tenta endpoint dedicado de PDV
+    int? statusPdv;
+    final urlPdv =
+        '${ApiLinks.baseUrl}/api/pdv/produtos?nome=${Uri.encodeComponent(termo)}&page=$page&tamanho=$tamanho';
+    try {
+      final responsePdv = await http.get(
+        Uri.parse(TenantContext.applyToUrl(urlPdv)),
+        headers: TenantContext.headers,
+      );
+      statusPdv = responsePdv.statusCode;
+      if (responsePdv.statusCode == 200) {
+        final res = extrairResultadoPaginadoSpring(jsonDecode(responsePdv.body));
+        if (res.itens.isNotEmpty || res.totalElements > 0) {
+          return res;
+        }
       }
-      if (body is Map && body['content'] is List) {
-        return (body['content'] as List).cast<Map<String, dynamic>>();
-      }
+    } catch (_) {
+      // Falha no endpoint PDV tenta fallback
     }
-    return [];
+
+    // 2. Fallback para /api/produto-contabil (mesmo endpoint que atende o Web e todas as telas)
+    try {
+      final queryParam = termo.isNotEmpty ? '&nome=${Uri.encodeQueryComponent(termo)}' : '';
+      final urlProdutoContabil =
+          '${ApiLinks.baseUrl}/api/produto-contabil?pagina=$page&tamanho=$tamanho$queryParam';
+      final responseFallback = await http.get(
+        Uri.parse(TenantContext.applyToUrl(urlProdutoContabil)),
+        headers: TenantContext.headers,
+      );
+      if (responseFallback.statusCode == 200) {
+        return extrairResultadoPaginadoSpring(jsonDecode(responseFallback.body));
+      }
+    } catch (_) {
+      // Ignora erro e devolve vazio
+    }
+
+    // PDV e fallback falharam: nao mascarar como "lista vazia" (403 sem permissao,
+    // 5xx...) - a tela mostrava "Nenhum produto encontrado" sem pista do erro.
+    if (statusPdv == 200) {
+      // PDV respondeu 200 sem itens e o fallback tambem nao trouxe: lista vazia real.
+      return const ResultadoPaginadoSpring(
+        itens: [],
+        totalElements: 0,
+        isLast: true,
+      );
+    }
+    final msg = statusPdv == 403
+        ? 'Sem permissao para consultar produtos no PDV (403)'
+        : 'Falha ao buscar produtos (status ${statusPdv ?? 'sem resposta'})';
+    AppLogger.i.warn('PDV buscarProdutos: $statusPdv $urlPdv');
+    throw NfceException(msg, statusCode: statusPdv ?? -1);
   }
 
   Future<void> inutilizar({

@@ -44,6 +44,8 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final Future<void> Function(Map<String, dynamic> formData, T? item)? onAfterSave;
   final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
 
+  final bool editUsesDetailScreen;
+
   /// Ver GenericGridScreen.prefetchExtraFields/onAfterSave — repassados como
   /// estão, sem lógica própria neste nível (só plumbing).
   final Future<Map<String, dynamic>> Function(T item)? prefetchExtraFields;
@@ -55,6 +57,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     required this.fromJson,
     required this.toJson,
     this.detailScreenBuilder,
+    this.editUsesDetailScreen = false,
     this.extraParams,
     this.customActions,
     this.fieldOverrides,
@@ -424,6 +427,7 @@ class _DynamicGridWindowsScreenState<T>
           exportConfig: const ExportConfig(enableCsvExport: true, filenamePrefix: 'dynamic'),
           paginationConfig: const PaginationConfig(),
           detailScreenBuilder: widget.detailScreenBuilder,
+          editUsesDetailScreen: widget.editUsesDetailScreen,
           extraParams: widget.extraParams,
           customActions: widget.customActions,
           showAppBar: widget.showAppBar,

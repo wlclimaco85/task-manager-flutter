@@ -1026,8 +1026,14 @@ class ApiLinks {
   static String nfceXml(int nfceId) => '$_baseUrlNew/api/v1/nfce/$nfceId/xml';
   static String nfceQrCode(int nfceId, {int size = 200}) =>
       '$_baseUrlNew/api/v1/nfce/$nfceId/qrcode.png?size=$size';
+  static String nfceBuscarPorId(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId';
   static String cancelarNfce(int nfceId) =>
       '$_baseUrlNew/api/v1/nfce/$nfceId/cancelar';
+  static String reenviarContingenciaNfce(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/reenviar-contingencia';
+  static String enviarEmailNfce(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/enviar-email';
   static String inutilizarNfce() => '$_baseUrlNew/api/v1/nfce/inutilizar';
   static String statusSefaz(String uf, {String ambiente = 'HOMOLOGACAO'}) =>
       '$_baseUrlNew/api/v1/fiscal/sefaz/status?uf=$uf&ambiente=$ambiente';
@@ -1036,10 +1042,14 @@ class ApiLinks {
       '$_baseUrlNew/api/v1/fiscal/nfce/health?empresaId=$empresaId&uf=$uf&ambiente=$ambiente';
   static String uploadCertificadoNfce() =>
       '$_baseUrlNew/api/v1/fiscal/nfce/certificado';
-  static String configFiscal(int empresaId) =>
-      '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId';
+  static String configFiscal(int empresaId, {int? parceiroId}) => parceiroId ==
+          null
+      ? '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId'
+      : '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId?parceiroId=$parceiroId';
   static String updateConfigFiscal(int configId) =>
       '$_baseUrlNew/api/v1/fiscal/nfce/config/$configId';
+  static String createConfigFiscal() =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/config';
   static String produtosBusca(String nome, int empresaId) =>
       '$_baseUrlNew/api/produto?nome=${Uri.encodeComponent(nome)}&empresa=$empresaId&page=0&size=20';
 

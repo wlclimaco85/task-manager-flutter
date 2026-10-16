@@ -107,6 +107,7 @@ import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
 import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/fornecedor_grid_screen.dart';
+import '../../web/screens/modulo_tela_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
@@ -504,6 +505,29 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
         DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
         DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais
+        const SizedBox.shrink(), // 183
+        const SizedBox.shrink(), // 184
+        const SizedBox.shrink(), // 185
+        const SizedBox.shrink(), // 186
+        const SizedBox.shrink(), // 187
+        const SizedBox.shrink(), // 188
+        const SizedBox.shrink(), // 189
+        const SizedBox.shrink(), // 190
+        const SizedBox.shrink(), // 191
+        const SizedBox.shrink(), // 192
+        const SizedBox.shrink(), // 193
+        const SizedBox.shrink(), // 194
+        const SizedBox.shrink(), // 195
+        const SizedBox.shrink(), // 196
+        const SizedBox.shrink(), // 197
+        const SizedBox.shrink(), // 198
+        const SizedBox.shrink(), // 199
+        const SizedBox.shrink(), // 200
+        const SizedBox.shrink(), // 201
+        const SizedBox.shrink(), // 202
+        const SizedBox.shrink(), // 203
+        const SizedBox.shrink(), // 204
+        const WebModuloTelaGridScreen(), // 205: Telas por Módulo
       ];
 
   String get userName {

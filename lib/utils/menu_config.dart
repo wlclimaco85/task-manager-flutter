@@ -602,6 +602,11 @@ class MenuConfig {
             label: 'Query Builder',
             icon: FontAwesomeIcons.database,
             screenIndex: 150),
+        MenuItem(
+            id: 'modulo_telas',
+            label: 'Telas por Módulo',
+            icon: FontAwesomeIcons.layerGroup,
+            screenIndex: 205),
       ],
     ),
     MenuGroup(
