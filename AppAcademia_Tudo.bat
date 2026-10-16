@@ -738,7 +738,11 @@ if errorlevel 1 (
     echo [ERRO] flutter pub get falhou em %BUILD_APP_LABEL%.
     exit /b 1
 )
-call flutter build apk --debug
+if /i "%~5"=="preservar" (
+    call flutter build apk --debug --dart-define=FORCE_LOGIN_ON_START=true
+) else (
+    call flutter build apk --debug
+)
 if errorlevel 1 (
     echo [ERRO] Build falhou em %BUILD_APP_LABEL%.
     exit /b 1
@@ -750,7 +754,17 @@ if errorlevel 1 (
 )
 echo.
 echo APK gerado: %BUILD_APK_DEST%
-echo Backend: http://127.0.0.1:%BACKEND_PORT% (local, sem --dart-define)
+echo Backend: http://127.0.0.1:%BACKEND_PORT% (configuracao local padrao)
+if /i "%~5"=="preservar" (
+    echo Configurando adb reverse antes de abrir o app...
+    "%ADB%" -s 127.0.0.1:5555 reverse tcp:%BACKEND_PORT% tcp:%BACKEND_PORT%
+    if errorlevel 1 (
+        echo [ERRO] Falha no adb reverse para o BlueStacks. O app nao foi aberto.
+        exit /b 1
+    )
+    call :INSTALL_V003_APK_PRESERVING_DATA "%BUILD_APK_DEST%" "%BUILD_APP_DIR%\build\app\outputs\apk\debug\output-metadata.json"
+    exit /b !ERRORLEVEL!
+)
 call :INSTALL_APK_FILE "%BUILD_APK_DEST%" "%BUILD_APP_PACKAGE%" "%BUILD_APP_LABEL%"
 if errorlevel 1 exit /b 1
 echo.
@@ -1230,6 +1244,12 @@ if errorlevel 1 (
     echo [ERRO] Falha ao atualizar o APK. Os dados existentes foram preservados; nenhuma desinstalacao foi executada.
     exit /b 1
 )
+echo Reiniciando %INSTALL_PACKAGE% sem apagar dados...
+"%ADB%" -s 127.0.0.1:5555 shell am force-stop %INSTALL_PACKAGE%
+if errorlevel 1 (
+    echo [ERRO] APK instalado, mas nao foi possivel encerrar a instancia anterior de %INSTALL_PACKAGE%.
+    exit /b 1
+)
 echo Iniciando %INSTALL_PACKAGE%...
 "%ADB%" -s 127.0.0.1:5555 shell monkey -p %INSTALL_PACKAGE% -c android.intent.category.LAUNCHER 1
 if errorlevel 1 (
@@ -1602,10 +1622,10 @@ exit /b 0
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
 call :DETECT_HOST_IP
-call :ENSURE_BLUESTACKS_ADB
+call :ENSURE_BLUESTACKS_ADB preservar
 if errorlevel 1 exit /b 1
-call :BUILD_ANDROID_PROJECT_LOCAL "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
-exit /b 0
+call :BUILD_ANDROID_PROJECT_LOCAL "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%" preservar
+exit /b %ERRORLEVEL%
 
 :V003_MOBILE_RAILWAY
 set "BUILD_BACKEND_URL=%DEPLOY_BACKEND_URL%"
