@@ -1150,6 +1150,10 @@ if errorlevel 1 (
     exit /b 1
 )
 echo APK gerado: %BUILD_APK_DEST%
+if /i "%~5"=="preservar" (
+    call :INSTALL_V003_APK_PRESERVING_DATA "%BUILD_APK_DEST%" "%BUILD_APP_DIR%\build\app\outputs\apk\debug\output-metadata.json"
+    exit /b !ERRORLEVEL!
+)
 call :INSTALL_APK_FILE "%BUILD_APK_DEST%" "%BUILD_APP_PACKAGE%" "%BUILD_APP_LABEL%"
 exit /b %ERRORLEVEL%
 
@@ -1188,6 +1192,7 @@ goto TENTA_BS_ADB
 
 :BS_ADB_OK
 echo BlueStacks conectado via ADB.
+if /i "%~1"=="preservar" exit /b 0
 call :CLEANUP_LEGACY_APPS
 exit /b 0
 
@@ -1200,6 +1205,37 @@ rem "task_manager_flutter" e codigo/backend antigos (causa de "Incorrect email o
 rem password" ao tentar logar nele em vez do app novo). Remove o residuo aqui,
 rem antes de qualquer instalacao, para nao confundir o usuario com 2 icones iguais.
 "%ADB%" -s 127.0.0.1:5555 shell pm uninstall br.com.abracocontabilidade.app >nul 2>&1
+exit /b 0
+
+:INSTALL_V003_APK_PRESERVING_DATA
+set "INSTALL_APK=%~1"
+set "INSTALL_METADATA=%~2"
+set "INSTALL_PACKAGE="
+if not exist "%INSTALL_APK%" (
+    echo [ERRO] APK nao encontrado: %INSTALL_APK%
+    exit /b 1
+)
+if not exist "%INSTALL_METADATA%" (
+    echo [ERRO] Metadados do APK nao encontrados: %INSTALL_METADATA%
+    exit /b 1
+)
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$ErrorActionPreference='Stop'; $id=(ConvertFrom-Json -InputObject (Get-Content -Raw -LiteralPath $env:INSTALL_METADATA)).applicationId; if ($id -match '^[a-zA-Z][a-zA-Z0-9_]*([.][a-zA-Z][a-zA-Z0-9_]*)+$') { $id } else { exit 1 }"`) do set "INSTALL_PACKAGE=%%P"
+if not defined INSTALL_PACKAGE (
+    echo [ERRO] Nao foi possivel ler applicationId valido dos metadados do APK.
+    exit /b 1
+)
+echo Atualizando %INSTALL_PACKAGE% no BlueStacks sem apagar dados...
+"%ADB%" -s 127.0.0.1:5555 install -r "%INSTALL_APK%"
+if errorlevel 1 (
+    echo [ERRO] Falha ao atualizar o APK. Os dados existentes foram preservados; nenhuma desinstalacao foi executada.
+    exit /b 1
+)
+echo Iniciando %INSTALL_PACKAGE%...
+"%ADB%" -s 127.0.0.1:5555 shell monkey -p %INSTALL_PACKAGE% -c android.intent.category.LAUNCHER 1
+if errorlevel 1 (
+    echo [ERRO] APK instalado, mas nao foi possivel abrir %INSTALL_PACKAGE%.
+    exit /b 1
+)
 exit /b 0
 
 :INSTALL_APK_FILE
@@ -1544,10 +1580,10 @@ echo  [0] Voltar ao Menu
 echo ============================================
 choice /c 12340 /n /m "Escolha: "
 if "%ERRORLEVEL%"=="5" exit /b 0
-if "%ERRORLEVEL%"=="4" call :V003_MOBILE_RAILWAY
-if "%ERRORLEVEL%"=="3" call :V003_MOBILE_LOCAL
-if "%ERRORLEVEL%"=="2" call :V003_WEB_RAILWAY
-if "%ERRORLEVEL%"=="1" call :V003_WEB_LOCAL
+if "%ERRORLEVEL%"=="4" goto V003_MOBILE_RAILWAY
+if "%ERRORLEVEL%"=="3" goto V003_MOBILE_LOCAL
+if "%ERRORLEVEL%"=="2" goto V003_WEB_RAILWAY
+if "%ERRORLEVEL%"=="1" goto V003_WEB_LOCAL
 exit /b 0
 
 :V003_WEB_LOCAL
@@ -1572,9 +1608,11 @@ call :BUILD_ANDROID_PROJECT_LOCAL "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTre
 exit /b 0
 
 :V003_MOBILE_RAILWAY
-call :ENSURE_BLUESTACKS_ADB
+set "BUILD_BACKEND_URL=%DEPLOY_BACKEND_URL%"
+set "BUILD_WS_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+call :ENSURE_BLUESTACKS_ADB preservar
 if errorlevel 1 exit /b 1
-call :BUILD_ANDROID_PROJECT_DEPLOY "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%"
-exit /b 0
+call :BUILD_ANDROID_PROJECT_DEPLOY "Meu Treino V003" "%FLUTTER_V003_DIR%" "MeuTreinoV003" "%APP_PACKAGE_MEU_TREINO%" preservar
+exit /b %ERRORLEVEL%
 exit /b 0
 
