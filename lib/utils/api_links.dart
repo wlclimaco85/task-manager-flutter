@@ -1083,6 +1083,10 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/recusar';
+  static String devolverNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/devolver';
+  static String emailNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/enviar-email';
   // Busca parceiro por CNPJ/CPF (usado pelo filtro de NF-e por parceiro/destinatario)
   static String buscarParceiroPorCnpj(String cpfCnpj) =>
       '$_baseUrlNew/api/parceiro?cpfCnpj=$cpfCnpj&tamanho=1';
@@ -1188,6 +1192,8 @@ class ApiLinks {
   // NFC-e / PDV (Card 8)
   static String emitirNfce(int vendaId) =>
       '$_baseUrlNew/api/v1/vendas/$vendaId/emitir-nfce';
+  static String nfceBuscarPorId(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId';
   static String nfceStatus(int nfceId) =>
       '$_baseUrlNew/api/v1/nfce/$nfceId/status';
   static String nfceDanfe(int nfceId) =>
