@@ -64,6 +64,15 @@ void main() {
       expect(nfes.single.id, 3);
     });
 
+    test('resposta sem content nem lista vira NfeRepositoryException, nao lista vazia', () async {
+      transporte.corpo = {'outro': 1};
+
+      await expectLater(
+        repository.listarNfe(page: 1, pageSize: 10),
+        throwsA(isA<NfeRepositoryException>()),
+      );
+    });
+
     test('envia status em maiusculo e data sem a hora', () async {
       transporte.corpo = {'content': <Map<String, dynamic>>[]};
 
