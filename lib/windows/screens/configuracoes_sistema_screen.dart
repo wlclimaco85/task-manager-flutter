@@ -142,6 +142,17 @@ class _ConfiguracoesSistemaScreenState
           _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
           _section('Importacao Fiscal', Icons.receipt_long_outlined, [
+            _actionCard(
+                id: 'reprocessar_nfe_receita',
+                title: 'Regerar / Enriquecer NF-es Incompletas da Receita (SEFAZ)',
+                subtitle:
+                    'Busca NF-es de Entrada sem itens (resumos da SEFAZ), '
+                    'manifesta Ciência da Emissão (210210), busca o XML completo e '
+                    'auto-cadastra itens, produtos, estoque, tributação e contas a pagar.',
+                icon: Icons.sync,
+                color: _green,
+                onTap: _reprocessarNfesIncompletas),
+            const SizedBox(height: 12),
             ImportacaoSintegraCard(baseUrl: ApiLinks.baseUrl),
             const SizedBox(height: 12),
             ImportacaoSpedCard(baseUrl: ApiLinks.baseUrl),
@@ -762,6 +773,11 @@ class _ConfiguracoesSistemaScreenState
       setState(() => _loading['seed'] = false);
     }
   }
+
+  void _reprocessarNfesIncompletas() => _executar(
+      'reprocessar_nfe_receita',
+      () => TenantContext.post(
+          '${ApiLinks.baseUrl}/api/nfe/receita/reprocessar-incompletas', {}));
 
   Future<void> _executar(String id, Future<dynamic> Function() fn) async {
     setState(() => _loading[id] = true);
