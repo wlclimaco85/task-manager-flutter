@@ -162,6 +162,21 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
           label: 'Recusar',
           onPressed: (context, item) => _recusar(context, item),
         ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.assignment_return_outlined,
+          label: 'Devolver NF-e',
+          onPressed: (context, item) => _devolver(context, item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.print,
+          label: 'Imprimir DANFE',
+          onPressed: (context, item) => _imprimirDanfe(context, item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.code,
+          label: 'Exportar XML',
+          onPressed: (context, item) => _baixarXml(context, item),
+        ),
       ];
     } else {
       // NF-e SAÍDA
@@ -185,6 +200,11 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
           icon: Icons.code,
           label: 'Exportar XML',
           onPressed: (context, item) => _baixarXml(context, item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.email_outlined,
+          label: 'Enviar por E-mail',
+          onPressed: (context, item) => _enviarEmail(context, item),
         ),
       ];
     }
@@ -362,6 +382,152 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
       if (context.mounted)
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Erro: $e'), backgroundColor: GridColors.error));
+    }
+  }
+
+  Future<void> _enviarEmail(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    String emailInicial = item['destinatario']?['email'] ??
+        item['parceiro']?['email'] ??
+        '';
+    final emailCtrl = TextEditingController(text: emailInicial);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Enviar NF-e por E-mail',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  'Serão enviados em anexo o DANFE (PDF) e o XML da NF-e #${item['numero'] ?? id}.',
+                  style:
+                      const TextStyle(fontSize: 12, color: GridColors.divider)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail destinatário *',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enviar E-mail'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final email = emailCtrl.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Informe um e-mail válido.'),
+          backgroundColor: GridColors.warning));
+      return;
+    }
+    try {
+      final r =
+          await TenantContext.post(ApiLinks.emailNfe(id), {'email': email});
+      if (!context.mounted) return;
+      if (r.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'E-mail enviado com sucesso com DANFE e XML para $email!'),
+            backgroundColor: GridColors.success));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao enviar e-mail: ${r.body}'),
+            backgroundColor: GridColors.error));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'), backgroundColor: GridColors.error));
+      }
+    }
+  }
+
+  Future<void> _devolver(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    final motivoCtrl = TextEditingController(text: 'Devolução de mercadoria');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Devolver NF-e de Entrada',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  'Deseja gerar a NF-e de devolução referenciando a nota #${item['numero'] ?? id} - Chave: ${item['chave'] ?? ''}?',
+                  style:
+                      const TextStyle(fontSize: 12, color: GridColors.divider)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: motivoCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo da devolução',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar Devolução'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      final r = await TenantContext.post(
+          ApiLinks.devolverNfe(id), {'motivo': motivoCtrl.text.trim()});
+      if (!context.mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'NF-e de devolução gerada com sucesso! Acesse a tela de NF-e Saída para emitir/imprimir.'),
+            backgroundColor: GridColors.success));
+        setState(() => _gridKey++);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao devolver NF-e: ${r.body}'),
+            backgroundColor: GridColors.error));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'), backgroundColor: GridColors.error));
+      }
     }
   }
 

@@ -945,6 +945,10 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/aceitar';
   static String recusarNfe(String nfeId) =>
       '$_baseUrlNew/api/nfe/$nfeId/recusar';
+  static String devolverNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/devolver';
+  static String emailNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/enviar-email';
   static String get importarNfeCsv => '$_baseUrlNew/api/nfe/importar-csv';
   static String get allNfe => '$_baseUrlNew/api/nfe';
   static String get createNfe => '$_baseUrlNew/api/nfe';
