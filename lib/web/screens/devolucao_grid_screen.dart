@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:file_saver/file_saver.dart';
+import 'package:task_manager_flutter/utils/file_saver_compat.dart';
 import '../../services/devolucao_service.dart';
 import '../../constants/custom_colors.dart';
 import '../../windows/dialogs/devolucao_form_dialog.dart';
