@@ -71,6 +71,8 @@ jobs:
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release-upload.jks
           test -s android/fastlane/google-play-key.json
           test -s android/app/release-upload.jks
+          # Numero de build unico e crescente por execucao (version code nunca repete no Play).
+          echo "BUILD_NUMBER=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
       - name: Dependencias do Flutter
         run: flutter pub get
@@ -79,7 +81,6 @@ jobs:
         working-directory: android
         shell: bash
         env:
-          BUILD_NUMBER: ${{ format('{0}', 1000 + github.run_number) }}
           ANDROID_KEYSTORE_PATH: app/release-upload.jks
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
