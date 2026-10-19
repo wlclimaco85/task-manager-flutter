@@ -33,6 +33,7 @@ class _SystemTestRunPanelState extends State<SystemTestRunPanel> {
     'FITNESS_DOCUMENTOS': 'Fitness: fichas e histórico',
     'FITNESS_ACADEMIA_DONO': 'Fitness: cadastro do dono de academia',
     'FITNESS_CADASTRO_INICIAL': 'Fitness: cadastro inicial do aluno (foto e medidas)',
+    'FITNESS_ACADEMIA_FINANCEIRO': 'Fitness: financeiro da academia (baixa e pendências)',
     'FITNESS_PERSONAL': 'Fitness: gestão do personal e vínculo de alunos',
     'FASE_1': 'Fase 1',
     'FASE_2': 'Fase 2',
