@@ -37,4 +37,36 @@ platform :android do
     )
   end
 
+
+  desc "Build do AAB de release com o numero de versao informado pelo CI (BUILD_NUMBER)"
+  lane :build_release do
+    build_number = ENV["BUILD_NUMBER"].to_s
+    UI.user_error!("BUILD_NUMBER obrigatorio") if build_number.empty?
+    Dir.chdir("../..") do
+      sh("flutter build appbundle --release --build-number=#{build_number}")
+    end
+  end
+
+  desc "Teste fechado (faixa alpha) - branch desenv"
+  lane :teste_fechado do
+    build_release
+    upload_to_play_store(
+      track: "alpha",
+      release_status: "completed",
+      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      json_key: "fastlane/google-play-key.json"
+    )
+  end
+
+  desc "Teste aberto (faixa beta) - branch main"
+  lane :teste_aberto do
+    build_release
+    upload_to_play_store(
+      track: "beta",
+      release_status: "completed",
+      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      json_key: "fastlane/google-play-key.json"
+    )
+  end
+
 end

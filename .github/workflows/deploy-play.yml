@@ -1,0 +1,87 @@
+name: Deploy Play (teste fechado / teste aberto)
+
+# desenv -> faixa alpha (Teste fechado - Alpha)
+# main   -> faixa beta  (Teste aberto)
+on:
+  push:
+    branches: [desenv, main]
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: 'Lane: teste_fechado (alpha) ou teste_aberto (beta)'
+        type: choice
+        options: [teste_fechado, teste_aberto]
+        default: teste_fechado
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-play-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  play:
+    name: Build e envio para o Play
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Escolhe a lane
+        id: lane
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            lane="${{ inputs.lane }}"
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            lane="teste_aberto"
+          else
+            lane="teste_fechado"
+          fi
+          echo "lane=$lane" >> "$GITHUB_OUTPUT"
+          echo "Lane escolhida: $lane"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Credenciais de assinatura e Play
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GOOGLE_PLAY_JSON_KEY" > android/fastlane/google-play-key.json
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release-upload.jks
+          test -s android/fastlane/google-play-key.json
+          test -s android/app/release-upload.jks
+
+      - name: Dependencias do Flutter
+        run: flutter pub get
+
+      - name: Fastlane
+        working-directory: android
+        shell: bash
+        env:
+          BUILD_NUMBER: ${{ format('{0}', 1000 + github.run_number) }}
+          ANDROID_KEYSTORE_PATH: app/release-upload.jks
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: bundle exec fastlane android ${{ steps.lane.outputs.lane }}
