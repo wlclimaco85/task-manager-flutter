@@ -1,7 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ✅ A permissão deve ficar aqui, fora da tag <application> -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- O geolocator 5.x declara servico de localizacao em primeiro plano (Android 14).
+         O app nao usa essa funcao, entao o item e removido do manifesto mesclado. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" tools:node="remove" />
 
     <application
         android:label="Abraço Contabilidade"
@@ -33,6 +38,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <service
+        android:name="com.baseflow.geolocator.GeolocatorLocationService"
+        tools:node="remove" />
     </application>
 
     <queries>
