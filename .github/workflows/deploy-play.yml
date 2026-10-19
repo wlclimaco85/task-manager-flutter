@@ -86,6 +86,9 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          # Versao do Bundler igual ao BUNDLED WITH do Gemfile.lock (evita o bundle do sistema).
-          gem install bundler -v 2.5.22 --no-document
-          bundle _2.5.22_ exec fastlane android ${{ steps.lane.outputs.lane }}
+          set -euo pipefail
+          # Usa o Ruby configurado pelo setup-ruby (3.3) e o Fastlane fixado no Gemfile.lock.
+          echo "ruby: $(command -v ruby) $(ruby -v)"
+          gem install fastlane -v 2.241.1 --no-document
+          cd android
+          "$(gem env bindir)/fastlane" android ${{ steps.lane.outputs.lane }}
