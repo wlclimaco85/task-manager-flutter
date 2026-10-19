@@ -14,7 +14,7 @@ platform :android do
     build
     upload_to_play_store(
       track: "internal",
-      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
       json_key_data: ENV["PLAY_STORE_JSON_KEY_DATA"]
     )
   end
@@ -53,7 +53,7 @@ platform :android do
     upload_to_play_store(
       track: "alpha",
       release_status: "completed",
-      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
       json_key: "fastlane/google-play-key.json"
     )
   end
@@ -64,7 +64,7 @@ platform :android do
     upload_to_play_store(
       track: "beta",
       release_status: "completed",
-      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
       json_key: "fastlane/google-play-key.json"
     )
   end
