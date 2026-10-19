@@ -90,5 +90,4 @@ jobs:
           # Usa o Ruby configurado pelo setup-ruby (3.3) e o Fastlane fixado no Gemfile.lock.
           echo "ruby: $(command -v ruby) $(ruby -v)"
           gem install fastlane -v 2.241.1 --no-document
-          cd android
           "$(gem env bindir)/fastlane" android ${{ steps.lane.outputs.lane }}
