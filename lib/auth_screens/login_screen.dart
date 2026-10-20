@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/utils/acesso_app_info.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -178,9 +179,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     NetworkResponse resp;
     try {
+      final acesso = await dadosDeAcessoLogin();
       resp = await NetworkCaller().postRequest(ApiLinks.login, {
         'email': _emailController.text.trim(),
-        'password': _passwordController.text
+        'password': _passwordController.text,
+        ...acesso,
       });
     } catch (e) {
       if (mounted) setState(() => _loginInProgress = false);
