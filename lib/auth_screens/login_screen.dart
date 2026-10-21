@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../mobile/screens/bottom_navbar_screen.dart';
 import '../../windows/screens/bottom_navbar_screen.dart';
-import '../../web/screens/bottom_navbar_screen.dart';
+import '../../web/screens/web_home_responsiva.dart';
 import '../../models/auth_utility.dart';
 import '../../models/login_model.dart';
 import '../../models/network_response.dart';
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (kIsWeb) {
       Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const WebBottomNavBarScreen()),
+          MaterialPageRoute(builder: (_) => const WebHomeResponsiva()),
           (_) => false);
     } else if (defaultTargetPlatform == TargetPlatform.windows) {
       Navigator.pushAndRemoveUntil(
