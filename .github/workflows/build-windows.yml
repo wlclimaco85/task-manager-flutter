@@ -73,6 +73,8 @@ jobs:
           Get-ChildItem -Recurse -Depth 2 -Name | Write-Host
 
       - name: Build Windows Release
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: '3.5'
         run: >
           flutter build windows
           --release
