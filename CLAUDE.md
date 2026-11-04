@@ -73,3 +73,8 @@ Done no CLAUDE.md pai).
 - Atenção: NUNCA find-replace em massa `const`→`final` (quebra `String.fromEnvironment` em runtime).
 - **Commit + push para `main` → code review OBRIGATÓRIO** antes do merge. Branch base: `desenv`.
 - Encoding UTF-8.
+
+
+ fazer  seguindo tudo descrito em C:\App_Academia\claude.md e sempre sem redundancia e sem startar agests e skills desnecessarias e o comit e apenas em desenv e verifique nos bugs.md se ja foi 
+ solicitado essas correção e se foi o que ele fez e porque nao funcionou sem alucinar sem viajar so focar no que foi solicitado e antes de implementar qualquer coisa verifique o fonte atual e veja como pode 
+ ser feito com o menor impacto no fonte que ja funciona sem estragar nada ja feito 
