@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:task_manager_flutter/utils/file_saver_compat.dart';
 
 import '../services/nfse_faturar_service.dart';
 import '../services/parceiro_faturamento_service.dart';
+import '../utils/api_links.dart';
+import '../utils/app_logger.dart';
+import '../utils/faturar_pdf_helper.dart';
+import '../utils/tenant_context.dart';
 import '../utils/dropdown_helpers.dart';
 import '../utils/grid_colors.dart';
 import '../utils/nfse_faturar_utils.dart';
@@ -318,14 +324,33 @@ class _ParceiroFaturamentoDialogState extends State<ParceiroFaturamentoDialog> {
         .map((item) => '${item['parceiroNome'] ?? 'Parceiro'}: '
             '${item['mensagem'] ?? 'Falha sem detalhe'}')
         .join('\n');
+    final pdfsBaixados = await _baixarPdfsDasNotas(resultados);
+    if (!mounted) return;
     _mostrarResultado(
       titulo: falhas == 0 ? 'Faturamento concluido' : 'Faturamento finalizado',
       mensagem: '$sucessos sucesso(s) e $falhas falha(s).'
+          "${sucessos == 0 ? '' : pdfsBaixados == sucessos ? '\nPDF do DANFSe baixado ($pdfsBaixados).' : '\n$pdfsBaixados de $sucessos PDF(s) baixado(s); os demais saem na tela de NFS-e.'}"
           '${detalhes.isEmpty ? '' : '\n\n$detalhes'}',
       erro: falhas > 0,
       fecharOrigem: true,
     );
   }
+
+  Future<int> _baixarPdfsDasNotas(List resultados) => baixarPdfsDasNotas(
+        resultados,
+        obter: (id) async {
+          final r = await TenantContext.get(ApiLinks.danfseNfse(id.toString()));
+          if (r.statusCode == 200) return r.bodyBytes;
+          AppLogger.i.warn('Faturar: DANFSE #$id retornou HTTP ${r.statusCode}');
+          return null;
+        },
+        salvar: (nome, bytes) => FileSaver.instance.saveFile(
+          name: nome,
+          bytes: Uint8List.fromList(bytes),
+          fileExtension: 'pdf',
+          mimeType: MimeType.pdf,
+        ),
+      );
 
   void _mostrarResultado({
     required String titulo,
