@@ -79,7 +79,7 @@ platform :ios do
       scheme:     "Runner",
       devices:    ["iPhone 15", "iPhone 15 Pro"],
       clean:      true,
-      output_dir: "fastlane/test_output/ios"
+      output_directory: "fastlane/test_output/ios"
     )
   end
 
