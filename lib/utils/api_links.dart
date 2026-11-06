@@ -1154,6 +1154,15 @@ class ApiLinks {
   static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
   static String get allNfeSerie => '$_baseUrlNew/api/nfe_serie';
   static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
+  // Transporte (MDF-e): cadastros de veiculos e motoristas
+  static String get allTransporteVeiculos =>
+      '$_baseUrlNew/api/transporte/veiculos';
+  static String transporteVeiculo(String id) =>
+      '$_baseUrlNew/api/transporte/veiculos/$id';
+  static String get allTransporteMotoristas =>
+      '$_baseUrlNew/api/transporte/motoristas';
+  static String transporteMotorista(String id) =>
+      '$_baseUrlNew/api/transporte/motoristas/$id';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';

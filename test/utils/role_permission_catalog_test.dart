@@ -131,6 +131,23 @@ void main() {
     expect(nfseSerie.telaNome, 'nfse_serie');
   });
 
+  // Modulo Transporte (MDF-e): cadastros de veiculos e motoristas.
+  test('catalogo de permissoes mostra Veículos e Motoristas (Transporte)', () {
+    final telas = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    final veiculos =
+        telas.firstWhere((tela) => tela.menuItemId == 'transporte_veiculos');
+    expect(veiculos.label, 'Veículos');
+    expect(veiculos.telaNome, 'transporte_veiculos');
+
+    final motoristas =
+        telas.firstWhere((tela) => tela.menuItemId == 'transporte_motoristas');
+    expect(motoristas.label, 'Motoristas');
+    expect(motoristas.telaNome, 'transporte_motoristas');
+  });
+
   // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem
   // que aparecer em Controle de Acesso" ja documentada no CLAUDE.md pros
   // casos de nfce_grid/cnab_remessa acima.

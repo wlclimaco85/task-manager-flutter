@@ -159,6 +159,8 @@ import 'certificado_empresa_screen.dart';
 import '../../web/screens/nfce_grid_screen.dart';
 import '../../web/screens/noticias_grid_screen.dart';
 import '../../web/screens/cnab_remessa_screen.dart';
+import '../../web/screens/transporte_veiculo_grid_screen.dart';
+import '../../web/screens/transporte_motorista_grid_screen.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
@@ -331,6 +333,24 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       default:
         return matrix.canView(AppScreen.nfceGrid);
     }
+  }
+
+  /// hasPermission por tela via SecurityMatrix (cadastros do modulo Transporte).
+  bool Function(String) _screenPermission(AppScreen screen) {
+    return (String permission) {
+      final matrix = SecurityMatrix.current();
+      switch (permission) {
+        case 'create':
+          return matrix.canInsert(screen);
+        case 'edit':
+          return matrix.canUpdate(screen);
+        case 'delete':
+        case 'deleteMultiple':
+          return matrix.canDelete(screen);
+        default:
+          return matrix.canView(screen);
+      }
+    };
   }
 
   List<Widget> _buildScreens(dynamic userInfo) => [
@@ -568,6 +588,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const CnabRemessaScreen(), // 202: Remessa EDI
         WebNfseSerieGridScreen(hasPermission: (perm) => true), // 203: NfseSerie
         const WindowsNfseImportXmlScreen(), // 204: NfseImportXml
+        WebTransporteVeiculoGridScreen(
+            hasPermission: _screenPermission(
+                AppScreen.transporteVeiculos)), // 205: Veiculos
+        WebTransporteMotoristaGridScreen(
+            hasPermission: _screenPermission(
+                AppScreen.transporteMotoristas)), // 206: Motoristas
       ];
 
   String get userName {

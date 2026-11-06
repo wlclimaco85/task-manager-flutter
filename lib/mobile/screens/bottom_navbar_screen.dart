@@ -49,6 +49,8 @@ import 'nfse_screen.dart';
 import 'nfe_grid_screen.dart';
 import 'nfce_grid_screen.dart';
 import 'nfse_serie_screen.dart';
+import 'transporte_veiculo_screen.dart';
+import 'transporte_motorista_screen.dart';
 import 'nfse_servico_screen.dart';
 import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
@@ -216,6 +218,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'NF-e Saída': (menuId: 'nfe_saida', appScreen: AppScreen.nfeSaida),
     'NF-e Entrada': (menuId: 'nfe_entrada', appScreen: AppScreen.nfeEntrada),
     'NFC-e (Cupons)': (menuId: 'nfce_grid', appScreen: AppScreen.nfceGrid),
+    'Veículos': (menuId: 'transporte_veiculos', appScreen: AppScreen.transporteVeiculos),
+    'Motoristas': (menuId: 'transporte_motoristas', appScreen: AppScreen.transporteMotoristas),
     'NF-e Série': (menuId: 'nfe_serie', appScreen: AppScreen.nfeSerie),
     'NF-e Finalidade': (menuId: 'nfe_finalidade', appScreen: null),
     'NF-e Tipo Operação': (menuId: 'nfe_tipo_operacao', appScreen: null),
@@ -380,6 +384,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'nfe_saida': 'Notas Fiscais',
     'nfe_entrada': 'Notas Fiscais',
     'nfce_grid': 'Notas Fiscais',
+    'transporte_veiculos': 'Notas Fiscais',
+    'transporte_motoristas': 'Notas Fiscais',
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',
@@ -1695,6 +1701,28 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => MobileNfceGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.nfceGrid, action),
+            ),
+          ),
+        );
+        break;
+      case "Veículos":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileTransporteVeiculoScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.transporteVeiculos, action),
+            ),
+          ),
+        );
+        break;
+      case "Motoristas":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MobileTransporteMotoristaScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.transporteMotoristas, action),
             ),
           ),
         );

@@ -282,6 +282,23 @@ class MenuConfig {
       ],
     ),
     MenuGroup(
+      id: 'transporte',
+      label: 'Transporte',
+      icon: FontAwesomeIcons.truckFast,
+      items: [
+        MenuItem(
+            id: 'transporte_veiculos',
+            label: 'Veículos',
+            icon: FontAwesomeIcons.truck,
+            screenIndex: 205),
+        MenuItem(
+            id: 'transporte_motoristas',
+            label: 'Motoristas',
+            icon: FontAwesomeIcons.idBadge,
+            screenIndex: 206),
+      ],
+    ),
+    MenuGroup(
       id: 'financeiro',
       label: 'Financeiro',
       icon: FontAwesomeIcons.moneyBillTrendUp,

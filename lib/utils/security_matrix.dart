@@ -70,6 +70,8 @@ enum AppScreen {
   nfceGrid,
   // CNAB / Remessa EDI
   cnabRemessa,
+  // Modulo Transporte (MDF-e): cadastros de veiculos e motoristas
+  transporteVeiculos, transporteMotoristas,
   // Paridade Web/Windows/Mobile
   regraFiscal, cobrancaAutomatica, aprovacaoPagamentos, sistemaTest,
   rateioFinanceiro, baixaAutomatica, renegociacao, contaContabil, relatorioDpRh,
@@ -170,6 +172,8 @@ const _escritorioScreens = {
   AppScreen.alvaras:    _all,
   AppScreen.nfceGrid:   _all,
   AppScreen.cnabRemessa: _all,
+  AppScreen.transporteVeiculos: _all,
+  AppScreen.transporteMotoristas: _all,
   AppScreen.regraFiscal: _all,
   AppScreen.cobrancaAutomatica: _allFinanceiro,
   AppScreen.aprovacaoPagamentos: _allFinanceiro,
@@ -419,6 +423,8 @@ class SecurityMatrix {
     AppScreen.dashMensalidadeArea: ['dashboardmensalidades', 'dashmensalidadearea'],
     AppScreen.nfceGrid: ['nfce_grid', 'nfcegrid', 'nfce_cupom', 'nfce cupons'],
     AppScreen.cnabRemessa: ['cnab_remessa', 'cnabremessa', 'cnab', 'remessaedi'],
+    AppScreen.transporteVeiculos: ['transporte_veiculos', 'transporteveiculos'],
+    AppScreen.transporteMotoristas: ['transporte_motoristas', 'transportemotoristas'],
     AppScreen.regraFiscal: ['regra_fiscal', 'regrafiscal'],
     AppScreen.cobrancaAutomatica: ['cobranca_automatica', 'cobrancaautomatica'],
     AppScreen.aprovacaoPagamentos: ['aprovacao_pagamentos_web', 'aprovacao_pagamentos', 'aprovacaopagamentos', 'aprovacaopagamento'],
@@ -654,6 +660,7 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
     AppScreen.dashFiscalArea, AppScreen.regraFiscal,
+    AppScreen.transporteVeiculos, AppScreen.transporteMotoristas,
   },
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
@@ -937,6 +944,8 @@ class ModuloAccess {
     'nfe_saida': 'Notas Fiscais',
     'nfe_entrada': 'Notas Fiscais',
     'nfce_grid': 'Notas Fiscais',
+    'transporte_veiculos': 'Notas Fiscais',
+    'transporte_motoristas': 'Notas Fiscais',
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',
