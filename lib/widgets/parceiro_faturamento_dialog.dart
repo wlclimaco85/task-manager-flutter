@@ -58,9 +58,10 @@ class _ParceiroFaturamentoDialogState extends State<ParceiroFaturamentoDialog> {
   @override
   void initState() {
     super.initState();
-    final padrao = nfseCompetenciaPadrao(DateTime.now());
-    _mes = padrao.mes;
-    _ano = padrao.ano;
+    // Referencia = mes/ano em que o popUp esta sendo aberto (a observacao usa o mes anterior).
+    final hoje = DateTime.now();
+    _mes = hoje.month;
+    _ano = hoje.year;
   }
 
   void _atualizarObservacaoPadrao() {

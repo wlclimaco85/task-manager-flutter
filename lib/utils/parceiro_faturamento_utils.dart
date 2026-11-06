@@ -18,9 +18,9 @@ class ParceiroFaturamentoUtils {
     return '$servico - ${meses[competencia.month - 1]}/${competencia.year}';
   }
 
-  /// Observacao padrao para uma competencia (mes/ano) escolhida no popUp.
+  /// Observacao padrao: competencia ANTERIOR a referencia escolhida no popUp.
   static String observacaoPadraoCompetencia(String servico, int mes, int ano) {
-    return observacaoPadrao(servico, DateTime(ano, mes + 1));
+    return observacaoPadrao(servico, DateTime(ano, mes));
   }
 
   static Map<String, dynamic> buildPayload({
