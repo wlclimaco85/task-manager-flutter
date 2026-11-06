@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import '../utils/api_links.dart';
 import '../utils/app_logger.dart';
 import '../utils/tenant_context.dart';
