@@ -181,11 +181,11 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       if (resp.isSuccess && _logo != null) {
         final bytes = await _logo!.readAsBytes();
         final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
-        final ok = await NfseLogoService.enviarEmpresa(
+        final erroLogo = await NfseLogoService.enviarEmpresa(
             int.parse(widget.initialData['id'].toString()), bytes, nome);
-        if (!ok && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Empresa salva, mas a logo do DANFSe nao foi enviada (PNG/JPEG ate 512 KB).'),
+        if (erroLogo != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Empresa salva, mas a logo do DANFSe nao foi enviada: $erroLogo'),
           ));
         }
       }

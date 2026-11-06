@@ -9,7 +9,8 @@ import '../services/nfse_logo_service.dart';
 class NfseLogoDialog extends StatefulWidget {
   final String titulo;
   final String urlLogo;
-  final Future<bool> Function(List<int> bytes, String nomeArquivo) enviar;
+  /// Retorna null quando salvou, ou a mensagem de erro para o usuario.
+  final Future<String?> Function(List<int> bytes, String nomeArquivo) enviar;
 
   const NfseLogoDialog({
     super.key,
@@ -64,9 +65,10 @@ class _NfseLogoDialogState extends State<NfseLogoDialog> {
     final bytes = _escolhida;
     if (bytes == null || _salvando) return;
     setState(() => _salvando = true);
-    final ok = await widget.enviar(bytes, _nomeEscolhido ?? 'logo.png');
+    final erro = await widget.enviar(bytes, _nomeEscolhido ?? 'logo.png');
     if (!mounted) return;
     setState(() => _salvando = false);
+    final ok = erro == null;
     if (ok) {
       setState(() {
         _atual = bytes;
@@ -77,7 +79,7 @@ class _NfseLogoDialogState extends State<NfseLogoDialog> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(ok
           ? 'Logo do DANFSe salva.'
-          : 'Nao foi possivel salvar a logo (use PNG ou JPEG ate 512 KB).'),
+          : erro),
     ));
   }
 
