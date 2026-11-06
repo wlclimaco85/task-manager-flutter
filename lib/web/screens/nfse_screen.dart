@@ -285,13 +285,6 @@ class _NfseScreenState extends State<NfseScreen> {
     ).then((_) => setState(() => _resultadoCancelamento = null));
   }
 
-  void _showAuditoriaDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => _AuditoriaDialog(caller: _caller),
-    );
-  }
 
   void _consultarLinha(Map<String, dynamic> item) {
     _consultaCtrl.text = _nfseNumero(item);
@@ -1080,12 +1073,6 @@ class _NfseScreenState extends State<NfseScreen> {
                     color: GridColors.error,
                     onPressed: _showCancelamentoDialog,
                   ),
-                  _actionChip(
-                    icon: Icons.history,
-                    label: 'Auditoria',
-                    color: Colors.grey.shade700,
-                    onPressed: _showAuditoriaDialog,
-                  ),
                 ],
               ),
             ],
@@ -1313,15 +1300,6 @@ class _NfseScreenState extends State<NfseScreen> {
             icon: Icons.cancel_outlined,
             label: 'Cancelar NFSe',
             backgroundColor: GridColors.error,
-            foregroundColor: Colors.white,
-            height: 36,
-          ),
-          const SizedBox(height: 8),
-          _actionBtn(
-            onPressed: _showAuditoriaDialog,
-            icon: Icons.history,
-            label: 'Auditoria',
-            backgroundColor: Colors.grey.shade700,
             foregroundColor: Colors.white,
             height: 36,
           ),
