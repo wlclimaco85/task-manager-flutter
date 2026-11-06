@@ -32,17 +32,16 @@ void main() {
     expect(payload.containsKey('anoReferencia'), isFalse);
   });
 
-  test('observacao padrao usa a competencia escolhida, inclusive virada de ano', () {
+  test('observacao padrao descreve o mes ANTERIOR a referencia, inclusive virada de ano', () {
     expect(ParceiroFaturamentoUtils.observacaoPadraoCompetencia('Servico', 9, 2026),
-        'Servico - Setembro/2026');
-    expect(ParceiroFaturamentoUtils.observacaoPadraoCompetencia('Servico', 12, 2025),
-        'Servico - Dezembro/2025');
+        'Servico - Agosto/2026');
+    expect(ParceiroFaturamentoUtils.observacaoPadraoCompetencia('Servico', 11, 2026),
+        'Servico - Outubro/2026');
     expect(ParceiroFaturamentoUtils.observacaoPadraoCompetencia('Servico', 1, 2026),
-        'Servico - Janeiro/2026');
+        'Servico - Dezembro/2025');
   });
 
-  testWidgets('popUp Faturar mostra mes/ano de referencia com o mes anterior como padrao',
-      (tester) async {
+  testWidgets('popUp Faturar abre com o mes e ano atuais como referencia', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
         body: ParceiroFaturamentoDialog(parceiroIds: [10], todos: false),
@@ -50,10 +49,10 @@ void main() {
     ));
     await tester.pump();
 
-    final padrao = nfseCompetenciaPadrao(DateTime.now());
+    final hoje = DateTime.now();
     expect(find.byKey(const Key('parceiro_faturar_mes')), findsOneWidget);
     expect(find.byKey(const Key('parceiro_faturar_ano')), findsOneWidget);
-    expect(find.text(nfseNomeMes(padrao.mes)), findsWidgets);
-    expect(find.text('${padrao.ano}'), findsWidgets);
+    expect(find.text(nfseNomeMes(hoje.month)), findsWidgets);
+    expect(find.text('${hoje.year}'), findsWidgets);
   });
 }
