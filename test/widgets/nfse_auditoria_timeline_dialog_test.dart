@@ -35,6 +35,7 @@ void main() {
           'acao': 'FATURADA',
           'dataEvento': '2026-11-05T20:39:51',
           'usuarioId': 42,
+          'usuarioNome': 'Washington Climaco',
           'origem': 'SISTEMA',
           'detalhe': 'Mensalidade 3 faturada.',
         },
@@ -59,7 +60,7 @@ void main() {
 
     expect(find.text('Nota faturada'), findsOneWidget);
     expect(find.text('05/11/2026 às 20:39'), findsOneWidget);
-    expect(find.text('Usuário nº 42'), findsOneWidget);
+    expect(find.text('Washington Climaco'), findsOneWidget);
     expect(find.text('Cancelamento'), findsOneWidget);
     expect(find.text('Origem: Portal Nacional'), findsOneWidget);
     expect(find.text('Automático'), findsWidgets);

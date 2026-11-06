@@ -260,7 +260,10 @@ class _Evento extends StatelessWidget {
     final estilo = _estiloDe(acao, cs);
     final data = _dataHora(evento['dataEvento']?.toString());
     final usuarioId = evento['usuarioId'];
-    final usuario = usuarioId == null ? 'Automático' : 'Usuário nº $usuarioId';
+    final nomeUsuario = evento['usuarioNome']?.toString();
+    final usuario = usuarioId == null
+        ? 'Automático'
+        : (nomeUsuario != null && nomeUsuario.isNotEmpty ? nomeUsuario : 'Usuário nº $usuarioId');
     final origem = _origemRotulo(evento['origem']?.toString());
     final detalhe = evento['detalhe']?.toString() ?? '';
 
