@@ -47,23 +47,30 @@ class NfseLogoService {
         fileName: nomeArquivo,
         fileField: 'arquivo',
       );
-      if (resposta.statusCode == 200) return null;
-      AppLogger.i.warn('[NFSE-LOGO] envio recusado (HTTP ${resposta.statusCode})');
-      return _mensagemDoBackend(resposta.body) ??
-          'Nao foi possivel salvar a logo (HTTP ${resposta.statusCode}).';
+      final status = resposta.statusCode;
+      if (status == 200) return null;
+      AppLogger.i.warn('[NFSE-LOGO] envio recusado (HTTP $status)');
+      // 413: arquivo acima do limite (o servidor responde antes de ler o corpo).
+      if (status == 413) return 'Logo acima de 512 KB. Reduza a imagem e tente de novo.';
+      // 5xx: detalhe interno nunca vai para a tela; so' o texto generico.
+      if (status >= 500) return 'Erro no servidor ao salvar a logo. Tente novamente.';
+      // 4xx: mensagem de negocio do backend (formato invalido, sem permissao etc.).
+      return _mensagemDoBackend(resposta.body) ?? 'Nao foi possivel salvar a logo (PNG ou JPEG ate 512 KB).';
     } catch (e, st) {
       AppLogger.i.error('[NFSE-LOGO] falha ao enviar logo: $e', st);
       return 'Falha de conexao ao enviar a logo.';
     }
   }
 
-  /// Extrai a mensagem do corpo de erro do backend (campo "message"/"mensagem"/"error"), se houver.
+  /// Primeira mensagem nao vazia do corpo de erro (message, mensagem, error). Null se nao houver.
   static String? _mensagemDoBackend(String corpo) {
     try {
       final json = jsonDecode(corpo);
       if (json is Map) {
-        final msg = json['message'] ?? json['mensagem'] ?? json['error'];
-        if (msg is String && msg.trim().isNotEmpty) return msg;
+        for (final chave in const ['message', 'mensagem', 'error']) {
+          final valor = json[chave];
+          if (valor is String && valor.trim().isNotEmpty) return valor;
+        }
       }
     } catch (_) {
       // corpo nao e JSON: sem mensagem especifica

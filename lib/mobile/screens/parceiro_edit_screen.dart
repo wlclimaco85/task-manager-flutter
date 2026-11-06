@@ -168,9 +168,14 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
       if (resp.isSuccess && _logo != null) {
         final bytes = await _logo!.readAsBytes();
         final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
-        await NfseLogoService.enviarParceiro(
+        final erroLogo = await NfseLogoService.enviarParceiro(
             int.parse(widget.initialData['id'].toString()), bytes, nome);
         if (!mounted) return;
+        if (erroLogo != null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Parceiro salvo, mas a logo do DANFSe nao foi enviada: $erroLogo'),
+          ));
+        }
       }
 
       if (resp.isSuccess) {
