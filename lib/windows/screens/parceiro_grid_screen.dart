@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../services/nfse_logo_service.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/parceiro_form_rules.dart';
+import '../../../widgets/nfse_logo_dialog.dart';
 import '../../../widgets/parceiro_faturamento_dialog.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show BulkAction, CustomAction;
@@ -27,6 +30,18 @@ class WindowsParceiroGridScreen extends StatelessWidget {
             context,
             parceiroIds: [_id(item)],
             todos: false,
+          ),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.image_outlined,
+          label: 'Logo NFS-e',
+          onPressed: (context, item) => showDialog<void>(
+            context: context,
+            builder: (_) => NfseLogoDialog(
+              titulo: (item['nome'] ?? item['razaoSocial'] ?? '').toString(),
+              urlLogo: ApiLinks.nfseLogoParceiro(_id(item).toString()),
+              enviar: (bytes, nome) => NfseLogoService.enviarParceiro(_id(item), bytes, nome),
+            ),
           ),
         ),
       ],
