@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/models/regime_tributario_model.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
 import 'package:task_manager_flutter/services/nfse_logo_service.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/app_logger.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/widgets/edit_form_helpers.dart';
 import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
@@ -183,7 +184,8 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
         List<int>? bytes;
         try {
           bytes = await _logo!.readAsBytes();
-        } catch (_) {
+        } catch (e, st) {
+          AppLogger.i.error('[NFSE-LOGO] falha ao ler a imagem escolhida: $e', st);
           bytes = null;
         }
         final erroLogo = bytes == null
