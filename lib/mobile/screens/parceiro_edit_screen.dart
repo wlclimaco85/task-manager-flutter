@@ -3,6 +3,7 @@ import '../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../utils/nfse_faturar_utils.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
+import 'package:task_manager_flutter/services/nfse_logo_service.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/widgets/edit_form_helpers.dart';
@@ -155,7 +156,6 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
         'valorMensal': valorMensal,
         'ie': _ie.text.trim(),
         'endereco': endereco,
-        'logoBase64': _logoBase64 ?? '',
       };
 
       final resp = await NetworkCaller()
@@ -163,6 +163,15 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
+
+      // Logo do DANFSe escolhida no formulario: envio separado (endpoint de logo do parceiro).
+      if (resp.isSuccess && _logo != null) {
+        final bytes = await _logo!.readAsBytes();
+        final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
+        await NfseLogoService.enviarParceiro(
+            int.parse(widget.initialData['id'].toString()), bytes, nome);
+        if (!mounted) return;
+      }
 
       if (resp.isSuccess) {
         Navigator.pop(context, req);

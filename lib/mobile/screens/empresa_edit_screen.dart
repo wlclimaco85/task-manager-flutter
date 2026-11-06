@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
 import 'package:task_manager_flutter/models/regime_tributario_model.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
+import 'package:task_manager_flutter/services/nfse_logo_service.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/widgets/edit_form_helpers.dart';
@@ -146,11 +147,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
     try {
-      if (_logo != null) {
-        // Upload de logo não disponível nesta versão — ignorado
-        debugPrint('Upload de logo: funcionalidade pendente de integração');
-      }
-
       final body = {
         'id': safeToInt(widget.initialData['id']),
         'nome': _nome.text.trim(),
@@ -180,6 +176,19 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
+
+      // Logo do DANFSe escolhida no formulario: envio separado (endpoint de logo da empresa).
+      if (resp.isSuccess && _logo != null) {
+        final bytes = await _logo!.readAsBytes();
+        final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
+        final ok = await NfseLogoService.enviarEmpresa(
+            int.parse(widget.initialData['id'].toString()), bytes, nome);
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Empresa salva, mas a logo do DANFSe nao foi enviada (PNG/JPEG ate 512 KB).'),
+          ));
+        }
+      }
 
       if (resp.isSuccess) {
         final refreshed = await NetworkCaller()
