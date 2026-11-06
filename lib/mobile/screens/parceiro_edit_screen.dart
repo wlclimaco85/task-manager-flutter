@@ -166,11 +166,20 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
 
       // Logo do DANFSe escolhida no formulario: envio separado (endpoint de logo do parceiro).
       if (resp.isSuccess && _logo != null) {
-        final bytes = await _logo!.readAsBytes();
-        final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
-        final erroLogo = await NfseLogoService.enviarParceiro(
-            int.parse(widget.initialData['id'].toString()), bytes, nome);
+        // Leitura fora do catch geral: falha aqui nao fecha a tela de novo.
+        List<int>? bytes;
+        try {
+          bytes = await _logo!.readAsBytes();
+        } catch (_) {
+          bytes = null;
+        }
         if (!mounted) return;
+        final erroLogo = bytes == null
+            ? 'nao foi possivel ler a imagem escolhida.'
+            : await NfseLogoService.enviarParceiro(
+                int.parse(widget.initialData['id'].toString()),
+                bytes,
+                _logo!.path.split(RegExp(r'[\\/]')).last);
         if (erroLogo != null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Parceiro salvo, mas a logo do DANFSe nao foi enviada: $erroLogo'),

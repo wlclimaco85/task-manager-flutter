@@ -179,10 +179,19 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
       // Logo do DANFSe escolhida no formulario: envio separado (endpoint de logo da empresa).
       if (resp.isSuccess && _logo != null) {
-        final bytes = await _logo!.readAsBytes();
-        final nome = _logo!.path.split(RegExp(r'[\\/]')).last;
-        final erroLogo = await NfseLogoService.enviarEmpresa(
-            int.parse(widget.initialData['id'].toString()), bytes, nome);
+        // Leitura fora do catch geral: falha aqui nao fecha a tela de novo.
+        List<int>? bytes;
+        try {
+          bytes = await _logo!.readAsBytes();
+        } catch (_) {
+          bytes = null;
+        }
+        final erroLogo = bytes == null
+            ? 'nao foi possivel ler a imagem escolhida.'
+            : await NfseLogoService.enviarEmpresa(
+                int.parse(widget.initialData['id'].toString()),
+                bytes,
+                _logo!.path.split(RegExp(r'[\\/]')).last);
         if (erroLogo != null && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Empresa salva, mas a logo do DANFSe nao foi enviada: $erroLogo'),

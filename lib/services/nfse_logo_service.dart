@@ -6,6 +6,9 @@ import '../utils/tenant_context.dart';
 
 /// Envia, consulta e remove a logo do DANFSe (PNG/JPEG) da empresa ou do parceiro.
 class NfseLogoService {
+  /// Tamanho maximo da logo (espelha o limite do NfseLogoController no backend).
+  static const int limiteBytes = 512 * 1024;
+
   /// Envia a logo. Retorna null quando o backend aceitou, ou a mensagem de erro do backend.
   static Future<String?> enviarEmpresa(int empresaId, List<int> bytes, String nomeArquivo) =>
       _enviar(ApiLinks.nfseLogoEmpresa(empresaId.toString()), bytes, nomeArquivo);
@@ -40,6 +43,10 @@ class NfseLogoService {
   }
 
   static Future<String?> _enviar(String url, List<int> bytes, String nomeArquivo) async {
+    // Limite conferido no app antes do envio (o servidor aceita arquivos maiores que a logo).
+    if (bytes.length > limiteBytes) {
+      return 'Logo acima de 512 KB. Reduza a imagem e tente de novo.';
+    }
     try {
       final resposta = await TenantContext.postMultipart(
         url,
