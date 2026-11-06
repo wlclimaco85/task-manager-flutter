@@ -8,6 +8,7 @@ import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
+import '../../widgets/nfse_auditoria_timeline_dialog.dart';
 import '../../widgets/nfse_faturar_dialog.dart';
 import '../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, BulkAction;
@@ -302,6 +303,50 @@ class _NfseScreenState extends State<NfseScreen> {
     _showCancelamentoDialog();
   }
 
+  /// Abre a linha do tempo de auditoria da NFS-e escolhida na grade.
+  void _showAuditoriaNota(BuildContext context, Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    showDialog<void>(
+      context: context,
+      builder: (_) => NfseAuditoriaTimelineDialog(nfseId: id, numero: _nfseNumero(item)),
+    );
+  }
+
+  /// Consulta a NFS-e no Portal Nacional. Se estiver cancelada la, o sistema e sincronizado
+  /// pelo mesmo caminho do cancelamento (titulos e mensalidade desfeitos) e a grade recarrega.
+  Future<void> _consultarStatusPortalLinha(
+      BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    try {
+      final response =
+          await TenantContext.post(ApiLinks.consultarStatusPortalNfse(id), {});
+      if (!context.mounted) return;
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final canceladaNoPortal = body['canceladaNoPortal'] == true;
+        if (canceladaNoPortal) _dynamicGridKey.currentState?.reload();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(body['detalhe']?.toString() ?? 'Consulta concluida.'),
+          backgroundColor: GridColors.success,
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Nao foi possivel consultar: ${response.body}'),
+          backgroundColor: GridColors.error,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erro ao consultar status: $e'),
+          backgroundColor: GridColors.error,
+        ));
+      }
+    }
+  }
+
   Future<void> _confirmarLinha(
       BuildContext context, Map<String, dynamic> item) async {
     final id = item['id']?.toString() ?? '';
@@ -364,7 +409,7 @@ class _NfseScreenState extends State<NfseScreen> {
         CustomAction<Map<String, dynamic>>(
           icon: Icons.manage_search,
           label: 'Consultar status',
-          onPressed: (context, item) => _consultarLinha(item),
+          onPressed: (context, item) => _consultarStatusPortalLinha(context, item),
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.cancel_outlined,
@@ -387,7 +432,7 @@ class _NfseScreenState extends State<NfseScreen> {
         CustomAction<Map<String, dynamic>>(
           icon: Icons.history,
           label: 'Auditoria',
-          onPressed: (context, item) => _showAuditoriaDialog(),
+          onPressed: (context, item) => _showAuditoriaNota(context, item),
         ),
       ];
 
