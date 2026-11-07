@@ -161,6 +161,7 @@ import '../../web/screens/noticias_grid_screen.dart';
 import '../../web/screens/cnab_remessa_screen.dart';
 import '../../web/screens/transporte_veiculo_grid_screen.dart';
 import '../../web/screens/transporte_motorista_grid_screen.dart';
+import '../../widgets/mdfe_emissao_view.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
@@ -594,6 +595,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WebTransporteMotoristaGridScreen(
             hasPermission: _screenPermission(
                 AppScreen.transporteMotoristas)), // 206: Motoristas
+        const MdfeEmissaoView(), // 207: MDF-e
       ];
 
   String get userName {

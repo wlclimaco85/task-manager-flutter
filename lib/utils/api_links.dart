@@ -1165,6 +1165,12 @@ class ApiLinks {
       '$_baseUrlNew/api/transporte/motoristas';
   static String transporteMotorista(String id) =>
       '$_baseUrlNew/api/transporte/motoristas/$id';
+  static String get allMdfe => '$_baseUrlNew/api/mdfe';
+  static String mdfe(String id) => '$_baseUrlNew/api/mdfe/$id';
+  static String mdfeConsultar(String id) => '$_baseUrlNew/api/mdfe/$id/consultar';
+  static String mdfeCancelar(String id) => '$_baseUrlNew/api/mdfe/$id/cancelar';
+  static String mdfeEncerrar(String id) => '$_baseUrlNew/api/mdfe/$id/encerrar';
+  static String mdfeEventos(String id) => '$_baseUrlNew/api/mdfe/$id/eventos';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';

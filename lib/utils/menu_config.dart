@@ -296,6 +296,11 @@ class MenuConfig {
             label: 'Motoristas',
             icon: FontAwesomeIcons.idBadge,
             screenIndex: 206),
+        MenuItem(
+            id: 'transporte_mdfe',
+            label: 'MDF-e',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 207),
       ],
     ),
     MenuGroup(

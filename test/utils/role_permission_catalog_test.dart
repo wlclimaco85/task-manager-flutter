@@ -146,6 +146,11 @@ void main() {
         telas.firstWhere((tela) => tela.menuItemId == 'transporte_motoristas');
     expect(motoristas.label, 'Motoristas');
     expect(motoristas.telaNome, 'transporte_motoristas');
+
+    final mdfe =
+        telas.firstWhere((tela) => tela.menuItemId == 'transporte_mdfe');
+    expect(mdfe.label, 'MDF-e');
+    expect(mdfe.telaNome, 'transporte_mdfe');
   });
 
   // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem

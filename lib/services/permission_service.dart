@@ -142,6 +142,7 @@ class PermissionService {
     // Modulo Transporte (MDF-e): cadastros de veiculos e motoristas.
     'transporte_veiculos': 'transporte_veiculos',
     'transporte_motoristas': 'transporte_motoristas',
+    'transporte_mdfe': 'transporte_mdfe',
 
     // Financeiro
     'calendario': 'Calendario',
