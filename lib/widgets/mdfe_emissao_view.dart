@@ -36,6 +36,7 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
   String? infoComplementar,
   required int veiculoId,
   required List<int> motoristaIds,
+  Map<String, dynamic>? seguro,
 }) {
   return {
     'tpAmb': tpAmb,
@@ -67,6 +68,35 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
       'infoComplementar': infoComplementar.trim(),
     'veiculoId': veiculoId,
     'motoristaIds': motoristaIds,
+    if (seguro != null) 'seguros': [seguro],
+  };
+}
+
+/// Monta o grupo de seguro da carga. [respSeg]: 1 = emitente, 2 = contratante
+/// (exige CPF/CNPJ). Devolve null quando nada foi informado ([respSeg] null).
+/// Averbacoes: uma por linha.
+Map<String, dynamic>? montarSeguroMdfe({
+  required int? respSeg,
+  String? documentoContratante,
+  String? seguradoraNome,
+  String? seguradoraCnpj,
+  String? apolice,
+  String? averbacoes,
+}) {
+  if (respSeg == null) return null;
+  String? limpo(String? v) => (v == null || v.trim().isEmpty) ? null : v.trim();
+  final lista = (averbacoes ?? '')
+      .split(RegExp(r'[\r\n]+'))
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
+  return {
+    'respSeg': respSeg,
+    if (respSeg == 2) 'cnpjCpfResponsavel': limpo(documentoContratante),
+    if (limpo(seguradoraNome) != null) 'seguradoraNome': limpo(seguradoraNome),
+    if (limpo(seguradoraNome) != null) 'seguradoraCnpj': limpo(seguradoraCnpj),
+    if (limpo(apolice) != null) 'numeroApolice': limpo(apolice),
+    if (lista.isNotEmpty) 'averbacoes': lista,
   };
 }
 
@@ -587,6 +617,12 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   final _valor = TextEditingController();
   final _quantidade = TextEditingController();
   final _info = TextEditingController();
+  final _segDocumento = TextEditingController();
+  final _segNome = TextEditingController();
+  final _segCnpj = TextEditingController();
+  final _segApolice = TextEditingController();
+  final _segAverbacoes = TextEditingController();
+  int? _respSeg;
 
   int _tpAmb = 2;
   int _tpEmit = 1;
@@ -612,7 +648,8 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   void dispose() {
     for (final c in [
       _serie, _carregIbge, _carregNome, _descIbge, _descNome, _chavesCte,
-      _chavesNfe, _valor, _quantidade, _info
+      _chavesNfe, _valor, _quantidade, _info, _segDocumento, _segNome,
+      _segCnpj, _segApolice, _segAverbacoes
     ]) {
       c.dispose();
     }
@@ -672,6 +709,16 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
       setState(() => _erro = 'Selecione o veículo e ao menos um motorista.');
       return;
     }
+    if (_respSeg == 2 && _segDocumento.text.replaceAll(RegExp(r'\D'), '').length
+        != 11 && _segDocumento.text.replaceAll(RegExp(r'\D'), '').length != 14) {
+      setState(() => _erro = 'Seguro: informe CPF ou CNPJ do contratante.');
+      return;
+    }
+    if (_segNome.text.trim().isNotEmpty &&
+        _segCnpj.text.replaceAll(RegExp(r'\D'), '').length != 14) {
+      setState(() => _erro = 'Seguro: informe o CNPJ da seguradora (14 dígitos).');
+      return;
+    }
     setState(() {
       _enviando = true;
       _erro = null;
@@ -696,6 +743,14 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
         infoComplementar: _info.text,
         veiculoId: _veiculoId!,
         motoristaIds: _motoristas.toList(),
+        seguro: montarSeguroMdfe(
+          respSeg: _respSeg,
+          documentoContratante: _segDocumento.text,
+          seguradoraNome: _segNome.text,
+          seguradoraCnpj: _segCnpj.text,
+          apolice: _segApolice.text,
+          averbacoes: _segAverbacoes.text,
+        ),
       );
       final r = await _net.postRequest(ApiLinks.allMdfe, corpo);
       if (!mounted) return;
@@ -930,6 +985,47 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
                             v == true ? _motoristas.add(id) : _motoristas.remove(id);
                           }),
                         ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int?>(
+                        initialValue: _respSeg,
+                        decoration: _dec('Seguro da carga — responsável'),
+                        items: const [
+                          DropdownMenuItem(value: null, child: Text('Não informar seguro')),
+                          DropdownMenuItem(value: 1, child: Text('Emitente do MDF-e')),
+                          DropdownMenuItem(value: 2, child: Text('Contratante do transporte')),
+                        ],
+                        onChanged: (v) => setState(() => _respSeg = v),
+                      ),
+                      if (_respSeg != null) ...[
+                        if (_respSeg == 2) ...[
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _segDocumento,
+                            decoration: _dec('CPF/CNPJ do contratante'),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _segNome,
+                          maxLength: 30,
+                          decoration: _dec('Seguradora (opcional)'),
+                        ),
+                        TextFormField(
+                          controller: _segCnpj,
+                          decoration: _dec('CNPJ da seguradora'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _segApolice,
+                          maxLength: 20,
+                          decoration: _dec('Nº da apólice (opcional)'),
+                        ),
+                        TextFormField(
+                          controller: _segAverbacoes,
+                          maxLines: 2,
+                          decoration: _dec('Averbações (uma por linha, opcional)'),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _info,
