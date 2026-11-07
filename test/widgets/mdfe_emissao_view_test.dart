@@ -64,6 +64,16 @@ void main() {
           chavesCte: const [chave], chavesNfe: const [], valorCarga: 1,
           unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
           motoristaIds: const [1], seguro: seguro);
+    expect(corpo(null).containsKey('reboqueIds'), isFalse);
+    final comReboque = montarCorpoEmissaoMdfe(
+        tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
+        municipioCarregamentoIbge: '3106200', municipioCarregamentoNome: 'BH',
+        municipioDescargaIbge: '3550308', municipioDescargaNome: 'SP',
+        chavesCte: const [chave], chavesNfe: const [], valorCarga: 1,
+        unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
+        motoristaIds: const [1], reboqueIds: const [7, 8]);
+    expect(comReboque['reboqueIds'], [7, 8]);
+    expect(kMdfeMaxReboques, 3);
     expect(corpo(null).containsKey('seguros'), isFalse);
     expect(corpo({'respSeg': 1})['seguros'], [
       {'respSeg': 1}

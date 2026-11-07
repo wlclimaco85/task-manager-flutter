@@ -14,6 +14,9 @@ import 'transporte_config_tab.dart'
 const String kMdfeAutorizado = 'AUTORIZADO';
 const int kMdfeTamanhoMinimoJustificativa = 15;
 
+/// Maximo de reboques por MDF-e rodoviario (esquema 3.00).
+const int kMdfeMaxReboques = 3;
+
 /// Monta o corpo do POST /api/mdfe a partir dos campos do formulario.
 /// Dados rodoviarios vem do cadastro (veiculoId + motoristaIds); numero e
 /// emissao sao definidos pelo backend.
@@ -37,6 +40,7 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
   required int veiculoId,
   required List<int> motoristaIds,
   Map<String, dynamic>? seguro,
+  List<int> reboqueIds = const [],
 }) {
   return {
     'tpAmb': tpAmb,
@@ -69,6 +73,7 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
     'veiculoId': veiculoId,
     'motoristaIds': motoristaIds,
     if (seguro != null) 'seguros': [seguro],
+    if (reboqueIds.isNotEmpty) 'reboqueIds': reboqueIds,
   };
 }
 
@@ -632,6 +637,7 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   String _unidade = '01';
   int? _veiculoId;
   final Set<int> _motoristas = {};
+  final Set<int> _reboques = {};
   List<Map<String, dynamic>> _veiculos = [];
   List<Map<String, dynamic>> _motoristasDisp = [];
   bool _loading = true;
@@ -743,6 +749,7 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
         infoComplementar: _info.text,
         veiculoId: _veiculoId!,
         motoristaIds: _motoristas.toList(),
+        reboqueIds: _reboques.toList(),
         seguro: montarSeguroMdfe(
           respSeg: _respSeg,
           documentoContratante: _segDocumento.text,
@@ -965,9 +972,31 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
                                   value: (v['id'] as num).toInt(),
                                   child: Text('${v['placa']}')),
                           ],
-                          onChanged: (v) => setState(() => _veiculoId = v),
+                          onChanged: (v) => setState(() {
+                            _veiculoId = v;
+                            _reboques.remove(v);
+                          }),
                         ), largura: 240),
                       ]),
+                      if (_veiculos.length > 1) ...[
+                        const Text('Reboques (opcional, até 3)'),
+                        for (final v in _veiculos.where(
+                            (v) => (v['id'] as num).toInt() != _veiculoId))
+                          CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text('${v['placa']}'),
+                            value: _reboques.contains((v['id'] as num).toInt()),
+                            onChanged: (marcado) => setState(() {
+                              final id = (v['id'] as num).toInt();
+                              if (marcado != true) {
+                                _reboques.remove(id);
+                              } else if (_reboques.length < kMdfeMaxReboques) {
+                                _reboques.add(id);
+                              }
+                            }),
+                          ),
+                      ],
                       const Text('Motoristas'),
                       if (_motoristasDisp.isEmpty)
                         const Padding(
