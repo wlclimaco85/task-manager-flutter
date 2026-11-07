@@ -1159,6 +1159,8 @@ class ApiLinks {
       '$_baseUrlNew/api/transporte/veiculos';
   static String transporteVeiculo(String id) =>
       '$_baseUrlNew/api/transporte/veiculos/$id';
+  static String get transporteConfig =>
+      '$_baseUrlNew/api/transporte/config';
   static String get allTransporteMotoristas =>
       '$_baseUrlNew/api/transporte/motoristas';
   static String transporteMotorista(String id) =>
