@@ -64,6 +64,67 @@ void main() {
     expect(kMdfeMaxUfsPercurso, 25);
   });
 
+  test('CIOT e vale-pedagio: montagem so com digitos e campos opcionais omitidos', () {
+    final ciot = montarCiotMdfe('1234.5678.9012', '123.456.789-09');
+    expect(ciot, {'codigo': '123456789012', 'cnpjCpfResponsavel': '12345678909'});
+
+    final completo = montarDispositivoValePedagioMdfe(
+      fornecedor: '11.222.333/0001-81',
+      pagador: '98.765.432/0001-10',
+      numeroCompra: ' 123456 ',
+      valor: 150.5,
+      tipo: '01',
+    );
+    expect(completo, {
+      'cnpjFornecedor': '11222333000181',
+      'cnpjCpfPagador': '98765432000110',
+      'numeroCompra': '123456',
+      'valor': 150.5,
+      'tipo': '01',
+    });
+
+    final minimo = montarDispositivoValePedagioMdfe(
+        fornecedor: '11222333000181', pagador: '', numeroCompra: null, valor: 0, tipo: null);
+    expect(minimo, {'cnpjFornecedor': '11222333000181', 'valor': 0});
+
+    expect(montarValePedagioMdfe([], '06'), isNull);
+    expect(montarValePedagioMdfe([minimo], null), {
+      'dispositivos': [minimo]
+    });
+    expect(montarValePedagioMdfe([minimo], '06')!['categoriaCombinacaoVeicular'], '06');
+    expect(kMdfeTiposValePedagio.keys, ['01', '04']);
+    expect(kMdfeCategoriasCombinacao.length, 10);
+  });
+
+  test('corpo de emissao inclui ciots e valePedagio so quando informados', () {
+    Map<String, dynamic> corpo({
+      List<Map<String, dynamic>> ciots = const [],
+      Map<String, dynamic>? vale,
+    }) =>
+        montarCorpoEmissaoMdfe(
+          tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
+          municipiosCarregamento: [montarMunicipioMdfe('3106200', 'BH')],
+          descargas: [
+            montarDescargaMdfe(
+                ibge: '3550308', nome: 'SP', chavesCte: const [chave], chavesNfe: const [])
+          ],
+          valorCarga: 1, unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
+          motoristaIds: const [1], ciots: ciots, valePedagio: vale,
+        );
+    final vazio = corpo();
+    expect(vazio.containsKey('ciots'), isFalse);
+    expect(vazio.containsKey('valePedagio'), isFalse);
+
+    final cheio = corpo(
+      ciots: [montarCiotMdfe('123456789012', '12345678909')],
+      vale: montarValePedagioMdfe([
+        montarDispositivoValePedagioMdfe(fornecedor: '11222333000181', valor: 10)
+      ], '02'),
+    );
+    expect((cheio['ciots'] as List).length, 1);
+    expect((cheio['valePedagio'] as Map)['categoriaCombinacaoVeicular'], '02');
+  });
+
   test('roteiro: sem UFs de percurso o campo nao e enviado', () {
     final corpo = montarCorpoEmissaoMdfe(
       tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',

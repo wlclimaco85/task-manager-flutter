@@ -39,6 +39,87 @@ Map<String, dynamic> montarDescargaMdfe({
       'chavesNfe': chavesNfe,
     };
 
+/// Tipos de dispositivo do vale-pedagio (valor enviado ao backend -> rotulo).
+const Map<String, String> kMdfeTiposValePedagio = {
+  '01': 'TAG',
+  '04': 'Leitura de placa',
+};
+
+/// Categorias de combinacao veicular (esquema 3.00).
+const Map<String, String> kMdfeCategoriasCombinacao = {
+  '02': '2 eixos',
+  '04': '3 eixos',
+  '06': '4 eixos',
+  '07': '5 eixos',
+  '08': '6 eixos',
+  '10': '7 eixos',
+  '11': '8 eixos',
+  '12': '9 eixos',
+  '13': '10 eixos',
+  '14': 'Acima de 10 eixos',
+};
+
+String _soDigitosMdfe(String v) => v.replaceAll(RegExp(r'\D'), '');
+
+/// CIOT da viagem: codigo (12 digitos) e CPF/CNPJ de quem o gerou.
+Map<String, dynamic> montarCiotMdfe(String codigo, String documento) => {
+      'codigo': _soDigitosMdfe(codigo),
+      'cnpjCpfResponsavel': _soDigitosMdfe(documento),
+    };
+
+/// Dispositivo do vale-pedagio; pagador, numero da compra e tipo sao opcionais.
+Map<String, dynamic> montarDispositivoValePedagioMdfe({
+  required String fornecedor,
+  String? pagador,
+  String? numeroCompra,
+  required num valor,
+  String? tipo,
+}) {
+  final pag = _soDigitosMdfe(pagador ?? '');
+  final compra = _soDigitosMdfe(numeroCompra ?? '');
+  return {
+    'cnpjFornecedor': _soDigitosMdfe(fornecedor),
+    if (pag.isNotEmpty) 'cnpjCpfPagador': pag,
+    if (compra.isNotEmpty) 'numeroCompra': compra,
+    'valor': valor,
+    if (tipo != null && tipo.isNotEmpty) 'tipo': tipo,
+  };
+}
+
+/// Vale-pedagio da viagem; null quando nao ha dispositivos.
+Map<String, dynamic>? montarValePedagioMdfe(
+    List<Map<String, dynamic>> dispositivos, String? categoria) {
+  if (dispositivos.isEmpty) return null;
+  return {
+    'dispositivos': dispositivos,
+    if (categoria != null && categoria.isNotEmpty)
+      'categoriaCombinacaoVeicular': categoria,
+  };
+}
+
+class _CiotCtl {
+  final codigo = TextEditingController();
+  final documento = TextEditingController();
+  void dispose() {
+    codigo.dispose();
+    documento.dispose();
+  }
+}
+
+class _ValeDispCtl {
+  final fornecedor = TextEditingController();
+  final pagador = TextEditingController();
+  final compra = TextEditingController();
+  final valor = TextEditingController();
+  String? tipo;
+  void dispose() {
+    fornecedor.dispose();
+    pagador.dispose();
+    compra.dispose();
+    valor.dispose();
+  }
+}
+
 class _MunicipioCtl {
   final ibge = TextEditingController();
   final nome = TextEditingController();
@@ -80,6 +161,8 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
   required List<int> motoristaIds,
   Map<String, dynamic>? seguro,
   List<int> reboqueIds = const [],
+  List<Map<String, dynamic>> ciots = const [],
+  Map<String, dynamic>? valePedagio,
 }) {
   return {
     'tpAmb': tpAmb,
@@ -100,6 +183,8 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
     'motoristaIds': motoristaIds,
     if (seguro != null) 'seguros': [seguro],
     if (reboqueIds.isNotEmpty) 'reboqueIds': reboqueIds,
+    if (ciots.isNotEmpty) 'ciots': ciots,
+    if (valePedagio != null) 'valePedagio': valePedagio,
   };
 }
 
@@ -642,6 +727,9 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   final List<_MunicipioCtl> _carregs = [_MunicipioCtl()];
   final List<_DescargaCtl> _descargas = [_DescargaCtl()];
   final List<String> _percurso = [];
+  final List<_CiotCtl> _ciots = [];
+  final List<_ValeDispCtl> _valeDisps = [];
+  String? _valeCategoria;
   final _valor = TextEditingController();
   final _quantidade = TextEditingController();
   final _info = TextEditingController();
@@ -683,6 +771,12 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
     }
     for (final m in [..._carregs, ..._descargas]) {
       m.dispose();
+    }
+    for (final c in _ciots) {
+      c.dispose();
+    }
+    for (final d in _valeDisps) {
+      d.dispose();
     }
     super.dispose();
   }
@@ -780,6 +874,17 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
         veiculoId: _veiculoId!,
         motoristaIds: _motoristas.toList(),
         reboqueIds: _reboques.toList(),
+        ciots: [for (final c in _ciots) montarCiotMdfe(c.codigo.text, c.documento.text)],
+        valePedagio: montarValePedagioMdfe([
+          for (final d in _valeDisps)
+            montarDispositivoValePedagioMdfe(
+              fornecedor: d.fornecedor.text,
+              pagador: d.pagador.text,
+              numeroCompra: d.compra.text,
+              valor: _numero(d.valor.text)!,
+              tipo: d.tipo,
+            )
+        ], _valeCategoria),
         seguro: montarSeguroMdfe(
           respSeg: _respSeg,
           documentoContratante: _segDocumento.text,
@@ -813,6 +918,11 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
 
   String? _ibge(String? v) =>
       RegExp(r'^\d{7}$').hasMatch((v ?? '').trim()) ? null : '7 dígitos';
+
+  String? _cpfOuCnpj(String? v) {
+    final n = _soDigitosMdfe(v ?? '').length;
+    return (n == 11 || n == 14) ? null : 'CPF (11) ou CNPJ (14)';
+  }
 
   String? _positivo(String? v) {
     final n = _numero(v ?? '');
@@ -1108,6 +1218,106 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
                             v == true ? _motoristas.add(id) : _motoristas.remove(id);
                           }),
                         ),
+                      _tituloLista('CIOT (opcional)', true,
+                          () => setState(() => _ciots.add(_CiotCtl()))),
+                      for (var i = 0; i < _ciots.length; i++)
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _ciots[i].codigo,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('CIOT (12 dígitos)'),
+                            validator: (v) => _soDigitosMdfe(v ?? '').length == 12
+                                ? null
+                                : '12 dígitos',
+                          ), largura: 220),
+                          _caixa(TextFormField(
+                            controller: _ciots[i].documento,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('CPF/CNPJ de quem gerou'),
+                            validator: _cpfOuCnpj,
+                          ), largura: 240),
+                          IconButton(
+                            tooltip: 'Remover CIOT',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () =>
+                                setState(() => _ciots.removeAt(i).dispose()),
+                          ),
+                        ]),
+                      _tituloLista('Vale-pedágio (opcional)', true,
+                          () => setState(() => _valeDisps.add(_ValeDispCtl()))),
+                      for (var i = 0; i < _valeDisps.length; i++) ...[
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _valeDisps[i].fornecedor,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('CNPJ do fornecedor'),
+                            validator: (v) => _soDigitosMdfe(v ?? '').length == 14
+                                ? null
+                                : '14 dígitos',
+                          ), largura: 220),
+                          _caixa(TextFormField(
+                            controller: _valeDisps[i].pagador,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('CPF/CNPJ do pagador (opcional)'),
+                            validator: (v) => (v ?? '').trim().isEmpty
+                                ? null
+                                : _cpfOuCnpj(v),
+                          ), largura: 240),
+                          IconButton(
+                            tooltip: 'Remover dispositivo do vale-pedágio',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () =>
+                                setState(() => _valeDisps.removeAt(i).dispose()),
+                          ),
+                        ]),
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _valeDisps[i].compra,
+                            keyboardType: TextInputType.number,
+                            maxLength: 20,
+                            decoration: _dec('Nº da compra (opcional)'),
+                          ), largura: 220),
+                          _caixa(TextFormField(
+                            controller: _valeDisps[i].valor,
+                            keyboardType:
+                                const TextInputType.numberWithOptions(decimal: true),
+                            decoration: _dec('Valor (R\$)'),
+                            validator: (v) {
+                              final n = _numero(v ?? '');
+                              return (n == null || n < 0) ? 'Valor inválido' : null;
+                            },
+                          ), largura: 160),
+                          _caixa(DropdownButtonFormField<String?>(
+                            initialValue: _valeDisps[i].tipo,
+                            isExpanded: true,
+                            decoration: _dec('Tipo (opcional)'),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                  value: null, child: Text('Não informado')),
+                              for (final e in kMdfeTiposValePedagio.entries)
+                                DropdownMenuItem<String?>(
+                                    value: e.key, child: Text(e.value)),
+                            ],
+                            onChanged: (v) => setState(() => _valeDisps[i].tipo = v),
+                          ), largura: 200),
+                        ]),
+                      ],
+                      if (_valeDisps.isNotEmpty)
+                        _linha([
+                          _caixa(DropdownButtonFormField<String?>(
+                            initialValue: _valeCategoria,
+                            isExpanded: true,
+                            decoration: _dec('Categoria de combinação veicular'),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                  value: null, child: Text('Não informada')),
+                              for (final e in kMdfeCategoriasCombinacao.entries)
+                                DropdownMenuItem<String?>(
+                                    value: e.key, child: Text(e.value)),
+                            ],
+                            onChanged: (v) => setState(() => _valeCategoria = v),
+                          ), largura: 300),
+                        ]),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int?>(
                         initialValue: _respSeg,
