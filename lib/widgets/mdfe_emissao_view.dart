@@ -97,6 +97,185 @@ Map<String, dynamic>? montarValePedagioMdfe(
   };
 }
 
+/// Tipos de componente do pagamento do frete (esquema 3.00).
+const Map<String, String> kMdfeTiposComponentePagamento = {
+  '04': 'Frete',
+  '01': 'Vale-pedágio',
+  '02': 'Impostos, taxas e contribuições',
+  '03': 'Despesas (bancárias, meios de pagamento, outras)',
+  '99': 'Outros',
+};
+
+/// Formas de recebimento do frete.
+const String kMdfeRecebimentoBanco = 'banco';
+const String kMdfeRecebimentoIpef = 'ipef';
+const String kMdfeRecebimentoPix = 'pix';
+
+final RegExp _somenteNumericoMdfe = RegExp(r'^[\d.\-/\s]+$');
+
+/// True quando o texto parece CPF/CNPJ (so digitos e pontuacao) e tem 11 ou 14 digitos.
+bool documentoNumericoValidoMdfe(String v) {
+  final n = _soDigitosMdfe(v).length;
+  return n == 11 || n == 14;
+}
+
+/// Separa o que o usuario digitou em CPF/CNPJ (digitos) ou identificador de estrangeiro (texto).
+/// Texto so com digitos/pontuacao vira CPF/CNPJ; qualquer outro vira idEstrangeiro.
+({String? cnpjCpf, String? idEstrangeiro}) separarDocumentoMdfe(String texto) {
+  final t = texto.trim();
+  if (t.isEmpty) return (cnpjCpf: null, idEstrangeiro: null);
+  if (_somenteNumericoMdfe.hasMatch(t)) {
+    return (cnpjCpf: _soDigitosMdfe(t), idEstrangeiro: null);
+  }
+  return (cnpjCpf: null, idEstrangeiro: t);
+}
+
+String? _opcMdfe(String? v) => (v == null || v.trim().isEmpty) ? null : v.trim();
+
+/// Contratante do servico (infContratante).
+Map<String, dynamic> montarContratanteMdfe({
+  String? nome,
+  required String documento,
+  String? numeroContrato,
+  num? valorContratoGlobal,
+}) {
+  final doc = separarDocumentoMdfe(documento);
+  final contrato = _opcMdfe(numeroContrato);
+  return {
+    if (_opcMdfe(nome) != null) 'nome': _opcMdfe(nome),
+    if (doc.cnpjCpf != null) 'cnpjCpf': doc.cnpjCpf,
+    if (doc.idEstrangeiro != null) 'idEstrangeiro': doc.idEstrangeiro,
+    if (contrato != null) 'numeroContrato': contrato,
+    if (contrato != null && valorContratoGlobal != null)
+      'valorContratoGlobal': valorContratoGlobal,
+  };
+}
+
+Map<String, dynamic> montarComponentePagamentoMdfe(
+        String tipo, num valor, String? descricao) =>
+    {
+      'tipo': tipo,
+      'valor': valor,
+      if (_opcMdfe(descricao) != null) 'descricao': _opcMdfe(descricao),
+    };
+
+Map<String, dynamic> montarParcelaMdfe(String vencimento, num valor) =>
+    {'vencimento': vencimento.trim(), 'valor': valor};
+
+/// Dados bancarios conforme a [forma] escolhida; so o grupo da forma vai no corpo.
+Map<String, dynamic> montarBancoMdfe({
+  required String forma,
+  String? codBanco,
+  String? codAgencia,
+  String? cnpjIpef,
+  String? pix,
+}) {
+  switch (forma) {
+    case kMdfeRecebimentoBanco:
+      return {'codBanco': _opcMdfe(codBanco), 'codAgencia': _opcMdfe(codAgencia)};
+    case kMdfeRecebimentoIpef:
+      return {'cnpjIpef': _soDigitosMdfe(cnpjIpef ?? '')};
+    default:
+      return {'pix': _opcMdfe(pix)};
+  }
+}
+
+/// Pagamento do frete (infPag). Adiantamento e parcelas so vao em pagamento a prazo ([indPag] = 1).
+Map<String, dynamic> montarPagamentoMdfe({
+  String? nome,
+  required String documento,
+  required List<Map<String, dynamic>> componentes,
+  required num valorContrato,
+  bool altoDesempenho = false,
+  required int indPag,
+  num? adiantamento,
+  bool anteciparAdiantamento = false,
+  List<Map<String, dynamic>> parcelas = const [],
+  int? tipoAntecipacao,
+  required Map<String, dynamic> banco,
+}) {
+  final doc = separarDocumentoMdfe(documento);
+  final aPrazo = indPag == 1;
+  return {
+    if (_opcMdfe(nome) != null) 'nome': _opcMdfe(nome),
+    if (doc.cnpjCpf != null) 'cnpjCpf': doc.cnpjCpf,
+    if (doc.idEstrangeiro != null) 'idEstrangeiro': doc.idEstrangeiro,
+    'componentes': componentes,
+    'valorContrato': valorContrato,
+    'altoDesempenho': altoDesempenho,
+    'indPag': indPag,
+    if (aPrazo && adiantamento != null) 'adiantamento': adiantamento,
+    'anteciparAdiantamento': aPrazo && anteciparAdiantamento,
+    'parcelas': aPrazo ? parcelas : const <Map<String, dynamic>>[],
+    if (tipoAntecipacao != null) 'tipoAntecipacao': tipoAntecipacao,
+    'banco': banco,
+  };
+}
+
+class _ContratanteCtl {
+  final nome = TextEditingController();
+  final documento = TextEditingController();
+  final contrato = TextEditingController();
+  final valorGlobal = TextEditingController();
+  void dispose() {
+    nome.dispose();
+    documento.dispose();
+    contrato.dispose();
+    valorGlobal.dispose();
+  }
+}
+
+class _ComponenteCtl {
+  String tipo = '04';
+  final valor = TextEditingController();
+  final descricao = TextEditingController();
+  void dispose() {
+    valor.dispose();
+    descricao.dispose();
+  }
+}
+
+class _ParcelaCtl {
+  final vencimento = TextEditingController();
+  final valor = TextEditingController();
+  void dispose() {
+    vencimento.dispose();
+    valor.dispose();
+  }
+}
+
+class _PagamentoCtl {
+  final nome = TextEditingController();
+  final documento = TextEditingController();
+  final valorContrato = TextEditingController();
+  final adiantamento = TextEditingController();
+  final codBanco = TextEditingController();
+  final codAgencia = TextEditingController();
+  final cnpjIpef = TextEditingController();
+  final pix = TextEditingController();
+  final List<_ComponenteCtl> componentes = [_ComponenteCtl()];
+  final List<_ParcelaCtl> parcelas = [];
+  bool altoDesempenho = false;
+  bool anteciparAdiantamento = false;
+  int indPag = 0;
+  int? tipoAntecipacao;
+  String recebimento = kMdfeRecebimentoPix;
+  void dispose() {
+    for (final c in [
+      nome, documento, valorContrato, adiantamento, codBanco, codAgencia,
+      cnpjIpef, pix
+    ]) {
+      c.dispose();
+    }
+    for (final c in componentes) {
+      c.dispose();
+    }
+    for (final p in parcelas) {
+      p.dispose();
+    }
+  }
+}
+
 class _CiotCtl {
   final codigo = TextEditingController();
   final documento = TextEditingController();
@@ -163,6 +342,8 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
   List<int> reboqueIds = const [],
   List<Map<String, dynamic>> ciots = const [],
   Map<String, dynamic>? valePedagio,
+  List<Map<String, dynamic>> contratantes = const [],
+  Map<String, dynamic>? pagamento,
 }) {
   return {
     'tpAmb': tpAmb,
@@ -185,6 +366,8 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
     if (reboqueIds.isNotEmpty) 'reboqueIds': reboqueIds,
     if (ciots.isNotEmpty) 'ciots': ciots,
     if (valePedagio != null) 'valePedagio': valePedagio,
+    if (contratantes.isNotEmpty) 'contratantes': contratantes,
+    if (pagamento != null) 'pagamentos': [pagamento],
   };
 }
 
@@ -730,6 +913,8 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   final List<_CiotCtl> _ciots = [];
   final List<_ValeDispCtl> _valeDisps = [];
   String? _valeCategoria;
+  final List<_ContratanteCtl> _contratantes = [];
+  _PagamentoCtl? _pag;
   final _valor = TextEditingController();
   final _quantidade = TextEditingController();
   final _info = TextEditingController();
@@ -778,6 +963,10 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
     for (final d in _valeDisps) {
       d.dispose();
     }
+    for (final c in _contratantes) {
+      c.dispose();
+    }
+    _pag?.dispose();
     super.dispose();
   }
 
@@ -885,6 +1074,16 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
               tipo: d.tipo,
             )
         ], _valeCategoria),
+        contratantes: [
+          for (final c in _contratantes)
+            montarContratanteMdfe(
+              nome: c.nome.text,
+              documento: c.documento.text,
+              numeroContrato: c.contrato.text,
+              valorContratoGlobal: _numero(c.valorGlobal.text),
+            )
+        ],
+        pagamento: _pag == null ? null : _montarPagamento(_pag!),
         seguro: montarSeguroMdfe(
           respSeg: _respSeg,
           documentoContratante: _segDocumento.text,
@@ -919,6 +1118,49 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   String? _ibge(String? v) =>
       RegExp(r'^\d{7}$').hasMatch((v ?? '').trim()) ? null : '7 dígitos';
 
+  Map<String, dynamic> _montarPagamento(_PagamentoCtl p) => montarPagamentoMdfe(
+        nome: p.nome.text,
+        documento: p.documento.text,
+        componentes: [
+          for (final c in p.componentes)
+            montarComponentePagamentoMdfe(c.tipo, _numero(c.valor.text)!, c.descricao.text)
+        ],
+        valorContrato: _numero(p.valorContrato.text)!,
+        altoDesempenho: p.altoDesempenho,
+        indPag: p.indPag,
+        adiantamento: _numero(p.adiantamento.text),
+        anteciparAdiantamento: p.anteciparAdiantamento,
+        parcelas: [
+          for (final r in p.parcelas)
+            montarParcelaMdfe(r.vencimento.text, _numero(r.valor.text)!)
+        ],
+        tipoAntecipacao: p.tipoAntecipacao,
+        banco: montarBancoMdfe(
+          forma: p.recebimento,
+          codBanco: p.codBanco.text,
+          codAgencia: p.codAgencia.text,
+          cnpjIpef: p.cnpjIpef.text,
+          pix: p.pix.text,
+        ),
+      );
+
+  /// Documento de contratante/pagador: CPF/CNPJ (so digitos e pontuacao) ou ID de estrangeiro.
+  String? _docOuEstrangeiro(String? v, {int minEstrangeiro = 2}) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return 'Obrigatório';
+    if (_somenteNumericoMdfe.hasMatch(t)) {
+      return documentoNumericoValidoMdfe(t) ? null : 'CPF (11) ou CNPJ (14)';
+    }
+    return (t.length >= minEstrangeiro && t.length <= 20)
+        ? null
+        : '$minEstrangeiro a 20 caracteres';
+  }
+
+  String? _valorNaoNegativo(String? v) {
+    final n = _numero(v ?? '');
+    return (n == null || n < 0) ? 'Valor inválido' : null;
+  }
+
   String? _cpfOuCnpj(String? v) {
     final n = _soDigitosMdfe(v ?? '').length;
     return (n == 11 || n == 14) ? null : 'CPF (11) ou CNPJ (14)';
@@ -942,6 +1184,256 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
 
   Widget _caixa(Widget child, {double largura = 220}) =>
       SizedBox(width: largura, child: child);
+
+  List<Widget> _secaoContratantes() => [
+        _tituloLista('Contratantes do serviço (opcional)', true,
+            () => setState(() => _contratantes.add(_ContratanteCtl()))),
+        for (var i = 0; i < _contratantes.length; i++)
+          _linha([
+            _caixa(TextFormField(
+              controller: _contratantes[i].documento,
+              decoration: _dec('CPF/CNPJ (ou ID de estrangeiro)'),
+              validator: _docOuEstrangeiro,
+            ), largura: 240),
+            _caixa(TextFormField(
+              controller: _contratantes[i].nome,
+              maxLength: 60,
+              decoration: _dec('Nome (opcional)'),
+              validator: (v) => (v ?? '').trim().isEmpty || v!.trim().length >= 2
+                  ? null
+                  : 'Mínimo 2 caracteres',
+            ), largura: 260),
+            _caixa(TextFormField(
+              controller: _contratantes[i].contrato,
+              maxLength: 20,
+              decoration: _dec('Nº do contrato (opcional)'),
+              validator: (v) => (v ?? '').trim().isEmpty || v!.trim().length >= 2
+                  ? null
+                  : 'Mínimo 2 caracteres',
+            ), largura: 200),
+            _caixa(TextFormField(
+              controller: _contratantes[i].valorGlobal,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _dec('Valor global do contrato (R\$)'),
+              validator: (v) {
+                if (_contratantes[i].contrato.text.trim().isEmpty) return null;
+                return _valorNaoNegativo(v);
+              },
+            ), largura: 220),
+            IconButton(
+              tooltip: 'Remover contratante',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () =>
+                  setState(() => _contratantes.removeAt(i).dispose()),
+            ),
+          ]),
+      ];
+
+  List<Widget> _secaoPagamento() {
+    final p = _pag;
+    return [
+      CheckboxListTile(
+        dense: true,
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Informar pagamento do frete (opcional)'),
+        value: p != null,
+        onChanged: (v) => setState(() {
+          if (v == true) {
+            _pag = _PagamentoCtl();
+          } else {
+            _pag?.dispose();
+            _pag = null;
+          }
+        }),
+      ),
+      if (p != null) ...[
+        _linha([
+          _caixa(TextFormField(
+            controller: p.documento,
+            decoration: _dec('Responsável: CPF/CNPJ (ou ID de estrangeiro)'),
+            validator: (v) => _docOuEstrangeiro(v, minEstrangeiro: 5),
+          ), largura: 300),
+          _caixa(TextFormField(
+            controller: p.nome,
+            maxLength: 60,
+            decoration: _dec('Responsável: nome (opcional)'),
+            validator: (v) => (v ?? '').trim().isEmpty || v!.trim().length >= 2
+                ? null
+                : 'Mínimo 2 caracteres',
+          ), largura: 300),
+        ]),
+        _tituloLista('Componentes do pagamento', true,
+            () => setState(() => p.componentes.add(_ComponenteCtl()))),
+        for (var i = 0; i < p.componentes.length; i++)
+          _linha([
+            _caixa(DropdownButtonFormField<String>(
+              initialValue: p.componentes[i].tipo,
+              isExpanded: true,
+              decoration: _dec('Tipo'),
+              items: [
+                for (final e in kMdfeTiposComponentePagamento.entries)
+                  DropdownMenuItem(
+                      value: e.key,
+                      child: Text(e.value, overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (v) => setState(() => p.componentes[i].tipo = v ?? '04'),
+            ), largura: 260),
+            _caixa(TextFormField(
+              controller: p.componentes[i].valor,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _dec('Valor (R\$)'),
+              validator: _valorNaoNegativo,
+            ), largura: 160),
+            if (p.componentes[i].tipo == '99')
+              _caixa(TextFormField(
+                controller: p.componentes[i].descricao,
+                maxLength: 60,
+                decoration: _dec('Descrição do componente'),
+                validator: (v) => (v ?? '').trim().length >= 2 ? null : 'Mínimo 2 caracteres',
+              ), largura: 260),
+            if (p.componentes.length > 1)
+              IconButton(
+                tooltip: 'Remover componente',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () =>
+                    setState(() => p.componentes.removeAt(i).dispose()),
+              ),
+          ]),
+        _linha([
+          _caixa(TextFormField(
+            controller: p.valorContrato,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: _dec('Valor total do contrato (R\$)'),
+            validator: _valorNaoNegativo,
+          ), largura: 240),
+          _caixa(DropdownButtonFormField<int>(
+            initialValue: p.indPag,
+            isExpanded: true,
+            decoration: _dec('Forma de pagamento'),
+            items: const [
+              DropdownMenuItem(value: 0, child: Text('À vista')),
+              DropdownMenuItem(value: 1, child: Text('A prazo')),
+            ],
+            onChanged: (v) => setState(() => p.indPag = v ?? 0),
+          ), largura: 200),
+        ]),
+        CheckboxListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Operação de transporte de alto desempenho'),
+          value: p.altoDesempenho,
+          onChanged: (v) => setState(() => p.altoDesempenho = v == true),
+        ),
+        if (p.indPag == 1) ...[
+          _linha([
+            _caixa(TextFormField(
+              controller: p.adiantamento,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _dec('Adiantamento (R\$, opcional)'),
+              validator: (v) =>
+                  (v ?? '').trim().isEmpty ? null : _valorNaoNegativo(v),
+            ), largura: 240),
+            _caixa(DropdownButtonFormField<int?>(
+              initialValue: p.tipoAntecipacao,
+              isExpanded: true,
+              decoration: _dec('Antecipação das parcelas'),
+              items: const [
+                DropdownMenuItem<int?>(value: null, child: Text('Não informada')),
+                DropdownMenuItem<int?>(value: 0, child: Text('Não permite antecipar')),
+                DropdownMenuItem<int?>(value: 1, child: Text('Permite antecipar')),
+                DropdownMenuItem<int?>(
+                    value: 2, child: Text('Permite, mediante confirmação')),
+              ],
+              onChanged: (v) => setState(() => p.tipoAntecipacao = v),
+            ), largura: 300),
+          ]),
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Concordo em antecipar o adiantamento'),
+            value: p.anteciparAdiantamento,
+            onChanged: (v) => setState(() => p.anteciparAdiantamento = v == true),
+          ),
+          _tituloLista('Parcelas', true,
+              () => setState(() => p.parcelas.add(_ParcelaCtl()))),
+          for (var i = 0; i < p.parcelas.length; i++)
+            _linha([
+              _caixa(TextFormField(
+                controller: p.parcelas[i].vencimento,
+                keyboardType: TextInputType.datetime,
+                decoration: _dec('Vencimento (AAAA-MM-DD)'),
+                validator: (v) => RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch((v ?? '').trim()) &&
+                        DateTime.tryParse(v!.trim()) != null
+                    ? null
+                    : 'AAAA-MM-DD',
+              ), largura: 220),
+              _caixa(TextFormField(
+                controller: p.parcelas[i].valor,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: _dec('Valor da parcela (R\$)'),
+                validator: _valorNaoNegativo,
+              ), largura: 200),
+              IconButton(
+                tooltip: 'Remover parcela',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => setState(() => p.parcelas.removeAt(i).dispose()),
+              ),
+            ]),
+        ],
+        _linha([
+          _caixa(DropdownButtonFormField<String>(
+            initialValue: p.recebimento,
+            isExpanded: true,
+            decoration: _dec('Recebimento do frete'),
+            items: const [
+              DropdownMenuItem(value: kMdfeRecebimentoPix, child: Text('Chave PIX')),
+              DropdownMenuItem(value: kMdfeRecebimentoBanco, child: Text('Banco e agência')),
+              DropdownMenuItem(
+                  value: kMdfeRecebimentoIpef,
+                  child: Text('Instituição de pagamento eletrônico (IPEF)')),
+            ],
+            onChanged: (v) =>
+                setState(() => p.recebimento = v ?? kMdfeRecebimentoPix),
+          ), largura: 340),
+          if (p.recebimento == kMdfeRecebimentoPix)
+            _caixa(TextFormField(
+              controller: p.pix,
+              decoration: _dec('Chave PIX'),
+              validator: (v) {
+                final n = (v ?? '').trim().length;
+                return (n >= 2 && n <= 60) ? null : '2 a 60 caracteres';
+              },
+            ), largura: 300),
+          if (p.recebimento == kMdfeRecebimentoBanco) ...[
+            _caixa(TextFormField(
+              controller: p.codBanco,
+              decoration: _dec('Banco (3 a 5)'),
+              validator: (v) {
+                final n = (v ?? '').trim().length;
+                return (n >= 3 && n <= 5) ? null : '3 a 5 caracteres';
+              },
+            ), largura: 140),
+            _caixa(TextFormField(
+              controller: p.codAgencia,
+              decoration: _dec('Agência (1 a 10)'),
+              validator: (v) {
+                final n = (v ?? '').trim().length;
+                return (n >= 1 && n <= 10) ? null : '1 a 10 caracteres';
+              },
+            ), largura: 160),
+          ],
+          if (p.recebimento == kMdfeRecebimentoIpef)
+            _caixa(TextFormField(
+              controller: p.cnpjIpef,
+              keyboardType: TextInputType.number,
+              decoration: _dec('CNPJ da IPEF'),
+              validator: (v) =>
+                  _soDigitosMdfe(v ?? '').length == 14 ? null : '14 dígitos',
+            ), largura: 240),
+        ]),
+      ],
+    ];
+  }
 
   Widget _tituloLista(String titulo, bool podeAdicionar, VoidCallback onAdd) =>
       Row(children: [
@@ -1318,6 +1810,8 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
                             onChanged: (v) => setState(() => _valeCategoria = v),
                           ), largura: 300),
                         ]),
+                      ..._secaoContratantes(),
+                      ..._secaoPagamento(),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int?>(
                         initialValue: _respSeg,

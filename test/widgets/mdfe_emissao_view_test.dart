@@ -125,6 +125,110 @@ void main() {
     expect((cheio['valePedagio'] as Map)['categoriaCombinacaoVeicular'], '02');
   });
 
+  test('documento: numerico vira CPF/CNPJ (so digitos), texto vira ID de estrangeiro', () {
+    expect(separarDocumentoMdfe('98.765.432/0001-10').cnpjCpf, '98765432000110');
+    expect(separarDocumentoMdfe('98.765.432/0001-10').idEstrangeiro, isNull);
+    expect(separarDocumentoMdfe(' PASS12345 ').idEstrangeiro, 'PASS12345');
+    expect(separarDocumentoMdfe(' PASS12345 ').cnpjCpf, isNull);
+    expect(separarDocumentoMdfe('   ').cnpjCpf, isNull);
+    expect(documentoNumericoValidoMdfe('123.456.789-09'), isTrue);
+    expect(documentoNumericoValidoMdfe('12345'), isFalse);
+  });
+
+  test('contratante: so envia contrato com valor quando ha numero do contrato', () {
+    expect(
+      montarContratanteMdfe(nome: ' Embarcadora ', documento: '98.765.432/0001-10'),
+      {'nome': 'Embarcadora', 'cnpjCpf': '98765432000110'},
+    );
+    expect(
+      montarContratanteMdfe(
+          documento: 'PASS12345', numeroContrato: 'CT-1', valorContratoGlobal: 5000),
+      {
+        'idEstrangeiro': 'PASS12345',
+        'numeroContrato': 'CT-1',
+        'valorContratoGlobal': 5000,
+      },
+    );
+    expect(
+      montarContratanteMdfe(documento: '12345678909', valorContratoGlobal: 5000)
+          .containsKey('valorContratoGlobal'),
+      isFalse,
+    );
+  });
+
+  test('pagamento a vista ignora adiantamento e parcelas; a prazo envia ambos', () {
+    final comps = [montarComponentePagamentoMdfe('04', 4000, null)];
+    final banco = montarBancoMdfe(forma: kMdfeRecebimentoPix, pix: ' chave@x.com ');
+    expect(banco, {'pix': 'chave@x.com'});
+
+    final aVista = montarPagamentoMdfe(
+      documento: '98765432000110', componentes: comps, valorContrato: 4000,
+      indPag: 0, adiantamento: 1000, anteciparAdiantamento: true,
+      parcelas: [montarParcelaMdfe('2026-12-10', 100)], banco: banco,
+    );
+    expect(aVista.containsKey('adiantamento'), isFalse);
+    expect(aVista['anteciparAdiantamento'], isFalse);
+    expect(aVista['parcelas'], isEmpty);
+
+    final aPrazo = montarPagamentoMdfe(
+      nome: 'Embarcadora', documento: '98765432000110', componentes: comps,
+      valorContrato: 4000, altoDesempenho: true, indPag: 1, adiantamento: 1000,
+      anteciparAdiantamento: true, tipoAntecipacao: 2,
+      parcelas: [montarParcelaMdfe(' 2026-12-10 ', 1500.25)], banco: banco,
+    );
+    expect(aPrazo['adiantamento'], 1000);
+    expect(aPrazo['anteciparAdiantamento'], isTrue);
+    expect((aPrazo['parcelas'] as List).single,
+        {'vencimento': '2026-12-10', 'valor': 1500.25});
+    expect(aPrazo['tipoAntecipacao'], 2);
+    expect(aPrazo['altoDesempenho'], isTrue);
+  });
+
+  test('banco: so o grupo da forma escolhida vai no corpo', () {
+    expect(
+      montarBancoMdfe(
+          forma: kMdfeRecebimentoBanco, codBanco: '341', codAgencia: '1234', pix: 'x'),
+      {'codBanco': '341', 'codAgencia': '1234'},
+    );
+    expect(
+      montarBancoMdfe(forma: kMdfeRecebimentoIpef, cnpjIpef: '11.222.333/0001-81'),
+      {'cnpjIpef': '11222333000181'},
+    );
+    expect(kMdfeTiposComponentePagamento.keys.toSet(), {'04', '01', '02', '03', '99'});
+  });
+
+  test('corpo de emissao inclui contratantes e pagamentos so quando informados', () {
+    Map<String, dynamic> corpo({
+      List<Map<String, dynamic>> contratantes = const [],
+      Map<String, dynamic>? pagamento,
+    }) =>
+        montarCorpoEmissaoMdfe(
+          tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
+          municipiosCarregamento: [montarMunicipioMdfe('3106200', 'BH')],
+          descargas: [
+            montarDescargaMdfe(
+                ibge: '3550308', nome: 'SP', chavesCte: const [chave], chavesNfe: const [])
+          ],
+          valorCarga: 1, unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
+          motoristaIds: const [1], contratantes: contratantes, pagamento: pagamento,
+        );
+    final vazio = corpo();
+    expect(vazio.containsKey('contratantes'), isFalse);
+    expect(vazio.containsKey('pagamentos'), isFalse);
+
+    final cheio = corpo(
+      contratantes: [montarContratanteMdfe(documento: '98765432000110')],
+      pagamento: montarPagamentoMdfe(
+        documento: '98765432000110',
+        componentes: [montarComponentePagamentoMdfe('04', 10, null)],
+        valorContrato: 10, indPag: 0,
+        banco: montarBancoMdfe(forma: kMdfeRecebimentoPix, pix: 'k@x.com'),
+      ),
+    );
+    expect((cheio['contratantes'] as List).length, 1);
+    expect((cheio['pagamentos'] as List).length, 1);
+  });
+
   test('roteiro: sem UFs de percurso o campo nao e enviado', () {
     final corpo = montarCorpoEmissaoMdfe(
       tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
