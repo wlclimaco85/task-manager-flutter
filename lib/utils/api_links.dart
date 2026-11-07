@@ -1171,6 +1171,7 @@ class ApiLinks {
   static String mdfeCancelar(String id) => '$_baseUrlNew/api/mdfe/$id/cancelar';
   static String mdfeEncerrar(String id) => '$_baseUrlNew/api/mdfe/$id/encerrar';
   static String mdfeEventos(String id) => '$_baseUrlNew/api/mdfe/$id/eventos';
+  static String mdfeDamdfe(String id) => '$_baseUrlNew/api/mdfe/$id/damdfe';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';

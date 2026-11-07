@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/widgets/mdfe_emissao_view.dart';
 
 void main() {
@@ -39,6 +40,11 @@ void main() {
     final chaves = extrairChaves('$chave\n123\n$chave', invalidas: invalidas);
     expect(chaves, [chave, chave]);
     expect(invalidas, ['123']);
+  });
+
+  test('endpoints de MDF-e apontam para /api/mdfe/{id}', () {
+    expect(ApiLinks.mdfeDamdfe('5'), endsWith('/api/mdfe/5/damdfe'));
+    expect(ApiLinks.mdfeConsultar('5'), endsWith('/api/mdfe/5/consultar'));
   });
 
   test('lista da API le o envelope data.dados', () {

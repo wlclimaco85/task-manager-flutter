@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/app_logger.dart';
+import '../utils/file_saver_compat.dart';
+import '../utils/tenant_context.dart';
 import '../web/screens/transporte_veiculo_grid_screen.dart'
     show kTransporteUfs;
 import 'transporte_config_tab.dart'
@@ -204,6 +206,22 @@ class _MdfeEmissaoViewState extends State<MdfeEmissaoView> {
       if (r.isSuccess) _carregar();
     });
   }
+
+  Future<void> _damdfe(Map<String, dynamic> m) => _acao('gerar o DAMDFE', () async {
+        final r = await TenantContext.get(ApiLinks.mdfeDamdfe('${m['id']}'));
+        if (r.statusCode != 200) {
+          AppLogger.i.warn('MdfeEmissaoView: DAMDFE #${m['id']} falhou: HTTP ${r.statusCode}');
+          _aviso('Não foi possível gerar o DAMDFE (HTTP ${r.statusCode}).');
+          return;
+        }
+        await FileSaver.instance.saveFile(
+          name: 'damdfe_${m['numero'] ?? m['id']}',
+          bytes: r.bodyBytes,
+          fileExtension: 'pdf',
+          mimeType: MimeType.pdf,
+        );
+        _aviso('DAMDFE gerado.');
+      });
 
   Future<void> _eventos(Map<String, dynamic> m) => _acao('listar os eventos', () async {
         final r = await _net.getRequest(ApiLinks.mdfeEventos('${m['id']}'));
@@ -424,6 +442,10 @@ class _MdfeEmissaoViewState extends State<MdfeEmissaoView> {
                     onPressed: () => _consultar(m),
                     icon: const Icon(Icons.sync, size: 18),
                     label: const Text('Consultar')),
+                OutlinedButton.icon(
+                    onPressed: () => _damdfe(m),
+                    icon: const Icon(Icons.picture_as_pdf, size: 18),
+                    label: const Text('DAMDFE')),
                 OutlinedButton.icon(
                     onPressed: () => _eventos(m),
                     icon: const Icon(Icons.history, size: 18),
