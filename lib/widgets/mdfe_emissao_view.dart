@@ -17,6 +17,48 @@ const int kMdfeTamanhoMinimoJustificativa = 15;
 /// Maximo de reboques por MDF-e rodoviario (esquema 3.00).
 const int kMdfeMaxReboques = 3;
 
+/// Limites do esquema 3.00 para o roteiro do manifesto.
+const int kMdfeMaxMunicipiosCarregamento = 50;
+const int kMdfeMaxMunicipiosDescarga = 1000;
+const int kMdfeMaxUfsPercurso = 25;
+
+/// Municipio de carregamento no formato do corpo do POST.
+Map<String, String> montarMunicipioMdfe(String ibge, String nome) =>
+    {'codigoIbge': ibge.trim(), 'nome': nome.trim()};
+
+/// Descarga (municipio + chaves de CT-e/NF-e) no formato do corpo do POST.
+Map<String, dynamic> montarDescargaMdfe({
+  required String ibge,
+  required String nome,
+  required List<String> chavesCte,
+  required List<String> chavesNfe,
+}) =>
+    {
+      'municipio': montarMunicipioMdfe(ibge, nome),
+      'chavesCte': chavesCte,
+      'chavesNfe': chavesNfe,
+    };
+
+class _MunicipioCtl {
+  final ibge = TextEditingController();
+  final nome = TextEditingController();
+  void dispose() {
+    ibge.dispose();
+    nome.dispose();
+  }
+}
+
+class _DescargaCtl extends _MunicipioCtl {
+  final chavesCte = TextEditingController();
+  final chavesNfe = TextEditingController();
+  @override
+  void dispose() {
+    super.dispose();
+    chavesCte.dispose();
+    chavesNfe.dispose();
+  }
+}
+
 /// Monta o corpo do POST /api/mdfe a partir dos campos do formulario.
 /// Dados rodoviarios vem do cadastro (veiculoId + motoristaIds); numero e
 /// emissao sao definidos pelo backend.
@@ -27,12 +69,9 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
   required int serie,
   required String ufIni,
   required String ufFim,
-  required String municipioCarregamentoIbge,
-  required String municipioCarregamentoNome,
-  required String municipioDescargaIbge,
-  required String municipioDescargaNome,
-  required List<String> chavesCte,
-  required List<String> chavesNfe,
+  required List<Map<String, String>> municipiosCarregamento,
+  required List<Map<String, dynamic>> descargas,
+  List<String> ufsPercurso = const [],
   required num valorCarga,
   required String unidadeCarga,
   required num quantidadeCarga,
@@ -49,22 +88,9 @@ Map<String, dynamic> montarCorpoEmissaoMdfe({
     'serie': serie,
     'ufIni': ufIni,
     'ufFim': ufFim,
-    'municipiosCarregamento': [
-      {
-        'codigoIbge': municipioCarregamentoIbge,
-        'nome': municipioCarregamentoNome,
-      }
-    ],
-    'descargas': [
-      {
-        'municipio': {
-          'codigoIbge': municipioDescargaIbge,
-          'nome': municipioDescargaNome,
-        },
-        'chavesCte': chavesCte,
-        'chavesNfe': chavesNfe,
-      }
-    ],
+    'municipiosCarregamento': municipiosCarregamento,
+    if (ufsPercurso.isNotEmpty) 'ufsPercurso': ufsPercurso,
+    'descargas': descargas,
     'valorCarga': valorCarga,
     'unidadeCarga': unidadeCarga,
     'quantidadeCarga': quantidadeCarga,
@@ -613,12 +639,9 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   final _net = NetworkCaller();
   final _form = GlobalKey<FormState>();
   final _serie = TextEditingController(text: '1');
-  final _carregIbge = TextEditingController();
-  final _carregNome = TextEditingController();
-  final _descIbge = TextEditingController();
-  final _descNome = TextEditingController();
-  final _chavesCte = TextEditingController();
-  final _chavesNfe = TextEditingController();
+  final List<_MunicipioCtl> _carregs = [_MunicipioCtl()];
+  final List<_DescargaCtl> _descargas = [_DescargaCtl()];
+  final List<String> _percurso = [];
   final _valor = TextEditingController();
   final _quantidade = TextEditingController();
   final _info = TextEditingController();
@@ -653,11 +676,13 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   @override
   void dispose() {
     for (final c in [
-      _serie, _carregIbge, _carregNome, _descIbge, _descNome, _chavesCte,
-      _chavesNfe, _valor, _quantidade, _info, _segDocumento, _segNome,
+      _serie, _valor, _quantidade, _info, _segDocumento, _segNome,
       _segCnpj, _segApolice, _segAverbacoes
     ]) {
       c.dispose();
+    }
+    for (final m in [..._carregs, ..._descargas]) {
+      m.dispose();
     }
     super.dispose();
   }
@@ -700,15 +725,21 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
   Future<void> _emitir() async {
     if (!_form.currentState!.validate()) return;
     final invalidas = <String>[];
-    final cte = extrairChaves(_chavesCte.text, invalidas: invalidas);
-    final nfe = extrairChaves(_chavesNfe.text, invalidas: invalidas);
+    final descargas = <Map<String, dynamic>>[];
+    for (final d in _descargas) {
+      final cte = extrairChaves(d.chavesCte.text, invalidas: invalidas);
+      final nfe = extrairChaves(d.chavesNfe.text, invalidas: invalidas);
+      if (cte.isEmpty && nfe.isEmpty && invalidas.isEmpty) {
+        setState(() => _erro = 'Informe ao menos uma chave de CT-e ou NF-e em '
+            'cada município de descarga (${d.nome.text.trim()}).');
+        return;
+      }
+      descargas.add(montarDescargaMdfe(
+          ibge: d.ibge.text, nome: d.nome.text, chavesCte: cte, chavesNfe: nfe));
+    }
     if (invalidas.isNotEmpty) {
       setState(() => _erro = 'Chave(s) com tamanho inválido (esperado 44 dígitos): '
           '${invalidas.join(', ')}');
-      return;
-    }
-    if (cte.isEmpty && nfe.isEmpty) {
-      setState(() => _erro = 'Informe ao menos uma chave de CT-e ou NF-e.');
       return;
     }
     if (_veiculoId == null || _motoristas.isEmpty) {
@@ -737,12 +768,11 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
         serie: int.parse(_serie.text.trim()),
         ufIni: _ufIni!,
         ufFim: _ufFim!,
-        municipioCarregamentoIbge: _carregIbge.text.trim(),
-        municipioCarregamentoNome: _carregNome.text.trim(),
-        municipioDescargaIbge: _descIbge.text.trim(),
-        municipioDescargaNome: _descNome.text.trim(),
-        chavesCte: cte,
-        chavesNfe: nfe,
+        municipiosCarregamento: [
+          for (final c in _carregs) montarMunicipioMdfe(c.ibge.text, c.nome.text)
+        ],
+        ufsPercurso: _percurso.toList(),
+        descargas: descargas,
         valorCarga: _numero(_valor.text)!,
         unidadeCarga: _unidade,
         quantidadeCarga: _numero(_quantidade.text)!,
@@ -802,6 +832,46 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
 
   Widget _caixa(Widget child, {double largura = 220}) =>
       SizedBox(width: largura, child: child);
+
+  Widget _tituloLista(String titulo, bool podeAdicionar, VoidCallback onAdd) =>
+      Row(children: [
+        Expanded(child: Text(titulo)),
+        TextButton.icon(
+          onPressed: podeAdicionar ? onAdd : null,
+          icon: const Icon(Icons.add),
+          label: const Text('Adicionar'),
+        ),
+      ]);
+
+  /// UFs de percurso, na ordem em que o veiculo passa: toque para incluir ao fim
+  /// da rota; toque numa UF ja escolhida para remove-la.
+  Widget _secaoPercurso() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('UFs de percurso (opcional, em ordem) — '
+              '${_percurso.isEmpty ? 'nenhuma' : _percurso.join(' → ')}'),
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final uf in kTransporteUfs)
+              FilterChip(
+                label: Text(uf),
+                selected: _percurso.contains(uf),
+                onSelected: (marcado) => setState(() {
+                  if (!marcado) {
+                    _percurso.remove(uf);
+                  } else if (_percurso.length < kMdfeMaxUfsPercurso) {
+                    _percurso.add(uf);
+                  }
+                }),
+              ),
+          ]),
+        ],
+      ),
+    );
+  }
 
   Widget _ufDrop(String label, String? valor, ValueChanged<String?> onChanged) =>
       _caixa(DropdownButtonFormField<String>(
@@ -896,44 +966,68 @@ class _MdfeFormDialogState extends State<_MdfeFormDialog> {
                         _ufDrop('UF início', _ufIni, (v) => setState(() => _ufIni = v)),
                         _ufDrop('UF fim', _ufFim, (v) => setState(() => _ufFim = v)),
                       ]),
-                      _linha([
-                        _caixa(TextFormField(
-                          controller: _carregIbge,
-                          keyboardType: TextInputType.number,
-                          decoration: _dec('Carregamento: IBGE'),
-                          validator: _ibge,
-                        ), largura: 180),
-                        _caixa(TextFormField(
-                          controller: _carregNome,
-                          decoration: _dec('Carregamento: município'),
-                          validator: _obrig,
-                        ), largura: 260),
-                      ]),
-                      _linha([
-                        _caixa(TextFormField(
-                          controller: _descIbge,
-                          keyboardType: TextInputType.number,
-                          decoration: _dec('Descarga: IBGE'),
-                          validator: _ibge,
-                        ), largura: 180),
-                        _caixa(TextFormField(
-                          controller: _descNome,
-                          decoration: _dec('Descarga: município'),
-                          validator: _obrig,
-                        ), largura: 260),
-                      ]),
-                      _linha([
-                        _caixa(TextFormField(
-                          controller: _chavesCte,
-                          maxLines: 3,
-                          decoration: _dec('Chaves CT-e (uma por linha)'),
-                        ), largura: 340),
-                        _caixa(TextFormField(
-                          controller: _chavesNfe,
-                          maxLines: 3,
-                          decoration: _dec('Chaves NF-e (uma por linha)'),
-                        ), largura: 340),
-                      ]),
+                      _secaoPercurso(),
+                      _tituloLista('Municípios de carregamento',
+                          _carregs.length < kMdfeMaxMunicipiosCarregamento,
+                          () => setState(() => _carregs.add(_MunicipioCtl()))),
+                      for (var i = 0; i < _carregs.length; i++)
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _carregs[i].ibge,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('Carregamento: IBGE'),
+                            validator: _ibge,
+                          ), largura: 180),
+                          _caixa(TextFormField(
+                            controller: _carregs[i].nome,
+                            decoration: _dec('Carregamento: município'),
+                            validator: _obrig,
+                          ), largura: 260),
+                          if (_carregs.length > 1)
+                            IconButton(
+                              tooltip: 'Remover município de carregamento',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => setState(
+                                  () => _carregs.removeAt(i).dispose()),
+                            ),
+                        ]),
+                      _tituloLista('Municípios de descarga e documentos',
+                          _descargas.length < kMdfeMaxMunicipiosDescarga,
+                          () => setState(() => _descargas.add(_DescargaCtl()))),
+                      for (var i = 0; i < _descargas.length; i++) ...[
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _descargas[i].ibge,
+                            keyboardType: TextInputType.number,
+                            decoration: _dec('Descarga: IBGE'),
+                            validator: _ibge,
+                          ), largura: 180),
+                          _caixa(TextFormField(
+                            controller: _descargas[i].nome,
+                            decoration: _dec('Descarga: município'),
+                            validator: _obrig,
+                          ), largura: 260),
+                          if (_descargas.length > 1)
+                            IconButton(
+                              tooltip: 'Remover município de descarga',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => setState(
+                                  () => _descargas.removeAt(i).dispose()),
+                            ),
+                        ]),
+                        _linha([
+                          _caixa(TextFormField(
+                            controller: _descargas[i].chavesCte,
+                            maxLines: 3,
+                            decoration: _dec('Chaves CT-e (uma por linha)'),
+                          ), largura: 340),
+                          _caixa(TextFormField(
+                            controller: _descargas[i].chavesNfe,
+                            maxLines: 3,
+                            decoration: _dec('Chaves NF-e (uma por linha)'),
+                          ), largura: 340),
+                        ]),
+                      ],
                       _linha([
                         _caixa(TextFormField(
                           controller: _valor,

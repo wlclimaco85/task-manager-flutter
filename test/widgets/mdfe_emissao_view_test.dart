@@ -13,12 +13,11 @@ void main() {
       serie: 1,
       ufIni: 'MG',
       ufFim: 'SP',
-      municipioCarregamentoIbge: '3106200',
-      municipioCarregamentoNome: 'Belo Horizonte',
-      municipioDescargaIbge: '3550308',
-      municipioDescargaNome: 'Sao Paulo',
-      chavesCte: const [chave],
-      chavesNfe: const [],
+      municipiosCarregamento: [montarMunicipioMdfe('3106200', 'Belo Horizonte')],
+      descargas: [
+        montarDescargaMdfe(
+            ibge: '3550308', nome: 'Sao Paulo', chavesCte: const [chave], chavesNfe: const [])
+      ],
       valorCarga: 1000,
       unidadeCarga: '01',
       quantidadeCarga: 500,
@@ -33,6 +32,50 @@ void main() {
     final desc = (corpo['descargas'] as List).single as Map;
     expect(desc['chavesCte'], [chave]);
     expect((desc['municipio'] as Map)['codigoIbge'], '3550308');
+  });
+
+  test('roteiro: varios municipios de carregamento/descarga e UFs de percurso em ordem', () {
+    final corpo = montarCorpoEmissaoMdfe(
+      tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'RS',
+      municipiosCarregamento: [
+        montarMunicipioMdfe(' 3106200 ', ' Belo Horizonte '),
+        montarMunicipioMdfe('3170206', 'Uberlandia'),
+      ],
+      ufsPercurso: const ['SP', 'PR', 'SC'],
+      descargas: [
+        montarDescargaMdfe(
+            ibge: '3550308', nome: 'Sao Paulo', chavesCte: const [chave], chavesNfe: const []),
+        montarDescargaMdfe(
+            ibge: '4314902', nome: 'Porto Alegre', chavesCte: const [], chavesNfe: const [chave]),
+      ],
+      valorCarga: 1, unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
+      motoristaIds: const [1],
+    );
+    expect(corpo['ufsPercurso'], ['SP', 'PR', 'SC']);
+    final carregs = corpo['municipiosCarregamento'] as List;
+    expect(carregs.length, 2);
+    expect((carregs.first as Map)['codigoIbge'], '3106200');
+    expect((carregs.first as Map)['nome'], 'Belo Horizonte');
+    final descs = corpo['descargas'] as List;
+    expect(descs.length, 2);
+    expect(((descs.last as Map)['municipio'] as Map)['nome'], 'Porto Alegre');
+    expect((descs.last as Map)['chavesNfe'], [chave]);
+    expect(kMdfeMaxMunicipiosCarregamento, 50);
+    expect(kMdfeMaxUfsPercurso, 25);
+  });
+
+  test('roteiro: sem UFs de percurso o campo nao e enviado', () {
+    final corpo = montarCorpoEmissaoMdfe(
+      tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
+      municipiosCarregamento: [montarMunicipioMdfe('3106200', 'BH')],
+      descargas: [
+        montarDescargaMdfe(
+            ibge: '3550308', nome: 'SP', chavesCte: const [chave], chavesNfe: const [])
+      ],
+      valorCarga: 1, unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
+      motoristaIds: const [1],
+    );
+    expect(corpo.containsKey('ufsPercurso'), isFalse);
   });
 
   test('seguro: sem responsavel nao envia; com contratante envia documento, seguradora e averbacoes', () {
@@ -59,17 +102,23 @@ void main() {
   test('corpo de emissao inclui seguros so quando informado', () {
     Map<String, dynamic> corpo(Map<String, dynamic>? seguro) => montarCorpoEmissaoMdfe(
           tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
-          municipioCarregamentoIbge: '3106200', municipioCarregamentoNome: 'BH',
-          municipioDescargaIbge: '3550308', municipioDescargaNome: 'SP',
-          chavesCte: const [chave], chavesNfe: const [], valorCarga: 1,
+          municipiosCarregamento: [montarMunicipioMdfe('3106200', 'BH')],
+          descargas: [
+            montarDescargaMdfe(
+                ibge: '3550308', nome: 'SP', chavesCte: const [chave], chavesNfe: const [])
+          ],
+          valorCarga: 1,
           unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
           motoristaIds: const [1], seguro: seguro);
     expect(corpo(null).containsKey('reboqueIds'), isFalse);
     final comReboque = montarCorpoEmissaoMdfe(
         tpAmb: 2, tpEmit: 1, serie: 1, ufIni: 'MG', ufFim: 'SP',
-        municipioCarregamentoIbge: '3106200', municipioCarregamentoNome: 'BH',
-        municipioDescargaIbge: '3550308', municipioDescargaNome: 'SP',
-        chavesCte: const [chave], chavesNfe: const [], valorCarga: 1,
+        municipiosCarregamento: [montarMunicipioMdfe('3106200', 'BH')],
+        descargas: [
+          montarDescargaMdfe(
+              ibge: '3550308', nome: 'SP', chavesCte: const [chave], chavesNfe: const [])
+        ],
+        valorCarga: 1,
         unidadeCarga: '01', quantidadeCarga: 1, veiculoId: 1,
         motoristaIds: const [1], reboqueIds: const [7, 8]);
     expect(comReboque['reboqueIds'], [7, 8]);
