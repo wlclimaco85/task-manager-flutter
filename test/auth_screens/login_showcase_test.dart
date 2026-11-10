@@ -40,6 +40,7 @@ void main() {
     expect(find.text('Módulos que podem ser contratados'), findsOneWidget);
     expect(find.text('Fiscal e NF-e'), findsOneWidget);
     expect(find.text('GME'), findsOneWidget);
+    expect(find.text('Transporte'), findsOneWidget);
 
     // Flash News lateral (Imagem 3)
     expect(find.text('FLASH NEWS'), findsOneWidget);
