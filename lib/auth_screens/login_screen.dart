@@ -1407,6 +1407,12 @@ class _SystemModulesShowcase extends StatelessWidget {
       badge: 'Opcional',
     ),
     _LoginModule(
+      title: 'Transporte',
+      description: 'MDF-e, CT-e, veículos e motoristas para transportadoras.',
+      icon: Icons.local_shipping_outlined,
+      badge: 'Opcional',
+    ),
+    _LoginModule(
       title: 'Precificação de contratos',
       description: 'Regras, reajustes e margens para contratos recorrentes.',
       icon: Icons.handshake_outlined,

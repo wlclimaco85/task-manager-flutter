@@ -70,6 +70,8 @@ enum AppScreen {
   nfceGrid,
   // CNAB / Remessa EDI
   cnabRemessa,
+  // Modulo Transporte (MDF-e): cadastros de veiculos e motoristas
+  transporteVeiculos, transporteMotoristas, transporteMdfe, transporteCte,
   // Paridade Web/Windows/Mobile
   regraFiscal, cobrancaAutomatica, aprovacaoPagamentos, sistemaTest,
   rateioFinanceiro, baixaAutomatica, renegociacao, contaContabil, relatorioDpRh,
@@ -170,6 +172,10 @@ const _escritorioScreens = {
   AppScreen.alvaras:    _all,
   AppScreen.nfceGrid:   _all,
   AppScreen.cnabRemessa: _all,
+  AppScreen.transporteVeiculos: _all,
+  AppScreen.transporteMotoristas: _all,
+  AppScreen.transporteMdfe: _all,
+  AppScreen.transporteCte: _all,
   AppScreen.regraFiscal: _all,
   AppScreen.cobrancaAutomatica: _allFinanceiro,
   AppScreen.aprovacaoPagamentos: _allFinanceiro,
@@ -419,6 +425,10 @@ class SecurityMatrix {
     AppScreen.dashMensalidadeArea: ['dashboardmensalidades', 'dashmensalidadearea'],
     AppScreen.nfceGrid: ['nfce_grid', 'nfcegrid', 'nfce_cupom', 'nfce cupons'],
     AppScreen.cnabRemessa: ['cnab_remessa', 'cnabremessa', 'cnab', 'remessaedi'],
+    AppScreen.transporteVeiculos: ['transporte_veiculos', 'transporteveiculos'],
+    AppScreen.transporteMotoristas: ['transporte_motoristas', 'transportemotoristas'],
+    AppScreen.transporteMdfe: ['transporte_mdfe', 'transportemdfe'],
+    AppScreen.transporteCte: ['transporte_cte', 'transportecte'],
     AppScreen.regraFiscal: ['regra_fiscal', 'regrafiscal'],
     AppScreen.cobrancaAutomatica: ['cobranca_automatica', 'cobrancaautomatica'],
     AppScreen.aprovacaoPagamentos: ['aprovacao_pagamentos_web', 'aprovacao_pagamentos', 'aprovacaopagamentos', 'aprovacaopagamento'],
@@ -655,6 +665,11 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
     AppScreen.dashFiscalArea, AppScreen.regraFiscal,
   },
+  // Modulo licenciavel proprio (modulo_servico 'Transporte', id 17): contratar Notas Fiscais nao libera.
+  'Transporte': {
+    AppScreen.transporteVeiculos, AppScreen.transporteMotoristas,
+    AppScreen.transporteMdfe, AppScreen.transporteCte,
+  },
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
     AppScreen.ajustePonto, AppScreen.funcionarios, AppScreen.feriados,
@@ -700,6 +715,17 @@ class ModuloAccess {
   static List<String> get modulosContratados => _modulosContratados;
   static bool _loaded = false;
 
+  /// Nomes dos modulos da resposta, ignorando os desativados (`ativo == false`).
+  /// Sem o campo (backend antigo) o modulo vale como ativo.
+  @visibleForTesting
+  static Set<String> nomesDeModulosAtivos(List<dynamic> data) =>
+      _nomesDeModulosAtivos(data);
+
+  static Set<String> _nomesDeModulosAtivos(List<dynamic> data) => data
+      .where((m) => !(m is Map && m['ativo'] == false))
+      .map((m) => m['nome']?.toString() ?? '')
+      .toSet();
+
   static Future<void> load() async {
     // Cache por sessao: evita refazer as chamadas de empresa-modulo/parceiro-modulo
     // (rate limit 429). reset() no login/logout forca nova leitura.
@@ -730,7 +756,7 @@ class ModuloAccess {
             .timeout(const Duration(seconds: 5));
         if (resp.statusCode == 200) {
           final List<dynamic> data = jsonDecode(resp.body);
-          empresaModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+          empresaModulos = _nomesDeModulosAtivos(data);
         } else {
           developer.log('API ${resp.statusCode} ao buscar empresa-módulos');
           throw Exception('API ${resp.statusCode} empresa-módulos');
@@ -751,7 +777,7 @@ class ModuloAccess {
             .timeout(const Duration(seconds: 5));
         if (resp.statusCode == 200) {
           final List<dynamic> data = jsonDecode(resp.body);
-          parceiroModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+          parceiroModulos = _nomesDeModulosAtivos(data);
         } else {
           developer.log('API ${resp.statusCode} ao buscar parceiro-módulos');
           throw Exception('API ${resp.statusCode} parceiro-módulos');
@@ -815,6 +841,9 @@ class ModuloAccess {
     'NFS-e': [
       'NFS-e',
       'NFSe',
+    ],
+    'Transporte': [
+      'Transporte',
     ],
     'Comercial': [
       'Comercial',
@@ -937,6 +966,10 @@ class ModuloAccess {
     'nfe_saida': 'Notas Fiscais',
     'nfe_entrada': 'Notas Fiscais',
     'nfce_grid': 'Notas Fiscais',
+    'transporte_veiculos': 'Transporte',
+    'transporte_motoristas': 'Transporte',
+    'transporte_mdfe': 'Transporte',
+    'transporte_cte': 'Transporte',
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',

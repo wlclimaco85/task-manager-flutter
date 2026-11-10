@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kDebugMode, kIsWeb, TargetPlatform, visibleForTesting;
+
 class ApiLinks {
   ApiLinks._();
 
@@ -9,10 +12,14 @@ class ApiLinks {
   // "Unsupported operation: String.fromEnvironment can only be used as a
   // const constructor". Precisa ficar const mesmo com o resto da cadeia
   // (_baseIp em diante) sendo final.
-  static const String _backendUrl = String.fromEnvironment(
-    'BACKEND_URL',
-    defaultValue: 'https://appacademia-production-be7e.up.railway.app',
-  );
+  static const String _backendUrlDefine = String.fromEnvironment('BACKEND_URL');
+
+  // Defaults (ver resolverBackend). Producao: Railway, https, atende na raiz.
+  static const String _railwayUrl =
+      'https://appacademia-production-be7e.up.railway.app';
+  // Backend local do dev (AppAcademia_Tudo.bat sobe na 9001 com context-path /boletobancos).
+  static const String _localUrl = 'http://127.0.0.1:9001';
+  static const String _localContextPath = '/boletobancos';
 
   // Context-path do backend: server.servlet.context-path=/boletobancos em
   // TODOS os perfis (application.properties, que se aplica sempre, e
@@ -39,10 +46,53 @@ class ApiLinks {
   // Railway atende na raiz: /boletobancos/... devolve 308 para /... e o app
   // não seguia esse redirect (aparecia 308 na tela). Para backend local
   // (ex.: 127.0.0.1:9001) passe --dart-define=BACKEND_CONTEXT_PATH=/boletobancos.
-  static const String _backendContextPath = String.fromEnvironment(
+  // Sentinela: BACKEND_CONTEXT_PATH nao informado => decidir pelo tipo de backend (resolverBackend).
+  // Informado (inclusive vazio) sempre vale.
+  static const String _contextPathAuto = '__auto__';
+  static const String _backendContextPathDefine = String.fromEnvironment(
     'BACKEND_CONTEXT_PATH',
-    defaultValue: '',
+    defaultValue: _contextPathAuto,
   );
+
+  /// Dev local sem --dart-define: web em debug aberto em localhost/127.0.0.1 ou Windows desktop em debug.
+  /// Android/iOS continuam no Railway (o celular nao enxerga o 127.0.0.1 do PC) ate alguem passar BACKEND_URL.
+  static bool _ehDesenvolvimentoLocal() {
+    if (!kDebugMode) return false;
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      return host == 'localhost' || host == '127.0.0.1';
+    }
+    return defaultTargetPlatform == TargetPlatform.windows;
+  }
+
+  /// Decide o backend e o context-path.
+  /// - BACKEND_URL informado vale; senao, dev local => backend local; senao Railway (producao, sem mudanca).
+  /// - Context-path: BACKEND_CONTEXT_PATH informado vale; senao backend http:// (local, sem TLS) usa
+  ///   /boletobancos (server.servlet.context-path) e https:// (Railway) usa raiz.
+  @visibleForTesting
+  static List<String> resolverBackend({
+    required String urlDefine,
+    required String contextPathDefine,
+    required bool desenvolvimentoLocal,
+  }) {
+    final url = urlDefine.isNotEmpty
+        ? urlDefine
+        : (desenvolvimentoLocal ? _localUrl : _railwayUrl);
+    final contextPath = contextPathDefine != _contextPathAuto
+        ? contextPathDefine
+        : (url.startsWith('http://') && !url.endsWith(_localContextPath)
+            ? _localContextPath
+            : '');
+    return [url, contextPath];
+  }
+
+  static final List<String> _backend = resolverBackend(
+    urlDefine: _backendUrlDefine,
+    contextPathDefine: _backendContextPathDefine,
+    desenvolvimentoLocal: _ehDesenvolvimentoLocal(),
+  );
+  static final String _backendUrl = _backend[0];
+  static final String _backendContextPath = _backend[1];
   static final String _baseIp = '$_backendUrl$_backendContextPath';
 
   // WebSocket: converte http→ws e https→wss
@@ -366,6 +416,15 @@ class ApiLinks {
   static String get importacaoContaReceber =>
       '$_baseUrlNew/api/importacao/conta-receber';
   static String get importacaoBoletos => '$_baseUrlNew/api/importacao/boletos';
+  // Importacao de boleto em PDF (pre-visualizacao + geracao da conta a pagar com o PDF anexado)
+  static String get boletoPdfPreview => '$_baseUrlNew/api/boletos/preview';
+  static String get boletoPdfImportar =>
+      '$_baseUrlNew/api/boletos/importar-boleto';
+  // Idem para contas a receber (o cliente e o pagador do boleto)
+  static String get boletoReceberPdfPreview =>
+      '$_baseUrlNew/api/boletos/preview-receber';
+  static String get boletoReceberPdfImportar =>
+      '$_baseUrlNew/api/boletos/importar-boleto-receber';
   static String get importacaoPreview => '$_baseUrlNew/api/importacao/preview';
 
   // Contas a Pagar
@@ -1154,6 +1213,32 @@ class ApiLinks {
   static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
   static String get allNfeSerie => '$_baseUrlNew/api/nfe_serie';
   static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
+  // Transporte (MDF-e): cadastros de veiculos e motoristas
+  static String get allTransporteVeiculos =>
+      '$_baseUrlNew/api/transporte/veiculos';
+  static String transporteVeiculo(String id) =>
+      '$_baseUrlNew/api/transporte/veiculos/$id';
+  static String get transporteConfig =>
+      '$_baseUrlNew/api/transporte/config';
+  static String get allTransporteMotoristas =>
+      '$_baseUrlNew/api/transporte/motoristas';
+  static String transporteMotorista(String id) =>
+      '$_baseUrlNew/api/transporte/motoristas/$id';
+  static String get allMdfe => '$_baseUrlNew/api/mdfe';
+  static String mdfe(String id) => '$_baseUrlNew/api/mdfe/$id';
+  static String mdfeConsultar(String id) => '$_baseUrlNew/api/mdfe/$id/consultar';
+  static String mdfeCancelar(String id) => '$_baseUrlNew/api/mdfe/$id/cancelar';
+  static String mdfeEncerrar(String id) => '$_baseUrlNew/api/mdfe/$id/encerrar';
+  static String mdfeEventos(String id) => '$_baseUrlNew/api/mdfe/$id/eventos';
+  static String mdfeDamdfe(String id) => '$_baseUrlNew/api/mdfe/$id/damdfe';
+  static String get allCte => '$_baseUrlNew/api/cte';
+  static String cte(String id) => '$_baseUrlNew/api/cte/$id';
+  static String cteConsultar(String id) => '$_baseUrlNew/api/cte/$id/consultar';
+  static String cteCancelar(String id) => '$_baseUrlNew/api/cte/$id/cancelar';
+  static String cteCartaCorrecao(String id) =>
+      '$_baseUrlNew/api/cte/$id/carta-correcao';
+  static String cteEventos(String id) => '$_baseUrlNew/api/cte/$id/eventos';
+  static String cteDacte(String id) => '$_baseUrlNew/api/cte/$id/dacte';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';
