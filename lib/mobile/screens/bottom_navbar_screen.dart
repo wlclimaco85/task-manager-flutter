@@ -51,6 +51,7 @@ import 'nfce_grid_screen.dart';
 import 'nfse_serie_screen.dart';
 import 'transporte_veiculo_screen.dart';
 import 'transporte_motorista_screen.dart';
+import 'cte_emissao_screen.dart';
 import 'mdfe_emissao_screen.dart';
 import 'nfse_servico_screen.dart';
 import 'nfse_config_screen.dart';
@@ -222,6 +223,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Veículos': (menuId: 'transporte_veiculos', appScreen: AppScreen.transporteVeiculos),
     'Motoristas': (menuId: 'transporte_motoristas', appScreen: AppScreen.transporteMotoristas),
     'MDF-e': (menuId: 'transporte_mdfe', appScreen: AppScreen.transporteMdfe),
+    'CT-e': (menuId: 'transporte_cte', appScreen: AppScreen.transporteCte),
     'NF-e Série': (menuId: 'nfe_serie', appScreen: AppScreen.nfeSerie),
     'NF-e Finalidade': (menuId: 'nfe_finalidade', appScreen: null),
     'NF-e Tipo Operação': (menuId: 'nfe_tipo_operacao', appScreen: null),
@@ -389,6 +391,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'transporte_veiculos': 'Notas Fiscais',
     'transporte_motoristas': 'Notas Fiscais',
     'transporte_mdfe': 'Notas Fiscais',
+    'transporte_cte': 'Notas Fiscais',
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',
@@ -1734,6 +1737,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const MobileMdfeEmissaoScreen()),
+        );
+        break;
+      case "CT-e":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MobileCteEmissaoScreen()),
         );
         break;
       case "Séries NFS-e":

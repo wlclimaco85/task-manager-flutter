@@ -1172,6 +1172,14 @@ class ApiLinks {
   static String mdfeEncerrar(String id) => '$_baseUrlNew/api/mdfe/$id/encerrar';
   static String mdfeEventos(String id) => '$_baseUrlNew/api/mdfe/$id/eventos';
   static String mdfeDamdfe(String id) => '$_baseUrlNew/api/mdfe/$id/damdfe';
+  static String get allCte => '$_baseUrlNew/api/cte';
+  static String cte(String id) => '$_baseUrlNew/api/cte/$id';
+  static String cteConsultar(String id) => '$_baseUrlNew/api/cte/$id/consultar';
+  static String cteCancelar(String id) => '$_baseUrlNew/api/cte/$id/cancelar';
+  static String cteCartaCorrecao(String id) =>
+      '$_baseUrlNew/api/cte/$id/carta-correcao';
+  static String cteEventos(String id) => '$_baseUrlNew/api/cte/$id/eventos';
+  static String cteDacte(String id) => '$_baseUrlNew/api/cte/$id/dacte';
   // NFS-e config
   static String nfseConfig(int empresaId) =>
       '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';

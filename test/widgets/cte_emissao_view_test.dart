@@ -1,0 +1,195 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/menu_config.dart';
+import 'package:task_manager_flutter/utils/security_matrix.dart';
+import 'package:task_manager_flutter/widgets/cte_emissao_view.dart';
+
+void main() {
+  const chave = '31261112345678000195550010000007771123456780';
+
+  Map<String, dynamic> parte(String doc, String nome, String uf) => montarParteCte(
+        documento: doc,
+        inscricaoEstadual: '062.307.904/0081',
+        nome: nome,
+        telefone: '(31) 3333-4444',
+        logradouro: 'Rua das Flores',
+        numero: '100',
+        bairro: 'Centro',
+        codigoMunicipio: '3106200',
+        municipio: 'Belo Horizonte',
+        cep: '30110-000',
+        uf: uf,
+      );
+
+  Map<String, dynamic> corpo({
+    int tomadorPapel = 0,
+    Map<String, dynamic>? tomadorOutro,
+    Map<String, dynamic>? expedidor,
+    Map<String, dynamic>? recebedor,
+    String cst = '40',
+    String? rntrc,
+    String? info,
+  }) =>
+      montarCorpoEmissaoCte(
+        tpAmb: 2,
+        serie: 1,
+        cfop: '6.353',
+        naturezaOperacao: ' Prestação de serviço de transporte ',
+        origem: montarLocalCte('3106200', 'Belo Horizonte', 'MG'),
+        destino: montarLocalCte('3550308', 'São Paulo', 'SP'),
+        indIeTomador: 1,
+        tomadorPapel: tomadorPapel,
+        tomadorOutro: tomadorOutro,
+        remetente: parte('98.765.432/0001-98', 'Remetente SA', 'MG'),
+        expedidor: expedidor,
+        recebedor: recebedor,
+        destinatario: parte('11.222.333/0001-81', 'Destino Ltda', 'SP'),
+        valorPrestacao: 1500,
+        componentes: [montarComponenteCte(' FRETE VALOR ', 1500)],
+        icms: montarIcmsCte(
+            cst: cst, baseCalculo: 1500, aliquota: 12, valor: 180),
+        valorCarga: 25000,
+        produtoPredominante: ' Material ',
+        unidade: '01',
+        tipoMedida: 'PESO BRUTO',
+        quantidade: 12000.5,
+        chavesNfe: const [chave],
+        rntrc: rntrc,
+        infoComplementar: info,
+      );
+
+  test('corpo de emissao nao envia emitente, numero nem data (vem do servidor)', () {
+    final c = corpo();
+    expect(c.containsKey('emitente'), isFalse);
+    expect(c.containsKey('numero'), isFalse);
+    expect(c.containsKey('emissao'), isFalse);
+    expect(c['tpAmb'], 2);
+    expect(c['cfop'], '6353');
+    expect(c['naturezaOperacao'], 'Prestação de serviço de transporte');
+    expect(c['origem'], {'codigoIbge': '3106200', 'nome': 'Belo Horizonte', 'uf': 'MG'});
+    expect(c['chavesNfe'], [chave]);
+    expect(c['valorPrestacao'], 1500);
+    expect((c['componentes'] as List).single, {'nome': 'FRETE VALOR', 'valor': 1500});
+    final carga = c['carga'] as Map;
+    expect(carga['produtoPredominante'], 'Material');
+    expect((carga['quantidades'] as List).single,
+        {'unidade': '01', 'tipoMedida': 'PESO BRUTO', 'quantidade': 12000.5});
+  });
+
+  test('partes saem so com digitos em documento, IE, telefone e CEP', () {
+    final p = parte('98.765.432/0001-98', ' Remetente SA ', 'MG');
+    expect(p['cnpjCpf'], '98765432000198');
+    expect(p['inscricaoEstadual'], '0623079040081');
+    expect(p['telefone'], '3133334444');
+    expect(p['nome'], 'Remetente SA');
+    final e = p['endereco'] as Map;
+    expect(e['cep'], '30110000');
+    expect(e['codigoMunicipio'], '3106200');
+    expect(e['uf'], 'MG');
+  });
+
+  test('campos opcionais vazios nao vao no corpo', () {
+    final p = montarParteCte(
+      documento: '12345678909',
+      nome: 'Pessoa',
+      logradouro: 'Rua A',
+      numero: '1',
+      bairro: 'Centro',
+      codigoMunicipio: '3106200',
+      municipio: 'BH',
+      uf: 'MG',
+      inscricaoEstadual: ' ',
+      telefone: '',
+      email: null,
+      complemento: null,
+      cep: '',
+    );
+    expect(p.containsKey('inscricaoEstadual'), isFalse);
+    expect(p.containsKey('telefone'), isFalse);
+    expect(p.containsKey('email'), isFalse);
+    expect((p['endereco'] as Map).containsKey('complemento'), isFalse);
+    expect((p['endereco'] as Map).containsKey('cep'), isFalse);
+    final c = corpo();
+    expect(c.containsKey('rntrc'), isFalse);
+    expect(c.containsKey('infoComplementar'), isFalse);
+    final c2 = corpo(rntrc: '1234.5678', info: ' Entrega agendada ');
+    expect(c2['rntrc'], '12345678');
+    expect(c2['infoComplementar'], 'Entrega agendada');
+  });
+
+  test('tomador: papel 0-3 so envia o papel; "outro" leva os dados proprios', () {
+    expect(corpo()['tomador'], {'papel': 0});
+    final exp = parte('55.444.333/0001-00', 'Expedidor', 'MG');
+    final c1 = corpo(tomadorPapel: 1, expedidor: exp);
+    expect(c1['tomador'], {'papel': 1});
+    expect(c1['expedidor'], exp);
+    expect(c1.containsKey('recebedor'), isFalse);
+    final outro = parte('123.456.789-09', 'Tomador', 'MG');
+    expect(corpo(tomadorPapel: 4, tomadorOutro: outro)['tomador'],
+        {'papel': 4, 'outro': outro});
+    // papel diferente de 4 ignora tomadorOutro
+    expect(corpo(tomadorPapel: 3, tomadorOutro: outro)['tomador'], {'papel': 3});
+  });
+
+  test('ICMS: 00 leva base, aliquota e valor; isento so o CST; SN vira CST 90 + simplesNacional', () {
+    expect(montarIcmsCte(cst: '00', baseCalculo: 1500, aliquota: 12, valor: 180), {
+      'cst': '00',
+      'simplesNacional': false,
+      'baseCalculo': 1500,
+      'aliquota': 12,
+      'valor': 180
+    });
+    expect(montarIcmsCte(cst: '40', baseCalculo: 1500, aliquota: 12, valor: 180),
+        {'cst': '40', 'simplesNacional': false});
+    expect(montarIcmsCte(cst: 'SN'), {'cst': '90', 'simplesNacional': true});
+    expect(kCteCstIcms.keys, containsAll(['00', '40', '41', '51', 'SN']));
+  });
+
+  test('carta de correcao: item opcional e textos aparados', () {
+    expect(montarCorrecaoCte(grupo: ' infCarga ', campo: 'proPred', valor: ' Cimento '),
+        {'grupoAlterado': 'infCarga', 'campoAlterado': 'proPred', 'valorAlterado': 'Cimento'});
+    expect(montarCorrecaoCte(grupo: 'ide', campo: 'xDetRetira', valor: 'Patio B', item: 2),
+        containsPair('nroItemAlterado', 2));
+    expect(kCteMaxCorrecoes, 20);
+    expect(kCteTamanhoMinimoJustificativa, 15);
+  });
+
+  test('documento valido: CPF (11) ou CNPJ (14) com pontuacao', () {
+    expect(documentoValidoCte('123.456.789-09'), isTrue);
+    expect(documentoValidoCte('98.765.432/0001-98'), isTrue);
+    expect(documentoValidoCte('12345'), isFalse);
+    expect(documentoValidoCte(''), isFalse);
+  });
+
+  test('localizacao e catalogos cobrem o contrato do backend', () {
+    expect(montarLocalCte('3.106.200', ' Belo Horizonte ', 'MG'),
+        {'codigoIbge': '3106200', 'nome': 'Belo Horizonte', 'uf': 'MG'});
+    expect(kCteUfs.length, 27);
+    expect(kCteTomadores.keys, [0, 1, 2, 3, 4]);
+    expect(kCteIndIeTomador.keys, [1, 2, 9]);
+    expect(kCteUnidades.keys, containsAll(['00', '01', '02', '03', '04', '05']));
+  });
+
+  test('endpoints de CT-e apontam para /api/cte/{id}', () {
+    expect(ApiLinks.allCte, endsWith('/api/cte'));
+    expect(ApiLinks.cte('9'), endsWith('/api/cte/9'));
+    expect(ApiLinks.cteConsultar('9'), endsWith('/api/cte/9/consultar'));
+    expect(ApiLinks.cteCancelar('9'), endsWith('/api/cte/9/cancelar'));
+    expect(ApiLinks.cteCartaCorrecao('9'), endsWith('/api/cte/9/carta-correcao'));
+    expect(ApiLinks.cteEventos('9'), endsWith('/api/cte/9/eventos'));
+    expect(ApiLinks.cteDacte('9'), endsWith('/api/cte/9/dacte'));
+  });
+
+  test('menu e permissoes: CT-e aparece no menu e nos dois sistemas de permissao', () {
+    final itens = [
+      ...MenuConfig.groups.expand((g) => g.items),
+      ...MenuConfig.loose,
+    ];
+    final cte = itens.firstWhere((i) => i.id == 'transporte_cte');
+    expect(cte.label, 'CT-e');
+    expect(cte.screenIndex, 208);
+    final mdfe = itens.firstWhere((i) => i.id == 'transporte_mdfe');
+    expect(cte.screenIndex, isNot(mdfe.screenIndex));
+    expect(AppScreen.values.map((e) => e.name), contains('transporteCte'));
+  });
+}

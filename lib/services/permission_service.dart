@@ -143,6 +143,7 @@ class PermissionService {
     'transporte_veiculos': 'transporte_veiculos',
     'transporte_motoristas': 'transporte_motoristas',
     'transporte_mdfe': 'transporte_mdfe',
+    'transporte_cte': 'transporte_cte',
 
     // Financeiro
     'calendario': 'Calendario',

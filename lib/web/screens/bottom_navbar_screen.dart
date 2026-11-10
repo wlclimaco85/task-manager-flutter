@@ -87,6 +87,7 @@ import './nfe_grid_screen.dart';
 import './nfce_grid_screen.dart';
 import './transporte_veiculo_grid_screen.dart';
 import './transporte_motorista_grid_screen.dart';
+import '../../widgets/cte_emissao_view.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import './nfe_import_screen.dart';
 import './nfe_import_xml_screen.dart';
@@ -621,6 +622,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: _screenPermission(
               AppScreen.transporteMotoristas)), // 206: Motoristas
       const MdfeEmissaoView(), // 207: MDF-e
+      const CteEmissaoView(), // 208: CT-e
     ];
   }
 

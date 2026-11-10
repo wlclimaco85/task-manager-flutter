@@ -301,6 +301,11 @@ class MenuConfig {
             label: 'MDF-e',
             icon: FontAwesomeIcons.fileInvoice,
             screenIndex: 207),
+        MenuItem(
+            id: 'transporte_cte',
+            label: 'CT-e',
+            icon: FontAwesomeIcons.truckFast,
+            screenIndex: 208),
       ],
     ),
     MenuGroup(

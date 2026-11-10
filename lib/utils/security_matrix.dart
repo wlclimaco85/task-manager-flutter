@@ -71,7 +71,7 @@ enum AppScreen {
   // CNAB / Remessa EDI
   cnabRemessa,
   // Modulo Transporte (MDF-e): cadastros de veiculos e motoristas
-  transporteVeiculos, transporteMotoristas, transporteMdfe,
+  transporteVeiculos, transporteMotoristas, transporteMdfe, transporteCte,
   // Paridade Web/Windows/Mobile
   regraFiscal, cobrancaAutomatica, aprovacaoPagamentos, sistemaTest,
   rateioFinanceiro, baixaAutomatica, renegociacao, contaContabil, relatorioDpRh,
@@ -175,6 +175,7 @@ const _escritorioScreens = {
   AppScreen.transporteVeiculos: _all,
   AppScreen.transporteMotoristas: _all,
   AppScreen.transporteMdfe: _all,
+  AppScreen.transporteCte: _all,
   AppScreen.regraFiscal: _all,
   AppScreen.cobrancaAutomatica: _allFinanceiro,
   AppScreen.aprovacaoPagamentos: _allFinanceiro,
@@ -427,6 +428,7 @@ class SecurityMatrix {
     AppScreen.transporteVeiculos: ['transporte_veiculos', 'transporteveiculos'],
     AppScreen.transporteMotoristas: ['transporte_motoristas', 'transportemotoristas'],
     AppScreen.transporteMdfe: ['transporte_mdfe', 'transportemdfe'],
+    AppScreen.transporteCte: ['transporte_cte', 'transportecte'],
     AppScreen.regraFiscal: ['regra_fiscal', 'regrafiscal'],
     AppScreen.cobrancaAutomatica: ['cobranca_automatica', 'cobrancaautomatica'],
     AppScreen.aprovacaoPagamentos: ['aprovacao_pagamentos_web', 'aprovacao_pagamentos', 'aprovacaopagamentos', 'aprovacaopagamento'],
@@ -663,7 +665,7 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
     AppScreen.dashFiscalArea, AppScreen.regraFiscal,
     AppScreen.transporteVeiculos, AppScreen.transporteMotoristas,
-    AppScreen.transporteMdfe,
+    AppScreen.transporteMdfe, AppScreen.transporteCte,
   },
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
@@ -950,6 +952,7 @@ class ModuloAccess {
     'transporte_veiculos': 'Notas Fiscais',
     'transporte_motoristas': 'Notas Fiscais',
     'transporte_mdfe': 'Notas Fiscais',
+    'transporte_cte': 'Notas Fiscais',
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',
