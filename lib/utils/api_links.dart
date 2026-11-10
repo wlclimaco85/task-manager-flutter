@@ -1218,6 +1218,13 @@ class ApiLinks {
       '$_baseUrlNew/api/transporte/veiculos';
   static String transporteVeiculo(String id) =>
       '$_baseUrlNew/api/transporte/veiculos/$id';
+  // Modulo Java (plataforma low-code)
+  static String get modulosJava => '$_baseUrlNew/api/modulos-java';
+  static String moduloJava(String id) => '$_baseUrlNew/api/modulos-java/$id';
+  static String moduloJavaArquivos(String id) =>
+      '$_baseUrlNew/api/modulos-java/$id/arquivos';
+  static String moduloJavaArquivo(String id, String arquivoId) =>
+      '$_baseUrlNew/api/modulos-java/$id/arquivos/$arquivoId';
   static String get transporteConfig =>
       '$_baseUrlNew/api/transporte/config';
   static String get allTransporteMotoristas =>

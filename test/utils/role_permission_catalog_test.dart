@@ -158,6 +158,17 @@ void main() {
     expect(cte.telaNome, 'transporte_cte');
   });
 
+  // Plataforma low-code: Modulo Java (upload de .jar) -- toda tela nova aparece em Controle de Acesso.
+  test('catalogo de permissoes mostra Modulo Java', () {
+    final telas = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    final modulo = telas.firstWhere((tela) => tela.menuItemId == 'modulo_java');
+    expect(modulo.label, 'Módulo Java');
+    expect(modulo.telaNome, 'modulo_java');
+  });
+
   // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem
   // que aparecer em Controle de Acesso" ja documentada no CLAUDE.md pros
   // casos de nfce_grid/cnab_remessa acima.

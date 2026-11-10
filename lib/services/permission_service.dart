@@ -144,6 +144,8 @@ class PermissionService {
     'transporte_motoristas': 'transporte_motoristas',
     'transporte_mdfe': 'transporte_mdfe',
     'transporte_cte': 'transporte_cte',
+    // Plataforma low-code: Modulo Java (upload de .jar). Somente MASTER (ver masterOnly nos menus).
+    'modulo_java': 'modulo_java',
 
     // Financeiro
     'calendario': 'Calendario',

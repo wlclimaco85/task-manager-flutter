@@ -53,6 +53,7 @@ import 'transporte_veiculo_screen.dart';
 import 'transporte_motorista_screen.dart';
 import 'cte_emissao_screen.dart';
 import 'mdfe_emissao_screen.dart';
+import 'modulo_java_screen.dart';
 import 'nfse_servico_screen.dart';
 import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
@@ -327,6 +328,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Solicitações de Acesso': (menuId: 'solicitacoes_acesso', appScreen: null),
     'Permissões Multi-Empresa': (menuId: 'permissoes_multi_empresa', appScreen: null),
     'Query Builder': (menuId: 'query_builder', appScreen: null),
+    'Módulo Java': (menuId: 'modulo_java', appScreen: null),
     'Sessões': (menuId: 'sessoes', appScreen: null),
     'Meu Perfil': (menuId: 'perfil', appScreen: AppScreen.perfil),
     'Controle de Acesso': (menuId: 'permissoes', appScreen: AppScreen.rolesPermissoes),
@@ -583,6 +585,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       'editor_telas',
       'cadastro_empresa',
       'query_builder',
+      'modulo_java',
       'aplicativo',
     };
     if (masterOnly.contains(menuItemId)) {
@@ -2362,6 +2365,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Query Builder":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileQueryBuilderWindowScreen()));
         break;
+      case "Módulo Java":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileModuloJavaScreen()));
+        break;
       case "Sessões":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileSessoesScreen()));
         break;
@@ -2795,6 +2801,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.switch_account, 'Permissões Multi-Empresa'),
           _MoreMenuAction(Icons.terminal, 'Query Builder'),
           _MoreMenuAction(Icons.devices, 'Sessões'),
+          _MoreMenuAction(Icons.extension, 'Módulo Java'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
           if (temNfce) _MoreMenuAction(Icons.settings, 'Config Fiscal'),

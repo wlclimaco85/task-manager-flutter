@@ -162,6 +162,7 @@ import '../../web/screens/cnab_remessa_screen.dart';
 import '../../web/screens/transporte_veiculo_grid_screen.dart';
 import '../../web/screens/transporte_motorista_grid_screen.dart';
 import '../../widgets/cte_emissao_view.dart';
+import '../../widgets/modulo_java_view.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
 
@@ -600,6 +601,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             hasPermission: _screenPermission(AppScreen.transporteMdfe)), // 207: MDF-e
         CteEmissaoView(
             hasPermission: _screenPermission(AppScreen.transporteCte)), // 208: CT-e
+        const ModuloJavaView(), // 209: Modulo Java
       ];
 
   String get userName {

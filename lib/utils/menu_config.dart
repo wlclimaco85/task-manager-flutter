@@ -715,6 +715,11 @@ class MenuConfig {
             label: 'Sessões',
             icon: FontAwesomeIcons.userClock,
             screenIndex: 186),
+        MenuItem(
+            id: 'modulo_java',
+            label: 'Módulo Java',
+            icon: FontAwesomeIcons.java,
+            screenIndex: 209),
       ],
     ),
     MenuGroup(
