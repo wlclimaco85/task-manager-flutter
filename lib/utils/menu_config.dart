@@ -720,6 +720,11 @@ class MenuConfig {
             label: 'Módulo Java',
             icon: FontAwesomeIcons.java,
             screenIndex: 209),
+        MenuItem(
+            id: 'dicionario_dados',
+            label: 'Dicionário de Dados',
+            icon: FontAwesomeIcons.bookOpen,
+            screenIndex: 210),
       ],
     ),
     MenuGroup(

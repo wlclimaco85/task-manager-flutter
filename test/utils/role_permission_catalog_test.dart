@@ -169,6 +169,16 @@ void main() {
     expect(modulo.telaNome, 'modulo_java');
   });
 
+  test('catalogo de permissoes mostra Dicionario de Dados', () {
+    final telas = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    final dic = telas.firstWhere((tela) => tela.menuItemId == 'dicionario_dados');
+    expect(dic.label, 'Dicionário de Dados');
+    expect(dic.telaNome, 'dicionario_dados');
+  });
+
   // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem
   // que aparecer em Controle de Acesso" ja documentada no CLAUDE.md pros
   // casos de nfce_grid/cnab_remessa acima.
