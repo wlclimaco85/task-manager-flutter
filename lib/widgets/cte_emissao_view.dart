@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../services/network_caller.dart';
@@ -63,6 +65,21 @@ const List<String> kCteUfs = [
   'TO',
 ];
 
+/// RNTRC: vazio (usa o da configuracao do modulo) ou exatamente 8 digitos.
+bool validarRntrcCte(String? v) {
+  final d = _soDigitosCte(v ?? '');
+  return (v ?? '').trim().isEmpty || d.length == 8;
+}
+
+bool _serieValida(String? v) {
+  final n = int.tryParse((v ?? '').trim());
+  return n != null && n >= 0 && n <= 999;
+}
+
+/// Largura de campo/dialogo limitada a tela (celular estreito nao pode estourar).
+double larguraCte(BuildContext context, double largura, {double reserva = 140}) =>
+    math.min(largura, math.max(120.0, MediaQuery.sizeOf(context).width - reserva));
+
 String _soDigitosCte(String v) => v.replaceAll(RegExp(r'\D'), '');
 
 String? _limpoCte(String? v) {
@@ -91,6 +108,11 @@ String rotuloTipoCte(dynamic tipo) {
 /// Confere as chaves de CT-e referenciadas conforme o tipo; devolve a mensagem de
 /// erro ou null. Normal nao referencia; complemento 1 a 10; substituicao exatamente 1.
 String? validarReferenciasCte(int tipoCte, List<String> chaves) {
+  for (final c in chaves) {
+    if (c.length == 44 && c.substring(20, 22) != '57') {
+      return 'A chave $c nao e de um CT-e (modelo 57).';
+    }
+  }
   switch (tipoCte) {
     case kCteTipoComplemento:
       if (chaves.isEmpty || chaves.length > kCteMaxComplementados) {
@@ -195,10 +217,10 @@ Map<String, dynamic> montarCorpoEmissaoCte({
   required int indIeTomador,
   required int tomadorPapel,
   Map<String, dynamic>? tomadorOutro,
-  required Map<String, dynamic> remetente,
+  Map<String, dynamic>? remetente,
   Map<String, dynamic>? expedidor,
   Map<String, dynamic>? recebedor,
-  required Map<String, dynamic> destinatario,
+  Map<String, dynamic>? destinatario,
   required num valorPrestacao,
   required List<Map<String, dynamic>> componentes,
   required Map<String, dynamic> icms,
@@ -226,10 +248,10 @@ Map<String, dynamic> montarCorpoEmissaoCte({
         'papel': tomadorPapel,
         if (tomadorPapel == 4 && tomadorOutro != null) 'outro': tomadorOutro,
       },
-      'remetente': remetente,
+      if (remetente != null) 'remetente': remetente,
       if (expedidor != null) 'expedidor': expedidor,
       if (recebedor != null) 'recebedor': recebedor,
-      'destinatario': destinatario,
+      if (destinatario != null) 'destinatario': destinatario,
       'valorPrestacao': valorPrestacao,
       'componentes': componentes,
       'icms': icms,
@@ -313,7 +335,7 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
       barrierDismissible: false,
       builder: (_) => const _CteFormDialog(),
     );
-    if (criado == true) _carregar();
+    if (criado == true && mounted) _carregar();
   }
 
   Future<void> _consultar(Map<String, dynamic> c) =>
@@ -395,7 +417,7 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
           builder: (_) => AlertDialog(
             title: Text('Eventos do CT-e ${c['numero']}'),
             content: SizedBox(
-              width: 420,
+              width: larguraCte(context, 420, reserva: 90),
               child: lista.isEmpty
                   ? const Text('Nenhum evento registrado.')
                   : ListView(
@@ -447,9 +469,9 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
   }
 
   Future<String?> _pedirTexto(
-      {required String titulo, required String rotulo, required int minimo}) {
+      {required String titulo, required String rotulo, required int minimo}) async {
     final ctrl = TextEditingController();
-    return showDialog<String>(
+    final resultado = await showDialog<String>(
       context: context,
       builder: (ctx) {
         String? erro;
@@ -459,6 +481,7 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
             content: TextField(
               controller: ctrl,
               maxLines: 3,
+              maxLength: 255,
               decoration: InputDecoration(labelText: rotulo, errorText: erro),
             ),
             actions: [
@@ -481,6 +504,8 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
         );
       },
     );
+    ctrl.dispose();
+    return resultado;
   }
 
   static String _nomeEvento(String tipo) {
@@ -702,7 +727,7 @@ class _CartaCorrecaoDialogState extends State<_CartaCorrecaoDialog> {
     return AlertDialog(
       title: Text('Carta de correção — CT-e ${widget.numero}'),
       content: SizedBox(
-        width: 520,
+        width: larguraCte(context, 520, reserva: 90),
         child: Form(
           key: _form,
           child: SingleChildScrollView(
@@ -724,28 +749,28 @@ class _CartaCorrecaoDialogState extends State<_CartaCorrecaoDialog> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         SizedBox(
-                            width: 150,
+                            width: larguraCte(context, 150),
                             child: TextFormField(
                                 controller: _linhas[i].grupo,
                                 decoration: const InputDecoration(
                                     labelText: 'Grupo (ex.: infCarga)'),
                                 validator: (v) => _obrigatorio(v, 20))),
                         SizedBox(
-                            width: 150,
+                            width: larguraCte(context, 150),
                             child: TextFormField(
                                 controller: _linhas[i].campo,
                                 decoration: const InputDecoration(
                                     labelText: 'Campo (ex.: proPred)'),
                                 validator: (v) => _obrigatorio(v, 20))),
                         SizedBox(
-                            width: 240,
+                            width: larguraCte(context, 240),
                             child: TextFormField(
                                 controller: _linhas[i].valor,
                                 decoration:
                                     const InputDecoration(labelText: 'Novo valor'),
                                 validator: (v) => _obrigatorio(v, 500))),
                         SizedBox(
-                            width: 80,
+                            width: larguraCte(context, 80),
                             child: TextFormField(
                                 controller: _linhas[i].item,
                                 keyboardType: TextInputType.number,
@@ -897,6 +922,10 @@ class _CteFormDialogState extends State<_CteFormDialog> {
     super.dispose();
   }
 
+  /// Complemento de valores nao exige remetente/destinatario (so o do tomador, se for um deles).
+  bool get _exigeRemetente => _tipoCte != kCteTipoComplemento || _tomador == 0;
+  bool get _exigeDestinatario => _tipoCte != kCteTipoComplemento || _tomador == 3;
+
   num? _numero(String t) => num.tryParse(t.trim().replaceAll(',', '.'));
 
   String? _obrigatorio(String? v) =>
@@ -912,7 +941,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
           String? Function(String?)? validator,
           TextInputType? teclado}) =>
       SizedBox(
-        width: largura,
+        width: larguraCte(context, largura),
         child: TextFormField(
           controller: c,
           keyboardType: teclado,
@@ -1014,10 +1043,10 @@ class _CteFormDialogState extends State<_CteFormDialog> {
         indIeTomador: _indIeTomador,
         tomadorPapel: _tomador,
         tomadorOutro: _tomador == 4 ? _outro.montar() : null,
-        remetente: _rem.montar(),
+        remetente: _exigeRemetente ? _rem.montar() : null,
         expedidor: (_usaExped || _tomador == 1) ? _exped.montar() : null,
         recebedor: (_usaReceb || _tomador == 2) ? _receb.montar() : null,
-        destinatario: _dest.montar(),
+        destinatario: _exigeDestinatario ? _dest.montar() : null,
         valorPrestacao: valorTotal,
         componentes: componentes,
         icms: montarIcmsCte(
@@ -1064,7 +1093,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
     return AlertDialog(
       title: const Text('Novo CT-e'),
       content: SizedBox(
-        width: 760,
+        width: larguraCte(context, 760, reserva: 90),
         child: Form(
           key: _form,
           child: SingleChildScrollView(
@@ -1081,7 +1110,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                   ),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   SizedBox(
-                    width: 160,
+                    width: larguraCte(context, 160),
                     child: DropdownButtonFormField<int>(
                       value: _tpAmb,
                       decoration: const InputDecoration(labelText: 'Ambiente'),
@@ -1096,16 +1125,17 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                       largura: 90,
                       teclado: TextInputType.number,
                       validator: (v) =>
-                          int.tryParse((v ?? '').trim()) == null ? 'Inválida' : null),
+                          _serieValida(v) ? null : '0 a 999'),
                   _campo('CFOP', _cfop,
                       largura: 100,
                       teclado: TextInputType.number,
                       validator: (v) =>
                           _soDigitosCte(v ?? '').length == 4 ? null : '4 dígitos'),
                   _campo('Natureza da prestação', _natureza, largura: 300),
-                  _campo('RNTRC (opcional)', _rntrc, validator: (_) => null),
+                  _campo('RNTRC (opcional, 8 dígitos)', _rntrc,
+                      validator: (v) => validarRntrcCte(v) ? null : '8 dígitos'),
                   SizedBox(
-                    width: 240,
+                    width: larguraCte(context, 240),
                     child: DropdownButtonFormField<int>(
                       value: _tipoCte,
                       decoration: const InputDecoration(labelText: 'Tipo do CT-e'),
@@ -1161,7 +1191,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                 _secao('Tomador do serviço'),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   SizedBox(
-                    width: 200,
+                    width: larguraCte(context, 200),
                     child: DropdownButtonFormField<int>(
                       value: _tomador,
                       decoration: const InputDecoration(labelText: 'Tomador'),
@@ -1173,7 +1203,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                     ),
                   ),
                   SizedBox(
-                    width: 240,
+                    width: larguraCte(context, 240),
                     child: DropdownButtonFormField<int>(
                       value: _indIeTomador,
                       decoration: const InputDecoration(labelText: 'IE do tomador'),
@@ -1185,8 +1215,8 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                     ),
                   ),
                 ]),
-                _parteCampos('Remetente', _rem),
-                _parteCampos('Destinatário', _dest),
+                if (_exigeRemetente) _parteCampos('Remetente', _rem),
+                if (_exigeDestinatario) _parteCampos('Destinatário', _dest),
                 CheckboxListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -1240,7 +1270,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                 _secao('ICMS'),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   SizedBox(
-                    width: 220,
+                    width: larguraCte(context, 220),
                     child: DropdownButtonFormField<String>(
                       value: _cst,
                       decoration: const InputDecoration(labelText: 'Situação tributária'),
@@ -1280,7 +1310,11 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                       onChanged: (v) => setState(() => _unidade = v ?? '01'),
                     ),
                   ),
-                  _campo('Tipo da medida', _tipoMedida),
+                  _campo('Tipo da medida', _tipoMedida,
+                      validator: (v) {
+                        final t = (v ?? '').trim();
+                        return (t.isEmpty || t.length > 20) ? '1 a 20 caracteres' : null;
+                      }),
                   _campo('Quantidade', _quantidade,
                       teclado: TextInputType.number,
                       validator: (v) {

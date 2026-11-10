@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
@@ -225,6 +226,77 @@ void main() {
     expect(validarReferenciasCte(kCteTipoSubstituicao, const [chaveCte, chaveCte]), isNotNull);
     expect(kCteMaxComplementados, 10);
     expect(kCteTipos.keys, [0, 1, 3]);
+  });
+
+  test('RNTRC: vazio (usa o da configuracao) ou 8 digitos', () {
+    expect(validarRntrcCte(null), isTrue);
+    expect(validarRntrcCte('  '), isTrue);
+    expect(validarRntrcCte('1234.5678'), isTrue);
+    expect(validarRntrcCte('123'), isFalse);
+    expect(validarRntrcCte('123456789'), isFalse);
+  });
+
+  test('referencias: chave que nao e de CT-e (modelo 57) e recusada', () {
+    // chave de NF-e (modelo 55) usada por engano como CT-e referenciado
+    expect(validarReferenciasCte(kCteTipoSubstituicao, const [chave]), contains('modelo 57'));
+    expect(validarReferenciasCte(kCteTipoComplemento, const [chaveCte, chave]), contains('modelo 57'));
+    expect(validarReferenciasCte(kCteTipoSubstituicao, const [chaveCte]), isNull);
+  });
+
+  test('complemento pode omitir remetente e destinatario (tomador "outro")', () {
+    final outro = parte('123.456.789-09', 'Tomador', 'MG');
+    final c = montarCorpoEmissaoCte(
+      tpAmb: 2,
+      serie: 1,
+      cfop: '6353',
+      naturezaOperacao: 'Complemento de valores',
+      origem: montarLocalCte('3106200', 'Belo Horizonte', 'MG'),
+      destino: montarLocalCte('3550308', 'São Paulo', 'SP'),
+      indIeTomador: 9,
+      tomadorPapel: 4,
+      tomadorOutro: outro,
+      valorPrestacao: 100,
+      componentes: [montarComponenteCte('COMPLEMENTO', 100)],
+      icms: montarIcmsCte(cst: '40'),
+      tipoCte: kCteTipoComplemento,
+      chavesReferenciadas: const [chaveCte],
+    );
+    expect(c.containsKey('remetente'), isFalse);
+    expect(c.containsKey('destinatario'), isFalse);
+    expect(c['tomador'], {'papel': 4, 'outro': outro});
+    expect(c.containsKey('carga'), isFalse);
+  });
+
+  testWidgets('larguraCte limita campos e dialogos a tela estreita (celular)', (tester) async {
+    late double estreito;
+    late double dialogo;
+    late double largo;
+    await tester.pumpWidget(MaterialApp(
+      home: MediaQuery(
+        data: const MediaQueryData(size: Size(360, 640)),
+        child: Builder(builder: (context) {
+          estreito = larguraCte(context, 260);
+          dialogo = larguraCte(context, 760, reserva: 90);
+          largo = larguraCte(context, 100);
+          return const SizedBox.shrink();
+        }),
+      ),
+    ));
+    expect(estreito, 220); // 360 - 140
+    expect(dialogo, 270); // 360 - 90
+    expect(largo, 100); // ja cabe: nao muda
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    await tester.pumpWidget(MaterialApp(
+      home: MediaQuery(
+        data: const MediaQueryData(size: Size(1280, 800)),
+        child: Builder(builder: (context) {
+          dialogo = larguraCte(context, 760, reserva: 90);
+          return const SizedBox.shrink();
+        }),
+      ),
+    ));
+    expect(dialogo, 760); // desktop mantem a largura de projeto
+    await tester.binding.setSurfaceSize(null);
   });
 
   test('titulo do cartao conforme o tipo (ausente = normal)', () {
