@@ -621,8 +621,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebTransporteMotoristaGridScreen(
           hasPermission: _screenPermission(
               AppScreen.transporteMotoristas)), // 206: Motoristas
-      const MdfeEmissaoView(), // 207: MDF-e
-      const CteEmissaoView(), // 208: CT-e
+      MdfeEmissaoView(
+            hasPermission: _screenPermission(AppScreen.transporteMdfe)), // 207: MDF-e
+      CteEmissaoView(
+            hasPermission: _screenPermission(AppScreen.transporteCte)), // 208: CT-e
     ];
   }
 
