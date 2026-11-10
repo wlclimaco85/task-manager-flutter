@@ -1219,6 +1219,14 @@ class ApiLinks {
   static String transporteVeiculo(String id) =>
       '$_baseUrlNew/api/transporte/veiculos/$id';
   // Modulo Java (plataforma low-code)
+  static String dicionarioCampos(String tela) =>
+      '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/campos';
+  static String dicionarioLabel(String tela, String campo) =>
+      '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/campos/${Uri.encodeComponent(campo)}/label';
+  static String dicionarioLigacao(String tela, String campo) =>
+      '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/ligacoes/${Uri.encodeComponent(campo)}';
+  static String dicionarioPersonalizacao(String tela) =>
+      '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/personalizacao';
   static String get acoesJava => '$_baseUrlNew/api/acoes-java';
   static String acaoJava(String id) => '$_baseUrlNew/api/acoes-java/$id';
   static String acaoJavaExecutar(String id) =>
