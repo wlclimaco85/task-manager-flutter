@@ -154,6 +154,86 @@ void main() {
     expect(kCteTamanhoMinimoJustificativa, 15);
   });
 
+  const chaveCte = '31261012345678000195570010000000171876543212';
+
+  Map<String, dynamic> corpoTipo(int tipo,
+          {List<String> refs = const [], bool altera = false}) =>
+      montarCorpoEmissaoCte(
+        tpAmb: 2,
+        serie: 1,
+        cfop: '6353',
+        naturezaOperacao: 'Prestação de serviço de transporte',
+        origem: montarLocalCte('3106200', 'Belo Horizonte', 'MG'),
+        destino: montarLocalCte('3550308', 'São Paulo', 'SP'),
+        indIeTomador: 1,
+        tomadorPapel: 0,
+        remetente: parte('98.765.432/0001-98', 'Remetente SA', 'MG'),
+        destinatario: parte('11.222.333/0001-81', 'Destino Ltda', 'SP'),
+        valorPrestacao: 300,
+        componentes: [montarComponenteCte('COMPLEMENTO', 300)],
+        icms: montarIcmsCte(cst: '40'),
+        tipoCte: tipo,
+        chavesReferenciadas: refs,
+        alteraTomador: altera,
+        // carga/NF-e so no CT-e normal e no de substituicao
+        valorCarga: tipo == kCteTipoComplemento ? null : 25000,
+        produtoPredominante: tipo == kCteTipoComplemento ? null : 'Material',
+        quantidade: tipo == kCteTipoComplemento ? null : 100,
+        chavesNfe: tipo == kCteTipoComplemento ? const [] : const [chave],
+      );
+
+  test('CT-e normal nao envia tipoCte nem referencias', () {
+    final c = corpoTipo(kCteTipoNormal);
+    expect(c.containsKey('tipoCte'), isFalse);
+    expect(c.containsKey('chavesReferenciadas'), isFalse);
+    expect(c.containsKey('alteraTomador'), isFalse);
+    expect(c.containsKey('carga'), isTrue);
+    expect(c['chavesNfe'], [chave]);
+  });
+
+  test('complemento envia tipo 1 e referencias, sem carga nem NF-e', () {
+    final c = corpoTipo(kCteTipoComplemento, refs: const [chaveCte]);
+    expect(c['tipoCte'], 1);
+    expect(c['chavesReferenciadas'], [chaveCte]);
+    expect(c.containsKey('carga'), isFalse);
+    expect(c.containsKey('chavesNfe'), isFalse);
+    expect(c.containsKey('alteraTomador'), isFalse);
+  });
+
+  test('substituicao envia tipo 3, a chave substituida e alteraTomador so quando marcado', () {
+    final sem = corpoTipo(kCteTipoSubstituicao, refs: const [chaveCte]);
+    expect(sem['tipoCte'], 3);
+    expect(sem['chavesReferenciadas'], [chaveCte]);
+    expect(sem.containsKey('alteraTomador'), isFalse);
+    expect(sem.containsKey('carga'), isTrue);
+    final com = corpoTipo(kCteTipoSubstituicao, refs: const [chaveCte], altera: true);
+    expect(com['alteraTomador'], isTrue);
+    // alteraTomador nao se aplica a outros tipos
+    expect(corpoTipo(kCteTipoComplemento, refs: const [chaveCte], altera: true)
+        .containsKey('alteraTomador'), isFalse);
+  });
+
+  test('referencias: normal nenhuma, complemento 1 a 10, substituicao exatamente 1', () {
+    expect(validarReferenciasCte(kCteTipoNormal, const []), isNull);
+    expect(validarReferenciasCte(kCteTipoNormal, const [chaveCte]), isNotNull);
+    expect(validarReferenciasCte(kCteTipoComplemento, const []), isNotNull);
+    expect(validarReferenciasCte(kCteTipoComplemento, const [chaveCte]), isNull);
+    expect(validarReferenciasCte(kCteTipoComplemento, List.filled(10, chaveCte)), isNull);
+    expect(validarReferenciasCte(kCteTipoComplemento, List.filled(11, chaveCte)), isNotNull);
+    expect(validarReferenciasCte(kCteTipoSubstituicao, const []), isNotNull);
+    expect(validarReferenciasCte(kCteTipoSubstituicao, const [chaveCte]), isNull);
+    expect(validarReferenciasCte(kCteTipoSubstituicao, const [chaveCte, chaveCte]), isNotNull);
+    expect(kCteMaxComplementados, 10);
+    expect(kCteTipos.keys, [0, 1, 3]);
+  });
+
+  test('titulo do cartao conforme o tipo (ausente = normal)', () {
+    expect(rotuloTipoCte(null), 'CT-e');
+    expect(rotuloTipoCte(0), 'CT-e');
+    expect(rotuloTipoCte(1), 'CT-e complementar');
+    expect(rotuloTipoCte(3), 'CT-e de substituição');
+  });
+
   test('documento valido: CPF (11) ou CNPJ (14) com pontuacao', () {
     expect(documentoValidoCte('123.456.789-09'), isTrue);
     expect(documentoValidoCte('98.765.432/0001-98'), isTrue);

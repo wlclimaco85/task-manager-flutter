@@ -11,6 +11,18 @@ const String kCteAutorizado = 'AUTORIZADO';
 const int kCteTamanhoMinimoJustificativa = 15;
 const int kCteMaxCorrecoes = 20;
 
+/// Tipo do CT-e (tpCTe): normal, complemento de valores ou substituicao.
+const int kCteTipoNormal = 0;
+const int kCteTipoComplemento = 1;
+const int kCteTipoSubstituicao = 3;
+const int kCteMaxComplementados = 10;
+
+const Map<int, String> kCteTipos = {
+  kCteTipoNormal: 'Normal',
+  kCteTipoComplemento: 'Complemento de valores',
+  kCteTipoSubstituicao: 'Substituição',
+};
+
 /// CST do ICMS suportados pelo backend (00, isento/nao tributado/diferido e Simples Nacional).
 const Map<String, String> kCteCstIcms = {
   '00': '00 - Tributado',
@@ -62,6 +74,36 @@ String? _limpoCte(String? v) {
 bool documentoValidoCte(String v) {
   final n = _soDigitosCte(v).length;
   return n == 11 || n == 14;
+}
+
+/// Titulo do cartao conforme o tipo do CT-e (ausente = normal).
+String rotuloTipoCte(dynamic tipo) {
+  switch (tipo) {
+    case kCteTipoComplemento:
+      return 'CT-e complementar';
+    case kCteTipoSubstituicao:
+      return 'CT-e de substituição';
+    default:
+      return 'CT-e';
+  }
+}
+
+/// Confere as chaves de CT-e referenciadas conforme o tipo; devolve a mensagem de
+/// erro ou null. Normal nao referencia; complemento 1 a 10; substituicao exatamente 1.
+String? validarReferenciasCte(int tipoCte, List<String> chaves) {
+  switch (tipoCte) {
+    case kCteTipoComplemento:
+      if (chaves.isEmpty || chaves.length > kCteMaxComplementados) {
+        return 'O CT-e complementar exige de 1 a $kCteMaxComplementados chaves de CT-e.';
+      }
+      return null;
+    case kCteTipoSubstituicao:
+      return chaves.length == 1
+          ? null
+          : 'O CT-e de substituição exige exatamente 1 chave de CT-e.';
+    default:
+      return chaves.isEmpty ? null : 'O CT-e normal não referencia outro CT-e.';
+  }
 }
 
 /// Municipio de inicio/fim da prestacao.
@@ -160,12 +202,15 @@ Map<String, dynamic> montarCorpoEmissaoCte({
   required num valorPrestacao,
   required List<Map<String, dynamic>> componentes,
   required Map<String, dynamic> icms,
-  required num valorCarga,
-  required String produtoPredominante,
-  required String unidade,
-  required String tipoMedida,
-  required num quantidade,
-  required List<String> chavesNfe,
+  num? valorCarga,
+  String? produtoPredominante,
+  String unidade = '01',
+  String tipoMedida = 'PESO BRUTO',
+  num? quantidade,
+  List<String> chavesNfe = const [],
+  int tipoCte = kCteTipoNormal,
+  List<String> chavesReferenciadas = const [],
+  bool alteraTomador = false,
   String? rntrc,
   String? infoComplementar,
 }) =>
@@ -188,14 +233,17 @@ Map<String, dynamic> montarCorpoEmissaoCte({
       'valorPrestacao': valorPrestacao,
       'componentes': componentes,
       'icms': icms,
-      'carga': {
-        'valor': valorCarga,
-        'produtoPredominante': produtoPredominante.trim(),
+      if (tipoCte != kCteTipoComplemento) 'carga': {
+        'valor': valorCarga!,
+        'produtoPredominante': produtoPredominante!.trim(),
         'quantidades': [
-          {'unidade': unidade, 'tipoMedida': tipoMedida.trim(), 'quantidade': quantidade}
+          {'unidade': unidade, 'tipoMedida': tipoMedida.trim(), 'quantidade': quantidade!}
         ],
       },
-      'chavesNfe': chavesNfe,
+      if (tipoCte != kCteTipoComplemento) 'chavesNfe': chavesNfe,
+      if (tipoCte != kCteTipoNormal) 'tipoCte': tipoCte,
+      if (chavesReferenciadas.isNotEmpty) 'chavesReferenciadas': chavesReferenciadas,
+      if (alteraTomador && tipoCte == kCteTipoSubstituicao) 'alteraTomador': true,
       if (_limpoCte(rntrc) != null) 'rntrc': _soDigitosCte(rntrc!),
       if (_limpoCte(infoComplementar) != null)
         'infoComplementar': infoComplementar!.trim(),
@@ -528,7 +576,7 @@ class _CteEmissaoViewState extends State<CteEmissaoView> {
               children: [
                 Expanded(
                   child: Text(
-                    'CT-e nº ${c['numero'] ?? '-'} • série ${c['serie'] ?? '-'}'
+                    '${rotuloTipoCte(c['tipoCte'])} nº ${c['numero'] ?? '-'} • série ${c['serie'] ?? '-'}'
                     '${homolog ? ' • HOMOLOGAÇÃO' : ''}',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
@@ -809,6 +857,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
   final _tipoMedida = TextEditingController(text: 'PESO BRUTO');
   final _quantidade = TextEditingController();
   final _chaves = TextEditingController();
+  final _refs = TextEditingController();
   final _rntrc = TextEditingController();
   final _info = TextEditingController();
   final _rem = _ParteCtl();
@@ -819,6 +868,8 @@ class _CteFormDialogState extends State<_CteFormDialog> {
   final List<_CompCtl> _componentes = [_CompCtl()];
 
   int _tpAmb = 2;
+  int _tipoCte = kCteTipoNormal;
+  bool _alteraTomador = false;
   int _indIeTomador = 1;
   int _tomador = 0;
   String? _origUf;
@@ -834,7 +885,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
   void dispose() {
     for (final c in [_serie, _cfop, _natureza, _origIbge, _origNome, _destIbge,
         _destNome, _valor, _icmsBase, _icmsAliq, _icmsValor, _cargaValor,
-        _produto, _tipoMedida, _quantidade, _chaves, _rntrc, _info]) {
+        _produto, _tipoMedida, _quantidade, _chaves, _refs, _rntrc, _info]) {
       c.dispose();
     }
     for (final p in [_rem, _dest, _exped, _receb, _outro]) {
@@ -917,13 +968,23 @@ class _CteFormDialogState extends State<_CteFormDialog> {
   Future<void> _emitir() async {
     if (!_form.currentState!.validate()) return;
     final invalidas = <String>[];
-    final chaves = extrairChaves(_chaves.text, invalidas: invalidas);
+    final chaves = _tipoCte == kCteTipoComplemento
+        ? <String>[]
+        : extrairChaves(_chaves.text, invalidas: invalidas);
+    final referencias = _tipoCte == kCteTipoNormal
+        ? <String>[]
+        : extrairChaves(_refs.text, invalidas: invalidas);
     if (invalidas.isNotEmpty) {
       setState(() => _erro = 'Chave(s) com tamanho inválido (esperado 44 dígitos): '
           '${invalidas.join(', ')}');
       return;
     }
-    if (chaves.isEmpty) {
+    final erroReferencias = validarReferenciasCte(_tipoCte, referencias);
+    if (erroReferencias != null) {
+      setState(() => _erro = erroReferencias);
+      return;
+    }
+    if (_tipoCte != kCteTipoComplemento && chaves.isEmpty) {
       setState(() => _erro = 'Informe ao menos uma chave de NF-e.');
       return;
     }
@@ -965,12 +1026,18 @@ class _CteFormDialogState extends State<_CteFormDialog> {
           aliquota: _numero(_icmsAliq.text),
           valor: _numero(_icmsValor.text),
         ),
-        valorCarga: _numero(_cargaValor.text)!,
-        produtoPredominante: _produto.text,
+        valorCarga:
+            _tipoCte == kCteTipoComplemento ? null : _numero(_cargaValor.text),
+        produtoPredominante:
+            _tipoCte == kCteTipoComplemento ? null : _produto.text,
         unidade: _unidade,
         tipoMedida: _tipoMedida.text,
-        quantidade: _numero(_quantidade.text)!,
+        quantidade:
+            _tipoCte == kCteTipoComplemento ? null : _numero(_quantidade.text),
         chavesNfe: chaves,
+        tipoCte: _tipoCte,
+        chavesReferenciadas: referencias,
+        alteraTomador: _alteraTomador,
         rntrc: _rntrc.text,
         infoComplementar: _info.text,
       );
@@ -1037,7 +1104,45 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                           _soDigitosCte(v ?? '').length == 4 ? null : '4 dígitos'),
                   _campo('Natureza da prestação', _natureza, largura: 300),
                   _campo('RNTRC (opcional)', _rntrc, validator: (_) => null),
+                  SizedBox(
+                    width: 240,
+                    child: DropdownButtonFormField<int>(
+                      value: _tipoCte,
+                      decoration: const InputDecoration(labelText: 'Tipo do CT-e'),
+                      items: [
+                        for (final e in kCteTipos.entries)
+                          DropdownMenuItem(value: e.key, child: Text(e.value))
+                      ],
+                      onChanged: (v) => setState(() {
+                        _tipoCte = v ?? kCteTipoNormal;
+                        if (_tipoCte != kCteTipoSubstituicao) _alteraTomador = false;
+                      }),
+                    ),
+                  ),
                 ]),
+                if (_tipoCte != kCteTipoNormal) ...[
+                  _secao(_tipoCte == kCteTipoComplemento
+                      ? 'CT-e complementados'
+                      : 'CT-e substituído'),
+                  TextFormField(
+                    controller: _refs,
+                    minLines: 1,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                        labelText: _tipoCte == kCteTipoComplemento
+                            ? 'Chaves dos CT-e (44 dígitos, 1 a $kCteMaxComplementados, uma por linha)'
+                            : 'Chave do CT-e substituído (44 dígitos)'),
+                    validator: _obrigatorio,
+                  ),
+                  if (_tipoCte == kCteTipoSubstituicao)
+                    CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('O tomador do serviço foi alterado'),
+                      value: _alteraTomador,
+                      onChanged: (v) => setState(() => _alteraTomador = v ?? false),
+                    ),
+                ],
                 _secao('Percurso da prestação'),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   _campo('Origem - IBGE', _origIbge,
@@ -1157,6 +1262,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                         teclado: TextInputType.number, validator: _numeroObrigatorio),
                   ],
                 ]),
+                if (_tipoCte != kCteTipoComplemento) ...[
                 _secao('Carga'),
                 Wrap(spacing: 8, runSpacing: 4, children: [
                   _campo('Valor da carga (R\$)', _cargaValor,
@@ -1191,6 +1297,7 @@ class _CteFormDialogState extends State<_CteFormDialog> {
                       labelText: 'Chaves das NF-e (44 dígitos, uma por linha)'),
                   validator: _obrigatorio,
                 ),
+                ],
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _info,
