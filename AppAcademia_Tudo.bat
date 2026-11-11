@@ -12,6 +12,7 @@ set "BACKEND_JAR="
 set "FLUTTER_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_CLIENT_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_BASE_DIR=%APP_ROOT%\task_manager_flutter_merged_final"
+set "FLUTTER_POR_CLIENTE_DIR=%APP_ROOT%\task_manager_flutter_por_cliente"
 set "FLUTTER_V003_DIR=%APP_ROOT%\task_manager_AppAcademiaV003"
 set "FLUTTER_DANIEL_DIR=%APP_ROOT%\task_manager_appDaniel"
 set "FLUTTER_ADMIN_DIR=%APP_ROOT%\task_manager_admin_panel"
@@ -207,6 +208,9 @@ if not exist "%BACKEND_DIR%\pom.xml" (
 if not exist "%FLUTTER_DIR%" (
     echo [ERRO] Pasta do Flutter nao encontrada: %FLUTTER_DIR%
     exit /b 1
+)
+if not exist "%FLUTTER_POR_CLIENTE_DIR%" (
+    echo [AVISO] Pasta do Flutter por_cliente nao encontrada: %FLUTTER_POR_CLIENTE_DIR%
 )
 if not exist "%FLUTTER_BASE_DIR%" (
     echo [ERRO] Pasta do Flutter base nao encontrada: %FLUTTER_BASE_DIR%
@@ -577,6 +581,11 @@ if "%PROJECT_KEY%"=="4" (
     set "PROJECT_DIR=%FLUTTER_BASE_DIR%"
     set "PROJECT_PORT=8084"
 )
+if "%PROJECT_KEY%"=="5" (
+    set "PROJECT_NAME=task_manager_flutter_por_cliente"
+    set "PROJECT_DIR=%FLUTTER_POR_CLIENTE_DIR%"
+    set "PROJECT_PORT=8085"
+)
 if not defined PROJECT_DIR (
     echo [ERRO] Projeto invalido: %PROJECT_KEY%
     exit /b 1
@@ -590,9 +599,10 @@ echo  [1] task_manager_appAcademiaV003
 echo  [2] task_manager_app_daniel
 echo  [3] task_manager_flutter
 echo  [4] task_manager_flutter_merged_final
+echo  [5] task_manager_flutter_por_cliente
 echo  [0] Voltar
-choice /c 12340 /n /m "Projeto: "
-if "%ERRORLEVEL%"=="5" exit /b 1
+choice /c 123450 /n /m "Projeto: "
+if "%ERRORLEVEL%"=="6" exit /b 1
 call :SET_FLUTTER_PROJECT %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 
