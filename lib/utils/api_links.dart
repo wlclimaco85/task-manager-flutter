@@ -1239,6 +1239,7 @@ class ApiLinks {
   static String dashboardPersonalizadoExecutar(String id) => '$_baseUrlNew/api/dashboards-personalizados/$id/executar';
   static String get relatoriosPersonalizados => '$_baseUrlNew/api/relatorios-personalizados';
   static String get relatoriosPersonalizadosTodos => '$_baseUrlNew/api/relatorios-personalizados/todos';
+  static String get relatoriosPersonalizadosPrevia => '$_baseUrlNew/api/relatorios-personalizados/previa';
   static String get relatoriosPersonalizadosTestar => '$_baseUrlNew/api/relatorios-personalizados/testar';
   static String relatorioPersonalizado(String id) => '$_baseUrlNew/api/relatorios-personalizados/$id';
   static String relatorioPersonalizadoAdmin(String id) => '$_baseUrlNew/api/relatorios-personalizados/$id/admin';
