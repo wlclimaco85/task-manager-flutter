@@ -1227,6 +1227,10 @@ class ApiLinks {
       '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/ligacoes/${Uri.encodeComponent(campo)}';
   static String dicionarioPersonalizacao(String tela) =>
       '$_baseUrlNew/api/dicionario/telas/${Uri.encodeComponent(tela)}/personalizacao';
+  static String get construtorTabelas => '$_baseUrlNew/api/construtor/tabelas';
+  static String get construtorTelas => '$_baseUrlNew/api/construtor/telas';
+  static String get construtorTelasTodas => '$_baseUrlNew/api/construtor/telas/todas';
+  static String construtorTela(String id) => '$_baseUrlNew/api/construtor/telas/$id';
   static String get acoesJava => '$_baseUrlNew/api/acoes-java';
   static String acaoJava(String id) => '$_baseUrlNew/api/acoes-java/$id';
   static String acaoJavaExecutar(String id) =>

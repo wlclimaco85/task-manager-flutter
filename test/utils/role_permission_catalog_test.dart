@@ -179,6 +179,18 @@ void main() {
     expect(dic.telaNome, 'dicionario_dados');
   });
 
+  test('catalogo de permissoes mostra Construtor de Telas e Telas Personalizadas', () {
+    final telas = RolePermissionCatalog.groups()
+        .expand((grupo) => grupo.entries)
+        .toList();
+
+    final c = telas.firstWhere((tela) => tela.menuItemId == 'construtor_telas');
+    expect(c.label, 'Construtor de Telas');
+    expect(c.telaNome, 'construtor_telas');
+    final p = telas.firstWhere((tela) => tela.menuItemId == 'telas_personalizadas');
+    expect(p.telaNome, 'telas_personalizadas');
+  });
+
   // Card: Importacao de XML de NFS-e -- mesma regra "toda tela nova tem
   // que aparecer em Controle de Acesso" ja documentada no CLAUDE.md pros
   // casos de nfce_grid/cnab_remessa acima.

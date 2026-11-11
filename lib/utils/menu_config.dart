@@ -725,6 +725,16 @@ class MenuConfig {
             label: 'Dicionário de Dados',
             icon: FontAwesomeIcons.bookOpen,
             screenIndex: 210),
+        MenuItem(
+            id: 'construtor_telas',
+            label: 'Construtor de Telas',
+            icon: FontAwesomeIcons.tableList,
+            screenIndex: 211),
+        MenuItem(
+            id: 'telas_personalizadas',
+            label: 'Telas Personalizadas',
+            icon: FontAwesomeIcons.tableCells,
+            screenIndex: 212),
       ],
     ),
     MenuGroup(

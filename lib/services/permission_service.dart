@@ -147,6 +147,8 @@ class PermissionService {
     // Plataforma low-code: Modulo Java (upload de .jar). Somente MASTER (ver masterOnly nos menus).
     'modulo_java': 'modulo_java',
     'dicionario_dados': 'dicionario_dados',
+    'construtor_telas': 'construtor_telas',
+    'telas_personalizadas': 'telas_personalizadas',
 
     // Financeiro
     'calendario': 'Calendario',
