@@ -735,6 +735,16 @@ class MenuConfig {
             label: 'Telas Personalizadas',
             icon: FontAwesomeIcons.tableCells,
             screenIndex: 212),
+        MenuItem(
+            id: 'dashboards_personalizados',
+            label: 'Dashboards Personalizados',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 213),
+        MenuItem(
+            id: 'construtor_dashboards',
+            label: 'Construtor de Dashboards',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 214),
       ],
     ),
     MenuGroup(

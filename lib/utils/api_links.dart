@@ -1231,6 +1231,12 @@ class ApiLinks {
   static String get construtorTelas => '$_baseUrlNew/api/construtor/telas';
   static String get construtorTelasTodas => '$_baseUrlNew/api/construtor/telas/todas';
   static String construtorTela(String id) => '$_baseUrlNew/api/construtor/telas/$id';
+  static String get dashboardsPersonalizados => '$_baseUrlNew/api/dashboards-personalizados';
+  static String get dashboardsPersonalizadosTodos => '$_baseUrlNew/api/dashboards-personalizados/todos';
+  static String get dashboardsPersonalizadosTestar => '$_baseUrlNew/api/dashboards-personalizados/testar';
+  static String dashboardPersonalizado(String id) => '$_baseUrlNew/api/dashboards-personalizados/$id';
+  static String dashboardPersonalizadoAdmin(String id) => '$_baseUrlNew/api/dashboards-personalizados/$id/admin';
+  static String dashboardPersonalizadoExecutar(String id) => '$_baseUrlNew/api/dashboards-personalizados/$id/executar';
   static String get acoesJava => '$_baseUrlNew/api/acoes-java';
   static String acaoJava(String id) => '$_baseUrlNew/api/acoes-java/$id';
   static String acaoJavaExecutar(String id) =>

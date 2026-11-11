@@ -149,6 +149,8 @@ class PermissionService {
     'dicionario_dados': 'dicionario_dados',
     'construtor_telas': 'construtor_telas',
     'telas_personalizadas': 'telas_personalizadas',
+    'dashboards_personalizados': 'dashboards_personalizados',
+    'construtor_dashboards': 'construtor_dashboards',
 
     // Financeiro
     'calendario': 'Calendario',

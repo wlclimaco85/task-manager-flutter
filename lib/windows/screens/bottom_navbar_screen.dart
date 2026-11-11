@@ -165,6 +165,8 @@ import '../../widgets/cte_emissao_view.dart';
 import '../../widgets/modulo_java_view.dart';
 import '../../widgets/dicionario_dados_view.dart';
 import '../../widgets/construtor_telas_view.dart';
+import '../../widgets/dashboard_construtor_view.dart';
+import '../../widgets/dashboards_personalizados_view.dart';
 import '../../utils/abrir_tela_construida.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
@@ -608,6 +610,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const DicionarioDadosView(), // 210: Dicionario de Dados
         const ConstrutorTelasView(abrir: abrirTelaConstruidaWindows), // 211: Construtor de Telas
         const TelasPersonalizadasView(abrir: abrirTelaConstruidaWindows), // 212: Telas Personalizadas
+        const DashboardsPersonalizadosView(), // 213: Dashboards Personalizados
+        const DashboardConstrutorView(), // 214: Construtor de Dashboards
       ];
 
   String get userName {
