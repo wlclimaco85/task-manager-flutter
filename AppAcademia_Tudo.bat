@@ -33,6 +33,7 @@ set "ANDROID_BACKEND_URL=http://127.0.0.1:9001"
 set "ANDROID_WS_BACKEND_URL=ws://127.0.0.1:9001/boletobancos"
 set "APP_PACKAGE_ABRACO=com.washingtonclimaco.task_manager_flutter"
 set "APP_PACKAGE_PORTAL=br.com.portalcont.app"
+set "APP_PACKAGE_CONTA_PROPRIA=com.example.task_manager_flutter_por_cliente"
 set "APP_PACKAGE_MEU_TREINO=com.washingtonclimaco.task_manager_appacademia"
 set "APP_PACKAGE_SAFRA=br.com.safradireto.app"
 
@@ -683,9 +684,10 @@ echo  [1] Abraco Contabilidade (task_manager_flutter)
 echo  [2] Portal Contabilidade (task_manager_flutter_merged_final)
 echo  [3] Meu Treino (task_manager_AppAcademiaV003)
 echo  [4] Safra Direto (task_manager_appDaniel)
+echo  [5] Conta Propria (task_manager_flutter_por_cliente)
 echo  [0] Voltar
-choice /c 12340 /n /m "Projeto: "
-if "%ERRORLEVEL%"=="5" exit /b 1
+choice /c 123450 /n /m "Projeto: "
+if "%ERRORLEVEL%"=="6" exit /b 1
 call :SET_FLUTTER_PROJECT_FULL %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 
@@ -718,6 +720,12 @@ if "%PROJECT_KEY%"=="4" (
     set "PROJECT_DIR=%FLUTTER_DANIEL_DIR%"
     set "PROJECT_APK_PREFIX=SafraDireto"
     set "PROJECT_PACKAGE=%APP_PACKAGE_SAFRA%"
+)
+if "%PROJECT_KEY%"=="5" (
+    set "PROJECT_LABEL=Conta Propria"
+    set "PROJECT_DIR=%FLUTTER_POR_CLIENTE_DIR%"
+    set "PROJECT_APK_PREFIX=ContaPropria"
+    set "PROJECT_PACKAGE=%APP_PACKAGE_CONTA_PROPRIA%"
 )
 if not defined PROJECT_DIR (
     echo [ERRO] Projeto invalido: %PROJECT_KEY%
