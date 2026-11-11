@@ -151,6 +151,8 @@ class PermissionService {
     'telas_personalizadas': 'telas_personalizadas',
     'dashboards_personalizados': 'dashboards_personalizados',
     'construtor_dashboards': 'construtor_dashboards',
+    'relatorios_personalizados': 'relatorios_personalizados',
+    'construtor_relatorios': 'construtor_relatorios',
 
     // Financeiro
     'calendario': 'Calendario',

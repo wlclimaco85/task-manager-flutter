@@ -81,7 +81,7 @@ class _AppSidebarState extends State<AppSidebar> {
     // Acesso), o item ficaria visivel/clicavel ate' o 403 no clique, sem
     // feedback preventivo. Guard explicito aqui, no mesmo espirito do
     // ownerOnly acima.
-    const masterOnly = {'sessoes', 'modulo_java', 'dicionario_dados', 'construtor_telas', 'construtor_dashboards'};
+    const masterOnly = {'sessoes', 'modulo_java', 'dicionario_dados', 'construtor_telas', 'construtor_dashboards', 'construtor_relatorios'};
     if (masterOnly.contains(item.id)) {
       return SecurityMatrix.current().isMaster;
     }

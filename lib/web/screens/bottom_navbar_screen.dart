@@ -93,6 +93,8 @@ import '../../widgets/dicionario_dados_view.dart';
 import '../../widgets/construtor_telas_view.dart';
 import '../../widgets/dashboard_construtor_view.dart';
 import '../../widgets/dashboards_personalizados_view.dart';
+import '../../widgets/relatorio_construtor_view.dart';
+import '../../widgets/relatorios_personalizados_view.dart';
 import '../../utils/abrir_tela_construida.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import './nfe_import_screen.dart';
@@ -637,6 +639,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const TelasPersonalizadasView(abrir: abrirTelaConstruidaWindows), // 212: Telas Personalizadas
       const DashboardsPersonalizadosView(), // 213: Dashboards Personalizados
       const DashboardConstrutorView(), // 214: Construtor de Dashboards
+      const RelatoriosPersonalizadosView(), // 215: Relatorios Personalizados
+      const RelatorioConstrutorView(), // 216: Construtor de Relatorios
     ];
   }
 

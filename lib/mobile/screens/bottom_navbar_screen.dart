@@ -57,6 +57,7 @@ import 'modulo_java_screen.dart';
 import 'dicionario_dados_screen.dart';
 import 'telas_construidas_screens.dart';
 import 'dashboards_personalizados_screens.dart';
+import 'relatorios_personalizados_screens.dart';
 import 'nfse_servico_screen.dart';
 import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
@@ -337,6 +338,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Telas Personalizadas': (menuId: 'telas_personalizadas', appScreen: null),
     'Dashboards Personalizados': (menuId: 'dashboards_personalizados', appScreen: null),
     'Construtor de Dashboards': (menuId: 'construtor_dashboards', appScreen: null),
+    'Relatórios Personalizados': (menuId: 'relatorios_personalizados', appScreen: null),
+    'Construtor de Relatórios': (menuId: 'construtor_relatorios', appScreen: null),
     'Sessões': (menuId: 'sessoes', appScreen: null),
     'Meu Perfil': (menuId: 'perfil', appScreen: AppScreen.perfil),
     'Controle de Acesso': (menuId: 'permissoes', appScreen: AppScreen.rolesPermissoes),
@@ -597,6 +600,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       'dicionario_dados',
       'construtor_telas',
       'construtor_dashboards',
+      'construtor_relatorios',
       'aplicativo',
     };
     if (masterOnly.contains(menuItemId)) {
@@ -2379,6 +2383,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Construtor de Telas":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileConstrutorTelasScreen()));
         break;
+      case "Relatórios Personalizados":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRelatoriosPersonalizadosScreen()));
+        break;
+      case "Construtor de Relatórios":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRelatorioConstrutorScreen()));
+        break;
       case "Dashboards Personalizados":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileDashboardsPersonalizadosScreen()));
         break;
@@ -2833,6 +2843,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.table_chart, 'Telas Personalizadas'),
           _MoreMenuAction(Icons.insights, 'Dashboards Personalizados'),
           _MoreMenuAction(Icons.bar_chart, 'Construtor de Dashboards'),
+          _MoreMenuAction(Icons.picture_as_pdf, 'Relatórios Personalizados'),
+          _MoreMenuAction(Icons.description, 'Construtor de Relatórios'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
           if (temNfce) _MoreMenuAction(Icons.settings, 'Config Fiscal'),

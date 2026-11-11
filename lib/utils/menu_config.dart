@@ -745,6 +745,16 @@ class MenuConfig {
             label: 'Construtor de Dashboards',
             icon: FontAwesomeIcons.chartLine,
             screenIndex: 214),
+        MenuItem(
+            id: 'relatorios_personalizados',
+            label: 'Relatórios Personalizados',
+            icon: FontAwesomeIcons.filePdf,
+            screenIndex: 215),
+        MenuItem(
+            id: 'construtor_relatorios',
+            label: 'Construtor de Relatórios',
+            icon: FontAwesomeIcons.fileLines,
+            screenIndex: 216),
       ],
     ),
     MenuGroup(
