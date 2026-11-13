@@ -76,6 +76,7 @@ echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
 echo  [M] Subir o App do Dono (Admin Panel no Chrome)
 echo  [N] Subir Meu Treino (V003) - Web/Mobile (Local ou Railway)
+echo  [R] Subir o Jarvis (assistente local - painel no navegador)
 echo  [0] Sair
 echo.
 set "OP="
@@ -180,6 +181,10 @@ if /i "%OP%"=="M" (
 )
 if /i "%OP%"=="N" (
     call :START_V003_CUSTOM
+    goto END_MENU
+)
+if /i "%OP%"=="R" (
+    call :START_JARVIS
     goto END_MENU
 )
 goto MENU
@@ -1595,6 +1600,42 @@ echo ============================================
 echo.
 call :START_BACKEND_ONLY
 call :START_FLUTTER_WEB "AdminPanel" "%FLUTTER_ADMIN_DIR%" 8083
+exit /b 0
+
+:START_JARVIS
+echo.
+echo ============================================
+echo  Jarvis (OpenJarvis local) - painel no navegador
+echo ============================================
+echo.
+set "JARVIS_SRC=%LOCALAPPDATA%\OpenJarvis\src"
+if not exist "%JARVIS_SRC%\pyproject.toml" set "JARVIS_SRC=%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\OpenJarvis\src"
+if not exist "%JARVIS_SRC%\pyproject.toml" (
+    echo [ERRO] OpenJarvis nao encontrado em %JARVIS_SRC%
+    exit /b 1
+)
+set "OLLAMA_EXE=%LOCALAPPDATA%\Programs\Ollama\ollama.exe"
+if not exist "%OLLAMA_EXE%" (
+    echo [ERRO] Ollama nao encontrado em %OLLAMA_EXE%
+    exit /b 1
+)
+set "PATH=%USERPROFILE%\.local\bin;%USERPROFILE%\.cargo\bin;C:\Program Files\eSpeak NG;%PATH%"
+set "npm_config_engine_strict=false"
+where uv >nul 2>&1
+if errorlevel 1 (
+    echo [ERRO] uv nao encontrado no PATH ^(esperado em %USERPROFILE%\.local\bin^)
+    exit /b 1
+)
+curl -s -f -o nul http://127.0.0.1:11434/api/tags
+if errorlevel 1 (
+    echo Iniciando Ollama...
+    start "Ollama" /min "%OLLAMA_EXE%" serve
+    timeout /t 6 /nobreak >nul
+)
+echo Iniciando Jarvis - a primeira subida demora ate 1 minuto...
+start "Jarvis" /d "%JARVIS_SRC%" cmd /k "title Jarvis - painel http://127.0.0.1:5173 && uv run jarvis gui"
+echo Painel: http://127.0.0.1:5173  API: http://127.0.0.1:8000
+echo Para fechar, feche a janela "Jarvis".
 exit /b 0
 
 :START_V003_CUSTOM
