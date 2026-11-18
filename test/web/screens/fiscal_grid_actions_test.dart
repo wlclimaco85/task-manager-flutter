@@ -29,6 +29,22 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
+  testWidgets('NF-e entrada oferece a acao Devolver NF-e (devolucao conforme NF-e) ao lado de Aceitar/Recusar', (tester) async {
+    await setWideSurface(tester);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: WebNfeGridScreen(entrada: true))),
+    );
+    await tester.pump();
+
+    final grid = tester.widget<DynamicGridWindowsScreen<Map<String, dynamic>>>(
+      find.byType(DynamicGridWindowsScreen<Map<String, dynamic>>),
+    );
+    final rotulos = grid.customActions!().map((a) => a.label).toList();
+
+    expect(rotulos, containsAllInOrder(['Aceitar', 'Recusar', 'Devolver NF-e', 'DANFE', 'XML']));
+  });
+
   testWidgets('NF-e saida exposes fiscal row actions and bulk actions with status check', (tester) async {
     await setWideSurface(tester);
 
