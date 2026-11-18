@@ -865,8 +865,24 @@ goto WAIT_ANDROID_DEVICE
 :START_FLUTTER_ANDROID
 set "RUN_NAME=%~1"
 set "RUN_DIR=%~2"
-call :ENSURE_ANDROID_DEVICE
-if errorlevel 1 exit /b 1
+flutter devices | findstr /i "android" >nul
+if not errorlevel 1 goto ANDROID_START_RUN
+echo.
+echo Nenhum Android conectado. Tentando iniciar o emulador flutter_emulator...
+flutter emulators --launch flutter_emulator
+echo Aguardando Android aparecer...
+set /a ANDROID_WAIT=0
+:WAIT_ANDROID_START
+set /a ANDROID_WAIT+=1
+flutter devices | findstr /i "android" >nul
+if not errorlevel 1 goto ANDROID_START_RUN
+if %ANDROID_WAIT% GEQ 24 goto ANDROID_START_TIMEOUT
+timeout /t 5 /nobreak >nul
+goto WAIT_ANDROID_START
+:ANDROID_START_TIMEOUT
+echo [ERRO] Nenhum Android/simulador ficou disponivel em 2 minutos.
+exit /b 1
+:ANDROID_START_RUN
 start "AppAcademia-%RUN_NAME%-Android" cmd /k "cd /d %RUN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
 echo %RUN_NAME% iniciando no Android/simulador.
 exit /b 0
