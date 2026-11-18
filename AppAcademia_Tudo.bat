@@ -650,7 +650,24 @@ call :PICK_FLUTTER_PROJECT
 if errorlevel 1 exit /b 1
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
-call :START_FLUTTER_ANDROID "%PROJECT_NAME%" "%PROJECT_DIR%"
+flutter devices | findstr /i "android" >nul
+if errorlevel 1 (
+    echo.
+    echo Nenhum Android conectado. Tentando iniciar o emulador flutter_emulator...
+    flutter emulators --launch flutter_emulator
+    echo Aguardando Android aparecer...
+    set "ANDROID_OK="
+    for /l %%i in (1,1,24) do if not defined ANDROID_OK (
+        timeout /t 5 /nobreak >nul
+        flutter devices | findstr /i "android" >nul && set "ANDROID_OK=1"
+    )
+    if not defined ANDROID_OK (
+        echo [ERRO] Nenhum Android/simulador ficou disponivel em 2 minutos.
+        exit /b 1
+    )
+)
+start "AppAcademia-%PROJECT_NAME%-Android" cmd /k "cd /d %PROJECT_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+echo %PROJECT_NAME% iniciando no Android/simulador.
 exit /b %ERRORLEVEL%
 
 :BUILD_ONE_ANDROID_LOCAL
