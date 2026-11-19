@@ -111,26 +111,46 @@ class _NfeDevolucaoDialogState extends State<NfeDevolucaoDialog> {
     }
   }
 
+  /// Mensagem que o backend devolve no erro (campo "message"); fallback generico se nao vier.
+  String _mensagemErroBusca(int status, String corpo) {
+    try {
+      final b = jsonDecode(corpo);
+      if (b is Map && b['message'] is String && (b['message'] as String).isNotEmpty) {
+        return b['message'] as String;
+      }
+    } catch (e) {
+      AppLogger.i.warn('Devolucao NF-e: resposta de erro da busca nao e JSON (HTTP $status): $e');
+    }
+    return 'Não foi possível buscar o XML na SEFAZ (HTTP $status). Tente de novo.';
+  }
+
   Future<void> _buscarXmlSefaz() async {
     setState(() => _buscandoXml = true);
+    String? erroBusca;
     try {
       final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_id/buscar-xml-sefaz', {});
       if (!mounted) return;
       if (r.statusCode != 200) {
-        setState(() => _erro = 'A SEFAZ ainda não liberou o XML (HTTP ${r.statusCode}). Aguarde alguns instantes e tente de novo.');
+        erroBusca = _mensagemErroBusca(r.statusCode, r.body);
       } else {
         _semItensAposBuscar = true;
       }
     } catch (e, st) {
       AppLogger.i.error('Devolucao NF-e #$_id: erro ao buscar XML na SEFAZ: $e', st);
-      if (mounted) setState(() => _erro = 'Erro ao buscar o XML na SEFAZ: $e');
+      erroBusca = 'Erro ao buscar o XML na SEFAZ: $e';
     }
     if (!mounted) return;
     setState(() => _buscandoXml = false);
     await _carregarItens();
-    if (mounted && _linhas.isEmpty && _semItensAposBuscar && _erro == null) {
-      setState(() => _erro = 'A SEFAZ respondeu, mas a nota continua sem itens. Aguarde alguns instantes e tente de novo.');
-    }
+    if (!mounted) return;
+    // _carregarItens zera _erro: aplica a mensagem da busca depois, para ela aparecer.
+    setState(() {
+      if (erroBusca != null) {
+        _erro = erroBusca;
+      } else if (_linhas.isEmpty && _semItensAposBuscar && _erro == null) {
+        _erro = 'A SEFAZ respondeu, mas a nota continua sem itens. Aguarde alguns instantes e tente de novo.';
+      }
+    });
     _semItensAposBuscar = false;
   }
 
