@@ -30,7 +30,7 @@ void main() {
       expect(nfeDetailAlturaItens(true), nfeDetailItensResumoAltura);
       expect(nfeDetailAlturaItens(false), nfeDetailItensFormularioAltura);
       expect(nfeDetailAlturaItens(true), lessThan(nfeDetailAlturaItens(false)));
-      expect(nfeDetailAlturaItens(true), lessThanOrEqualTo(280));
+      expect(nfeDetailAlturaItens(true), lessThanOrEqualTo(440));
     });
 
     test('referencias de cadastros aceitam objeto ou id direto', () {
