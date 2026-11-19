@@ -695,6 +695,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(r.statusCode == 200
               ? 'Importação concluída: $total nota(s) importada(s)'
+                  '${(body['pendentes'] as List?)?.isNotEmpty == true ? '. ${(body['pendentes'] as List).length} sem itens: use Buscar XML SEFAZ pela chave' : ''}'
               : 'Erro ${r.statusCode}'),
           backgroundColor:
               r.statusCode == 200 ? GridColors.success : GridColors.error));
