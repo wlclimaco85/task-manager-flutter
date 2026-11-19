@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
 import '../utils/api_links.dart';
@@ -129,9 +130,9 @@ class _NfeDevolucaoDialogState extends State<NfeDevolucaoDialog> {
     String? erroBusca;
     try {
       final url = '${ApiLinks.baseUrl}/api/nfe/$_id/buscar-xml-sefaz';
-      debugPrint('[DEVOLUCAO-BUSCA] REQUEST POST $url | nfeId=$_id | chave=${widget.nota['chave']} | body={}');
+      if (kDebugMode) debugPrint('[DEVOLUCAO-BUSCA] REQUEST POST $url | nfeId=$_id | chave=${widget.nota['chave']} | body={}');
       final r = await TenantContext.post(url, {});
-      debugPrint('[DEVOLUCAO-BUSCA] RESPONSE HTTP ${r.statusCode} | ${r.body.length > 600 ? r.body.substring(0, 600) : r.body}');
+      if (kDebugMode) debugPrint('[DEVOLUCAO-BUSCA] RESPONSE HTTP ${r.statusCode} | ${r.body.length > 600 ? r.body.substring(0, 600) : r.body}');
       if (!mounted) return;
       if (r.statusCode != 200) {
         erroBusca = _mensagemErroBusca(r.statusCode, r.body);
