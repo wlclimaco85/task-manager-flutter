@@ -128,7 +128,10 @@ class _NfeDevolucaoDialogState extends State<NfeDevolucaoDialog> {
     setState(() => _buscandoXml = true);
     String? erroBusca;
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_id/buscar-xml-sefaz', {});
+      final url = '${ApiLinks.baseUrl}/api/nfe/$_id/buscar-xml-sefaz';
+      debugPrint('[DEVOLUCAO-BUSCA] REQUEST POST $url | nfeId=$_id | chave=${widget.nota['chave']} | body={}');
+      final r = await TenantContext.post(url, {});
+      debugPrint('[DEVOLUCAO-BUSCA] RESPONSE HTTP ${r.statusCode} | ${r.body.length > 600 ? r.body.substring(0, 600) : r.body}');
       if (!mounted) return;
       if (r.statusCode != 200) {
         erroBusca = _mensagemErroBusca(r.statusCode, r.body);
