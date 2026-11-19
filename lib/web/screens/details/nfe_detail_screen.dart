@@ -29,7 +29,7 @@ const _dark = Color(0xFF212121);
 
 const double _kCampoMinWidth = 260;
 const double nfeDetailPagamentoTipoCampoAltura = 56;
-const double nfeDetailItensResumoAltura = 260;
+const double nfeDetailItensResumoAltura = 420;
 const double nfeDetailItensFormularioAltura = 480;
 
 @visibleForTesting
@@ -2055,6 +2055,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
             if (_tipoOperacaoId != null)
               'nfeTipoOperacaoId':
                   int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId,
+            // Serie escolhida no dropdown precisa ir no PUT (so com numero em branco: backend aloca numero uma vez).
+            if (_serieId != null && _numeroCtrl.text.trim().isEmpty)
+              'serieId': int.tryParse(_serieId!) ?? _serieId,
             ...nfeDetailCadastroPayloadIds(
               formaPagamentoId: _formaPagId,
               nfeFinalidadeId: _finalidadeId,
