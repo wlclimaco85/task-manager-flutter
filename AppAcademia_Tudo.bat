@@ -668,7 +668,7 @@ if errorlevel 1 (
         exit /b 1
     )
 )
-start "AppAcademia-%PROJECT_NAME%-Android" cmd /k "cd /d %PROJECT_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+start "AppAcademia-%PROJECT_NAME%-Android" cmd /k "cd /d %PROJECT_DIR% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
 echo %PROJECT_NAME% iniciando no Android/simulador.
 exit /b %ERRORLEVEL%
 
@@ -855,7 +855,7 @@ if not exist "%RUN_DIR%" (
 )
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$needle = '%RUN_DIR:\=\\%'; $items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like ('*' + $needle + '*')) }; if ($items) { exit 0 } else { exit 1 }"
 if errorlevel 1 (
-    start "AppAcademia-%RUN_NAME%-Web" cmd /k "cd /d %RUN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port %RUN_PORT% --dart-define=BACKEND_URL=%BACKEND_URL%"
+    start "AppAcademia-%RUN_NAME%-Web" cmd /k "cd /d %RUN_DIR% && flutter pub get && flutter run -d chrome --web-port %RUN_PORT% --dart-define=BACKEND_URL=%BACKEND_URL%"
     echo %RUN_NAME% iniciando no Chrome em http://localhost:%RUN_PORT%
 ) else (
     echo %RUN_NAME% parece ja estar rodando.
@@ -902,7 +902,7 @@ goto WAIT_ANDROID_START
 echo [ERRO] Nenhum Android/simulador ficou disponivel em 2 minutos.
 exit /b 1
 :ANDROID_START_RUN
-start "AppAcademia-%RUN_NAME%-Android" cmd /k "cd /d %RUN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+start "AppAcademia-%RUN_NAME%-Android" cmd /k "cd /d %RUN_DIR% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
 echo %RUN_NAME% iniciando no Android/simulador.
 exit /b 0
 
@@ -1703,12 +1703,12 @@ exit /b 0
 :V003_WEB_LOCAL
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
-start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
+start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
 echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para backend local.
 exit /b 0
 
 :V003_WEB_RAILWAY
-start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para Railway.
 exit /b 0
 
