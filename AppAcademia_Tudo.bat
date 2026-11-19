@@ -650,6 +650,8 @@ call :PICK_FLUTTER_PROJECT
 if errorlevel 1 exit /b 1
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
+call :ENSURE_BLUESTACKS_ADB
+if errorlevel 1 exit /b 1
 flutter devices | findstr /i "android" >nul
 if errorlevel 1 (
     echo.
