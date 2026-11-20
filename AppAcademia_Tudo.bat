@@ -29,8 +29,8 @@ set "BACKEND_PORT=9001"
 set "DEPLOY_BACKEND_URL=https://appacademia-production-be7e.up.railway.app"
 set "BACKEND_URL=http://127.0.0.1:9001"
 set "HOST_IP=127.0.0.1"
-set "ANDROID_BACKEND_URL=http://127.0.0.1:9001"
-set "ANDROID_WS_BACKEND_URL=ws://127.0.0.1:9001/boletobancos"
+set "ANDROID_BACKEND_URL=http://10.0.2.2:9001"
+set "ANDROID_WS_BACKEND_URL=ws://10.0.2.2:9001/boletobancos"
 set "APP_PACKAGE_ABRACO=com.washingtonclimaco.task_manager_flutter"
 set "APP_PACKAGE_PORTAL=br.com.portalcont.app"
 set "APP_PACKAGE_CONTA_PROPRIA=com.example.task_manager_flutter_por_cliente"
@@ -650,7 +650,26 @@ call :PICK_FLUTTER_PROJECT
 if errorlevel 1 exit /b 1
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
-call :START_FLUTTER_ANDROID "%PROJECT_NAME%" "%PROJECT_DIR%"
+call :ENSURE_BLUESTACKS_ADB
+if errorlevel 1 exit /b 1
+flutter devices | findstr /i "android" >nul
+if errorlevel 1 (
+    echo.
+    echo Nenhum Android conectado. Tentando iniciar o emulador flutter_emulator...
+    flutter emulators --launch flutter_emulator
+    echo Aguardando Android aparecer...
+    set "ANDROID_OK="
+    for /l %%i in (1,1,24) do if not defined ANDROID_OK (
+        timeout /t 5 /nobreak >nul
+        flutter devices | findstr /i "android" >nul && set "ANDROID_OK=1"
+    )
+    if not defined ANDROID_OK (
+        echo [ERRO] Nenhum Android/simulador ficou disponivel em 2 minutos.
+        exit /b 1
+    )
+)
+start "AppAcademia-%PROJECT_NAME%-Android" cmd /k "cd /d %PROJECT_DIR% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+echo %PROJECT_NAME% iniciando no Android/simulador.
 exit /b %ERRORLEVEL%
 
 :BUILD_ONE_ANDROID_LOCAL
@@ -836,7 +855,7 @@ if not exist "%RUN_DIR%" (
 )
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$needle = '%RUN_DIR:\=\\%'; $items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like ('*' + $needle + '*')) }; if ($items) { exit 0 } else { exit 1 }"
 if errorlevel 1 (
-    start "AppAcademia-%RUN_NAME%-Web" cmd /k "cd /d %RUN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port %RUN_PORT% --dart-define=BACKEND_URL=%BACKEND_URL%"
+    start "AppAcademia-%RUN_NAME%-Web" cmd /k "cd /d %RUN_DIR% && flutter pub get && flutter run -d chrome --web-port %RUN_PORT% --dart-define=BACKEND_URL=%BACKEND_URL%"
     echo %RUN_NAME% iniciando no Chrome em http://localhost:%RUN_PORT%
 ) else (
     echo %RUN_NAME% parece ja estar rodando.
@@ -865,9 +884,25 @@ goto WAIT_ANDROID_DEVICE
 :START_FLUTTER_ANDROID
 set "RUN_NAME=%~1"
 set "RUN_DIR=%~2"
-call :ENSURE_ANDROID_DEVICE
-if errorlevel 1 exit /b 1
-start "AppAcademia-%RUN_NAME%-Android" cmd /k "cd /d %RUN_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d android --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
+flutter devices | findstr /i "android" >nul
+if not errorlevel 1 goto ANDROID_START_RUN
+echo.
+echo Nenhum Android conectado. Tentando iniciar o emulador flutter_emulator...
+flutter emulators --launch flutter_emulator
+echo Aguardando Android aparecer...
+set /a ANDROID_WAIT=0
+:WAIT_ANDROID_START
+set /a ANDROID_WAIT+=1
+flutter devices | findstr /i "android" >nul
+if not errorlevel 1 goto ANDROID_START_RUN
+if %ANDROID_WAIT% GEQ 24 goto ANDROID_START_TIMEOUT
+timeout /t 5 /nobreak >nul
+goto WAIT_ANDROID_START
+:ANDROID_START_TIMEOUT
+echo [ERRO] Nenhum Android/simulador ficou disponivel em 2 minutos.
+exit /b 1
+:ANDROID_START_RUN
+start "AppAcademia-%RUN_NAME%-Android" cmd /k "cd /d %RUN_DIR% && flutter pub get && flutter run -d 127.0.0.1:5555 --device-timeout 120 --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL%"
 echo %RUN_NAME% iniciando no Android/simulador.
 exit /b 0
 
@@ -1668,12 +1703,12 @@ exit /b 0
 :V003_WEB_LOCAL
 call :START_BACKEND_ONLY
 if errorlevel 1 exit /b 1
-start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
+start "AppAcademia-MeuTreinoV003-Web-Local" cmd /k "cd /d %FLUTTER_V003_DIR% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%BACKEND_URL%"
 echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para backend local.
 exit /b 0
 
 :V003_WEB_RAILWAY
-start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && set GRADLE_USER_HOME=%GRADLE_USER_HOME% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+start "AppAcademia-MeuTreinoV003-Web-Railway" cmd /k "cd /d %FLUTTER_V003_DIR% && flutter pub get && flutter run -d chrome --web-port 8081 --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=BACKEND_CONTEXT_PATH= --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Meu Treino V003 iniciando no Chrome (porta 8081) apontando para Railway.
 exit /b 0
 
