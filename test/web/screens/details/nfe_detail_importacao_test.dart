@@ -39,6 +39,20 @@ void main() {
       expect(nfeDetailIdRef(null), isNull);
     });
 
+    test('cProd do item vem do codigo do produto escolhido, ou do id se nao tiver codigo', () {
+      expect(nfeItemCodigoDoProduto(' 122065 ', '9'), '122065');
+      expect(nfeItemCodigoDoProduto('', '9'), '9');
+      expect(nfeItemCodigoDoProduto(null, '9'), '9');
+      expect(nfeItemCodigoDoProduto(null, null), '');
+    });
+
+    test('PUT envia o destinatario escolhido (saida) e nao envia em entrada nem vazio', () {
+      expect(nfeDetailDestinatarioPayload('77', entrada: false), {'destinatarioId': 77});
+      expect(nfeDetailDestinatarioPayload('77', entrada: true), isEmpty);
+      expect(nfeDetailDestinatarioPayload(null, entrada: false), isEmpty);
+      expect(nfeDetailDestinatarioPayload('', entrada: false), isEmpty);
+    });
+
     test('cabecalho envia ids financeiros esperados pela API', () {
       expect(
         nfeDetailCadastroPayloadIds(
