@@ -82,6 +82,7 @@ import './catalago_produto_grid_screen.dart';
 import './nfe_finalidade_grid_screen.dart';
 import './nfe_serie_grid_screen.dart';
 import './nfse_serie_grid_screen.dart';
+import './cfop_grid_screen.dart';
 import './nfe_tipo_operacao_grid_screen.dart';
 import './nfe_grid_screen.dart';
 import './nfce_grid_screen.dart';
@@ -641,6 +642,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const DashboardConstrutorView(), // 214: Construtor de Dashboards
       const RelatoriosPersonalizadosView(), // 215: Relatorios Personalizados
       const RelatorioConstrutorView(), // 216: Construtor de Relatorios
+      WebCfopGridScreen(hasPermission: (p) => true), // 217: CFOP
     ];
   }
 

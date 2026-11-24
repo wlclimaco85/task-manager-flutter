@@ -206,6 +206,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.arrowsLeftRight,
             screenIndex: 56),
         MenuItem(
+            id: 'cfop',
+            label: 'CFOP',
+            icon: FontAwesomeIcons.listOl,
+            screenIndex: 217),
+        MenuItem(
             id: 'nfe_import_csv',
             label: 'Importar NF-e CSV',
             icon: FontAwesomeIcons.fileCsv,
