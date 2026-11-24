@@ -39,6 +39,13 @@ void main() {
       expect(nfeDetailIdRef(null), isNull);
     });
 
+    test('PUT envia o destinatario escolhido (saida) e nao envia em entrada nem vazio', () {
+      expect(nfeDetailDestinatarioPayload('77', entrada: false), {'destinatarioId': 77});
+      expect(nfeDetailDestinatarioPayload('77', entrada: true), isEmpty);
+      expect(nfeDetailDestinatarioPayload(null, entrada: false), isEmpty);
+      expect(nfeDetailDestinatarioPayload('', entrada: false), isEmpty);
+    });
+
     test('cabecalho envia ids financeiros esperados pela API', () {
       expect(
         nfeDetailCadastroPayloadIds(
