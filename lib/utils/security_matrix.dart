@@ -973,6 +973,7 @@ class ModuloAccess {
     'nfe_serie': 'Notas Fiscais',
     'nfe_finalidade': 'Notas Fiscais',
     'nfe_tipo_operacao': 'Notas Fiscais',
+    'cfop': 'Notas Fiscais',
     'nfe_import_xml': 'Notas Fiscais',
     'nfe_import_csv': 'Notas Fiscais',
     'consulta_dfe': 'Notas Fiscais',
