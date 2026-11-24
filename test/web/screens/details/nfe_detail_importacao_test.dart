@@ -85,6 +85,21 @@ void main() {
       expect(campos.destinatarioNome, 'Comprador Real');
     });
 
+    test('windows: saida criada na tela (parceiro = tenant) mantem o comprador em destinatario', () {
+      final campos = windows_nfe.nfeDetailParceirosSaida(
+        item: {
+          'parceiro': {'id': 99, 'nome': 'Tenant Livro'},
+          'destinatario': {'id': 20, 'nome': 'Comprador Real'},
+        },
+        sessParcId: '99',
+        sessParcNome: 'Tenant Livro',
+      );
+
+      expect(campos.parceiroId, '99');
+      expect(campos.destinatarioId, '20');
+      expect(campos.destinatarioNome, 'Comprador Real');
+    });
+
     testWidgets('campo tipo de pagamento renderiza sem overflow',
         (tester) async {
       await tester.pumpWidget(
