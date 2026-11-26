@@ -146,6 +146,11 @@ class MenuConfig {
         // Série e Dashboard fiscal ficam aqui por serem conceitos COMUNS
         // entre NF-e/NFS-e/NFC-e
         MenuItem(
+            id: 'painel_fiscal',
+            label: 'Painel Fiscal',
+            icon: FontAwesomeIcons.gaugeHigh,
+            screenIndex: 220),
+        MenuItem(
             id: 'dashboard_fiscal',
             label: 'Dashboard Fiscal',
             icon: FontAwesomeIcons.chartPie,

@@ -1,3 +1,4 @@
+import '../../widgets/painel_fiscal/painel_fiscal_screen.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
@@ -244,6 +245,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Regras Fiscais': (menuId: 'regra_fiscal', appScreen: AppScreen.regraFiscal),
     'Obrigações Fiscais': (menuId: 'obrigacoes_fiscais', appScreen: AppScreen.obrigacoesFiscais),
     'Calendário Tributário': (menuId: 'calendario_guias', appScreen: null),
+    'Painel Fiscal': (menuId: 'painel_fiscal', appScreen: null),
     'Dashboard Fiscal': (menuId: 'dashboard_fiscal', appScreen: AppScreen.dashFiscalArea),
     'Notas de Serviço (NFS-e)': (menuId: 'nfse', appScreen: AppScreen.nfseLista),
     'Séries NFS-e': (menuId: 'nfse_serie', appScreen: AppScreen.nfseSerie),
@@ -424,6 +426,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'obrigacoes_fiscais': 'Notas Fiscais',
     'calendario_tributario': 'Notas Fiscais',
     'dashboard_fiscal': 'Notas Fiscais',
+    'painel_fiscal': 'Notas Fiscais',
 
     // NFS-e
     'nfse': 'NFS-e',
@@ -645,7 +648,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         return PermissionService().canViewScreen('agendamento_nfe') ||
             PermissionService().canViewScreen('pdv_nfce') ||
             PermissionService().canViewScreen('nfe_saida') ||
-            PermissionService().canViewScreen('dashboard_fiscal');
+            PermissionService().canViewScreen('dashboard_fiscal') ||
+            PermissionService().canViewScreen('painel_fiscal');
       }
       return PermissionService().canViewScreen(menuItemId);
     }
@@ -1545,6 +1549,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
           ),
         );
+        break;
+      case "Painel Fiscal":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const PainelFiscalScreen()));
         break;
       case "Dashboard Fiscal":
         nav = Navigator.push(
@@ -2679,6 +2686,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.rule, 'Regras Fiscais'),
             _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
             _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
+            _MoreMenuAction(Icons.speed, 'Painel Fiscal'),
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
           ],
         ),

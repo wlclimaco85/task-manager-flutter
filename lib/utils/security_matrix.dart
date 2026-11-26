@@ -984,6 +984,7 @@ class ModuloAccess {
     'obrigacoes_fiscais': 'Notas Fiscais',
     'calendario_tributario': 'Notas Fiscais',
     'dashboard_fiscal': 'Notas Fiscais',
+    'painel_fiscal': 'Notas Fiscais',
     'regra_fiscal': 'Notas Fiscais',
 
     // NFS-e
