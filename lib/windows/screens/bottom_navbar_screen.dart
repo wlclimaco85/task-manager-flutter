@@ -169,6 +169,7 @@ import '../../widgets/dashboard_construtor_view.dart';
 import '../../widgets/dashboards_personalizados_view.dart';
 import '../../widgets/relatorio_construtor_view.dart';
 import '../../widgets/relatorios_personalizados_view.dart';
+import '../../widgets/planilha_view.dart';
 import '../../utils/abrir_tela_construida.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
@@ -618,6 +619,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const RelatoriosPersonalizadosView(), // 215: Relatorios Personalizados
         const RelatorioConstrutorView(), // 216: Construtor de Relatorios
         WebCfopGridScreen(hasPermission: (perm) => true), // 217: CFOP
+        const PlanilhaView(), // 218: Planilhas
       ];
 
   String get userName {

@@ -154,6 +154,7 @@ class PermissionService {
     'dashboards_personalizados': 'dashboards_personalizados',
     'construtor_dashboards': 'construtor_dashboards',
     'relatorios_personalizados': 'relatorios_personalizados',
+    'planilhas': 'planilhas',
     'construtor_relatorios': 'construtor_relatorios',
 
     // Financeiro

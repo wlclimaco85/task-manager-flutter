@@ -96,6 +96,7 @@ import '../../widgets/dashboard_construtor_view.dart';
 import '../../widgets/dashboards_personalizados_view.dart';
 import '../../widgets/relatorio_construtor_view.dart';
 import '../../widgets/relatorios_personalizados_view.dart';
+import '../../widgets/planilha_view.dart';
 import '../../utils/abrir_tela_construida.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import './nfe_import_screen.dart';
@@ -643,6 +644,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const RelatoriosPersonalizadosView(), // 215: Relatorios Personalizados
       const RelatorioConstrutorView(), // 216: Construtor de Relatorios
       WebCfopGridScreen(hasPermission: (p) => true), // 217: CFOP
+      const PlanilhaView(), // 218: Planilhas
     ];
   }
 

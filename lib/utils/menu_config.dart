@@ -1048,6 +1048,11 @@ class MenuConfig {
 
   static const List<MenuItem> loose = [
     MenuItem(
+        id: 'planilhas',
+        label: 'Planilhas',
+        icon: FontAwesomeIcons.table,
+        screenIndex: 218),
+    MenuItem(
         id: 'dashboard',
         label: 'Dashboard',
         icon: FontAwesomeIcons.chartBar,
