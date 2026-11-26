@@ -1,4 +1,7 @@
 import '../../widgets/painel_fiscal/painel_fiscal_screen.dart';
+import '../../features/escrituracao_fiscal/screens/escrituracao_list_screen.dart';
+import '../../widgets/diagnostico_esocial/diagnostico_esocial_screen.dart';
+import '../../widgets/gestao_xml/gestao_xml_screen.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
@@ -261,6 +264,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Horários Funcionário': (menuId: 'horario_func', appScreen: null),
     'Dashboard DP': (menuId: 'dashboard_dp', appScreen: AppScreen.dashDpArea),
     'Relatórios DP/RH': (menuId: 'relatorio_dp_rh', appScreen: AppScreen.relatorioDpRh),
+    'Escrituração Fiscal': (menuId: 'escrituracao_fiscal', appScreen: null),
+    'Diagnóstico eSocial': (menuId: 'diagnostico_esocial', appScreen: null),
+    'Gestão de XML': (menuId: 'gestao_xml', appScreen: null),
     'Plano de Contas': (menuId: 'conta_contabil', appScreen: null),
     'Lançamentos Contábeis': (menuId: 'lancamento_contabil', appScreen: AppScreen.lancamentoContabil),
     'Balancete': (menuId: 'balancete', appScreen: AppScreen.balancete),
@@ -426,7 +432,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'obrigacoes_fiscais': 'Notas Fiscais',
     'calendario_tributario': 'Notas Fiscais',
     'dashboard_fiscal': 'Notas Fiscais',
-    'painel_fiscal': 'Notas Fiscais',
+    'painel_fiscal': 'Contábil',
 
     // NFS-e
     'nfse': 'NFS-e',
@@ -446,6 +452,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'dashboard_dp': 'Departamento Pessoal',
 
     // Contábil
+    'escrituracao_fiscal': 'Contábil',
+    'diagnostico_esocial': 'Contábil',
+    'gestao_xml': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',
@@ -1548,6 +1557,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
           ),
         );
+        break;
+      case "Escrituração Fiscal":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const EscrituracaoListScreen()));
+        break;
+      case "Diagnóstico eSocial":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticoEsocialScreen()));
+        break;
+      case "Gestão de XML":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const GestaoXmlScreen()));
         break;
       case "Painel Fiscal":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const PainelFiscalScreen()));
@@ -2685,7 +2703,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.rule, 'Regras Fiscais'),
             _MoreMenuAction(Icons.fact_check, 'Obrigações Fiscais'),
             _MoreMenuAction(Icons.calendar_month, 'Calendário Tributário'),
-            _MoreMenuAction(Icons.speed, 'Painel Fiscal'),
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
           ],
         ),
@@ -2726,6 +2743,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           'Contábil & IA',
           Icons.account_tree,
           [
+            _MoreMenuAction(Icons.speed, 'Painel Fiscal'),
+            _MoreMenuAction(Icons.menu_book, 'Escrituração Fiscal'),
+            _MoreMenuAction(Icons.fact_check, 'Diagnóstico eSocial'),
+            _MoreMenuAction(Icons.folder_zip, 'Gestão de XML'),
             _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
             _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
             _MoreMenuAction(Icons.scale, 'Balancete'),

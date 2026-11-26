@@ -1693,6 +1693,8 @@ class _EndpointsTestTabState extends State<_EndpointsTestTab> {
     '/api/financeiro/forma-pagamento/{id}',
     '/api/dashboard/obrigacoes',
     '/api/painel-fiscal',
+    '/api/diagnostico-esocial',
+    '/api/gestao-xml',
     '/api/dashboard/painel-clientes',
     '/api/dashboard/calendario-tributario',
     '/api/dashboard/cliente-resumo',
