@@ -170,6 +170,9 @@ import '../../widgets/dashboards_personalizados_view.dart';
 import '../../widgets/relatorio_construtor_view.dart';
 import '../../widgets/relatorios_personalizados_view.dart';
 import '../../widgets/planilha_view.dart';
+import '../../widgets/planilha_construtor_view.dart';
+import '../../widgets/tela_publicada_view.dart';
+import '../../services/menu_publicado_service.dart';
 import '../../utils/abrir_tela_construida.dart';
 import '../../widgets/mdfe_emissao_view.dart';
 import '../../web/screens/nfse_serie_grid_screen.dart';
@@ -204,6 +207,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   @override
   void initState() {
     super.initState();
+    MenuConfig.versao.addListener(_aoMudarMenuPublicado);
+    MenuPublicadoService().carregarNoMenu();
     _loadUserAndInit();
   }
 
@@ -241,8 +246,13 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     return null;
   }
 
+  void _aoMudarMenuPublicado() {
+    if (mounted) setState(() {});
+  }
+
   OpenTab _buildTab(int screenIndex) {
     final menuItem = _menuItemForScreenIndex(screenIndex);
+    final publicado = screenIndex >= MenuConfig.kIndicePublicado;
     final widgetIndex = screenIndex.clamp(0, _screens.length - 1);
     return OpenTab(
       id: 'screen_$screenIndex',
@@ -250,7 +260,10 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       icon: menuItem?.icon ?? FontAwesomeIcons.fileLines,
       content: KeyedSubtree(
         key: ValueKey('screen_$screenIndex'),
-        child: _screens[widgetIndex],
+        child: publicado
+            ? TelaPublicadaView(
+              item: MenuPublicadoService.porIndice(screenIndex), construirTela: gradeTelaConstruidaWindows)
+            : _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
       openedAt: DateTime.now(),
@@ -620,6 +633,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const RelatorioConstrutorView(), // 216: Construtor de Relatorios
         WebCfopGridScreen(hasPermission: (perm) => true), // 217: CFOP
         const PlanilhaView(), // 218: Planilhas
+      const PlanilhaConstrutorView(), // 219: Construtor de Planilhas
       ];
 
   String get userName {
@@ -1021,6 +1035,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
 
   @override
   void dispose() {
+    MenuConfig.versao.removeListener(_aoMudarMenuPublicado);
     notificationOverlay?.remove();
     super.dispose();
   }

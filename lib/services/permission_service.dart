@@ -155,6 +155,7 @@ class PermissionService {
     'construtor_dashboards': 'construtor_dashboards',
     'relatorios_personalizados': 'relatorios_personalizados',
     'planilhas': 'planilhas',
+    'construtor_planilhas': 'construtor_planilhas',
     'construtor_relatorios': 'construtor_relatorios',
 
     // Financeiro
@@ -323,6 +324,8 @@ class PermissionService {
 
   /// Obter telaNome para um menuItem.id
   static String? _getTelaNomeForMenuItem(String menuItemId) {
+    // itens publicados pela empresa usam o proprio id como telaNome ("pub_{id}")
+    if (menuItemId.startsWith('pub_')) return menuItemId;
     return _menuIdToTelaNome[menuItemId];
   }
 

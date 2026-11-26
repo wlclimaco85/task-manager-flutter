@@ -30,3 +30,19 @@ void abrirTelaConstruidaMobile(BuildContext context, TelaConstruida tela) {
     ),
   ));
 }
+
+/// Grade da tela construida sem navegacao propria, para os itens publicados no menu (Web/Windows).
+Widget gradeTelaConstruidaWindows(TelaConstruida tela) => DynamicGridWindowsScreen<Map<String, dynamic>>(
+      telaNome: tela.telaNome,
+      hasPermission: (_) => true,
+      fromJson: (m) => m,
+      toJson: (m) => m,
+      showAppBar: false,
+    );
+
+/// A mesma grade no Mobile.
+Widget gradeTelaConstruidaMobile(TelaConstruida tela) => DynamicGridDynamicScreen(
+      telaNome: tela.telaNome,
+      hasPermission: (_) => true,
+      tituloOverride: tela.titulo,
+    );

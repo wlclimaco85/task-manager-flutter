@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/dashboard_personalizado_service.dart' show DashFiltro;
 import '../services/relatorio_personalizado_service.dart';
 import '../utils/app_logger.dart';
+import 'publicar_menu_dialog.dart';
 import 'dashboard_componente_view.dart';
 import 'relatorio_designer_view.dart';
 import '../utils/file_saver_compat.dart';
@@ -137,6 +138,10 @@ class _RelatorioConstrutorViewState extends State<RelatorioConstrutorView> {
                             title: Text(r.titulo),
                             subtitle: Text('${r.grupo ?? 'Sem grupo'}${r.ativo ? '' : ' · inativo'}'),
                             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                              IconButton(
+                                  tooltip: 'Publicar no menu',
+                                  onPressed: () => publicarNoMenu(context, tipo: 'RELATORIO', refId: r.id!, titulo: r.titulo),
+                                  icon: const Icon(Icons.menu_open)),
                               IconButton(tooltip: 'Editar', onPressed: () => _editar(r), icon: const Icon(Icons.edit_outlined)),
                               IconButton(tooltip: 'Excluir', onPressed: () => _excluir(r), icon: const Icon(Icons.delete_outline)),
                             ]),

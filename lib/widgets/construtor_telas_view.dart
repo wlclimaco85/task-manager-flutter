@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/construtor_telas_service.dart';
 import '../utils/app_logger.dart';
+import 'publicar_menu_dialog.dart';
 
 /// Abre a tela construida para o usuario ver como ela ficou (cada plataforma passa o seu construtor de grid).
 typedef AbrirTelaConstruida = void Function(BuildContext context, TelaConstruida tela);
@@ -158,6 +159,10 @@ class _ConstrutorTelasViewState extends State<ConstrutorTelasView> {
                                     tooltip: 'Abrir',
                                     onPressed: () => widget.abrir!(context, t),
                                     icon: const Icon(Icons.open_in_new)),
+                              IconButton(
+                                  tooltip: 'Publicar no menu',
+                                  onPressed: () => publicarNoMenu(context, tipo: 'TELA', refId: t.id!, titulo: t.titulo),
+                                  icon: const Icon(Icons.menu_open)),
                               Switch(value: t.ativo, onChanged: (v) => _alternar(t, v)),
                               IconButton(
                                   tooltip: 'Excluir',
