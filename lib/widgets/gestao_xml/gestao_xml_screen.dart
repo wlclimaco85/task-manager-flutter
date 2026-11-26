@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../../services/session_expired_handler.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/file_saver_compat.dart';
@@ -136,6 +137,8 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
       final r = widget.enviar != null
           ? await widget.enviar!(url, corpo)
           : await http.post(Uri.parse(url), headers: TenantContext.jsonHeaders, body: corpo);
+      // Este POST não passa pelo TenantContext.post: o 401 é tratado aqui.
+      if (r.statusCode == 401) SessionExpiredHandler.handle();
       if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
       if (widget.salvar != null) {
         await widget.salvar!(r.bodyBytes);

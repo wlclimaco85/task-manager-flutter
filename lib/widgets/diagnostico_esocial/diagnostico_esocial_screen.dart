@@ -334,7 +334,7 @@ class _DiagnosticoEsocialScreenState extends State<DiagnosticoEsocialScreen> {
         final vistos = <String>{};
         for (final p in _pendencias(f, grupo)) {
           final codigo = '${p['codigo']}';
-          rotulos[codigo] = codigo == 'DEPENDENTE' ? '${p['problema']}' : '${p['problema']}';
+          rotulos[codigo] = '${p['problema']}';
           if (vistos.add(codigo)) contagem.update(codigo, (n) => n + 1, ifAbsent: () => 1);
         }
       }
