@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../constants/custom_colors.dart';
 import '../../features/agendamento/agendamento_module.dart';
 import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
+import '../../widgets/painel_fiscal/painel_fiscal_screen.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
@@ -659,6 +660,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebCfopGridScreen(hasPermission: (p) => true), // 217: CFOP
       const PlanilhaView(), // 218: Planilhas
       const PlanilhaConstrutorView(), // 219: Construtor de Planilhas
+      const PainelFiscalScreen(), // 220: Painel Fiscal
     ];
   }
 
