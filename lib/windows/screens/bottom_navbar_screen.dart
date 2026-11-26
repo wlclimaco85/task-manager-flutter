@@ -7,6 +7,9 @@ import '../../constants/custom_colors.dart';
 import '../../features/agendamento/agendamento_module.dart';
 import '../../widgets/login_empresa_acesso_aprovacao_screen.dart';
 import '../../widgets/painel_fiscal/painel_fiscal_screen.dart';
+import '../../features/escrituracao_fiscal/screens/escrituracao_list_screen.dart';
+import '../../widgets/diagnostico_esocial/diagnostico_esocial_screen.dart';
+import '../../widgets/gestao_xml/gestao_xml_screen.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
@@ -636,6 +639,9 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const PlanilhaView(), // 218: Planilhas
       const PlanilhaConstrutorView(), // 219: Construtor de Planilhas
       const PainelFiscalScreen(), // 220: Painel Fiscal
+      const EscrituracaoListScreen(), // 221: Escrituracao Fiscal
+      const DiagnosticoEsocialScreen(), // 222: Diagnostico eSocial
+      const GestaoXmlScreen(), // 223: Gestao de XML
       ];
 
   String get userName {

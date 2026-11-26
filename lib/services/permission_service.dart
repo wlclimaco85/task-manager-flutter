@@ -132,6 +132,9 @@ class PermissionService {
     'cancelamento_cce': 'CancelamentoCCe',
     'dashboard_fiscal': 'DashboardFiscal',
     'painel_fiscal': 'painel_fiscal',
+    'escrituracao_fiscal': 'escrituracao_fiscal',
+    'diagnostico_esocial': 'diagnostico_esocial',
+    'gestao_xml': 'gestao_xml',
     'agendamento_nfe': 'AgendamentoNFeRecorrente',
     // Bug de producao (2026-09-16, ver bugs.md): telas criadas sem entrada
     // aqui nunca aparecem em Controle de Acesso (RolePermissionCatalog

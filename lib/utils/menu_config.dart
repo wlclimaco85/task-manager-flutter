@@ -146,11 +146,6 @@ class MenuConfig {
         // Série e Dashboard fiscal ficam aqui por serem conceitos COMUNS
         // entre NF-e/NFS-e/NFC-e
         MenuItem(
-            id: 'painel_fiscal',
-            label: 'Painel Fiscal',
-            icon: FontAwesomeIcons.gaugeHigh,
-            screenIndex: 220),
-        MenuItem(
             id: 'dashboard_fiscal',
             label: 'Dashboard Fiscal',
             icon: FontAwesomeIcons.chartPie,
@@ -591,6 +586,26 @@ class MenuConfig {
       label: 'Contábil',
       icon: FontAwesomeIcons.fileInvoiceDollar,
       items: [
+        MenuItem(
+            id: 'painel_fiscal',
+            label: 'Painel Fiscal',
+            icon: FontAwesomeIcons.gaugeHigh,
+            screenIndex: 220),
+        MenuItem(
+            id: 'escrituracao_fiscal',
+            label: 'Escrituração Fiscal',
+            icon: FontAwesomeIcons.book,
+            screenIndex: 221),
+        MenuItem(
+            id: 'diagnostico_esocial',
+            label: 'Diagnóstico eSocial',
+            icon: FontAwesomeIcons.clipboardCheck,
+            screenIndex: 222),
+        MenuItem(
+            id: 'gestao_xml',
+            label: 'Gestão de XML',
+            icon: FontAwesomeIcons.fileZipper,
+            screenIndex: 223),
         MenuItem(
             id: 'conta_contabil',
             label: 'Plano de Contas',

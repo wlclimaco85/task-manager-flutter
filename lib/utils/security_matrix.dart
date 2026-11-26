@@ -984,7 +984,7 @@ class ModuloAccess {
     'obrigacoes_fiscais': 'Notas Fiscais',
     'calendario_tributario': 'Notas Fiscais',
     'dashboard_fiscal': 'Notas Fiscais',
-    'painel_fiscal': 'Notas Fiscais',
+    'painel_fiscal': 'Contábil',
     'regra_fiscal': 'Notas Fiscais',
 
     // NFS-e
@@ -1006,6 +1006,9 @@ class ModuloAccess {
     'relatorio_dp_rh': 'Departamento Pessoal',
 
     // Contábil
+    'escrituracao_fiscal': 'Contábil',
+    'diagnostico_esocial': 'Contábil',
+    'gestao_xml': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',
