@@ -648,8 +648,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         return PermissionService().canViewScreen('agendamento_nfe') ||
             PermissionService().canViewScreen('pdv_nfce') ||
             PermissionService().canViewScreen('nfe_saida') ||
-            PermissionService().canViewScreen('dashboard_fiscal') ||
-            PermissionService().canViewScreen('painel_fiscal');
+            PermissionService().canViewScreen('dashboard_fiscal');
       }
       return PermissionService().canViewScreen(menuItemId);
     }
