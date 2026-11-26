@@ -36,11 +36,8 @@ void main() {
     expect(find.text('Módulo contratado'), findsOneWidget);
     expect(find.text('Pacote completo'), findsOneWidget);
 
-    // Módulos opcionais (Imagem 2)
-    expect(find.text('Módulos que podem ser contratados'), findsOneWidget);
-    expect(find.text('Fiscal e NF-e'), findsOneWidget);
-    expect(find.text('GME'), findsOneWidget);
-    expect(find.text('Transporte'), findsOneWidget);
+    // Módulos opcionais vêm do Painel do Dono (ver login_modulos_publicos_test.dart)
+    expect(find.text('GME'), findsNothing);
 
     // Flash News lateral (Imagem 3)
     expect(find.text('FLASH NEWS'), findsOneWidget);

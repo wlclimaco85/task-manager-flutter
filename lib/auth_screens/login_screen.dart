@@ -24,12 +24,15 @@ import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
 import 'trial_request_dialog.dart';
+import 'login_modulos_publicos.dart';
 
 const String _playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.appacademia.taskmanager';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final Future<List<ModuloPublico>> Function() carregarModulos;
+
+  const LoginScreen({super.key, this.carregarModulos = carregarModulosPublicos});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -44,12 +47,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   String _loginStepMessage = 'Autenticando credenciais...';
   bool _loadingNoticias = true;
+  List<ModuloPublico> _modulos = const [];
   List<Map<String, dynamic>> _noticias = [];
 
   @override
   void initState() {
     super.initState();
     _carregarNoticias();
+    _carregarModulos();
+  }
+
+  Future<void> _carregarModulos() async {
+    final modulos = await widget.carregarModulos();
+    if (mounted) setState(() => _modulos = modulos);
   }
 
   @override
@@ -482,7 +492,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Expanded(
                                     flex: 7,
                                     child: _SystemModulesShowcase(
-                                        width: 1400.0 - 16 - 360),
+                                        width: 1400.0 - 16 - 360, modulos: _modulos),
                                   ),
                                   const SizedBox(width: 16),
                                   // Right Side: Flash News List (Image 3 style)
@@ -525,7 +535,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onLogin: _login,
                                 ),
                                 const SizedBox(height: 20),
-                                _SystemModulesShowcase(),
+                                _SystemModulesShowcase(modulos: _modulos),
                               ],
                             ),
                           ),
@@ -1243,7 +1253,9 @@ class _SystemModulesShowcase extends StatelessWidget {
   /// a largura e' descoberta em tempo real via LayoutBuilder.
   final double? width;
 
-  const _SystemModulesShowcase({this.width});
+  final List<ModuloPublico> modulos;
+
+  const _SystemModulesShowcase({this.width, required this.modulos});
 
   @override
   Widget build(BuildContext context) {
@@ -1269,9 +1281,10 @@ class _SystemModulesShowcase extends StatelessWidget {
         const SizedBox(height: 4),
         _buildModuleGrid(_includedModules, isIncluded: true),
 
+        // 3. Seção: Módulos que podem ser contratados (só os ativos do Painel do Dono)
+        if (modulos.isNotEmpty) ...[
         const SizedBox(height: 6),
 
-        // 3. Seção: Módulos que podem ser contratados
         const Text(
           'Módulos que podem ser contratados',
           style: TextStyle(
@@ -1282,7 +1295,11 @@ class _SystemModulesShowcase extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        _buildModuleGrid(_optionalModules, isIncluded: false),
+        _buildModuleGrid([
+          for (final m in modulos)
+            _LoginModule(title: m.nome, description: m.descricao, icon: m.icone, badge: 'Opcional'),
+        ], isIncluded: false),
+        ],
       ],
     );
   }
@@ -1380,82 +1397,6 @@ class _SystemModulesShowcase extends StatelessWidget {
     ),
   ];
 
-  static const List<_LoginModule> _optionalModules = [
-    _LoginModule(
-      title: 'Fiscal e NF-e',
-      description: 'XML, SPED, SINTEGRA, entradas, saídas e tributação.',
-      icon: Icons.receipt_long_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'GME',
-      description:
-          'Gestor Micro Empreendedor para vendas, compras, produção e rotina operacional.',
-      icon: Icons.storefront_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'NFS-e',
-      description: 'Nota fiscal de serviço, prefeitura, tomador e serviços.',
-      icon: Icons.description_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'NFC-e',
-      description: 'Cupons fiscais, PDV, pagamentos e emissão para varejo.',
-      icon: Icons.point_of_sale_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Transporte',
-      description: 'MDF-e, CT-e, veículos e motoristas para transportadoras.',
-      icon: Icons.local_shipping_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Precificação de contratos',
-      description: 'Regras, reajustes e margens para contratos recorrentes.',
-      icon: Icons.handshake_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Service Desk',
-      description: 'SLA, filas, transferência e operação de suporte.',
-      icon: Icons.headset_mic_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Projetos',
-      description: 'Organização de entregas, etapas, responsáveis e status.',
-      icon: Icons.account_tree_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Precificação',
-      description: 'Cálculo comercial para serviços, pacotes e propostas.',
-      icon: Icons.sell_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Financeiro avançado',
-      description:
-          'Régua de cobrança, kanban de pagamentos e conciliação bancária.',
-      icon: Icons.insights_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'DRE gerencial',
-      description: 'Indicadores de resultado, margem e análise de performance.',
-      icon: Icons.stacked_line_chart_outlined,
-      badge: 'Opcional',
-    ),
-    _LoginModule(
-      title: 'Estoque e giro',
-      description: 'Controle de estoque, giro de produto e alertas de reposição.',
-      icon: Icons.inventory_2_outlined,
-      badge: 'Opcional',
-    ),
-  ];
 }
 
 class _ModuleCard extends StatelessWidget {
