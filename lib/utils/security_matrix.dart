@@ -1010,6 +1010,7 @@ class ModuloAccess {
     'diagnostico_esocial': 'Contábil',
     'gestao_xml': 'Contábil',
     'intercambio_contabil': 'Contábil',
+    'controle_obrigacoes': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',

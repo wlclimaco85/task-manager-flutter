@@ -612,6 +612,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.rightLeft,
             screenIndex: 224),
         MenuItem(
+            id: 'controle_obrigacoes',
+            label: 'Controle de Obrigações',
+            icon: FontAwesomeIcons.listCheck,
+            screenIndex: 225),
+        MenuItem(
             id: 'conta_contabil',
             label: 'Plano de Contas',
             icon: FontAwesomeIcons.tableList,
