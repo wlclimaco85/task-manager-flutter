@@ -1697,6 +1697,7 @@ class _EndpointsTestTabState extends State<_EndpointsTestTab> {
     '/api/gestao-xml',
     '/api/intercambio-contabil/plano-contas',
     '/api/controle-obrigacoes',
+    '/api/captura-dfe',
     '/api/dashboard/painel-clientes',
     '/api/dashboard/calendario-tributario',
     '/api/dashboard/cliente-resumo',

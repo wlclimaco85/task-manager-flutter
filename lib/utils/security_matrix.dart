@@ -1011,6 +1011,7 @@ class ModuloAccess {
     'gestao_xml': 'Contábil',
     'intercambio_contabil': 'Contábil',
     'controle_obrigacoes': 'Contábil',
+    'captura_nfe': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',

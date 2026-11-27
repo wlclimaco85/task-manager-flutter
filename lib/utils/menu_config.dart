@@ -617,6 +617,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.listCheck,
             screenIndex: 225),
         MenuItem(
+            id: 'captura_nfe',
+            label: 'Captura de NF-e',
+            icon: FontAwesomeIcons.cloudArrowDown,
+            screenIndex: 226),
+        MenuItem(
             id: 'conta_contabil',
             label: 'Plano de Contas',
             icon: FontAwesomeIcons.tableList,

@@ -13,6 +13,7 @@ import '../../widgets/diagnostico_esocial/diagnostico_esocial_screen.dart';
 import '../../widgets/gestao_xml/gestao_xml_screen.dart';
 import '../../widgets/intercambio_contabil/intercambio_contabil_screen.dart';
 import '../../widgets/controle_obrigacoes/controle_obrigacoes_screen.dart';
+import '../../widgets/captura_nfe/captura_nfe_screen.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
@@ -671,6 +672,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const GestaoXmlScreen(), // 223: Gestao de XML
       const IntercambioContabilScreen(), // 224: Importar e Exportar Contabil
       const ControleObrigacoesScreen(), // 225: Controle de Obrigacoes
+      const CapturaNfeScreen(), // 226: Captura de NF-e
     ];
   }
 
