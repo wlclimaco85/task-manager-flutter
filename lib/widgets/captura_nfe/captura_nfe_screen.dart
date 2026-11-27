@@ -24,6 +24,7 @@ const _tipos = {
   'NOTA': ('Nota', Icons.description, GridColors.success, GridColors.successLight),
   'RESUMO': ('Resumo', Icons.short_text, GridColors.warningDark, GridColors.suggestionMedium),
   'EVENTO': ('Evento', Icons.bolt, GridColors.info, GridColors.card),
+  'ERRO': ('Ilegível', Icons.error, GridColors.errorDark, GridColors.errorLight),
 };
 
 String _dataHora(Object? iso) => DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse('$iso'));
