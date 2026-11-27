@@ -1,3 +1,5 @@
+import '../../../utils/grid_colors.dart';
+import '../../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../../models/escrituracao_fiscal_model.dart';
 import '../../../models/item_escrituracao_model.dart';
@@ -6,7 +8,9 @@ import '../../../utils/grid_texts.dart';
 
 class EscrituracaoDetalheScreen extends StatefulWidget {
   final EscrituracaoFiscal escrituracao;
-  const EscrituracaoDetalheScreen({super.key, required this.escrituracao});
+  final bool cabecalhoMobile;
+  const EscrituracaoDetalheScreen(
+      {super.key, required this.escrituracao, this.cabecalhoMobile = false});
 
   @override
   State<EscrituracaoDetalheScreen> createState() =>
@@ -114,13 +118,13 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
   Color _statusColor(String status) {
     switch (status) {
       case 'RASCUNHO':
-        return Colors.orange;
+        return GridColors.warningDark;
       case 'CONFERIDA':
-        return Colors.blue;
+        return GridColors.info;
       case 'FECHADA':
-        return Colors.green;
+        return GridColors.success;
       default:
-        return Colors.grey;
+        return GridColors.neutral;
     }
   }
 
@@ -131,7 +135,25 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
     final podeAcao = podeConferir || podeFechar;
 
     return Scaffold(
-      appBar: AppBar(
+      backgroundColor: GridColors.pageBackground,
+      // No celular usa o cabeçalho padrão do app (usuário, avisos e sair).
+      appBar: widget.cabecalhoMobile
+          ? UserBannerAppBar(
+              screenTitle: 'Escrituração ${_esc.periodo}',
+              showBackButton: true,
+              showFilterButton: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Atualizar',
+                  color: GridColors.textPrimary,
+                  onPressed: _loadItens,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          : AppBar(
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.textPrimary,
         title: Text('Escrituração ${_esc.periodo}'),
         actions: [
           IconButton(
@@ -150,7 +172,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.error_outline,
-                            size: 48, color: Colors.redAccent),
+                            size: 48, color: GridColors.errorDark),
                         const SizedBox(height: 12),
                         Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 16),
@@ -189,7 +211,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
                         child: _itens.isEmpty
                             ? const Center(
                                 child: Text('Nenhum item encontrado.',
-                                    style: TextStyle(color: Colors.grey)),
+                                    style: TextStyle(color: GridColors.neutral)),
                               )
                             : ListView.separated(
                                 itemCount: _itens.length,
@@ -209,15 +231,15 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
                 if (podeConferir)
                   FloatingActionButton.extended(
                     heroTag: 'conferir',
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GridColors.info,
+                    foregroundColor: GridColors.textPrimary,
                     onPressed: _actionLoading ? null : _conferir,
                     icon: _actionLoading
                         ? const SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2, color: GridColors.textPrimary),
                           )
                         : const Icon(Icons.check_circle_outline),
                     label: const Text('Conferir'),
@@ -226,15 +248,15 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
                   const SizedBox(height: 12),
                   FloatingActionButton.extended(
                     heroTag: 'fechar',
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GridColors.success,
+                    foregroundColor: GridColors.textPrimary,
                     onPressed: _actionLoading ? null : _fechar,
                     icon: _actionLoading
                         ? const SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2, color: GridColors.textPrimary),
                           )
                         : const Icon(Icons.lock_outline),
                     label: const Text('Fechar'),
@@ -309,7 +331,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: const TextStyle(color: Colors.grey)),
+            child: Text(label, style: const TextStyle(color: GridColors.neutral)),
           ),
           Expanded(
             child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -323,11 +345,11 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: item.status == 'OK'
-            ? Colors.green.withValues(alpha: 0.15)
-            : Colors.red.withValues(alpha: 0.15),
+            ? GridColors.success.withValues(alpha: 0.15)
+            : GridColors.errorDark.withValues(alpha: 0.15),
         child: Icon(
           item.status == 'OK' ? Icons.check : Icons.warning,
-          color: item.status == 'OK' ? Colors.green : Colors.red,
+          color: item.status == 'OK' ? GridColors.success : GridColors.errorDark,
           size: 20,
         ),
       ),
@@ -350,18 +372,18 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
               item.inconsistencia!.isNotEmpty)
             Text(
               item.inconsistencia!,
-              style: const TextStyle(fontSize: 11, color: Colors.redAccent),
+              style: const TextStyle(fontSize: 11, color: GridColors.errorDark),
             ),
         ],
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: (item.status == 'OK' ? Colors.green : Colors.red)
+          color: (item.status == 'OK' ? GridColors.success : GridColors.errorDark)
               .withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: (item.status == 'OK' ? Colors.green : Colors.red)
+            color: (item.status == 'OK' ? GridColors.success : GridColors.errorDark)
                 .withValues(alpha: 0.5),
           ),
         ),
@@ -370,7 +392,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: item.status == 'OK' ? Colors.green : Colors.red,
+            color: item.status == 'OK' ? GridColors.success : GridColors.errorDark,
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import '../user_banners.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show Uint8List;
@@ -28,12 +29,15 @@ const _status = {
 
 /// Central dos XMLs de NF-e guardados no sistema, com download em ZIP.
 class GestaoXmlScreen extends StatefulWidget {
+  /// true quando a tela é aberta pelo menu do celular.
+  final bool cabecalhoMobile;
+
   /// Substituíveis em teste.
   final Future<http.Response> Function(String url)? buscar;
   final Future<http.Response> Function(String url, String corpo)? enviar;
   final Future<void> Function(Uint8List bytes)? salvar;
 
-  const GestaoXmlScreen({super.key, this.buscar, this.enviar, this.salvar});
+  const GestaoXmlScreen({super.key, this.cabecalhoMobile = false, this.buscar, this.enviar, this.salvar});
 
   @override
   State<GestaoXmlScreen> createState() => _GestaoXmlScreenState();
@@ -164,7 +168,22 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
-      appBar: AppBar(
+      // No celular usa o cabeçalho padrão do app (usuário, avisos e sair).
+      appBar: widget.cabecalhoMobile
+          ? UserBannerAppBar(
+              screenTitle: 'Gestão de XML',
+              showBackButton: true,
+              showFilterButton: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Atualizar',
+                  color: GridColors.textPrimary,
+                  onPressed: _carregando ? null : _carregar,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          : AppBar(
         title: const Text('Gestão de XML'),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,

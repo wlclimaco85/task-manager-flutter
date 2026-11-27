@@ -1,3 +1,4 @@
+import '../user_banners.dart';
 import 'dart:convert';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -56,10 +57,13 @@ const _semRegime = -1;
 
 /// Painel Fiscal: a carteira de clientes em um só lugar. Os números vêm calculados do backend.
 class PainelFiscalScreen extends StatefulWidget {
+  /// true quando a tela é aberta pelo menu do celular.
+  final bool cabecalhoMobile;
+
   /// Substituível em teste.
   final Future<http.Response> Function(String url)? buscar;
 
-  const PainelFiscalScreen({super.key, this.buscar});
+  const PainelFiscalScreen({super.key, this.cabecalhoMobile = false, this.buscar});
 
   @override
   State<PainelFiscalScreen> createState() => _PainelFiscalScreenState();
@@ -158,7 +162,22 @@ class _PainelFiscalScreenState extends State<PainelFiscalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
-      appBar: AppBar(
+      // No celular usa o cabeçalho padrão do app (usuário, avisos e sair).
+      appBar: widget.cabecalhoMobile
+          ? UserBannerAppBar(
+              screenTitle: 'Painel Fiscal',
+              showBackButton: true,
+              showFilterButton: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Atualizar',
+                  color: GridColors.textPrimary,
+                  onPressed: _carregando ? null : _carregar,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          : AppBar(
         title: const Text('Painel Fiscal'),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,
