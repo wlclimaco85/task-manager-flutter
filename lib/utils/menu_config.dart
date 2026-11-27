@@ -607,6 +607,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.fileZipper,
             screenIndex: 223),
         MenuItem(
+            id: 'intercambio_contabil',
+            label: 'Importar e Exportar Contábil',
+            icon: FontAwesomeIcons.rightLeft,
+            screenIndex: 224),
+        MenuItem(
             id: 'conta_contabil',
             label: 'Plano de Contas',
             icon: FontAwesomeIcons.tableList,
