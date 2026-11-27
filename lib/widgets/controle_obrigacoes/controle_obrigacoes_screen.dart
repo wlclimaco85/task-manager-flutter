@@ -109,6 +109,10 @@ class _ControleObrigacoesScreenState extends State<ControleObrigacoesScreen> {
           return v != 0 ? v : '${a['empresa']}'.compareTo('${b['empresa']}');
         });
       setState(() {
+        // Filtro que não existe no mês carregado ficaria ativo sem aparecer na tela.
+        if (!linhas.any((l) => l['parceiroId'] == _empresaId)) _empresaId = null;
+        if (!linhas.any((l) => l['regimeId'] == _regimeId)) _regimeId = null;
+        if (!linhas.any((l) => l['obrigacao'] == _obrigacao)) _obrigacao = null;
         _linhas = linhas;
         _erro = null;
         _carregando = false;
