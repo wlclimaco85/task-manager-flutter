@@ -1,4 +1,5 @@
 import '../../../utils/grid_colors.dart';
+import '../../../utils/app_logger.dart';
 import '../../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../../services/escrituracao_fiscal_service.dart';
@@ -48,6 +49,7 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
         _loading = false;
       });
     } catch (e) {
+      AppLogger.i.warn('escrituracao_list_screen: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString();
@@ -127,6 +129,7 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
       );
       _load();
     } catch (e) {
+      AppLogger.i.warn('escrituracao_list_screen: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao gerar: $e')),

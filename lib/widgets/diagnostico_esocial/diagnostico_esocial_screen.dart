@@ -73,6 +73,8 @@ class _DiagnosticoEsocialScreenState extends State<DiagnosticoEsocialScreen> {
       final corpo = jsonDecode(utf8.decode(r.bodyBytes)) as _Json;
       setState(() {
         _todos = (corpo['funcionarios'] as List).cast<_Json>();
+        // a empresa-cliente filtrada pode nao vir nos dados novos: o dropdown nao pode ficar com valor fora da lista
+        if (!_todos!.any((x) => x['contratanteId'] == _contratanteId)) _contratanteId = null;
         _erro = null;
         _carregando = false;
       });

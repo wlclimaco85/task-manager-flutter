@@ -1,4 +1,5 @@
 import '../../../utils/grid_colors.dart';
+import '../../../utils/app_logger.dart';
 import '../../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../../models/escrituracao_fiscal_model.dart';
@@ -45,6 +46,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         _loading = false;
       });
     } catch (e) {
+      AppLogger.i.warn('escrituracao_detalhe_screen: $e');
       if (!mounted) return;
       setState(() {
         _error = e.toString();
@@ -66,6 +68,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         const SnackBar(content: Text('Escrituração conferida com sucesso!')),
       );
     } catch (e) {
+      AppLogger.i.warn('escrituracao_detalhe_screen: $e');
       if (!mounted) return;
       setState(() => _actionLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,6 +110,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         const SnackBar(content: Text('Escrituração fechada com sucesso!')),
       );
     } catch (e) {
+      AppLogger.i.warn('escrituracao_detalhe_screen: $e');
       if (!mounted) return;
       setState(() => _actionLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
