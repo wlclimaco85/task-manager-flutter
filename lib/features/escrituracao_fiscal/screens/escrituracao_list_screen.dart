@@ -1,3 +1,5 @@
+import '../../../utils/grid_colors.dart';
+import '../../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../../services/escrituracao_fiscal_service.dart';
 import '../../../models/escrituracao_fiscal_model.dart';
@@ -6,7 +8,8 @@ import 'escrituracao_detalhe_screen.dart';
 import '../../../utils/grid_texts.dart';
 
 class EscrituracaoListScreen extends StatefulWidget {
-  const EscrituracaoListScreen({super.key});
+  final bool cabecalhoMobile;
+  const EscrituracaoListScreen({super.key, this.cabecalhoMobile = false});
 
   @override
   State<EscrituracaoListScreen> createState() => _EscrituracaoListScreenState();
@@ -135,7 +138,8 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EscrituracaoDetalheScreen(escrituracao: esc),
+        builder: (_) => EscrituracaoDetalheScreen(
+            escrituracao: esc, cabecalhoMobile: widget.cabecalhoMobile),
       ),
     );
     _load();
@@ -144,20 +148,38 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
   Color _statusColor(String status) {
     switch (status) {
       case 'RASCUNHO':
-        return Colors.orange;
+        return GridColors.warningDark;
       case 'CONFERIDA':
-        return Colors.blue;
+        return GridColors.info;
       case 'FECHADA':
-        return Colors.green;
+        return GridColors.success;
       default:
-        return Colors.grey;
+        return GridColors.neutral;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      backgroundColor: GridColors.pageBackground,
+      // No celular usa o cabeçalho padrão do app (usuário, avisos e sair).
+      appBar: widget.cabecalhoMobile
+          ? UserBannerAppBar(
+              screenTitle: 'Escrituração Fiscal',
+              showBackButton: true,
+              showFilterButton: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Atualizar',
+                  color: GridColors.textPrimary,
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          : AppBar(
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.textPrimary,
         title: const Text('Escrituração Fiscal'),
         actions: [
           IconButton(
@@ -187,7 +209,7 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const Icon(Icons.error_outline, size: 48, color: GridColors.errorDark),
               const SizedBox(height: 12),
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -206,13 +228,13 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.description_outlined, size: 64, color: Colors.grey),
+            Icon(Icons.description_outlined, size: 64, color: GridColors.neutral),
             SizedBox(height: 16),
             Text('Nenhuma escrituração encontrada',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
+                style: TextStyle(fontSize: 16, color: GridColors.neutral)),
             SizedBox(height: 8),
             Text('Clique em "Gerar" para criar uma nova.',
-                style: TextStyle(color: Colors.grey)),
+                style: TextStyle(color: GridColors.neutral)),
           ],
         ),
       );
@@ -267,7 +289,7 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: Colors.grey),
+                const Icon(Icons.chevron_right, color: GridColors.neutral),
               ],
             ),
           );

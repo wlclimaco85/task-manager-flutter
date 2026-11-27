@@ -1,3 +1,4 @@
+import '../user_banners.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -21,10 +22,13 @@ enum _Gravidade {
 
 /// Confere o cadastro dos funcionários antes do eSocial. Não transmite nem consulta o governo.
 class DiagnosticoEsocialScreen extends StatefulWidget {
+  /// true quando a tela é aberta pelo menu do celular.
+  final bool cabecalhoMobile;
+
   /// Substituível em teste.
   final Future<http.Response> Function(String url)? buscar;
 
-  const DiagnosticoEsocialScreen({super.key, this.buscar});
+  const DiagnosticoEsocialScreen({super.key, this.cabecalhoMobile = false, this.buscar});
 
   @override
   State<DiagnosticoEsocialScreen> createState() => _DiagnosticoEsocialScreenState();
@@ -115,7 +119,22 @@ class _DiagnosticoEsocialScreenState extends State<DiagnosticoEsocialScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
-      appBar: AppBar(
+      // No celular usa o cabeçalho padrão do app (usuário, avisos e sair).
+      appBar: widget.cabecalhoMobile
+          ? UserBannerAppBar(
+              screenTitle: 'Diagnóstico eSocial',
+              showBackButton: true,
+              showFilterButton: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Atualizar',
+                  color: GridColors.textPrimary,
+                  onPressed: _carregando ? null : _carregar,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            )
+          : AppBar(
         title: const Text('Diagnóstico eSocial'),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,

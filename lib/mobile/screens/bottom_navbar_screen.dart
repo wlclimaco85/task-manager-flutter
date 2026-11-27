@@ -1559,16 +1559,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Escrituração Fiscal":
-        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const EscrituracaoListScreen()));
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const EscrituracaoListScreen(cabecalhoMobile: true)));
         break;
       case "Diagnóstico eSocial":
-        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticoEsocialScreen()));
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticoEsocialScreen(cabecalhoMobile: true)));
         break;
       case "Gestão de XML":
-        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const GestaoXmlScreen()));
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const GestaoXmlScreen(cabecalhoMobile: true)));
         break;
       case "Painel Fiscal":
-        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const PainelFiscalScreen()));
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const PainelFiscalScreen(cabecalhoMobile: true)));
         break;
       case "Dashboard Fiscal":
         nav = Navigator.push(
