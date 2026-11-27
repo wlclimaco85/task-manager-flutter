@@ -1009,6 +1009,7 @@ class ModuloAccess {
     'escrituracao_fiscal': 'Contábil',
     'diagnostico_esocial': 'Contábil',
     'gestao_xml': 'Contábil',
+    'intercambio_contabil': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',

@@ -2,6 +2,7 @@ import '../../widgets/painel_fiscal/painel_fiscal_screen.dart';
 import '../../features/escrituracao_fiscal/screens/escrituracao_list_screen.dart';
 import '../../widgets/diagnostico_esocial/diagnostico_esocial_screen.dart';
 import '../../widgets/gestao_xml/gestao_xml_screen.dart';
+import '../../widgets/intercambio_contabil/intercambio_contabil_screen.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
@@ -267,6 +268,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Escrituração Fiscal': (menuId: 'escrituracao_fiscal', appScreen: null),
     'Diagnóstico eSocial': (menuId: 'diagnostico_esocial', appScreen: null),
     'Gestão de XML': (menuId: 'gestao_xml', appScreen: null),
+    'Importar e Exportar Contábil': (menuId: 'intercambio_contabil', appScreen: null),
     'Plano de Contas': (menuId: 'conta_contabil', appScreen: null),
     'Lançamentos Contábeis': (menuId: 'lancamento_contabil', appScreen: AppScreen.lancamentoContabil),
     'Balancete': (menuId: 'balancete', appScreen: AppScreen.balancete),
@@ -455,6 +457,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'escrituracao_fiscal': 'Contábil',
     'diagnostico_esocial': 'Contábil',
     'gestao_xml': 'Contábil',
+    'intercambio_contabil': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',
@@ -1563,6 +1566,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Diagnóstico eSocial":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticoEsocialScreen(cabecalhoMobile: true)));
+        break;
+      case "Importar e Exportar Contábil":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const IntercambioContabilScreen(cabecalhoMobile: true)));
         break;
       case "Gestão de XML":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const GestaoXmlScreen(cabecalhoMobile: true)));
@@ -2747,6 +2753,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.menu_book, 'Escrituração Fiscal'),
             _MoreMenuAction(Icons.fact_check, 'Diagnóstico eSocial'),
             _MoreMenuAction(Icons.folder_zip, 'Gestão de XML'),
+            _MoreMenuAction(Icons.import_export, 'Importar e Exportar Contábil'),
             _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
             _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
             _MoreMenuAction(Icons.scale, 'Balancete'),
