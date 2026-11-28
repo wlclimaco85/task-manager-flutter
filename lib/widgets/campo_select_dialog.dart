@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/menu_publicado_service.dart';
+import '../utils/campo_calculado.dart';
 import '../utils/grid_colors.dart';
 import '../utils/planilha_formula.dart';
-
-/// Nomes (minusculos) dos parametros :nome do SELECT. Empresa e parceiro vem do login, entao ficam de fora.
-List<String> parametrosDoSelect(String sql) => {
-      for (final m in RegExp(r'(?<![:\w]):([A-Za-z_]\w*)').allMatches(sql)) m[1]!.toLowerCase()
-    }.where((p) => p != 'empresaid' && p != 'parceiroid').toList();
 
 /// Campo preenchido por SELECT: uma coluna da planilha e' o resultado e cada :parametro vem de outra, na mesma linha.
 class CampoSelectDialog extends StatefulWidget {

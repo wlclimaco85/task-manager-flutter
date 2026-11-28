@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/dashboard_personalizado_service.dart' show DashFiltro;
 import '../services/relatorio_personalizado_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/campo_calculado.dart';
+import 'colunas_por_select.dart';
 import 'publicar_menu_dialog.dart';
 import 'dashboard_componente_view.dart';
 import 'relatorio_designer_view.dart';
@@ -212,6 +214,8 @@ class _RelatorioDialogState extends State<_RelatorioDialog> {
   late String _modo = widget.atual?.config.modo ?? 'SIMPLES';
   late RelLayout? _layout = widget.atual?.config.layout;
   ResultadoDashLocal? _previa;
+  late List<CampoCalculado> _campos = widget.atual?.config.campos ?? const [];
+  List<String> _colunasTestadas = const [];
   String? _erroPrevia;
   bool _testando = false;
 
@@ -260,8 +264,13 @@ class _RelatorioDialogState extends State<_RelatorioDialog> {
       _previa = null;
     });
     try {
-      final r = await widget.servico.testarSql(_sql.text.trim(), _valoresDeTeste());
-      if (mounted) setState(() => _previa = ResultadoDashLocal(r.colunas, r.linhas));
+      final r = await widget.servico.testarComCampos(_sql.text.trim(), _valoresDeTeste(), _campos);
+      if (mounted) {
+        setState(() {
+          _previa = ResultadoDashLocal(r.colunas, r.linhas);
+          _colunasTestadas = r.colunas;
+        });
+      }
     } catch (e) {
       AppLogger.i.warn('RelatorioConstrutorView: SQL recusado/falhou no teste: $e');
       if (mounted) setState(() => _erroPrevia = '$e');
@@ -320,7 +329,8 @@ class _RelatorioDialogState extends State<_RelatorioDialog> {
         _titulo.text.trim(),
         _sql.text.trim(),
         _valoresDeTeste(),
-        RelConfig(orientacao: _orientacao, modo: 'AVANCADO', layout: layout, colunas: _configColunas()),
+        RelConfig(
+            orientacao: _orientacao, modo: 'AVANCADO', layout: layout, colunas: _configColunas(), campos: _campos),
       );
       await _salvarPrevia(pdf);
       messenger.showSnackBar(const SnackBar(content: Text('Prévia gerada.')));
@@ -390,6 +400,7 @@ class _RelatorioDialogState extends State<_RelatorioDialog> {
           modo: _modo,
           layout: _modo == 'AVANCADO' ? (_layout ?? layoutInicial(_titulo.text.trim(), _colunasConfig(), _orientacao)) : null,
           colunas: _colunasConfig(),
+          campos: _campos,
         ),
       ),
     );
@@ -447,6 +458,14 @@ class _RelatorioDialogState extends State<_RelatorioDialog> {
                   label: const Text('Carregar colunas'),
                 ),
               ]),
+              ColunasPorSelect(
+                campos: _campos,
+                colunas: _colunasTestadas,
+                aoMudar: (novos) {
+                  setState(() => _campos = novos);
+                  _testar();
+                },
+              ),
               if (_erroPrevia != null)
                 Padding(padding: const EdgeInsets.only(top: 6), child: Text(_erroPrevia!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
               if (_previa != null)
