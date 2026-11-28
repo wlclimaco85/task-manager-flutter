@@ -5,6 +5,7 @@ import '../../widgets/gestao_xml/gestao_xml_screen.dart';
 import '../../widgets/intercambio_contabil/intercambio_contabil_screen.dart';
 import '../../widgets/controle_obrigacoes/controle_obrigacoes_screen.dart';
 import '../../widgets/captura_nfe/captura_nfe_screen.dart';
+import '../../widgets/certidoes/certidoes_screen.dart';
 import 'package:task_manager_flutter/services/permission_service.dart';
 import 'package:task_manager_flutter/utils/string_utils.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
@@ -273,6 +274,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'Importar e Exportar Contábil': (menuId: 'intercambio_contabil', appScreen: null),
     'Controle de Obrigações': (menuId: 'controle_obrigacoes', appScreen: null),
     'Captura de NF-e': (menuId: 'captura_nfe', appScreen: null),
+    'Certidões (CND)': (menuId: 'certidoes', appScreen: null),
     'Plano de Contas': (menuId: 'conta_contabil', appScreen: null),
     'Lançamentos Contábeis': (menuId: 'lancamento_contabil', appScreen: AppScreen.lancamentoContabil),
     'Balancete': (menuId: 'balancete', appScreen: AppScreen.balancete),
@@ -464,6 +466,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     'intercambio_contabil': 'Contábil',
     'controle_obrigacoes': 'Contábil',
     'captura_nfe': 'Contábil',
+    'certidoes': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',
@@ -1572,6 +1575,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Diagnóstico eSocial":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticoEsocialScreen(cabecalhoMobile: true)));
+        break;
+      case "Certidões (CND)":
+        nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const CertidoesScreen(cabecalhoMobile: true)));
         break;
       case "Captura de NF-e":
         nav = Navigator.push(context, MaterialPageRoute(builder: (_) => const CapturaNfeScreen(cabecalhoMobile: true)));
@@ -2768,6 +2774,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.import_export, 'Importar e Exportar Contábil'),
             _MoreMenuAction(Icons.fact_check, 'Controle de Obrigações'),
             _MoreMenuAction(Icons.cloud_download, 'Captura de NF-e'),
+            _MoreMenuAction(Icons.assignment_turned_in, 'Certidões (CND)'),
             _MoreMenuAction(Icons.account_tree, 'Plano de Contas'),
             _MoreMenuAction(Icons.history_edu, 'Lançamentos Contábeis'),
             _MoreMenuAction(Icons.scale, 'Balancete'),

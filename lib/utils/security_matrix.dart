@@ -1012,6 +1012,7 @@ class ModuloAccess {
     'intercambio_contabil': 'Contábil',
     'controle_obrigacoes': 'Contábil',
     'captura_nfe': 'Contábil',
+    'certidoes': 'Contábil',
     'conta_contabil': 'Contábil',
     'lancamento_contabil': 'Contábil',
     'balancete': 'Contábil',

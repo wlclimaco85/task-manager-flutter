@@ -138,6 +138,7 @@ class PermissionService {
     'intercambio_contabil': 'intercambio_contabil',
     'controle_obrigacoes': 'controle_obrigacoes',
     'captura_nfe': 'captura_nfe',
+    'certidoes': 'certidoes',
     'agendamento_nfe': 'AgendamentoNFeRecorrente',
     // Bug de producao (2026-09-16, ver bugs.md): telas criadas sem entrada
     // aqui nunca aparecem em Controle de Acesso (RolePermissionCatalog

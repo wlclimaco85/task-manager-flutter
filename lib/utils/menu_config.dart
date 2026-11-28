@@ -622,6 +622,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.cloudArrowDown,
             screenIndex: 226),
         MenuItem(
+            id: 'certidoes',
+            label: 'Certidões (CND)',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 227),
+        MenuItem(
             id: 'conta_contabil',
             label: 'Plano de Contas',
             icon: FontAwesomeIcons.tableList,
