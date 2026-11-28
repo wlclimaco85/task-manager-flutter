@@ -9,6 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/fiscal_error_message.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../widgets/nfe_cancelamento_extemporaneo_dialog.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, BulkAction;
@@ -828,6 +829,15 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
         label: "Cancelar",
         onPressed: (context, item) => _cancelar(context, item),
       ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.history_toggle_off,
+          label: 'Cancelamento extemporâneo',
+          onPressed: (context, item) async {
+            final cancelada = await cancelarNfeExtemporaneo(context, item['id']?.toString() ?? '',
+                numero: item['numero']?.toString() ?? '');
+            if (cancelada && mounted) setState(() => _gridKey++);
+          },
+        ),
       CustomAction<Map<String, dynamic>>(
         icon: Icons.edit_note,
         label: "Carta de Correção",

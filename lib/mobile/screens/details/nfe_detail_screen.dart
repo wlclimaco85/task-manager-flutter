@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../../utils/grid_colors.dart';
 import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
+import '../../../../widgets/nfe_cancelamento_extemporaneo_dialog.dart';
 import '../../../../utils/tenant_context.dart';
 import '../../../../widgets/searchable_dropdown.dart';
 import '../../../../utils/grid_texts.dart';
@@ -209,6 +210,9 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   List<Widget> _actionsSaida() => [
     _appBarBtn(Icons.send, 'Emitir', () => _emitir()),
     _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
+    _appBarBtn(Icons.history_toggle_off, 'Cancelamento extemporâneo', () async {
+      if (await cancelarNfeExtemporaneo(context, _nfeId) && mounted) setState(() => _statusVal = 'CANCELADA');
+    }),
     _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
     _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
   ];
