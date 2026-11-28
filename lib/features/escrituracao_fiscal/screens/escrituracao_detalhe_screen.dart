@@ -1,3 +1,10 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:share_plus/share_plus.dart';
+
+import '../../../utils/file_saver_compat.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/app_logger.dart';
 import '../../../widgets/user_banners.dart';
@@ -10,8 +17,11 @@ import '../../../utils/grid_texts.dart';
 class EscrituracaoDetalheScreen extends StatefulWidget {
   final EscrituracaoFiscal escrituracao;
   final bool cabecalhoMobile;
+  /// Substituível em teste.
+  final Future<void> Function(String nome, Uint8List bytes)? salvar;
+
   const EscrituracaoDetalheScreen(
-      {super.key, required this.escrituracao, this.cabecalhoMobile = false});
+      {super.key, required this.escrituracao, this.cabecalhoMobile = false, this.salvar});
 
   @override
   State<EscrituracaoDetalheScreen> createState() =>
@@ -24,6 +34,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
   List<ItemEscrituracao> _itens = [];
   bool _loading = true;
   bool _actionLoading = false;
+  bool _exportando = false;
   String? _error;
 
   @override
@@ -119,13 +130,54 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
     }
   }
 
+  /// Salva o livro em CSV. No celular o arquivo é compartilhado: a pasta do app não é acessível ao usuário.
+  Future<void> _exportar() async {
+    setState(() => _exportando = true);
+    var mensagem = 'Não foi possível exportar a escrituração.';
+    try {
+      final bytes = await _service.exportar(_esc.id!);
+      final nome = 'escrituracao-${_esc.periodo}-${_esc.tipo.toLowerCase()}.csv';
+      if (widget.salvar != null) {
+        await widget.salvar!(nome, bytes);
+        mensagem = 'CSV gerado.';
+      } else {
+        final caminho =
+            await FileSaver.instance.saveFile(name: nome, bytes: bytes, mimeType: MimeType.csv);
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+          // ignore: deprecated_member_use
+          await Share.shareXFiles([XFile(caminho, name: nome)], sharePositionOrigin: ui.Rect.largest);
+          mensagem = '';
+        } else {
+          mensagem = kIsWeb ? 'CSV gerado.' : 'CSV salvo em $caminho';
+        }
+      }
+    } on EscrituracaoFiscalException catch (e) {
+      AppLogger.i.warn('escrituracao_detalhe_screen: $e');
+      mensagem = e.message;
+    } catch (e, st) {
+      AppLogger.i.error('escrituracao_detalhe_screen: falha ao exportar ($e)', st);
+    }
+    if (!mounted) return;
+    setState(() => _exportando = false);
+    if (mensagem.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+    }
+  }
+
+  Widget get _botaoExportar => IconButton(
+        tooltip: 'Exportar CSV',
+        color: GridColors.textPrimary,
+        onPressed: _exportando ? null : _exportar,
+        icon: const Icon(Icons.download),
+      );
+
   Color _statusColor(String status) {
     switch (status) {
-      case 'RASCUNHO':
+      case 'ABERTO':
         return GridColors.warningDark;
-      case 'CONFERIDA':
+      case 'CONFERIDO':
         return GridColors.info;
-      case 'FECHADA':
+      case 'FECHADO':
         return GridColors.success;
       default:
         return GridColors.neutral;
@@ -134,8 +186,8 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final podeConferir = _esc.status == 'RASCUNHO';
-    final podeFechar = _esc.status == 'CONFERIDA';
+    final podeConferir = _esc.status == 'ABERTO';
+    final podeFechar = _esc.status == 'CONFERIDO';
     final podeAcao = podeConferir || podeFechar;
 
     return Scaffold(
@@ -147,6 +199,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
               showBackButton: true,
               showFilterButton: false,
               actions: [
+                _botaoExportar,
                 IconButton(
                   tooltip: 'Atualizar',
                   color: GridColors.textPrimary,
@@ -160,6 +213,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         foregroundColor: GridColors.textPrimary,
         title: Text('Escrituração ${_esc.periodo}'),
         actions: [
+          _botaoExportar,
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadItens,

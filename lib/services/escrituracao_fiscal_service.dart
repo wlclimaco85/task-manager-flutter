@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../models/escrituracao_fiscal_model.dart';
 import '../models/item_escrituracao_model.dart';
@@ -34,6 +35,19 @@ class EscrituracaoFiscalService {
       headers: TenantContext.jsonHeaders,
     );
     return _parseItemList(response);
+  }
+
+  Future<Uint8List> exportar(int id) async {
+    final response = await http.get(
+      Uri.parse(TenantContext.applyToUrl('${ApiLinks.escrituracaoFiscalDetalhe(id)}/exportar')),
+      headers: TenantContext.jsonHeaders,
+    );
+    if (response.statusCode != 200) {
+      throw EscrituracaoFiscalException(response.statusCode == 403
+          ? 'Sem permissão para exportar a escrituração.'
+          : 'Erro ao exportar (${response.statusCode}).');
+    }
+    return response.bodyBytes;
   }
 
   Future<EscrituracaoFiscal> gerar({
@@ -82,6 +96,11 @@ class EscrituracaoFiscalService {
 
   EscrituracaoFiscal _parseSingle(http.Response response) {
     final body = _decode(response.bodyBytes);
+    if (response.statusCode >= 300) {
+      final mensagem = body is Map ? (body['message'] ?? body['mensagem']) : null;
+      throw EscrituracaoFiscalException(
+          mensagem?.toString() ?? 'Erro ao processar escrituração (${response.statusCode}).');
+    }
     if (body is Map<String, dynamic>) {
       return EscrituracaoFiscal.fromJson(body);
     }

@@ -74,11 +74,11 @@ class EscrituracaoFiscal {
 
   String get statusLabel {
     switch (status) {
-      case 'RASCUNHO':
-        return 'Rascunho';
-      case 'CONFERIDA':
+      case 'ABERTO':
+        return 'Aberta';
+      case 'CONFERIDO':
         return 'Conferida';
-      case 'FECHADA':
+      case 'FECHADO':
         return 'Fechada';
       default:
         return status;

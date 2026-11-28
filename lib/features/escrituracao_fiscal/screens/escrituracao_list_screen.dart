@@ -150,11 +150,11 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'RASCUNHO':
+      case 'ABERTO':
         return GridColors.warningDark;
-      case 'CONFERIDA':
+      case 'CONFERIDO':
         return GridColors.info;
-      case 'FECHADA':
+      case 'FECHADO':
         return GridColors.success;
       default:
         return GridColors.neutral;
