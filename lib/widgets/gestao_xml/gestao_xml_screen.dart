@@ -1,10 +1,15 @@
 import '../user_banners.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart' show Uint8List;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+
+import 'exportar_xml_dialog.dart';
 
 import '../../services/session_expired_handler.dart';
 import '../../utils/api_links.dart';
@@ -136,19 +141,11 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
   Future<void> _baixar(List<int> ids) async {
     setState(() => _baixando = true);
     try {
-      final url = _url('/api/gestao-xml/zip');
-      final corpo = jsonEncode({'ids': ids});
-      final r = widget.enviar != null
-          ? await widget.enviar!(url, corpo)
-          : await http.post(Uri.parse(url), headers: TenantContext.jsonHeaders, body: corpo);
+      final r = await _post(_url('/api/gestao-xml/zip'), jsonEncode({'ids': ids}));
       // Este POST não passa pelo TenantContext.post: o 401 é tratado aqui.
       if (r.statusCode == 401) SessionExpiredHandler.handle();
       if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
-      if (widget.salvar != null) {
-        await widget.salvar!(r.bodyBytes);
-      } else {
-        await FileSaver.instance.saveFile(name: 'xml_nfe.zip', bytes: r.bodyBytes);
-      }
+      await _salvarZip('xml_nfe.zip', r.bodyBytes);
       if (mounted) _mensagem('ZIP gerado.');
     } catch (e, st) {
       AppLogger.i.error('Gestão de XML: falha ao gerar ZIP de ${ids.length} nota(s) ($e)', st);
@@ -157,6 +154,47 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
       if (mounted) setState(() => _baixando = false);
     }
   }
+
+  Future<http.Response> _post(String url, String corpo) => widget.enviar != null
+      ? widget.enviar!(url, corpo)
+      : http.post(Uri.parse(url), headers: TenantContext.jsonHeaders, body: corpo);
+
+  Future<void> _salvarZip(String nome, Uint8List bytes) async {
+    if (widget.salvar != null) {
+      await widget.salvar!(bytes);
+      return;
+    }
+    final caminho = await FileSaver.instance.saveFile(name: nome, bytes: bytes);
+    // No celular o arquivo é compartilhado: a pasta do app não é acessível ao usuário.
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      // ignore: deprecated_member_use
+      await Share.shareXFiles([XFile(caminho, name: nome)], sharePositionOrigin: ui.Rect.largest);
+    }
+  }
+
+  Future<void> _enviarSelecao() async {
+    final ids = _selecionadas.toList();
+    final destinatario = await pedirDestinatario(context, 'XML de ${ids.length} NF-e selecionada(s).');
+    if (destinatario == null || !mounted) return;
+    setState(() => _baixando = true);
+    final r = await pedirXml(
+        _post, _url('/api/gestao-xml/email'), {'ids': ids, 'destinatario': destinatario},
+        porEmail: true);
+    if (!mounted) return;
+    setState(() => _baixando = false);
+    _mensagem(r.erro ?? 'E-mail enviado para $destinatario.');
+  }
+
+  void _exportarPorPeriodo() => showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => ExportarXmlDialog(
+          url: _url,
+          buscar: widget.buscar ?? TenantContext.get,
+          enviar: _post,
+          salvar: (r) => _salvarZip('xml_fiscais.zip', r.bodyBytes),
+        ),
+      );
 
   List<_Json> _lista(String chave) => ((_dados?[chave] as List?) ?? const []).cast<_Json>();
 
@@ -209,6 +247,11 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
                         liveRegion: true, child: Text('${_selecionadas.length} selecionada(s)')),
                     TextButton(
                         onPressed: () => setState(_selecionadas.clear), child: const Text('Limpar')),
+                    OutlinedButton.icon(
+                      onPressed: _baixando ? null : _enviarSelecao,
+                      icon: const Icon(Icons.email),
+                      label: const Text('Enviar por e-mail'),
+                    ),
                     FilledButton.icon(
                       onPressed: _baixando ? null : () => _baixar(_selecionadas.toList()),
                       icon: const Icon(Icons.archive),
@@ -241,7 +284,19 @@ class _GestaoXmlScreenState extends State<GestaoXmlScreen> {
               padding: EdgeInsets.all(largura < 700 ? 12 : 20),
               children: [
                 _faixa(Icons.info, GridColors.info, GridColors.card,
-                    'Somente NF-e. NFS-e, NFC-e, CT-e e MDF-e não aparecem nesta versão.'),
+                    'A lista mostra apenas NF-e. Use Exportar por período para todos os documentos.'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                      onPressed: _exportarPorPeriodo,
+                      icon: const Icon(Icons.date_range),
+                      label: const Text('Exportar por período'),
+                    ),
+                  ),
+                ),
                 if (_erro != null)
                   _faixa(Icons.warning, GridColors.errorDark, GridColors.errorLight,
                       '$_erro A lista abaixo é a carregada antes.'),

@@ -82,7 +82,7 @@ void main() {
     testWidgets('gestão de XML não estoura em ${tamanho.width.toInt()} px', (t) async {
       await abrir(t, tamanho, GestaoXmlScreen(buscar: (_) async => _ok(_xml)));
 
-      expect(find.textContaining('Somente NF-e'), findsOneWidget);
+      expect(find.textContaining('A lista mostra apenas NF-e'), findsOneWidget);
       expect(find.textContaining('NF-e 123'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
