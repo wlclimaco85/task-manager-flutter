@@ -114,6 +114,88 @@ void main() {
     });
   }
 
+  for (final largura in const [1366.0, 360.0]) {
+    testWidgets('ciência só vai à SEFAZ depois da confirmação em ${largura.toInt()} px', (t) async {
+      final corpos = <Map<String, dynamic>>[];
+      await abrir(
+          t,
+          CapturaNfeScreen(
+            buscar: servidor,
+            enviarCiencia: (url, corpo) async {
+              expect(url, contains('/api/captura-dfe/ciencia'));
+              corpos.add(jsonDecode(corpo) as Map<String, dynamic>);
+              return _json({
+                'resultados': [
+                  {'id': 1, 'situacao': 'REJEITADA', 'mensagem': 'SEFAZ 596: Evento fora do prazo'}
+                ]
+              });
+            },
+          ),
+          largura);
+      await t.tap(find.text('Documentos capturados'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('Dar ciência ('), findsNothing);
+
+      await t.tap(find.text('Selecionar para ciência'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Dar ciência (1)'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('não há como desfazer'), findsOneWidget);
+
+      // Sem marcar a conferência o botão não envia.
+      await t.tap(find.text('Enviar ciência'));
+      await t.pumpAndSettle();
+      expect(corpos, isEmpty);
+
+      await t.tap(find.text('Conferi as notas e quero enviar a ciência'));
+      await t.pumpAndSettle();
+      final antes = urls.length;
+      await t.tap(find.text('Enviar ciência'));
+      await t.pumpAndSettle();
+
+      expect(corpos.single['ids'], [1]);
+      expect(find.text('0 de 1 registrada(s) na SEFAZ.'), findsOneWidget);
+      expect(find.textContaining('SEFAZ 596: Evento fora do prazo'), findsOneWidget);
+      await t.tap(find.text('Fechar'));
+      await t.pumpAndSettle();
+      expect(urls.length, greaterThan(antes)); // lista recarregada
+      expect(find.textContaining('Dar ciência ('), findsNothing);
+      expect(t.takeException(), isNull);
+    });
+  }
+
+  testWidgets('cancelar não envia e falha de rede avisa para conferir antes de repetir', (t) async {
+    var envios = 0;
+    await abrir(
+        t,
+        CapturaNfeScreen(
+          buscar: servidor,
+          enviarCiencia: (_, __) async {
+            envios++;
+            throw Exception('sem rede');
+          },
+        ));
+    await t.tap(find.text('Documentos capturados'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Selecionar para ciência'));
+    await t.pumpAndSettle();
+
+    await t.tap(find.text('Dar ciência (1)'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Cancelar'));
+    await t.pumpAndSettle();
+    expect(envios, 0);
+
+    await t.tap(find.text('Dar ciência (1)'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Conferi as notas e quero enviar a ciência'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Enviar ciência'));
+    await t.pumpAndSettle();
+    expect(envios, 1);
+    expect(find.textContaining('Atualize a lista antes de repetir'), findsOneWidget);
+  });
+
   testWidgets('403 mostra falta de acesso sem tentar de novo', (t) async {
     await abrir(t, CapturaNfeScreen(buscar: (_) async => _json({}, 403)), 360);
     expect(find.textContaining('Você não tem acesso à Captura de NF-e'), findsOneWidget);

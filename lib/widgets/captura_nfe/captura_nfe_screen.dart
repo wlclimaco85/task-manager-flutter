@@ -31,6 +31,8 @@ String _dataHora(Object? iso) => DateFormat('dd/MM/yyyy HH:mm').format(DateTime.
 
 String _data(Object? iso) => DateFormat('dd/MM/yyyy').format(DateTime.parse('$iso'));
 
+String _moeda(Object? v) => NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(v);
+
 String _cnpj(String v) => v.length != 14
     ? v
     : '${v.substring(0, 2)}.${v.substring(2, 5)}.${v.substring(5, 8)}/${v.substring(8, 12)}-${v.substring(12)}';
@@ -47,9 +49,15 @@ class CapturaNfeScreen extends StatefulWidget {
   final Future<http.Response> Function(String url)? buscar;
   final Future<http.Response> Function(String url, String corpo)? enviar;
   final Future<void> Function(String nome, Uint8List bytes)? salvar;
+  final Future<http.Response> Function(String url, String corpo)? enviarCiencia;
 
   const CapturaNfeScreen(
-      {super.key, this.cabecalhoMobile = false, this.buscar, this.enviar, this.salvar});
+      {super.key,
+      this.cabecalhoMobile = false,
+      this.buscar,
+      this.enviar,
+      this.salvar,
+      this.enviarCiencia});
 
   @override
   State<CapturaNfeScreen> createState() => _CapturaNfeScreenState();
@@ -71,6 +79,8 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
   bool _temMais = false;
   bool _carregandoDocumentos = false;
   final Set<int> _baixando = {};
+  final Set<int> _marcados = {};
+  bool _enviandoCiencia = false;
   int _pedido = 0;
 
   @override
@@ -125,7 +135,10 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
     setState(() {
       _carregandoDocumentos = true;
       _erroDocumentos = null;
-      if (!mais) _documentos = null;
+      if (!mais) {
+        _documentos = null;
+        _marcados.clear();
+      }
     });
     String? erro;
     try {
@@ -256,6 +269,181 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
     }
   }
 
+  // ── Ciência em lote ──────────────────────────────────────────────────────
+
+  /// Limite aceito pelo servidor em cada envio.
+  static const _limiteCiencia = 20;
+
+  bool _aceitaCiencia(_Json d) =>
+      d['tipo'] == 'RESUMO' && d['chave'] != null && d['cienciaRegistrada'] != true;
+
+  void _marcarVarios() => setState(() {
+        for (final d in (_documentos ?? const <_Json>[]).where(_aceitaCiencia)) {
+          if (_marcados.length >= _limiteCiencia) break;
+          _marcados.add(d['id'] as int);
+        }
+      });
+
+  /// Ciência vai para a SEFAZ e não tem como desfazer: exige leitura e confirmação.
+  Future<bool> _confirmarCiencia(List<_Json> notas) async {
+    var li = false;
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, atualizar) => AlertDialog(
+          title: Text('Enviar ciência de ${notas.length} nota(s) à SEFAZ?'),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('A Ciência da Operação é um evento fiscal: fica registrada na SEFAZ, '
+                    'o emitente pode vê-la e não há como desfazer.\n\n'
+                    'Ela não confirma a compra. Depois dela, a SEFAZ espera uma manifestação '
+                    'conclusiva (confirmação, desconhecimento ou operação não realizada) '
+                    'dentro do prazo legal.'),
+                const SizedBox(height: 12),
+                for (final d in notas)
+                  Text('• ${d['emitenteNome'] ?? 'Emitente não informado'}'
+                      '${d['valor'] == null ? '' : ' — ${_moeda(d['valor'])}'}'),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Conferi as notas e quero enviar a ciência'),
+                  value: li,
+                  onChanged: (v) => atualizar(() => li = v ?? false),
+                ),
+              ]),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(
+                onPressed: li ? () => Navigator.pop(context, true) : null,
+                child: const Text('Enviar ciência')),
+          ],
+        ),
+      ),
+    );
+    return confirmou == true;
+  }
+
+  Future<void> _darCiencia() async {
+    final notas = (_documentos ?? const <_Json>[]).where((d) => _marcados.contains(d['id'])).toList();
+    if (notas.isEmpty || _enviandoCiencia) return;
+    if (!await _confirmarCiencia(notas) || !mounted) return;
+    setState(() => _enviandoCiencia = true);
+    const semResposta = 'Não foi possível confirmar o resultado. Atualize a lista antes de repetir.';
+    String? falha = semResposta;
+    List<_Json> resultados = const [];
+    try {
+      final url = _url('/ciencia');
+      final corpo = jsonEncode({'ids': [for (final d in notas) d['id']]});
+      final r = widget.enviarCiencia != null
+          ? await widget.enviarCiencia!(url, corpo)
+          : await http
+              .post(Uri.parse(url), headers: TenantContext.jsonHeaders, body: corpo)
+              .timeout(const Duration(minutes: 5));
+      if (r.statusCode == 401) SessionExpiredHandler.handle();
+      if (r.statusCode == 200) {
+        resultados =
+            ((jsonDecode(utf8.decode(r.bodyBytes)) as _Json)['resultados'] as List).cast<_Json>();
+        falha = null;
+      } else if (r.statusCode == 403) {
+        falha = 'Você não tem permissão para dar ciência.';
+      } else if (r.statusCode == 400 || r.statusCode == 404) {
+        final json = jsonDecode(utf8.decode(r.bodyBytes));
+        falha = '${json['message'] ?? json['mensagem'] ?? semResposta}';
+      } else {
+        AppLogger.i.warn('Captura de NF-e: ciência recusada (${r.statusCode})');
+      }
+    } catch (e, st) {
+      AppLogger.i.error('Captura de NF-e: falha ao enviar a ciência ($e)', st);
+    }
+    if (!mounted) return;
+    setState(() => _enviandoCiencia = false);
+    if (falha != null) {
+      _avisar(falha);
+    } else {
+      await _mostrarResultado(notas, resultados);
+    }
+    if (mounted) await _carregarDocumentos();
+  }
+
+  Future<void> _mostrarResultado(List<_Json> notas, List<_Json> resultados) {
+    final emitentes = {
+      for (final d in notas) d['id']: '${d['emitenteNome'] ?? 'Emitente não informado'}'
+    };
+    final registradas = resultados.where((r) => r['situacao'] == 'REGISTRADA').length;
+    final outras = resultados.where((r) => r['situacao'] != 'REGISTRADA').toList();
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Resultado da ciência'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$registradas de ${resultados.length} registrada(s) na SEFAZ.'),
+              if (registradas > 0)
+                const Text('O XML completo chega em uma próxima captura, com o CNPJ ativo.'),
+              for (final r in outras)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('${emitentes[r['id']] ?? r['chave']}: ${r['mensagem']}'),
+                ),
+            ]),
+          ),
+        ),
+        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))],
+      ),
+    );
+  }
+
+  Widget _barraCiencia(double margem) => Material(
+        color: GridColors.card,
+        elevation: 4,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: margem, vertical: 8),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(_enviandoCiencia
+                    ? 'Enviando à SEFAZ. Pode levar alguns minutos.'
+                    : '${_marcados.length} selecionado(s), máximo $_limiteCiencia'),
+                if (_enviandoCiencia)
+                  const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: 'Enviando'))
+                else ...[
+                  TextButton(
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+                    onPressed: _marcarVarios,
+                    child: const Text('Selecionar da lista'),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+                    onPressed: () => setState(_marcados.clear),
+                    child: const Text('Limpar seleção'),
+                  ),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                    onPressed: _darCiencia,
+                    icon: const Icon(Icons.fact_check),
+                    label: Text('Dar ciência (${_marcados.length})'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+
   // ── Tela ─────────────────────────────────────────────────────────────────
 
   @override
@@ -289,7 +477,7 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
           Padding(
             padding: EdgeInsets.fromLTRB(margem, margem, margem, 0),
             child: _faixa(Icons.info, GridColors.info, GridColors.card,
-                'Somente NF-e. O sistema só busca e guarda o XML: não envia ciência, não importa a nota e não altera estoque nem financeiro.'),
+                'Somente NF-e. A captura só busca e guarda o XML: não importa a nota e não altera estoque nem financeiro. A ciência só é enviada quando você seleciona resumos e confirma.'),
           ),
           Material(
             color: GridColors.card,
@@ -303,7 +491,10 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
           Expanded(
             child: TabBarView(controller: _abas, children: [
               _abaCnpjs(largura, margem),
-              _abaDocumentos(largura, margem),
+              Column(children: [
+                Expanded(child: _abaDocumentos(largura, margem)),
+                if (_marcados.isNotEmpty || _enviandoCiencia) _barraCiencia(margem),
+              ]),
             ]),
           ),
         ]);
@@ -512,16 +703,31 @@ class _CapturaNfeScreenState extends State<CapturaNfeScreen> with SingleTickerPr
       Wrap(spacing: 12, children: [
         Text(d['valor'] == null
             ? 'Valor: —'
-            : 'Valor: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(d['valor'])}'),
+            : 'Valor: ${_moeda(d['valor'])}'),
         if (d['dhEmissao'] != null) Text('Emissão: ${_data(d['dhEmissao'])}'),
         Text('Capturado em ${_dataHora(d['capturadoEm'])}'),
         Text('NSU ${d['nsu']}'),
       ]),
       if (d['chave'] != null) SelectableText('Chave: ${d['chave']}'),
-      if (resumo)
-        const Text(
-            'A SEFAZ enviou apenas o resumo. Para obter o XML completo, faça a manifestação na tela Manifestação do Destinatário.',
+      if (resumo && d['cienciaRegistrada'] == true) ...[
+        const SizedBox(height: 4),
+        _selo(Icons.fact_check, GridColors.success, GridColors.successLight, 'Ciência registrada'),
+        const Text('O XML completo chega em uma próxima captura, com o CNPJ ativo.',
             style: TextStyle(color: GridColors.textMuted)),
+      ] else if (resumo)
+        const Text('A SEFAZ enviou apenas o resumo. Dê ciência para liberar o XML completo.',
+            style: TextStyle(color: GridColors.textMuted)),
+      if (_aceitaCiencia(d))
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text('Selecionar para ciência'),
+          value: _marcados.contains(id),
+          onChanged: _enviandoCiencia ||
+                  (!_marcados.contains(id) && _marcados.length >= _limiteCiencia)
+              ? null
+              : (v) => setState(() => v == true ? _marcados.add(id) : _marcados.remove(id)),
+        ),
     ]);
     final acao = Semantics(
       label: 'Baixar XML de $emitente',
