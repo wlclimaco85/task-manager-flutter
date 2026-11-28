@@ -9,6 +9,7 @@ import '../../../models/nfe_pagamento_model.dart';
 import '../../../models/nfe_fatura_model.dart';
 import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../widgets/nfe_cancelamento_extemporaneo_dialog.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/nfe_emission_payload.dart';
 import '../../../utils/nfe_action_feedback.dart';
@@ -1224,6 +1225,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
         _appBarBtn(Icons.send, _emitindo ? 'Autorizando...' : 'Emitir',
             _emitindo ? null : () => _emitir()),
         _appBarBtn(Icons.cancel_outlined, 'Cancelar', () => _cancelar()),
+        _appBarBtn(Icons.history_toggle_off, 'Cancelamento extemporâneo', () async {
+          if (await cancelarNfeExtemporaneo(context, _nfeId)) await _recarregarCabecalhoNfe();
+        }),
         _appBarBtn(Icons.print, 'DANFE', () => _imprimirDanfe()),
         _appBarBtn(Icons.code, 'XML', () => _baixarXml()),
         const SizedBox(width: 8),

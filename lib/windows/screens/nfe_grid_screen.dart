@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../widgets/nfe_devolucao_dialog.dart';
 import '../../../utils/api_links.dart';
+import '../../../widgets/nfe_cancelamento_extemporaneo_dialog.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -192,6 +193,15 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
           icon: Icons.cancel_outlined,
           label: 'Cancelar',
           onPressed: (context, item) => _cancelar(context, item),
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.history_toggle_off,
+          label: 'Cancelamento extemporâneo',
+          onPressed: (context, item) async {
+            final cancelada = await cancelarNfeExtemporaneo(context, item['id']?.toString() ?? '',
+                numero: item['numero']?.toString() ?? '');
+            if (cancelada && mounted) setState(() => _gridKey++);
+          },
         ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.print,
