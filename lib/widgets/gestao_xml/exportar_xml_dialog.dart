@@ -33,8 +33,13 @@ Future<RespostaXml> pedirXml(Enviar enviar, String url, Object corpo, {required 
           porEmail ? 'Você não tem permissão para enviar XML por e-mail.' : 'Você não tem permissão para esta ação.');
     }
     if (r.statusCode == 400) {
-      final json = jsonDecode(utf8.decode(r.bodyBytes));
-      return RespostaXml(null, '${json['message'] ?? json['mensagem'] ?? padrao}');
+      // Um 400 significa que nada saiu: corpo ilegível não pode virar "não sei se enviou".
+      try {
+        final json = jsonDecode(utf8.decode(r.bodyBytes));
+        return RespostaXml(null, '${json['message'] ?? json['mensagem'] ?? padrao}');
+      } on Object {
+        return RespostaXml(null, padrao);
+      }
     }
     AppLogger.i.warn('Gestão de XML: pedido recusado (${r.statusCode}), e-mail=$porEmail');
   } catch (e, st) {
@@ -353,7 +358,8 @@ class _ExportarXmlDialogState extends State<ExportarXmlDialog> {
                 Text('$total documentos · ${_soma('semXml')} sem XML autorizado'),
                 const Text(
                     'O ZIP tem uma pasta por tipo e o arquivo relacao.csv. Documento sem XML autorizado '
-                    'aparece só no CSV. XML de cancelamento: somente NF-e.',
+                    'aparece só no CSV. XML de cancelamento: somente NF-e. Homologação não entra. '
+                    'Em NFC-e, CT-e e MDF-e, o filtro de cliente vale para o cliente emitente.',
                     style: TextStyle(color: GridColors.textMuted)),
               ],
               if (motivo != null) _erroNaTela(motivo),
