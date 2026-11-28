@@ -68,4 +68,13 @@ void main() {
           .having((e) => e.message, 'message', 'Confira a escrituração antes de fechar.')),
     );
   });
+
+  test('erro que não é JSON vira mensagem legível', () async {
+    await expectLater(
+      http.runWithClient(() => EscrituracaoFiscalService().fechar(1),
+          () => MockClient((_) async => http.Response('<html>502</html>', 502))),
+      throwsA(isA<EscrituracaoFiscalException>()
+          .having((e) => e.message, 'message', 'Erro ao processar escrituração (502).')),
+    );
+  });
 }

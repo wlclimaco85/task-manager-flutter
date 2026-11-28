@@ -95,7 +95,12 @@ class EscrituracaoFiscalService {
   }
 
   EscrituracaoFiscal _parseSingle(http.Response response) {
-    final body = _decode(response.bodyBytes);
+    dynamic body;
+    try {
+      body = _decode(response.bodyBytes);
+    } on FormatException {
+      body = null;
+    }
     if (response.statusCode >= 300) {
       final mensagem = body is Map ? (body['message'] ?? body['mensagem']) : null;
       throw EscrituracaoFiscalException(
