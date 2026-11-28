@@ -11,7 +11,7 @@ import '../../utils/grid_texts.dart';
 ///   omitido pelo cliente, como aqui, o backend usa o tenant da sessão)
 /// - GET  /api/fiscal/manifestacao/historico (idem; período default 30 dias)
 /// tipoEvento aceito: CIENCIA, CONFIRMACAO, DESCONHECIMENTO, NAO_REALIZADA.
-/// Justificativa é obrigatória apenas para CONFIRMACAO e NAO_REALIZADA.
+/// Justificativa (15 a 255 caracteres) só existe em NAO_REALIZADA.
 class ManifestacaoDestinatarioScreen extends StatefulWidget {
   const ManifestacaoDestinatarioScreen({super.key});
 
@@ -163,6 +163,7 @@ class _ManifestacaoDestinatarioScreenState
 
   Color _corStatus(String status) {
     switch (status.toUpperCase()) {
+      case 'REGISTRADO':
       case 'ENVIADO':
         return GridColors.success;
       case 'ERRO':
@@ -487,6 +488,7 @@ class _ManifestacaoDestinatarioScreenState
     IconData icone;
     String label;
     switch (status.toUpperCase()) {
+      case 'REGISTRADO':
       case 'ENVIADO':
         icone = Icons.check_circle;
         label = GridTexts.sent;
@@ -586,7 +588,7 @@ class _ManifestacaoFormDialogState extends State<_ManifestacaoFormDialog> {
         _erroChave = GridTexts.accessKeyInvalidLength;
         valido = false;
       }
-      if (_requerJustificativa && _justificativaController.text.trim().isEmpty) {
+      if (_requerJustificativa && _justificativaController.text.trim().length < 15) {
         _erroJustificativa = GridTexts.manifestationJustificationRequired;
         valido = false;
       }
@@ -608,6 +610,10 @@ class _ManifestacaoFormDialogState extends State<_ManifestacaoFormDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Text(GridTexts.manifestationIrreversible),
+            ),
             TextField(
               controller: _chaveController,
               readOnly: !widget.chaveEditavel,
@@ -656,7 +662,7 @@ class _ManifestacaoFormDialogState extends State<_ManifestacaoFormDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _justificativaController,
-              maxLength: 500,
+              maxLength: 255,
               decoration: InputDecoration(
                 labelText: _requerJustificativa
                     ? GridTexts.justificationRequired

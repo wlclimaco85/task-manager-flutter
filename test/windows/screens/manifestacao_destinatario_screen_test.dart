@@ -71,7 +71,7 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Confirmar'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Justificativa é obrigatória para este tipo de manifestação'),
+      expect(find.text('Escreva uma justificativa com pelo menos 15 caracteres'),
           findsOneWidget);
     });
 
@@ -94,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-          find.text('Justificativa é obrigatória para este tipo de manifestação'),
+          find.text('Escreva uma justificativa com pelo menos 15 caracteres'),
           findsNothing);
     });
   });

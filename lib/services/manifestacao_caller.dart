@@ -34,9 +34,9 @@ class ManifestacaoTipoEvento {
     naoRealizada,
   ];
 
-  /// Espelha ManifestacaoDestinatarioServiceImpl.EXIGE_JUSTIFICATIVA no backend.
+  /// A SEFAZ só aceita (e exige) justificativa em Operação não Realizada.
   static bool exigeJustificativa(String tipoEvento) {
-    return tipoEvento == confirmacao || tipoEvento == naoRealizada;
+    return tipoEvento == naoRealizada;
   }
 }
 
@@ -132,6 +132,15 @@ class ManifestacaoCaller {
         final decoded = response.body.isNotEmpty
             ? jsonDecode(response.body)
             : <String, dynamic>{};
+        if (decoded is Map<String, dynamic> && decoded['status'] == 'ERRO') {
+          return ManifestacaoResult(
+            success: false,
+            data: decoded,
+            message: decoded['erro']?.toString() ??
+                'A SEFAZ não registrou a manifestação.',
+            statusCode: response.statusCode,
+          );
+        }
         return ManifestacaoResult(
           success: true,
           data: decoded is Map<String, dynamic> ? decoded : {'data': decoded},

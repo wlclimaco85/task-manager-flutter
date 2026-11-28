@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/services/manifestacao_caller.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 
@@ -35,11 +36,11 @@ void main() {
   });
 
   group('ManifestacaoTipoEvento.exigeJustificativa', () {
-    test('CONFIRMACAO exige justificativa', () {
+    test('CONFIRMACAO não exige justificativa', () {
       expect(
         ManifestacaoTipoEvento.exigeJustificativa(
             ManifestacaoTipoEvento.confirmacao),
-        isTrue,
+        isFalse,
       );
     });
 
@@ -443,5 +444,19 @@ void main() {
       // (POST /api/fiscal/manifestacao), não um endpoint inventado.
       expect(ApiLinks.manifestacaoRegistrar, endsWith('/api/fiscal/manifestacao'));
     });
+  });
+
+  test('HTTP 200 com status ERRO não é sucesso e mostra o motivo da SEFAZ', () async {
+    SharedPreferences.setMockInitialValues({});
+    final result = await http.runWithClient(
+      () => ManifestacaoCaller.registrarManifestacao(
+          nfeChave: '1' * 44, tipoEvento: ManifestacaoTipoEvento.ciencia),
+      () => MockClient((_) async => http.Response.bytes(
+          utf8.encode(jsonEncode({'status': 'ERRO', 'erro': 'SEFAZ 596: fora do prazo'})),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'})),
+    );
+    expect(result.success, isFalse);
+    expect(result.message, 'SEFAZ 596: fora do prazo');
   });
 }

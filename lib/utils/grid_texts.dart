@@ -269,10 +269,12 @@ class GridTexts {
   static const String accessKeyFieldLabel = 'Chave de acesso da NFe (44 dígitos)';
   static const String accessKeyInvalidLength =
       'Chave de acesso deve ter 44 dígitos';
+  static const String manifestationIrreversible =
+      'A manifestação é enviada à SEFAZ, fica visível ao emitente e não pode ser apagada.';
   static const String manifestationJustificationHint =
-      'Justificativa obrigatória para Confirmação ou Operação não Realizada';
+      'Operação não Realizada exige justificativa de 15 a 255 caracteres';
   static const String manifestationJustificationRequired =
-      'Justificativa é obrigatória para este tipo de manifestação';
+      'Escreva uma justificativa com pelo menos 15 caracteres';
   static const String confirmation = 'Confirmação da Operação';
   static const String cienciaLabel = 'Ciência da Emissão';
   static const String unknownLabel = 'Desconhecimento da Operação';

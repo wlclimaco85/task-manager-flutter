@@ -82,7 +82,7 @@ void main() {
     });
 
     testWidgets(
-        'exige justificativa quando tipo = Confirmação da Operação',
+        'Confirmação da Operação não exige justificativa',
         (tester) async {
       await tester.pumpWidget(wrap(const ManifestacaoDestinatarioScreen()));
       await tester.pumpAndSettle(const Duration(seconds: 3));
@@ -100,8 +100,8 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Confirmar'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Justificativa é obrigatória para este tipo de manifestação'),
-          findsOneWidget);
+      expect(find.text('Escreva uma justificativa com pelo menos 15 caracteres'),
+          findsNothing);
     });
 
     testWidgets(
@@ -121,7 +121,7 @@ void main() {
       // em seguida, exibindo mensagem de erro via SnackBar.
       expect(find.text('Chave de acesso deve ter 44 dígitos'), findsNothing);
       expect(
-          find.text('Justificativa é obrigatória para este tipo de manifestação'),
+          find.text('Escreva uma justificativa com pelo menos 15 caracteres'),
           findsNothing);
     });
 
